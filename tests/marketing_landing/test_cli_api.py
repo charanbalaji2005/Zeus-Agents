@@ -150,3 +150,20 @@ def test_without_mongodb_nothing_is_accepted(site, monkeypatch):
     base, _db = site
     monkeypatch.setattr(server, "mongo_db", None)
     assert _login(base)[0] == 503
+
+
+def test_web_terminal_never_runs_commands_on_the_server(site):
+    base, db = site
+    status, body = _post(f"{base}/api/cli/run", {"command": "zeus --version"})
+    assert status == 410 and body["success"] is False
+    assert "scripts/install.ps1" in body["output"] and "Zeus Agents v" not in body["output"]
+
+
+def test_tokens_are_never_minted_without_an_approved_google_sign_in(site):
+    base, db = site
+    request = urllib.request.Request(f"{base}/api/auth/token", data=b'{"email": "anyone@example.com"}',
+                                     headers={"Content-Type": "application/json"})
+    with pytest.raises(urllib.error.HTTPError) as excinfo:
+        urllib.request.urlopen(request, timeout=10)
+    assert excinfo.value.code == 404
+    assert db.users.docs == [] and db.cli_tokens.docs == []

@@ -3,14 +3,13 @@ import socketserver
 import os
 import sys
 import json
-import shlex
-import subprocess
-import secrets
 import urllib.request
 import urllib.parse
 from datetime import datetime
 
 PORT = int(os.environ.get("PORT", 8080))
+INSTALL_SH_URL = "https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.sh"
+INSTALL_PS1_URL = "https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.ps1"
 GOOGLE_CLIENT_ID = os.environ.get(
     "GOOGLE_CLIENT_ID",
     "644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com"
@@ -268,97 +267,16 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
             return
 
-        # CLI Command Runner Endpoint for Web Terminal & API
+        # The web terminal never runs commands on this server: an open endpoint would let anyone
+        # execute `zeus` here with the server's secrets (MONGODB_URI, OAuth secrets) in its env.
         if url.path in ("/api/cli/run", "/api/cli/execute"):
-            try:
-                data = json.loads(body) if body else {}
-                raw_cmd = (data.get("command") or "").strip()
-                if not raw_cmd:
-                    self.send_response(400)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"success": False, "error": "No command provided"}).encode("utf-8"))
-                    return
-
-                # Normalize command tokens
-                tokens = shlex.split(raw_cmd)
-                if tokens and tokens[0].lower() in ("zeus", "zeus.exe", "zeus-agent"):
-                    tokens = tokens[1:]
-
-                # Security filter for Web Terminal
-                banned_substrings = [":(){ :|:& };:", "rm -rf /", "shutdown", "reboot"]
-                if any(b in raw_cmd for b in banned_substrings):
-                    self.send_response(403)
-                    self.send_header("Content-Type", "application/json")
-                    self.end_headers()
-                    self.wfile.write(json.dumps({"success": False, "error": "Command blocked: security policy."}).encode("utf-8"))
-                    return
-
-                if not tokens:
-                    tokens = ["--help"]
-
-                cmd_args = [sys.executable, "-m", "zeus_cli.main"] + tokens
-                res = subprocess.run(
-                    cmd_args,
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    errors="replace",
-                    timeout=30,
-                    env={**os.environ, "PYTHONIOENCODING": "utf-8", "TERM": "dumb"}
-                )
-
-                output = (res.stdout or "") + (res.stderr or "")
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    "success": res.returncode == 0,
-                    "command": raw_cmd,
-                    "exit_code": res.returncode,
-                    "output": output
-                }).encode("utf-8"))
-            except subprocess.TimeoutExpired:
-                self.send_response(504)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"success": False, "error": "Execution timed out (30s limit)"}).encode("utf-8"))
-            except Exception as e:
-                self.send_response(500)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
-            return
-
-        # CLI Token generation for terminal login
-        if url.path == "/api/auth/token":
-            try:
-                data = json.loads(body) if body else {}
-                email = data.get("email") or "terminal@zeus-agents.internal"
-                name = data.get("name") or "Zeus CLI User"
-                token = f"zeus_live_{secrets.token_hex(24)}"
-                user_record = {
-                    "email": email,
-                    "name": name,
-                    "cli_token": token,
-                    "provider": "zeus_cli",
-                    "issued_at": datetime.utcnow().isoformat() + "Z"
-                }
-                save_user_to_db(user_record)
-
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({
-                    "success": True,
-                    "token": token,
-                    "user": user_record
-                }).encode("utf-8"))
-            except Exception as e:
-                self.send_response(400)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            msg = ("This web terminal can't run commands on the server. Install Zeus on your computer:\n"
+                   "  macOS / Linux:  curl -fsSL " + INSTALL_SH_URL + " | bash\n"
+                   "  Windows:        irm " + INSTALL_PS1_URL + " | iex")
+            self.send_response(410)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": False, "error": "disabled", "output": msg}).encode("utf-8"))
             return
 
         self.send_response(404)
