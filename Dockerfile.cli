@@ -31,3 +31,4 @@ EXPOSE 10000 8080
 
 # Start multi-threaded Zeus CLI & Landing Web Server
 CMD ["python", "server.py"]
+

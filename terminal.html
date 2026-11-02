@@ -245,7 +245,101 @@
       flex-wrap: wrap;
       gap: 8px;
     }
-  </style>
+  
+    /* =========================================================
+       TABLET RESPONSIVENESS (max-width: 1024px)
+       ========================================================= */
+    @media (max-width: 1024px) {
+      main {
+        padding: 14px;
+        max-width: 100%;
+      }
+      .terminal-window {
+        min-height: 480px;
+      }
+    }
+
+    /* =========================================================
+       MOBILE RESPONSIVENESS (max-width: 640px)
+       ========================================================= */
+    @media (max-width: 640px) {
+      header {
+        padding: 10px 14px;
+        gap: 10px;
+      }
+      .brand-title {
+        font-size: 11px;
+        letter-spacing: 0.1em;
+      }
+      .status-badge {
+        padding: 3px 8px;
+        font-size: 9px;
+      }
+      .nav-links {
+        gap: 10px;
+        font-size: 10px;
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      main {
+        padding: 6px 8px 10px 8px;
+        gap: 8px;
+        flex: 1;
+      }
+      .terminal-window {
+        border-radius: 4px;
+        min-height: 0;
+        height: calc(100vh - 170px);
+      }
+      .terminal-topbar {
+        padding: 6px 10px;
+      }
+      .terminal-title {
+        font-size: 9.5px;
+      }
+      .quick-actions {
+        padding: 8px 10px;
+        gap: 6px;
+        -webkit-overflow-scrolling: touch;
+      }
+      .quick-actions::-webkit-scrollbar {
+        display: none;
+      }
+      .quick-chip {
+        font-size: 9.5px;
+        padding: 4px 8px;
+      }
+      .terminal-output {
+        padding: 12px 10px;
+        font-size: 11.5px;
+        line-height: 1.5;
+      }
+      .terminal-input-bar {
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      .terminal-prompt-label {
+        font-size: 11px;
+      }
+      .terminal-input {
+        font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+      }
+      .terminal-send-btn {
+        padding: 8px 12px;
+        font-size: 10px;
+        min-height: 38px;
+      }
+      footer {
+        padding: 10px 14px;
+        font-size: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+    }
+</style>
 </head>
 <body>
   <header>
