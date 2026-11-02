@@ -403,6 +403,7 @@ RUN /opt/zeus/.venv/bin/python -m docker.build_agent
 
 USER root
 RUN mkdir -p /opt/zeus/bin && \
+    chmod -R 0755 /opt/zeus/docker && \
     cp /opt/zeus/docker/zeus-exec-shim.sh /opt/zeus/bin/zeus && \
     chmod 0755 /opt/zeus /opt/zeus/bin/zeus && \
     printf 'docker\n' > /opt/zeus/.install_method
@@ -452,7 +453,8 @@ RUN set -eu; \
 # the profile create/delete hooks (Phase 4); they live under
 # /run/service/ (tmpfs) and are reconciled on container restart by
 # /etc/cont-init.d/02-reconcile-profiles (Phase 4 Task 4.0).
-COPY docker/s6-rc.d/ /etc/s6-overlay/s6-rc.d/
+COPY --chmod=0755 docker/s6-rc.d/ /etc/s6-overlay/s6-rc.d/
+RUN chmod -R 0755 /etc/s6-overlay/s6-rc.d/ /opt/zeus/docker/
 
 # stage2-hook handles UID/GID remap, volume chown, config seeding,
 # skills sync — all the work the old entrypoint.sh did before
@@ -534,6 +536,7 @@ COPY --chmod=0644 docker/profile-zeus-path.sh /etc/profile.d/zeus.sh
 # uv's environment locks are build-only and may be world-writable. Remove
 # them after all builds; never relax permissions on mutable PM/home state.
 RUN mkdir -p /opt/data && chmod 0644 /opt/zeus/tools/facts.json && \
+    chmod -R 0755 /opt/zeus/docker /etc/s6-overlay/s6-rc.d && \
     rm -f /opt/zeus/.venv/.lock /opt/zeus/pm-runtime/.lock
 # Build helpers use system Python above; TUI gateway children need the sealed runtime.
 ENV ZEUS_PYTHON=/opt/zeus/.venv/bin/python
