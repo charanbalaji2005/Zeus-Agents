@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zeus CLI — Cloud Terminal Server</title>
+  <link rel="icon" type="image/png" href="/logo-square.png">
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #111115;
+      --border: rgba(255, 255, 255, 0.15);
+      --fg: #fafafa;
+      --muted: #a1a1aa;
+      --accent: #10b981;
+      --accent-dim: rgba(16, 185, 129, 0.15);
+      --cyan: #38bdf8;
+      --red: #f87171;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .brand img {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+    .brand-title {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+    .nav-links a:hover { color: #fff; }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 1300px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    /* Terminal Container */
+    .terminal-window {
+      flex: 1;
+      background: #000;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      min-height: 520px;
+    }
+    .terminal-topbar {
+      background: #141418;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .terminal-controls {
+      display: flex;
+      gap: 6px;
+    }
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+    }
+    .terminal-title {
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    /* Quick Action Chips */
+    .quick-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      background: #09090d;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .quick-chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: #e4e4e7;
+      font-family: inherit;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .quick-chip:hover {
+      background: #fff;
+      color: #000;
+    }
+
+    /* Terminal Body */
+    .terminal-output {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #e4e4e7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .terminal-output .welcome-banner {
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+    .terminal-output .cmd-echo {
+      color: #38bdf8;
+      margin-top: 14px;
+      margin-bottom: 4px;
+      font-weight: bold;
+    }
+    .terminal-output .cmd-result {
+      color: #f4f4f5;
+    }
+    .terminal-output .cmd-error {
+      color: var(--red);
+    }
+
+    /* Terminal Input Line */
+    .terminal-input-bar {
+      display: flex;
+      align-items: center;
+      background: #0c0c10;
+      border-top: 1px solid var(--border);
+      padding: 12px 14px;
+      gap: 8px;
+    }
+    .terminal-prompt-label {
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .terminal-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .terminal-send-btn {
+      background: #fff;
+      color: #000;
+      border: none;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+    .terminal-send-btn:hover { opacity: 0.85; }
+
+    /* Footer info */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      font-size: 11px;
+      color: #71717a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/" class="brand">
+      <img src="/logo-square.png" alt="Zeus Logo">
+      <span class="brand-title">Zeus CLI Server</span>
+    </a>
+    <div class="status-badge" id="server-status-pill">
+      <span class="status-dot"></span>
+      <span id="server-status-text">CLOUD READY &bull; PORT <span id="port-display">10000</span></span>
+    </div>
+    <div class="nav-links">
+      <a href="/">&larr; Landing Page</a>
+      <a href="/#docs">CLI Documentation</a>
+      <a href="/api/health" target="_blank">Health API</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="terminal-window">
+      <div class="terminal-topbar">
+        <div class="terminal-controls">
+          <span class="terminal-dot" style="background:#ef4444;"></span>
+          <span class="terminal-dot" style="background:#eab308;"></span>
+          <span class="terminal-dot" style="background:#22c55e;"></span>
+        </div>
+        <span class="terminal-title">zeus@render:~ (Zeus Agents CLI Cloud Server)</span>
+        <button type="button" class="quick-chip" onclick="clearOutput()" style="padding: 2px 8px; font-size: 9px;">CLEAR</button>
+      </div>
+
+      <div class="quick-actions">
+        <button type="button" class="quick-chip" onclick="runQuick('zeus status')">zeus status</button>
+        <button type="button" class="quick-chip" onclick="runQuick('zeus tools list')">zeus tools list</button>
+        <button type="button" class="quick-chip" onclick="runQuick('zeus auth list')">zeus auth list</button>
+        <button type="button" class="quick-chip" onclick="runQuick('zeus --version')">zeus --version</button>
+        <button type="button" class="quick-chip" onclick="runQuick('zeus doctor')">zeus doctor</button>
+        <button type="button" class="quick-chip" onclick="runQuick('zeus cron list')">zeus cron list</button>
+        <button type="button" class="quick-chip" onclick="runQuick('help')">help</button>
+      </div>
+
+      <div class="terminal-output" id="term-output">
+        <div class="welcome-banner">┌─────────────────────────────────────────────────────────────┐
+│                 ⚡ ZEUS AGENTS CLI SERVER                   │
+│          Live Cloud Terminal Session &bull; Render Host        │
+└─────────────────────────────────────────────────────────────┘
+Welcome to the interactive Zeus CLI cloud terminal.
+Run any Zeus command below (e.g. 'zeus status', 'zeus tools list')
+or send a chat prompt with 'zeus chat -q "your prompt"'.
+Type 'help' for available command recipes.</div>
+      </div>
+
+      <form class="terminal-input-bar" id="term-form" onsubmit="handleCommand(event);">
+        <span class="terminal-prompt-label">zeus@render:~$</span>
+        <input type="text" class="terminal-input" id="term-input" placeholder="Type a zeus CLI command..." autocomplete="off" autofocus />
+        <button type="submit" class="terminal-send-btn" id="term-btn">EXECUTE</button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    <span>Zeus Agents &bull; Open-Source Autonomous AI Agent Platform &bull; MIT License</span>
+    <span>Render Cloud Container &bull; Host: 0.0.0.0</span>
+  </footer>
+
+  <script>
+    const termOutput = document.getElementById('term-output');
+    const termInput = document.getElementById('term-input');
+    const termBtn = document.getElementById('term-btn');
+    const portDisplay = document.getElementById('port-display');
+    const history = [];
+    let histIndex = -1;
+
+    // Detect server port on load
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(d => {
+        if (d.port) portDisplay.innerText = d.port;
+      })
+      .catch(() => {});
+
+    function scrollToBottom() {
+      termOutput.scrollTop = termOutput.scrollHeight;
+    }
+
+    function appendEcho(cmd) {
+      const div = document.createElement('div');
+      div.className = 'cmd-echo';
+      div.innerText = 'zeus@render:~$ ' + cmd;
+      termOutput.appendChild(div);
+      scrollToBottom();
+    }
+
+    function appendResult(text, isError = false) {
+      const div = document.createElement('div');
+      div.className = isError ? 'cmd-error' : 'cmd-result';
+      div.innerText = text;
+      termOutput.appendChild(div);
+      scrollToBottom();
+    }
+
+    function clearOutput() {
+      termOutput.innerHTML = '';
+    }
+
+    function runQuick(cmd) {
+      termInput.value = cmd;
+      executeCommand(cmd);
+    }
+
+    function executeCommand(rawCmd) {
+      const cmd = rawCmd.trim();
+      if (!cmd) return;
+
+      history.push(cmd);
+      histIndex = history.length;
+      termInput.value = '';
+
+      if (cmd === 'clear') {
+        clearOutput();
+        return;
+      }
+
+      if (cmd === 'help') {
+        appendEcho(cmd);
+        appendResult(`Available CLI Commands & Shortcuts:
+  zeus status           Show agent model, providers, gateway & job status
+  zeus tools list       List all available toolsets (web, terminal, code, etc.)
+  zeus auth list        View active credentials & priority pool
+  zeus auth add <p>     Add an API key or login provider
+  zeus model            Inspect active default LLM engine
+  zeus --version        Show installed Zeus Agents version & facts
+  zeus doctor           Run system diagnostics & health checks
+  zeus cron list        Inspect scheduled recurring background jobs
+  zeus chat -q "<msg>"  Run a prompt directly through the agent
+  clear                 Clear terminal window`);
+        return;
+      }
+
+      appendEcho(cmd);
+      termBtn.disabled = true;
+      termBtn.innerText = 'RUNNING...';
+
+      fetch('/api/cli/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command: cmd })
+      })
+      .then(r => r.json())
+      .then(res => {
+        termBtn.disabled = false;
+        termBtn.innerText = 'EXECUTE';
+        if (res.output) {
+          appendResult(res.output, !res.success);
+        } else if (res.error) {
+          appendResult('Error: ' + res.error, true);
+        } else {
+          appendResult('(Completed with no output)');
+        }
+      })
+      .catch(err => {
+        termBtn.disabled = false;
+        termBtn.innerText = 'EXECUTE';
+        appendResult('Network / Execution error: ' + err.message, true);
+      });
+    }
+
+    function handleCommand(e) {
+      e.preventDefault();
+      executeCommand(termInput.value);
+    }
+
+    // Up/Down Arrow Command History
+    termInput.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowUp') {
+        if (histIndex > 0) {
+          histIndex--;
+          termInput.value = history[histIndex] || '';
+        }
+      } else if (e.key === 'ArrowDown') {
+        if (histIndex < history.length - 1) {
+          histIndex++;
+          termInput.value = history[histIndex] || '';
+        } else {
+          histIndex = history.length;
+          termInput.value = '';
+        }
+      }
+    });
+  </script>
+</body>
+</html>

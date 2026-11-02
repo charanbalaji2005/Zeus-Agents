@@ -8,6 +8,11 @@ The page is never trusted: before anything is saved the CLI asks Google (``token
 the token was issued to *our* client id for a verified email. A token minted for another app, an
 expired one, or a POST without the one-time ``state`` is rejected. No client secret is involved,
 and the Google token itself is not stored — only the verified profile.
+
+The Zeus Agents server then registers the account in its database and mints a terminal token
+only for accounts the site owner has approved; an unapproved account cannot sign in. After an
+approved sign-in the user is asked, once, whether to share usage records and conversations
+(``account.sync.*``, both off by default); the ``zeus-account-sync`` plugin does the uploads.
 """
 
 from __future__ import annotations
@@ -128,7 +133,7 @@ class _CallbackServer(HTTPServer):
 class _CallbackHandler(BaseHTTPRequestHandler):
     server: _CallbackServer
 
-    def do_POST(self) -> None:  # noqa: N802 - http.server naming
+    def do_POST(self) -> None:
         if urllib.parse.urlsplit(self.path).path != "/callback":
             return self._reply(404, "Not found", "")
         length = int(self.headers.get("Content-Length") or 0)
@@ -157,7 +162,7 @@ class _CallbackHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(page)
 
-    def log_message(self, format: str, *args: Any) -> None:  # noqa: A002 - keep tokens out of stderr
+    def log_message(self, format: str, *args: Any) -> None:  # silent: keeps tokens out of stderr
         return
 
 
@@ -190,21 +195,90 @@ def run_browser_sign_in(
     return server.outcome
 
 
+def post_json(url: str, payload: dict[str, Any], token: str = "") -> tuple[int, dict[str, Any]]:
+    """POST *payload* as JSON; ``(status, body)``. Status 0 means the server was unreachable."""
+    headers = {"Content-Type": "application/json", **({"Authorization": f"Bearer {token}"} if token else {})}
+    request = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=_HTTP_TIMEOUT_SECONDS) as response:
+            status, raw = response.status, response.read()
+    except urllib.error.HTTPError as exc:
+        status, raw = exc.code, exc.read()
+    except (urllib.error.URLError, TimeoutError) as exc:
+        return 0, {"error": str(exc)}
+    try:
+        body = json.loads(raw.decode("utf-8") or "{}")
+    except ValueError:
+        body = {}
+    return status, body if isinstance(body, dict) else {}
+
+
+def register_with_portal(portal_url: str, kind: str, token: str, *, post=post_json) -> str:
+    """The terminal token the Zeus Agents server mints for an APPROVED account, or GoogleSignInError."""
+    status, body = post(f"{portal_url}/api/cli/login", {"kind": kind, "token": token})
+    if status == 200 and body.get("approved") is True and str(body.get("token") or "").startswith("zat_"):
+        return body["token"]
+    if status == 403:
+        raise GoogleSignInError(
+            "Your Zeus Agents account is waiting for approval. You can sign in once the Zeus Agents "
+            "admin approves it.")
+    if status == 0:
+        raise GoogleSignInError(f"Could not reach the Zeus Agents server at {portal_url}: {body.get('error')}")
+    raise GoogleSignInError(f"The Zeus Agents server refused the sign-in: {body.get('error') or f'HTTP {status}'}")
+
+
+def _ask(question: str) -> bool:
+    from zeus_cli.cli_output import prompt_yes_no
+    return prompt_yes_no(question, default=False)
+
+
+def offer_data_sharing(*, ask: Callable[[str], bool] = _ask) -> dict[str, bool]:
+    """Ask once which activity to store in the Zeus Agents database; persist and return the choice."""
+    import sys
+
+    from zeus_cli.config import load_config, save_config
+    choice = {"usage": False, "conversations": False}
+    if sys.stdin.isatty():
+        print()
+        print("Zeus Agents can store your activity in the Zeus Agents database, tied to your account:")
+        print("  • usage records: model, provider, token counts and timing of each request")
+        print("  • conversations: the full text of your messages and Zeus's replies")
+        print("Nothing is sent unless you say yes. Change it later with `zeus login --sharing`.")
+        choice = {"usage": ask("Share usage records?"), "conversations": ask("Share full conversations?")}
+    config = load_config()
+    account_cfg = config.get("account") if isinstance(config.get("account"), dict) else {}
+    account_cfg["sync"] = dict(choice)
+    config["account"] = account_cfg
+    save_config(config)
+    if any(choice.values()):
+        from zeus_cli.plugins_cmd import cmd_enable
+        cmd_enable("zeus-account-sync")
+    return choice
+
+
 def _print_status() -> None:
     account = load_account()
     if account:
+        from zeus_cli.config import load_config
+        sync = ((load_config().get("account") or {}).get("sync") or {})
+        shared = [name for name in ("usage", "conversations") if sync.get(name)]
         print(f"Signed in as {account.get('name')} <{account['email']}> (Google)")
+        print(f"Sharing with Zeus Agents: {', '.join(shared) if shared else 'nothing'}")
     else:
         print("Not signed in. Run `zeus login` to connect this terminal.")
 
 
 def _sign_out() -> None:
     path = account_path()
-    if path.exists():
-        path.unlink()
-        print("Signed out of Zeus Agents.")
-    else:
+    account = load_account()
+    if not path.exists():
         print("Not signed in.")
+        return
+    portal_url, _ = account_settings()
+    if account and account.get("token") and portal_url:
+        post_json(f"{portal_url}/api/cli/logout", {}, token=account["token"])  # best effort: revoke server-side
+    path.unlink()
+    print("Signed out of Zeus Agents.")
 
 
 def login_command(args) -> None:
@@ -213,17 +287,29 @@ def login_command(args) -> None:
         return _print_status()
     if getattr(args, "sign_out", False):
         return _sign_out()
+    if getattr(args, "sharing", False):
+        if not load_account():
+            print("Not signed in. Run `zeus login` first.")
+            raise SystemExit(1)
+        offer_data_sharing()
+        return _print_status()
     portal_url, client_id = account_settings()
     portal_url = (getattr(args, "portal_url", None) or portal_url).rstrip("/")
     if not portal_url or not client_id:
         print("Set account.portal_url and account.google_client_id in config.yaml first "
               "(`zeus config set account.portal_url https://...`).")
         raise SystemExit(1)
+    def verify_and_register(kind: str, token: str, cid: str) -> dict[str, Any]:
+        # Runs while the browser waits, so its result page says "waiting for approval" too.
+        account = verify_google_token(kind, token, cid)
+        return {**account, "token": register_with_portal(portal_url, kind, token)}
+
     try:
         account = run_browser_sign_in(portal_url, client_id, open_browser=not getattr(args, "no_browser", False),
-                                      timeout=float(getattr(args, "timeout", 300.0)))
+                                      timeout=float(getattr(args, "timeout", 300.0)), verify=verify_and_register)
     except GoogleSignInError as exc:
         print(f"Sign-in failed: {exc}")
         raise SystemExit(1) from None
     save_account(account)
     print(f"Signed in as {account['name']} <{account['email']}>")
+    offer_data_sharing()

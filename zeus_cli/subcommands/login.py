@@ -18,6 +18,9 @@ def build_login_parser(subparsers, *, cmd_login: Callable) -> None:
     login_parser.add_argument("--status", action="store_true", help="Show the signed-in account")
     login_parser.add_argument("--sign-out", action="store_true", help="Forget the signed-in account")
     login_parser.add_argument(
+        "--sharing", action="store_true",
+        help="Choose which activity (usage records, conversations) is stored in your Zeus Agents account")
+    login_parser.add_argument(
         "--portal-url", default=None,
         help="Sign-in page to use instead of account.portal_url (e.g. http://localhost:8080)")
     login_parser.add_argument(

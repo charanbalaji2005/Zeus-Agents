@@ -2687,10 +2687,10 @@ DEFAULT_CONFIG = {
     # Zeus Agents account (`zeus login`): the terminal signs in through the Google OAuth 2.0
     # sign-in on the Zeus Agents website. Both values are public identifiers, not secrets.
     "account": {
-        # The deployed Zeus Agents site that hosts the Google sign-in page.
         "portal_url": "https://zeus-agents.onrender.com",
-        # Google OAuth web client id; Google must have issued the sign-in token to this id.
         "google_client_id": "644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com",
+        # Activity stored in the Zeus Agents database (`zeus login --sharing`); off until opted in.
+        "sync": {"usage": False, "conversations": False},
     },
     # Google Vertex AI (Gemini). Auth is OAuth2 from a service-account JSON or ADC, NOT an API key;
     # the credential path lives in .env (VERTEX_CREDENTIALS_PATH / GOOGLE_APPLICATION_CREDENTIALS).

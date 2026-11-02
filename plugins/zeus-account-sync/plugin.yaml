@@ -1,0 +1,7 @@
+name: zeus-account-sync
+version: "0.1.0"
+description: "Store this terminal's activity in its Zeus Agents account (the site owner's MongoDB) after `zeus login`: usage records (model, provider, token counts, timing) and/or full conversations, each only when the user opted in (account.sync.usage / account.sync.conversations). Uploads run in the background; failed uploads wait in a local outbox and retry."
+author: "Zeus Agents"
+provides_hooks:
+  - post_api_request
+  - post_llm_call

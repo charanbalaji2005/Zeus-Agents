@@ -1,0 +1,33 @@
+# Zeus CLI Web Terminal & API Server for Render
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONIOENCODING=utf-8 \
+    PORT=10000 \
+    RENDER=true
+
+WORKDIR /app
+
+# Install system utilities needed by CLI and Git subcommands
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    git \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python requirements
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy codebase
+COPY . .
+
+# Ensure shell scripts have execute permissions
+RUN chmod +x docker/*.sh 2>/dev/null || true
+
+# Render requires binding to $PORT (default 10000)
+EXPOSE 10000 8080
+
+# Start multi-threaded Zeus CLI & Landing Web Server
+CMD ["python", "server.py"]

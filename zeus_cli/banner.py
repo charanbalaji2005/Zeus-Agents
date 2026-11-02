@@ -70,12 +70,12 @@ def _skin_color(key: str, fallback: str) -> str:
 from zeus_cli import __release_date__ as RELEASE_DATE
 from zeus_cli.version_info import get_version_info
 
-ZEUS_AGENTS_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
-[bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
-[#FFBF00]███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
-[#FFBF00]██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
-[#CD7F32]██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
-[#CD7F32]╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
+ZEUS_AGENTS_LOGO = """[bold #FFD700]███████╗███████╗██╗   ██╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗███████╗[/]
+[bold #FFD700]╚══███╔╝██╔════╝██║   ██║██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝██╔════╝[/]
+[#FFBF00]  ███╔╝ █████╗  ██║   ██║███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ███████╗[/]
+[#FFBF00] ███╔╝  ██╔══╝  ██║   ██║╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ╚════██║[/]
+[#CD7F32]███████╗███████╗╚██████╔╝███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ███████║[/]
+[#CD7F32]╚══════╝╚══════╝ ╚═════╝ ╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   ╚══════╝[/]"""
 
 ZEUS_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
 [#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
@@ -605,18 +605,18 @@ def _banner_left_lines(model: str, cwd: str, session_id, context_length, provide
     lines = []
     pin = " (pinned)" if context_pinned else ""
     ctx_str = _dim_sep(f"{_format_context_length(context_length)} context{pin}") if context_length else ""
-    nous_str = _dim_sep("Nous Research")
+    brand_str = _dim_sep("Zeus Agents")
     if (provider or "").strip().lower() == "moa":
         # MoA virtual provider: ``model`` is a preset name; show it with its aggregator.
         agg_label = _quiet(lambda: _moa_aggregator_label(model), "")
         agg_str = _dim_sep(f"agg {agg_label}") if agg_label else ""
-        lines.append(f"[{accent}]MoA: {_short_label(model)}[/]{agg_str}{ctx_str}{nous_str}")
+        lines.append(f"[{accent}]MoA: {_short_label(model)}[/]{agg_str}{ctx_str}{brand_str}")
     elif not (model or "").strip() or (model or "").strip().lower() == "unknown":
         # Unconfigured install: the clearest place to say what is wrong and how to fix it.
         lines.append(f"[bold red]no model configured[/] [dim {dim}]— run /model or zeus setup[/]")
     else:
         model_short = model.split("/")[-1].removesuffix(".gguf")
-        lines.append(f"[{accent}]{_short_label(model_short)}[/]{ctx_str}{nous_str}")
+        lines.append(f"[{accent}]{_short_label(model_short)}[/]{ctx_str}{brand_str}")
     if os.getenv("ZEUS_YOLO_MODE"):
         lines.append(f"[bold red]⚠ YOLO mode[/] [dim {dim}]— all approval prompts bypassed[/]")
     lines.append(f"[dim {dim}]{cwd}[/]")

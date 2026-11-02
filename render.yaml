@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: zeus-agent-portal
-    # Landing page only. The root ./Dockerfile is the full agent image and never serves $PORT.
+    name: zeus-cli-server
+    # Zeus CLI Server, Interactive Web Terminal (/cli) and Marketing Landing Page
     runtime: docker
-    dockerfilePath: ./Dockerfile.landing
+    dockerfilePath: ./Dockerfile.cli
     dockerContext: .
     plan: free
     region: oregon
@@ -12,6 +12,8 @@ services:
     envVars:
       - key: PORT
         value: 10000
+      - key: RENDER
+        value: "true"
       - key: GOOGLE_CLIENT_ID
         value: 644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com
       - key: MONGODB_URI
