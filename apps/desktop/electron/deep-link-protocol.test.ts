@@ -11,7 +11,7 @@ function run(env: NodeJS.ProcessEnv, defaultApp = true) {
     app: { setAsDefaultProtocolClient: (...args: unknown[]) => { calls.push(args);
 
  return true } },
-    protocol: 'hermes',
+    protocol: 'zeus',
     env,
     defaultApp,
     argv: ['/electron', '.'],
@@ -23,11 +23,11 @@ function run(env: NodeJS.ProcessEnv, defaultApp = true) {
   return { calls, log }
 }
 
-test('the E2E/dev guard leaves the OS hermes:// handler untouched; normal launches still register', () => {
-  const skipped = run({ HERMES_DESKTOP_SKIP_PROTOCOL_REGISTRATION: '1' })
+test('the E2E/dev guard leaves the OS zeus:// handler untouched; normal launches still register', () => {
+  const skipped = run({ ZEUS_DESKTOP_SKIP_PROTOCOL_REGISTRATION: '1' })
   assert.deepEqual(skipped.calls, [])
   assert.match(skipped.log.join('\n'), /registration skipped/)
 
-  assert.deepEqual(run({}).calls, [['hermes', '/electron', ['/checkout/.']]])
-  assert.deepEqual(run({}, false).calls, [['hermes']])
+  assert.deepEqual(run({}).calls, [['zeus', '/electron', ['/checkout/.']]])
+  assert.deepEqual(run({}, false).calls, [['zeus']])
 })

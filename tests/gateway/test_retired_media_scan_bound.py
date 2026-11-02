@@ -29,8 +29,8 @@ def _trace_messages_scans(db):
 
 def test_candidates_share_one_messages_pass(owner, tmp_path, monkeypatch):
     from gateway.session_ingress_media import _media_root
-    from hermes_state_media import PREFIX, collect_retired_media
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    from zeus_state_media import PREFIX, collect_retired_media
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db, root = owner.db, _media_root()
     db.create_session('keep', source='api_server')
     references = []
@@ -56,12 +56,12 @@ def test_candidates_share_one_messages_pass(owner, tmp_path, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_gateway_delete_collects_retired_media_off_the_event_loop(tmp_path, monkeypatch):
-    import hermes_state_media
+    import zeus_state_media
     from gateway.session_mutations import mutate_session
     from tests.gateway.test_local_authority_transitions import local_session
     owner, connection, ref = await local_session(tmp_path, monkeypatch)
     threads = []
-    monkeypatch.setattr(hermes_state_media, 'collect_retired_media', lambda db: threads.append(threading.get_ident()))
+    monkeypatch.setattr(zeus_state_media, 'collect_retired_media', lambda db: threads.append(threading.get_ident()))
     handle = owner._handle(ref)
     try:
         await mutate_session(owner, connection.actor, ref, dict(session_id=ref.session_id, request_id='delete',

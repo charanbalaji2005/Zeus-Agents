@@ -11,7 +11,7 @@ const confirmMock = vi.fn()
 
 vi.mock('@/store/confirm', () => ({ confirm: (...args: unknown[]) => confirmMock(...args) }))
 vi.mock('@/store/notifications', () => ({ dismissNotification: vi.fn(), notify: vi.fn(), notifyError: vi.fn() }))
-vi.mock('@/hermes', () => ({ getGlobalModelInfo: vi.fn(), setApiRequestProfile: vi.fn(), setGlobalModel: vi.fn() }))
+vi.mock('@/zeus', () => ({ getGlobalModelInfo: vi.fn(), setApiRequestProfile: vi.fn(), setGlobalModel: vi.fn() }))
 
 // The canonical owner: a guarded target answers `confirmation_required` + a one-time token and
 // writes nothing; only that token in `payload.confirm` applies it.
@@ -107,7 +107,7 @@ test('a confirmed model switch whose reply was lost retries as the exact token-b
   // The user confirmed; the owner may have committed it, but the reply never arrived.
   const confirmed = protocol.prepare('config.set', { ...pick, confirm_expensive_model: true })
   expect(confirmed.payload).toEqual({ model: 'pricey', provider: 'custom', confirm: 'tok-1' })
-  protocol.failure(confirmed, new Error('Hermes gateway connection closed'))
+  protocol.failure(confirmed, new Error('Zeus gateway connection closed'))
 
   // Every retry of that target is the same confirmed intent: same request id, same token.
   for (const retry of [{ ...pick, confirm_expensive_model: true }, pick]) {

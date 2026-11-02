@@ -2,11 +2,11 @@
 name: setup-wizard-generator
 description: "Generate a bash wizard guiding a human through manual setup."
 version: 1.0.0
-author: "Matt Pocock (mattpocock/skills, wizard) + Hermes Agent"
+author: "Matt Pocock (mattpocock/skills, wizard) + Zeus Agents"
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  zeus:
     tags: [wizard, setup, onboarding, credentials, secrets, migration, bash, human-in-the-loop]
     related_skills: []
 ---

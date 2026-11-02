@@ -6,7 +6,7 @@ description: "Local ledger of the messages models write in the middle of a turn,
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/interim-ledger
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/ed94f43f5573b4b55f355bb97f37c225e36d6f19/docs/interim-ledger-card.png

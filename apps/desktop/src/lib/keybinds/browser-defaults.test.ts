@@ -72,7 +72,7 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
   setPlatform('')
   vi.unstubAllGlobals()
   localStorage.clear()
@@ -87,7 +87,7 @@ describe('browser-hosted shortcut defaults', () => {
 
     it('ships no default the browser takes first, and leaves native defaults alone', async () => {
       setPlatform(platform)
-      window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+      window.document.documentElement.dataset.zeusDesktopHost = 'browser'
       const browser = await import('./actions')
       const { canonicalizeCombo } = await import('./combo')
       const reserved = new Set(BROWSER_RESERVED[mac ? 'mac' : 'other'])
@@ -99,7 +99,7 @@ describe('browser-hosted shortcut defaults', () => {
 
       expect(offenders).toEqual([])
 
-      delete window.document.documentElement.dataset.hermesDesktopHost
+      delete window.document.documentElement.dataset.zeusDesktopHost
       vi.resetModules()
       const native = await import('./actions')
 
@@ -125,11 +125,11 @@ describe('browser-hosted shortcut defaults', () => {
         setPlatform(platform)
 
         if (host === 'bridge') {
-          window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+          window.document.documentElement.dataset.zeusDesktopHost = 'browser'
         } else {
-          vi.stubGlobal('hermesDesktop', undefined)
+          vi.stubGlobal('zeusDesktop', undefined)
           vi.stubGlobal(
-            host === 'webapp' ? '__HERMES_UI_SURFACE__' : '__HERMES_AUTH_REQUIRED__',
+            host === 'webapp' ? '__ZEUS_UI_SURFACE__' : '__ZEUS_AUTH_REQUIRED__',
             host === 'webapp' ? 'webapp' : true
           )
         }
@@ -168,9 +168,9 @@ describe('browser-hosted shortcut defaults', () => {
 
   it('preserves saved remaps and explicit unbinding across a browser reload', async () => {
     setPlatform('Win32')
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     localStorage.setItem(
-      'hermes.desktop.keybinds',
+      'zeus.desktop.keybinds',
       JSON.stringify({
         'session.new': ['mod+shift+f6'],
         'session.newTab': [],
@@ -184,6 +184,6 @@ describe('browser-hosted shortcut defaults', () => {
     expect(bindingsFor('view.closeTab')).toEqual(['mod+w'])
     resetAllBindings()
     expect(bindingsFor('session.new')).toEqual(['alt+n'])
-    expect(JSON.parse(localStorage.getItem('hermes.desktop.keybinds')!)).toEqual({})
+    expect(JSON.parse(localStorage.getItem('zeus.desktop.keybinds')!)).toEqual({})
   })
 })

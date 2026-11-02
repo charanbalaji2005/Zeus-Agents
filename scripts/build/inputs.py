@@ -9,11 +9,11 @@ import tomllib
 
 
 RESOURCE_ENV = {
-    "skills": "HERMES_BUNDLED_SKILLS",
-    "optional-skills": "HERMES_OPTIONAL_SKILLS",
-    "plugins": "HERMES_BUNDLED_PLUGINS",
-    "locales": "HERMES_BUNDLED_LOCALES",
-    "optional-mcps": "HERMES_OPTIONAL_MCPS",
+    "skills": "ZEUS_BUNDLED_SKILLS",
+    "optional-skills": "ZEUS_OPTIONAL_SKILLS",
+    "plugins": "ZEUS_BUNDLED_PLUGINS",
+    "locales": "ZEUS_BUNDLED_LOCALES",
+    "optional-mcps": "ZEUS_OPTIONAL_MCPS",
 }
 
 

@@ -9,7 +9,7 @@ description: TypeSafe Jev (System One) decision tools — atomic yes/no checks, 
 maintainer: Anders Jensen-Waud
 tier: community
 category: tools
-requires_hermes: '>=0.19'
+requires_zeus: '>=0.19'
 docs_url: https://github.com/ajensenwaud/hermes-jev-plugin/blob/b3d29f71770a3447ad0b3db00658f64a8edc7dd3/README.md
 version: 0.1.0
 platforms: []

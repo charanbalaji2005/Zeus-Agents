@@ -11,7 +11,7 @@ description: "Watch over opencode sessions from anywhere: alerts for stopped tur
 maintainer: okazakee
 tier: community
 category: automation
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 version: "0.2.5"
 docs_url: https://github.com/okazakee/opencode-shepherd#readme
 platforms: []

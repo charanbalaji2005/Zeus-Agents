@@ -18,9 +18,9 @@ from types import SimpleNamespace
 import psutil
 import pytest
 
-from hermes_cli.process_identity import worker_birth
-from hermes_state import SessionDB
-from hermes_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input
+from zeus_cli.process_identity import worker_birth
+from zeus_state import SessionDB
+from zeus_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input
 from tests.gateway.fixtures.local_recovery_probe import child_env, daemon, rpc, websocket
 from tests.waiting import async_wait_until
 
@@ -109,7 +109,7 @@ def test_managed_worker_completes_through_interpreter_trampoline(tmp_path):
         'model': {'provider': 'custom', 'default': 'managed-model', 'base_url': url},
         'auxiliary': {'title_generation': {'enabled': False}}, 'platform_toolsets': {'cli': []}}), encoding='utf-8')
     env = child_env()
-    env.update(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home), PYTHONPATH=str(root),
+    env.update(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home), PYTHONPATH=str(root),
                OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url, PYTHONUNBUFFERED='1', UGW_TRAMPOLINE=str(trampoline))
 
     def query(sql, args=()):

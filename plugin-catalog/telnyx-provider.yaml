@@ -5,7 +5,7 @@ description: Vendor-maintained Telnyx inference provider with an authenticated l
 maintainer: team-telnyx
 tier: community
 category: models
-requires_hermes: ">=0.21.4"
+requires_zeus: ">=0.21.4"
 docs_url: https://github.com/team-telnyx/hermes-inference-provider#readme
 version: "0.1.0"
 platforms: []

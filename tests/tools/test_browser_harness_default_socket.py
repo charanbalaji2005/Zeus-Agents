@@ -1,7 +1,7 @@
 """browser_exec outside a served profile: the harness daemon socket must bind under a deep HOME.
 
 browser-harness binds ``<home>/.config/browser-harness/runtime/bu-<BU_NAME>.sock`` unless
-``BH_RUNTIME_DIR`` says otherwise. A container's profile home (``$HERMES_HOME/home``) or a long
+``BH_RUNTIME_DIR`` says otherwise. A container's profile home (``$ZEUS_HOME/home``) or a long
 account home overflowed sun_path and every call died with ``AF_UNIX path too long``.
 """
 import json
@@ -36,7 +36,7 @@ def harness_env(tmp_path, monkeypatch):
             return None
 
     monkeypatch.setattr(browser_supervisor, "SUPERVISOR_REGISTRY", _Registry())
-    monkeypatch.setattr("hermes_cli.config_effective.load_user_config_effective", lambda: {"browser": {}})
+    monkeypatch.setattr("zeus_cli.config_effective.load_user_config_effective", lambda: {"browser": {}})
     monkeypatch.setattr("tools.browser_session_cdp.resolve_cdp_override", lambda url: url)
     cli = tmp_path / "browser-harness"
     cli.write_text('#!/bin/sh\ncat > /dev/null\necho "{\\"home\\": \\"$HOME\\", \\"runtime\\": \\"$BH_RUNTIME_DIR\\", '

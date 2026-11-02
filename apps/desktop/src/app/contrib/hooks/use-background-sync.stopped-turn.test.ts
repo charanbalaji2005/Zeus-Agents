@@ -1,4 +1,4 @@
-import type { PersistedTurn } from '@hermes/shared'
+import type { PersistedTurn } from '@zeus/shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { bindStoppedTurnReceipt } from '@/app/session/hooks/use-message-stream/interrupted-reply'
@@ -12,17 +12,17 @@ import { type ChatMessage, chatMessageText, toChatMessages } from '@/lib/chat-me
 import { createClientSessionState } from '@/lib/chat-runtime'
 import { $activeSessionId, $selectedStoredSessionId } from '@/store/session'
 import { $sessionStates, clearAllSessionStates, publishSessionState } from '@/store/session-states'
-import type { SessionMessage } from '@/types/hermes'
+import type { SessionMessage } from '@/types/zeus'
 
 import { reconcileActiveTranscript } from './use-background-sync'
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal()),
   getLatestSessionMessages: vi.fn(),
   getOlderSessionMessages: vi.fn()
 }))
 
-const { getLatestSessionMessages } = await import('@/hermes')
+const { getLatestSessionMessages } = await import('@/zeus')
 
 const RUNTIME = 'runtime-stopped'
 const STORED = 'stored-stopped'

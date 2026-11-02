@@ -137,7 +137,7 @@ describe('composer context-menu contribution area', () => {
     )
 
     plugin('alpha', items)
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       const editor = composer('teh quick fox')
@@ -160,7 +160,7 @@ describe('composer context-menu contribution area', () => {
       expect(withoutRows.defaultPrevented).toBe(false)
       expect($contextMenu.get()).toBeNull()
     } finally {
-      delete window.document.documentElement.dataset.hermesDesktopHost
+      delete window.document.documentElement.dataset.zeusDesktopHost
     }
   })
 
@@ -214,8 +214,8 @@ describe('composer context-menu contribution area', () => {
     await waitFor(() => expect(action).not.toBeNull())
 
     expect(action!.word).toBe('Hermse')
-    expect(action!.replaceWord('Hermes')).toBe(true)
-    expect(editor.textContent).toBe('Hermes rocks')
+    expect(action!.replaceWord('Zeus')).toBe(true)
+    expect(editor.textContent).toBe('Zeus rocks')
   })
 
   it('keeps astral-plane letters inside the word', async () => {

@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { cancelCronJobRun, type CronJob } from '@/hermes'
+import { cancelCronJobRun, type CronJob } from '@/zeus'
 import type { Translations } from '@/i18n'
 import { getCronJobsSnapshotScope } from '@/store/cron'
 import { $cronChangeTick } from '@/store/live-sync'

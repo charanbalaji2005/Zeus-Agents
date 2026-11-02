@@ -57,9 +57,9 @@ class TestModuleNotFound:
         assert "requests" in hint
 
     def test_dotted_module(self):
-        out = "ImportError: No module named 'hermes_cli.main'"
-        hint = annotate_failure("python3 -m hermes_cli.main", 1, out)
-        assert "hermes_cli" in hint
+        out = "ImportError: No module named 'zeus_cli.main'"
+        hint = annotate_failure("python3 -m zeus_cli.main", 1, out)
+        assert "zeus_cli" in hint
 
 
 class TestGitShapes:

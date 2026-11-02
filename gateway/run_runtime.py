@@ -23,8 +23,8 @@ logger = logging.getLogger(__name__)
 
 def reserved_profile_homes(runner):
     """``(name, home)`` pairs this process reserved: launch home first, then served secondaries."""
-    from hermes_constants import get_hermes_home
-    launch = get_hermes_home().resolve()
+    from zeus_constants import get_zeus_home
+    launch = get_zeus_home().resolve()
     homes = [(getattr(runner, '_primary_profile_name', None) or 'default', launch)]
     if getattr(runner.config, 'multiplex_profiles', False):
         reserved = getattr(runner.config, '_runtime_profile_homes', None) or ()
@@ -86,7 +86,7 @@ def pin_launch_store():
     reference, so the synchronous ``SessionStore`` open inside ``GatewayRunner()`` on the loop is a
     registry hit instead of the schema setup. None when the open fails: the store's own open then
     reports and backs off exactly as before."""
-    from hermes_state_registry import acquire
+    from zeus_state_registry import acquire
     try:
         return acquire()
     except Exception:
@@ -96,7 +96,7 @@ def pin_launch_store():
 
 def unpin_launch_store(db):
     if db is not None:
-        from hermes_state_registry import release
+        from zeus_state_registry import release
         release(db)
 
 
@@ -152,8 +152,8 @@ def refuse_parked_scope(runner):
     retryably (``runtime_draining``, a 503 with ``Retry-After``), not with the final
     ``profile_mismatch`` of a profile this gateway does not serve."""
     from gateway.session_authorities import served_profile_name
-    from hermes_constants import get_hermes_home
-    name = served_profile_name(get_hermes_home())
+    from zeus_constants import get_zeus_home
+    name = served_profile_name(get_zeus_home())
     if profile_parked(runner, name):
         from gateway.parked_route_refusal import ParkedProfileRefusal
         raise ParkedProfileRefusal(name)
@@ -324,7 +324,7 @@ def stop_authority_turns(authority, *, in_process=False, reason=None):
     ``reason`` (a gateway restart/shutdown) is recorded on each worker it signals, so the turn settles
     with that cause; a worker already stopped (the user's Stop came first) keeps none. A worker
     still being spawned gets the same Stop and cause through latches (``_stop_spawning_managed``)."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     signalled = 0
     workers = getattr(authority, '_managed_workers', {})
     for worker in list(workers.values()):
@@ -434,7 +434,7 @@ async def _retire_profile_authority(authority, timeout=None):
     authority.retired = True
     # No drain is left to answer an observer (a session_busy pause keeps API/webhook/Bot ones
     # waiting): release them all. Their rows stay queued for the next owner, so nothing is resent.
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     authority.native_waiters.clear()
     for waiter in authority.waiters.values():
         if not waiter.done():
@@ -569,8 +569,8 @@ async def start_gateway_runtime_api(runner):
     from gateway.webapp_listener import (
         STARTING, BrowserCredentialError, browser_session_token, dial_origin, listener_plan, register_control_verbs,
     )
-    from hermes_constants import get_hermes_home
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    home = get_zeus_home()
     # The bootstrap registered these before its control socket answered; a runner started without it
     # (an embedded gateway) gets them here, before the listener's slow start.
     register_control_verbs(runner, home)
@@ -639,13 +639,13 @@ async def _recover_profile_bot_mailbox(runner, authority):
             # settle, but the profile leaves the served set, so later boot never starts it.
             _withdraw_profile_home(runner, home)
             park_profile(runner, name, f'startup recovery failed; ownership retained (a control-socket rescan, '
-                                       f'`hermes -p {name} gateway run`, serves it once its writer stops): {exc}')
+                                       f'`zeus -p {name} gateway run`, serves it once its writer stops): {exc}')
             return
         registry.remove(home)
         _publish_served_set(runner)
         release_profile_home(runner, home)
         park_profile(runner, name, f'startup recovery failed (a control-socket rescan, '
-                                   f'`hermes -p {name} gateway run`, serves it again): {exc}')
+                                   f'`zeus -p {name} gateway run`, serves it again): {exc}')
 
 
 async def recover_gateway_native_sessions(runner):

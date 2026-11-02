@@ -11,7 +11,7 @@ export function documentAddress(href) {
 
 /**
  * Loads each smoke viewport in one browser tab. The smoke's input URL may be the one-use launch link
- * `hermes webapp --no-open` prints: loading it spends the ticket, and only the tab that spent it keeps
+ * `zeus webapp --no-open` prints: loading it spends the ticket, and only the tab that spent it keeps
  * the grant it bought (the Webapp keeps it in that tab's sessionStorage). So the first viewport opens
  * the input URL, and every later one reopens, in the same tab, the address the first one landed on.
  */

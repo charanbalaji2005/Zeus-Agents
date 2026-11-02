@@ -1,7 +1,7 @@
-/** `/api/profiles/<suffix>` collection routes, by method (hermes_cli/web_routers/profiles.py). Any
+/** `/api/profiles/<suffix>` collection routes, by method (zeus_cli/web_routers/profiles.py). Any
  *  other method on these paths is the per-profile `/api/profiles/{name}` route of a profile NAMED
  *  `active`, `import`, `sessions`, …, which are valid profile names. Mirror of the gateway's
- *  hermes_cli/dashboard_auth/native_http.py `PROFILE_COLLECTION_ROUTES`: grant selection, ticket
+ *  zeus_cli/dashboard_auth/native_http.py `PROFILE_COLLECTION_ROUTES`: grant selection, ticket
  *  routing and ambient profile scoping all read this one table. */
 const PROFILE_COLLECTION_ROUTES: Readonly<Record<string, readonly string[]>> = {
   active: ['GET', 'POST'],

@@ -3,8 +3,8 @@ keeps the bytes a live hosted row still needs, and the row's own terminal releas
 import json
 
 from gateway.session_ingress_media import capture_native_media, release_admission_media
-from hermes_state import SessionDB
-from hermes_state_runtime import admit_session_input, begin_runtime_epoch, cancel_session_input
+from zeus_state import SessionDB
+from zeus_state_runtime import admit_session_input, begin_runtime_epoch, cancel_session_input
 
 
 def _document(tmp_path, name, data):
@@ -15,7 +15,7 @@ def _document(tmp_path, name, data):
 
 
 def test_queued_hosted_document_survives_native_cancel_and_is_released_at_its_own_terminal(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     from gateway.session_hosted_attachments import attested_submission_payload
     db = SessionDB(db_path=tmp_path / 'state.db')
     db.create_session('s', source='test')

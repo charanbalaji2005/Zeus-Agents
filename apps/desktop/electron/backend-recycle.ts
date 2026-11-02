@@ -1,5 +1,5 @@
 /**
- * Recycle the backend behind a code-skew 503 ("Restart required" after `hermes update`).
+ * Recycle the backend behind a code-skew 503 ("Restart required" after `zeus update`).
  *
  * Closing the local tunnel/child is not enough for SSH: `serve --isolated`
  * detaches with setsid/nohup, so a reconnect would reuse the still-alive
@@ -7,10 +7,10 @@
  * the SSH channel can still exec), then tear down the local child — the
  * same order as connection apply (#97046, #91668).
  *
- * A LOCAL profile attaches to the per-host gateway (`hermes gateway ensure`),
+ * A LOCAL profile attaches to the per-host gateway (`zeus gateway ensure`),
  * which Desktop never owns: dropping its descriptor only re-attached the same
  * stale process. `restartLocalGateway` runs a supervised
- * `hermes --profile P gateway restart` (a no-op for a remote profile) before
+ * `zeus --profile P gateway restart` (a no-op for a remote profile) before
  * the descriptor drop, so the next ensure dials the replacement.
  */
 

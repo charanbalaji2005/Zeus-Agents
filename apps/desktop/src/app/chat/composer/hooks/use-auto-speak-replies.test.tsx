@@ -352,7 +352,7 @@ describe('useAutoSpeakReplies — final reply after tool calls', () => {
     clearOwnedSpeechTurnsForTests()
     $autoSpeakReplies.set(false)
     setVoicePlaybackState({ ...IDLE_STATE })
-    delete (window as { hermesDesktop?: unknown }).hermesDesktop
+    delete (window as { zeusDesktop?: unknown }).zeusDesktop
     vi.clearAllMocks()
   })
 
@@ -360,7 +360,7 @@ describe('useAutoSpeakReplies — final reply after tool calls', () => {
     // The main-process arbiter within its speech TTL: first claim of a key wins.
     const claimed = new Set<string>()
 
-    ;(window as { hermesDesktop?: unknown }).hermesDesktop = {
+    ;(window as { zeusDesktop?: unknown }).zeusDesktop = {
       claimAmbientCue: async (key: string) => !claimed.has(key) && Boolean(claimed.add(key))
     }
 

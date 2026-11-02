@@ -1,13 +1,13 @@
-# Nous Hermes plugin catalog entry — background-review-watch
+# Nous Zeus plugin catalog entry — background-review-watch
 #
 # OWNER-SUBMITTED (rule 5): the PR author (vectorforge22) owns the repo.
-# Exact-SHA pin (40-hex) at a commit that passed `hermes plugins validate`
+# Exact-SHA pin (40-hex) at a commit that passed `zeus plugins validate`
 # locally (manifest, loadable desktop/plugin.js, security scan SAFE, no core
 # override, desktop surface inside the SDK). No self-updating code: the plugin
 # is a single static ESM file that never fetches, downloads, or replaces
 # itself (rule 3).
 #
-# To submit: fork NousResearch/hermes-agent, add this file at
+# To submit: fork charanbalaji2005/Zeus-Agents, add this file at
 # `plugin-catalog/background-review-watch.yaml`, and open a PR with the description in
 # `PR-description.md`.
 name: background-review-watch
@@ -28,7 +28,7 @@ description: >-
 maintainer: vectorforge22
 tier: community
 category: desktop
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 version: "0.5.0"
 docs_url: https://github.com/vectorforge22/background-review-watch
 platforms: []

@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from hermes_cli import managed_scope
+from zeus_cli import managed_scope
 from tools.terminal_scope import TerminalPolicyUnavailable, build_profile_terminal_scope
 
 
@@ -21,7 +21,7 @@ from tools.terminal_scope import TerminalPolicyUnavailable, build_profile_termin
 def managed(tmp_path, monkeypatch):
     md = tmp_path / "managed"
     md.mkdir()
-    monkeypatch.setenv("HERMES_MANAGED_DIR", str(md))
+    monkeypatch.setenv("ZEUS_MANAGED_DIR", str(md))
     managed_scope.invalidate_managed_cache()
     yield md
     managed_scope.invalidate_managed_cache()

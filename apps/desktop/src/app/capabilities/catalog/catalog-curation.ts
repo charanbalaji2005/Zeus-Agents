@@ -1,4 +1,4 @@
-import { isOfficialSkillSource } from '@hermes/shared'
+import { isOfficialSkillSource } from '@zeus/shared'
 
 import curation from '../../../../../shared/src/catalog-curation.json'
 

@@ -259,7 +259,7 @@ describe('pop-out overlay', () => {
     popInPet()
     cleanup()
     resetPetPluginMessages()
-    delete (window as { hermesDesktop?: unknown }).hermesDesktop
+    delete (window as { zeusDesktop?: unknown }).zeusDesktop
     setPetInfo({ enabled: false })
   })
 
@@ -269,7 +269,7 @@ describe('pop-out overlay', () => {
     // overlay's onState handler does.
     const pushState = vi.fn()
 
-    ;(window as { hermesDesktop?: unknown }).hermesDesktop = {
+    ;(window as { zeusDesktop?: unknown }).zeusDesktop = {
       petOverlay: { close: vi.fn(async () => ({ ok: true })), open: vi.fn(async () => ({ ok: true })), pushState }
     }
     setPetInfo(PET)

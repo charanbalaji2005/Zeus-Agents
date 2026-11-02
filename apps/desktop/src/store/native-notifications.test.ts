@@ -22,8 +22,8 @@ import { markSessionGone, resetBackgroundPollingGuard } from './runtime-gone'
 import { setActiveSessionId } from './session'
 import { dropSessionState, publishSessionState } from './session-states'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-const initialHermesDesktop = desktopWindow.hermesDesktop
+const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+const initialZeusDesktop = desktopWindow.zeusDesktop
 
 const notify = vi.fn().mockResolvedValue(true)
 
@@ -44,7 +44,7 @@ function freshSession(): string {
 
 beforeEach(() => {
   notify.mockClear()
-  desktopWindow.hermesDesktop = { notify } as unknown as Window['hermesDesktop']
+  desktopWindow.zeusDesktop = { notify } as unknown as Window['zeusDesktop']
   setNativeNotifyEnabled(true)
 
   for (const kind of NATIVE_NOTIFICATION_KINDS) {
@@ -60,10 +60,10 @@ beforeEach(() => {
 afterEach(() => {
   clearPluginNotifyHandlers()
 
-  if (initialHermesDesktop) {
-    desktopWindow.hermesDesktop = initialHermesDesktop
+  if (initialZeusDesktop) {
+    desktopWindow.zeusDesktop = initialZeusDesktop
   } else {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
   }
 
   resetBackgroundPollingGuard()
@@ -239,10 +239,10 @@ describe('dispatchPluginNativeNotification', () => {
     // Unique tag (throttle is per plugin id); activate still uses the plugin deep link.
     dispatchPluginNativeNotification('index-network-alerts', {
       actions: [
-        { id: 'open', label: 'Open', activate: 'hermes://index-network/intent/1' },
+        { id: 'open', label: 'Open', activate: 'zeus://index-network/intent/1' },
         { id: 'dismiss', label: 'Dismiss', onAction: () => undefined }
       ],
-      activate: 'hermes://index-network/intent/1',
+      activate: 'zeus://index-network/intent/1',
       body: 'New match',
       icon: '/tmp/index-network.png',
       title: 'Opportunity'
@@ -269,7 +269,7 @@ describe('dispatchPluginNativeNotification', () => {
     const onAction = vi.fn()
 
     dispatchPluginNativeNotification('handlers-plugin', {
-      activate: 'hermes://index-network/intent/1',
+      activate: 'zeus://index-network/intent/1',
       onActivate,
       actions: [{ id: 'dismiss', label: 'Dismiss', onAction }],
       title: 'Opportunity'
@@ -298,7 +298,7 @@ describe('sendTestNativeNotification', () => {
   it('fires regardless of focus or active session', () => {
     setWindowState({ focused: true, hidden: false })
     setActiveSessionId('on-screen')
-    sendTestNativeNotification('Hermes', 'works')
+    sendTestNativeNotification('Zeus', 'works')
     expect(notify).toHaveBeenCalledTimes(1)
   })
 })

@@ -9,7 +9,7 @@ import { reconcileApprovalModeForProfile } from '@/store/approval-mode'
 import { activeGatewayConnectionId, isActivePrimary } from '@/store/gateway'
 import { $activeGatewayProfile, normalizeProfileKey } from '@/store/profile'
 import type { SessionOwnerRoute, SessionOwnerScope } from '@/store/session-request-router'
-import type { SessionRuntimeInfo } from '@/types/hermes'
+import type { SessionRuntimeInfo } from '@/types/zeus'
 
 function ownerIsActiveGateway(owner: SessionOwnerScope): boolean {
   if (!owner) {

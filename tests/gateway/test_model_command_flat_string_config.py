@@ -11,7 +11,7 @@ before mutation, so ``--global`` succeeds and the config is rewritten in
 the proper ``model: {default: ..., provider: ...}`` form.
 """
 
-import hermes_yaml as yaml
+import zeus_yaml as yaml
 import pytest
 
 from gateway.config import Platform
@@ -39,7 +39,7 @@ def _make_event(text):
 
 def _fake_switch_result():
     """Build a successful ModelSwitchResult that bypasses real provider resolution."""
-    from hermes_cli.model_switch import ModelSwitchResult
+    from zeus_cli.model_switch import ModelSwitchResult
 
     return ModelSwitchResult(
         success=True,
@@ -58,23 +58,23 @@ def _setup_isolated_home(tmp_path, monkeypatch, model_yaml_value):
     """Write a config.yaml with the given ``model:`` value and stub the heavy bits."""
     import gateway.run as gateway_run
 
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    cfg_path = hermes_home / "config.yaml"
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
+    cfg_path = zeus_home / "config.yaml"
     cfg_path.write_text(
         yaml.safe_dump({"model": model_yaml_value, "providers": {}}),
         encoding="utf-8",
     )
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+    monkeypatch.setattr(gateway_run, "_zeus_home", zeus_home)
     monkeypatch.setattr("agent.models_dev.fetch_models_dev", dict)
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "zeus_cli.model_switch.switch_model",
         lambda **kw: _fake_switch_result(),
     )
-    # save_config writes to ``get_hermes_home() / config.yaml`` — point it here.
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+    # save_config writes to ``get_zeus_home() / config.yaml`` — point it here.
+    monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: zeus_home)
+    monkeypatch.setattr("zeus_cli.config.get_zeus_home", lambda: zeus_home)
     return cfg_path
 
 
@@ -113,19 +113,19 @@ async def test_model_global_persists_when_config_has_missing_model(tmp_path, mon
     """
     import gateway.run as gateway_run
 
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    cfg_path = hermes_home / "config.yaml"
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
+    cfg_path = zeus_home / "config.yaml"
     cfg_path.write_text(yaml.safe_dump({"providers": {}}), encoding="utf-8")
 
-    monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+    monkeypatch.setattr(gateway_run, "_zeus_home", zeus_home)
     monkeypatch.setattr("agent.models_dev.fetch_models_dev", dict)
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "zeus_cli.model_switch.switch_model",
         lambda **kw: _fake_switch_result(),
     )
-    monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-    monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+    monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: zeus_home)
+    monkeypatch.setattr("zeus_cli.config.get_zeus_home", lambda: zeus_home)
 
     result = await _make_runner()._handle_model_command(
         _make_event("/model gpt-5.5 --global")

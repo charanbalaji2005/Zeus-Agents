@@ -5,7 +5,7 @@ import { $notifications, clearNotifications } from '@/store/notifications'
 
 import { bindTerminalDrop } from './terminal-drop'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Partial<Window['hermesDesktop']> }
+const desktopWindow = window as unknown as { zeusDesktop?: Partial<Window['zeusDesktop']> }
 const MIB = 1024 * 1024
 // eslint-disable-next-line no-control-regex -- the assertion is that none of these reach the shell
 const CONTROL_CHARACTER = /[\u0000-\u001f\u007f-\u009f]/
@@ -36,15 +36,15 @@ function file(name: string, size = 4): File {
   return value
 }
 
-function transfer(files: File[], hermesPaths?: string[]): DataTransfer {
+function transfer(files: File[], zeusPaths?: string[]): DataTransfer {
   const list = Object.assign([...files], { item: (index: number) => files[index] ?? null })
 
   return {
     files: list,
     getData: (type: string) =>
-      type === 'application/x-hermes-paths' && hermesPaths ? JSON.stringify(hermesPaths.map(path => ({ path }))) : '',
+      type === 'application/x-zeus-paths' && zeusPaths ? JSON.stringify(zeusPaths.map(path => ({ path }))) : '',
     items: files.map(entry => ({ getAsFile: () => entry, kind: 'file' })),
-    types: [...(hermesPaths ? ['application/x-hermes-paths'] : []), ...(files.length ? ['Files'] : [])]
+    types: [...(zeusPaths ? ['application/x-zeus-paths'] : []), ...(files.length ? ['Files'] : [])]
   } as unknown as DataTransfer
 }
 
@@ -89,7 +89,7 @@ function typedText(write: ReturnType<typeof vi.fn>): string {
 }
 
 afterEach(() => {
-  Reflect.deleteProperty(desktopWindow, 'hermesDesktop')
+  Reflect.deleteProperty(desktopWindow, 'zeusDesktop')
   clearNotifications()
   vi.restoreAllMocks()
 })
@@ -97,53 +97,53 @@ afterEach(() => {
 describe('terminal drop in the browser-hosted Desktop', () => {
   function browserBridge(stage: (file: File) => Promise<string>) {
     const stageFileForAttach = vi.fn(stage)
-    desktopWindow.hermesDesktop = { getPathForFile: () => '', stageFileForAttach }
+    desktopWindow.zeusDesktop = { getPathForFile: () => '', stageFileForAttach }
 
     return stageFileForAttach
   }
 
   it('stages each dropped file on the host and types its quoted host path', async () => {
-    const stage = browserBridge(async entry => `/srv/hermes/uploads/${entry.name}`)
+    const stage = browserBridge(async entry => `/srv/zeus/uploads/${entry.name}`)
     const { host, unbind, write } = bind('bash')
 
     const event = drop(host, transfer([file("it's.txt"), file('b c.log')]))
 
     expect(event.defaultPrevented).toBe(true)
     await vi.waitFor(() => expect(write).toHaveBeenCalledTimes(1))
-    expect(write).toHaveBeenCalledWith('term-1', "'/srv/hermes/uploads/it'\\''s.txt' '/srv/hermes/uploads/b c.log' ")
+    expect(write).toHaveBeenCalledWith('term-1', "'/srv/zeus/uploads/it'\\''s.txt' '/srv/zeus/uploads/b c.log' ")
     expect(stage).toHaveBeenCalledTimes(2)
     unbind()
   })
 
   it("quotes staged paths for the terminal's own shell", async () => {
-    browserBridge(async () => 'C:\\Users\\me\\.hermes\\uploads\\it\'s.txt')
+    browserBridge(async () => 'C:\\Users\\me\\.zeus\\uploads\\it\'s.txt')
     const { host, unbind, write } = bind('powershell.exe')
 
     drop(host, transfer([file("it's.txt")]))
 
-    await vi.waitFor(() => expect(write).toHaveBeenCalledWith('term-1', "'C:\\Users\\me\\.hermes\\uploads\\it''s.txt' "))
+    await vi.waitFor(() => expect(write).toHaveBeenCalledWith('term-1', "'C:\\Users\\me\\.zeus\\uploads\\it''s.txt' "))
     unbind()
   })
 
   it('keeps in-app paths and staged files in drop order', async () => {
-    browserBridge(async entry => `/srv/hermes/uploads/${entry.name}`)
+    browserBridge(async entry => `/srv/zeus/uploads/${entry.name}`)
     const { host, unbind, write } = bind('zsh')
 
     drop(host, transfer([file('notes.md')], ['/work/project/src']))
 
     await vi.waitFor(() =>
-      expect(write).toHaveBeenCalledWith('term-1', "'/work/project/src' '/srv/hermes/uploads/notes.md' ")
+      expect(write).toHaveBeenCalledWith('term-1', "'/work/project/src' '/srv/zeus/uploads/notes.md' ")
     )
     unbind()
   })
 
   it('never uploads a file over 16 MiB and names it in a warning', async () => {
-    const stage = browserBridge(async entry => `/srv/hermes/uploads/${entry.name}`)
+    const stage = browserBridge(async entry => `/srv/zeus/uploads/${entry.name}`)
     const { host, unbind, write } = bind('bash')
 
     drop(host, transfer([file('huge.iso', 16 * MIB + 1), file('small.txt', 16 * MIB)]))
 
-    await vi.waitFor(() => expect(write).toHaveBeenCalledWith('term-1', "'/srv/hermes/uploads/small.txt' "))
+    await vi.waitFor(() => expect(write).toHaveBeenCalledWith('term-1', "'/srv/zeus/uploads/small.txt' "))
     expect(stage).toHaveBeenCalledTimes(1)
     expect(stage.mock.calls[0][0].name).toBe('small.txt')
     const [warning] = $notifications.get()
@@ -175,7 +175,7 @@ describe('terminal drop in the browser-hosted Desktop', () => {
 describe('terminal drop in Electron Desktop', () => {
   it('types the native path of each dropped file without uploading it', async () => {
     const getPathForFile = vi.fn((entry: File) => `/home/me/${entry.name}`)
-    desktopWindow.hermesDesktop = { getPathForFile }
+    desktopWindow.zeusDesktop = { getPathForFile }
     const { focus, host, unbind, write } = bind('bash')
 
     drop(host, transfer([file('a.txt'), file('b c.txt')]))
@@ -186,7 +186,7 @@ describe('terminal drop in Electron Desktop', () => {
   })
 
   it('ignores a dropped file Electron cannot resolve to a path', async () => {
-    desktopWindow.hermesDesktop = { getPathForFile: () => '' }
+    desktopWindow.zeusDesktop = { getPathForFile: () => '' }
     const { host, unbind, write } = bind('bash')
 
     drop(host, transfer([file('from-a-web-page.png')]))
@@ -219,7 +219,7 @@ describe('terminal drop never types keystrokes', () => {
   })
 
   it('types nothing for an OS file whose native path holds a control character', () => {
-    desktopWindow.hermesDesktop = { getPathForFile: (entry: File) => `/home/me/${entry.name}` }
+    desktopWindow.zeusDesktop = { getPathForFile: (entry: File) => `/home/me/${entry.name}` }
     const { focus, host, unbind, write } = bind('zsh')
 
     drop(host, transfer([file('report\n.txt')]))
@@ -570,10 +570,10 @@ describe("terminal drop types each path as one literal word of the terminal's sh
 
   it('types each % outside the quotes so cmd expands no variable into the path', () => {
     // A variable whose value holds a quote would turn the rest of the name into a command.
-    const env = { HERMESPROBE: 'X"&calc&"Y', PATH: 'C:\\Windows\\system32' }
+    const env = { ZEUSPROBE: 'X"&calc&"Y', PATH: 'C:\\Windows\\system32' }
 
     for (const path of [
-      'C:\\work\\a%HERMESPROBE%b.txt',
+      'C:\\work\\a%ZEUSPROBE%b.txt',
       'C:\\work\\a%PATH%b.txt',
       'C:\\work\\my%20file%20name.pdf',
       'C:\\work\\100%'
@@ -628,10 +628,10 @@ describe("terminal drop types each path as one literal word of the terminal's sh
 })
 
 describe('terminal drop in cmd with delayed expansion', () => {
-  const env = { HERMESPROBE: 'X"&calc&"Y', PATH: 'C:\\Windows\\system32' }
+  const env = { ZEUSPROBE: 'X"&calc&"Y', PATH: 'C:\\Windows\\system32' }
 
   it('types the same words whether delayed expansion is on or off', () => {
-    for (const path of ['C:\\work\\a%HERMESPROBE%b.txt', 'C:\\work\\a^b & c.txt', 'C:\\work\\100%', 'C:\\work\\a b (1).txt']) {
+    for (const path of ['C:\\work\\a%ZEUSPROBE%b.txt', 'C:\\work\\a^b & c.txt', 'C:\\work\\100%', 'C:\\work\\a b (1).txt']) {
       const typed = droppedText('cmd.exe', path)
       expect(cmdWords(typed, env)).toEqual([path])
       expect(cmdWords(typed, env, { delayed: true })).toEqual([path])
@@ -639,16 +639,16 @@ describe('terminal drop in cmd with delayed expansion', () => {
   })
 
   // cmd can't be asked whether delayed expansion is on, and no quoting keeps a '!' literal in both
-  // modes: with it on, !HERMESPROBE! is replaced inside the quotes and a lone '!' is dropped.
+  // modes: with it on, !ZEUSPROBE! is replaced inside the quotes and a lone '!' is dropped.
   it('never types a path holding "!" and names it in a warning', () => {
     const { host, unbind, write } = bind('cmd.exe')
 
-    drop(host, transfer([], ['C:\\work\\a!HERMESPROBE!b.txt', 'C:\\work\\wow!.txt', 'C:\\work\\ok.txt']))
+    drop(host, transfer([], ['C:\\work\\a!ZEUSPROBE!b.txt', 'C:\\work\\wow!.txt', 'C:\\work\\ok.txt']))
 
     expect(typedText(write)).toBe('"C:\\work\\ok.txt" ')
     const [warning] = $notifications.get()
     expect(warning?.kind).toBe('warning')
-    expect(warning?.message).toContain('C:\\work\\a!HERMESPROBE!b.txt')
+    expect(warning?.message).toContain('C:\\work\\a!ZEUSPROBE!b.txt')
     expect(warning?.message).toContain('C:\\work\\wow!.txt')
     expect(warning?.message).not.toContain('ok.txt')
     unbind()

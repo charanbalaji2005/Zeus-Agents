@@ -16,7 +16,7 @@ interface RelaunchHost {
  * directly and drops the fd itself. Both start the new process through
  * createAppRelauncher.
  * The launcher's ready pipe is not inherited by the relaunched process, so a
- * carried `HERMES_DESKTOP_READY_FD` names whatever file reuses that descriptor
+ * carried `ZEUS_DESKTOP_READY_FD` names whatever file reuses that descriptor
  * number there, and the reveal byte would be written into it.
  */
 export function relaunchApp(host: RelaunchHost, options: RelaunchOptions, env: NodeJS.ProcessEnv = process.env): void {
@@ -71,7 +71,7 @@ export function createAppRelauncher(
 
       const args = options.args ?? process.argv.slice(1)
       const target = relaunchTarget(execPath, env)
-      // The new process skips `hermes desktop`: it needs the launcher's short socket TMPDIR,
+      // The new process skips `zeus desktop`: it needs the launcher's short socket TMPDIR,
       // not the long one main.ts restored after the lock (linux-sandbox-relaunch.ts).
       const childEnv = { ...env }
       restoreLaunchTmpdir(childEnv)
@@ -88,7 +88,7 @@ export function createAppRelauncher(
         } catch (error) {
           // A synchronous spawn throw (E2BIG) must not cost the restart.
           console.error(
-            `[hermes] relaunching ${target} failed (${String(error)}); relaunching through Electron instead`
+            `[zeus] relaunching ${target} failed (${String(error)}); relaunching through Electron instead`
           )
         }
       }

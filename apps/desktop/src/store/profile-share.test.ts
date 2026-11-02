@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { DesktopTheme } from '@/themes/types'
-import type { ProfileDesktopOverlay } from '@/types/hermes'
+import type { ProfileDesktopOverlay } from '@/types/zeus'
 
 // Keep side-effecting transitive imports inert (gateway sockets, REST).
 vi.mock('@/store/gateway', async () => {
@@ -13,7 +13,7 @@ vi.mock('@/store/gateway', async () => {
     openGatewayForProfile: vi.fn(async () => undefined)
   }
 })
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   exportProfileArchive: vi.fn(async () => ({ archive: '/tmp/out.tar.gz', ok: true })),
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   importProfileArchive: vi.fn(async () => ({ desktop: null, name: 'imported', ok: true, path: '/tmp/p' })),
@@ -27,7 +27,7 @@ const { $profileColors, setProfileColor } = await import('./profile')
 const { modePref, skinPref } = await import('@/themes/context')
 const { $userThemes } = await import('@/themes/user-themes')
 const { $layoutTree } = await import('@/components/pane-shell/tree/store')
-const { exportProfileArchive } = await import('@/hermes')
+const { exportProfileArchive } = await import('@/zeus')
 
 // isValidTheme only requires background/foreground/primary at runtime; the
 // static type wants the full palette, hence the cast.
@@ -122,23 +122,23 @@ describe('runExportProfileFlow', () => {
 
     try {
       expect(installBrowserDesktopBridge()).toBe(true)
-      expect(window.hermesDesktop.selectSavePath).toBeUndefined()
+      expect(window.zeusDesktop.selectSavePath).toBeUndefined()
       await expect(runExportProfileFlow('glam')).resolves.toBeNull()
       expect(exportProfileArchive).not.toHaveBeenCalled()
       expect($notifications.get().at(-1)).toMatchObject({ kind: 'error', title: 'Failed to export profile' })
-      expect($notifications.get().at(-1)?.message).toContain('hermes profile export glam')
+      expect($notifications.get().at(-1)?.message).toContain('zeus profile export glam')
     } finally {
       clearWebappSession()
-      Reflect.deleteProperty(window, 'hermesDesktop')
-      document.documentElement.removeAttribute('data-hermes-desktop-host')
+      Reflect.deleteProperty(window, 'zeusDesktop')
+      document.documentElement.removeAttribute('data-zeus-desktop-host')
       vi.unstubAllGlobals()
     }
   })
 })
 
 describe('importProfileBundle', () => {
-  const folderKey = (profile: string) => `hermes:browser:default-project-dir:${JSON.stringify(['/hermes', profile])}`
-  const startupKey = 'hermes:webapp:default-profile:/hermes'
+  const folderKey = (profile: string) => `zeus:browser:default-project-dir:${JSON.stringify(['/zeus', profile])}`
+  const startupKey = 'zeus:webapp:default-profile:/zeus'
 
   function seedLeftovers() {
     window.localStorage.setItem(folderKey('imported'), '/srv/deleted-imported')
@@ -147,16 +147,16 @@ describe('importProfileBundle', () => {
   }
 
   afterEach(() => {
-    document.documentElement.removeAttribute('data-hermes-desktop-host')
-    Reflect.deleteProperty(window, '__HERMES_BASE_PATH__')
+    document.documentElement.removeAttribute('data-zeus-desktop-host')
+    Reflect.deleteProperty(window, '__ZEUS_BASE_PATH__')
   })
 
   // An import never lands on a live profile's name, so prefs stored under it were left by a deleted one.
   it('drops what a deleted profile of the same name left, only once the import succeeded', async () => {
     const { importProfileBundle } = await import('./profile-share')
-    const { importProfileArchive } = await import('@/hermes')
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
-    Object.assign(window, { __HERMES_BASE_PATH__: '/hermes' })
+    const { importProfileArchive } = await import('@/zeus')
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
+    Object.assign(window, { __ZEUS_BASE_PATH__: '/zeus' })
     seedLeftovers()
     vi.mocked(importProfileArchive).mockRejectedValueOnce(new Error('bad archive'))
 
@@ -172,7 +172,7 @@ describe('importProfileBundle', () => {
 
   it('keeps browser prefs in native Desktop', async () => {
     const { importProfileBundle } = await import('./profile-share')
-    Object.assign(window, { __HERMES_BASE_PATH__: '/hermes' })
+    Object.assign(window, { __ZEUS_BASE_PATH__: '/zeus' })
     seedLeftovers()
 
     await expect(importProfileBundle('/tmp/in.tar.gz')).resolves.toBe('imported')

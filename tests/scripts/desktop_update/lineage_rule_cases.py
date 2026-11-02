@@ -49,7 +49,7 @@ RULE_CASES = [
           named_is_our_parent=True, named_parent_is_desktop=False, env_started_matches=True),
 ]
 
-# HERMES_UPDATE_STARTED_AT vs line 2 (its digits as parsed): plain ASCII digits of the same value.
+# ZEUS_UPDATE_STARTED_AT vs line 2 (its digits as parsed): plain ASCII digits of the same value.
 # (PowerShell used to Trim() and Int64.TryParse the env value: spaces and a sign matched.)
 ENV_CASES = [
     {"id": "equal", "env": "1791079348", "line2": "1791079348", "expect": True},

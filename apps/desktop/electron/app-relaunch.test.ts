@@ -65,8 +65,8 @@ else process.kill(process.pid, 'SIGKILL')
 test.skipIf(process.platform !== 'linux')(
   'a Linux relaunch comes back after an exit or a hard death, unlocked, in its own session, without no_new_privs',
   async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-relaunch-'))
-    const exe = path.join(dir, 'hermes')
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-relaunch-'))
+    const exe = path.join(dir, 'zeus')
     const oldProcess = path.join(dir, 'old-process.cjs')
 
     fs.writeFileSync(
@@ -123,8 +123,8 @@ setTimeout(() => process.exit(0), 1000)
 `
 
 test.skipIf(process.platform !== 'linux')('a Linux relaunch starts only once the old process is dead', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-relaunch-linger-'))
-  const exe = path.join(dir, 'hermes')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-relaunch-linger-'))
+  const exe = path.join(dir, 'zeus')
   const oldProcess = path.join(dir, 'old-process.cjs')
   const report = path.join(dir, 'report')
 
@@ -156,7 +156,7 @@ test.skipIf(process.platform !== 'linux')('a Linux relaunch starts only once the
 test('macOS and Windows keep Electron app.relaunch', () => {
   for (const platform of ['darwin', 'win32']) {
     const events: string[] = []
-    const relauncher = createAppRelauncher(recordingApp(events), platform, '/nonexistent/hermes', {})
+    const relauncher = createAppRelauncher(recordingApp(events), platform, '/nonexistent/zeus', {})
 
     relaunchApp(relauncher, { args: ['--no-sandbox'] }, {})
     relauncher.exit(0)
@@ -169,8 +169,8 @@ test('macOS and Windows keep Electron app.relaunch', () => {
 // Electron's relauncher. JS keeps running briefly after app.exit(), and a relaunch requested
 // then (a second Restart) must not start another process.
 test.skipIf(process.platform !== 'linux')('a Linux relaunch whose target cannot start uses Electron, once', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-relaunch-noexec-'))
-  const exe = path.join(dir, 'hermes')
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-relaunch-noexec-'))
+  const exe = path.join(dir, 'zeus')
   const events: string[] = []
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
 

@@ -4,7 +4,7 @@ import { createBrowserClipboardBridge } from './browser-clipboard'
 import { installClipboardShim, writeClipboardText } from './clipboard'
 import { copySvgAsPng } from './svg-image'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
 
 function installClipboard(writeText: (text: string) => Promise<void>) {
   Object.defineProperty(navigator, 'clipboard', {
@@ -14,10 +14,10 @@ function installClipboard(writeText: (text: string) => Promise<void>) {
 }
 
 afterEach(() => {
-  Reflect.deleteProperty(desktopWindow, 'hermesDesktop')
+  Reflect.deleteProperty(desktopWindow, 'zeusDesktop')
   Reflect.deleteProperty(navigator, 'clipboard')
   vi.restoreAllMocks()
-  delete document.documentElement.dataset.hermesDesktopHost
+  delete document.documentElement.dataset.zeusDesktopHost
 })
 
 describe('installClipboardShim', () => {
@@ -25,7 +25,7 @@ describe('installClipboardShim', () => {
     const nativeWrite = vi.fn().mockResolvedValue(undefined)
     const ipcWrite = vi.fn().mockResolvedValue(true)
     installClipboard(nativeWrite)
-    desktopWindow.hermesDesktop = { writeClipboard: ipcWrite } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { writeClipboard: ipcWrite } as unknown as Window['zeusDesktop']
 
     installClipboardShim()
     await navigator.clipboard.writeText('payload')
@@ -38,7 +38,7 @@ describe('installClipboardShim', () => {
     const nativeWrite = vi.fn().mockResolvedValue(undefined)
     const ipcWrite = vi.fn().mockRejectedValue(new Error('main process gone'))
     installClipboard(nativeWrite)
-    desktopWindow.hermesDesktop = { writeClipboard: ipcWrite } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { writeClipboard: ipcWrite } as unknown as Window['zeusDesktop']
 
     installClipboardShim()
     await navigator.clipboard.writeText('payload')
@@ -53,7 +53,7 @@ describe('writeClipboardText', () => {
     const nativeWrite = vi.fn().mockRejectedValue(new Error('Document is not focused'))
     const ipcWrite = vi.fn().mockResolvedValue(true)
     installClipboard(nativeWrite)
-    desktopWindow.hermesDesktop = { writeClipboard: ipcWrite } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { writeClipboard: ipcWrite } as unknown as Window['zeusDesktop']
 
     await writeClipboardText('payload')
 
@@ -64,10 +64,10 @@ describe('writeClipboardText', () => {
   it('writes a browser-hosted copy through the native clipboard once', async () => {
     const nativeWrite = vi.fn().mockResolvedValue(undefined)
     installClipboard(nativeWrite)
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
-    desktopWindow.hermesDesktop = createBrowserClipboardBridge({
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
+    desktopWindow.zeusDesktop = createBrowserClipboardBridge({
       saveBuffer: async () => ''
-    }) as Window['hermesDesktop']
+    }) as Window['zeusDesktop']
     installClipboardShim()
 
     await writeClipboardText('payload')
@@ -80,7 +80,7 @@ describe('writeClipboardText', () => {
     const nativeWrite = vi.fn().mockRejectedValue(new Error('lost focus'))
     const bridgeWrite = vi.fn().mockResolvedValue(false)
     installClipboard(nativeWrite)
-    desktopWindow.hermesDesktop = { writeClipboard: bridgeWrite } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { writeClipboard: bridgeWrite } as unknown as Window['zeusDesktop']
     installClipboardShim()
     await expect(writeClipboardText('payload')).rejects.toThrow()
     expect(nativeWrite).toHaveBeenCalledTimes(1)
@@ -90,10 +90,10 @@ describe('writeClipboardText', () => {
   it('does not retry the same native API through the installed browser bridge', async () => {
     const nativeWrite = vi.fn().mockRejectedValue(new Error('permission denied'))
     installClipboard(nativeWrite)
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
-    desktopWindow.hermesDesktop = createBrowserClipboardBridge({
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
+    desktopWindow.zeusDesktop = createBrowserClipboardBridge({
       saveBuffer: async () => ''
-    }) as Window['hermesDesktop']
+    }) as Window['zeusDesktop']
     installClipboardShim()
     await expect(writeClipboardText('payload')).rejects.toThrow('permission denied')
     expect(nativeWrite).toHaveBeenCalledTimes(1)
@@ -101,7 +101,7 @@ describe('writeClipboardText', () => {
 
   it('reports an unavailable bridge as a failed copy', async () => {
     const bridgeWrite = vi.fn().mockResolvedValue(false)
-    desktopWindow.hermesDesktop = { writeClipboard: bridgeWrite } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { writeClipboard: bridgeWrite } as unknown as Window['zeusDesktop']
 
     await expect(writeClipboardText('payload')).rejects.toThrow('Clipboard write is unavailable')
   })
@@ -110,10 +110,10 @@ describe('writeClipboardText', () => {
   it.each(['a button in it', 'the dialog itself'])(
     'copies through a selection where an insecure origin has no Clipboard API, inside a focus trap while %s has focus',
     async holder => {
-      document.documentElement.dataset.hermesDesktopHost = 'browser'
-      desktopWindow.hermesDesktop = createBrowserClipboardBridge({
+      document.documentElement.dataset.zeusDesktopHost = 'browser'
+      desktopWindow.zeusDesktop = createBrowserClipboardBridge({
         saveBuffer: async () => ''
-      }) as Window['hermesDesktop']
+      }) as Window['zeusDesktop']
       installClipboardShim()
       // A modal dialog that pulls focus back inside itself, as Radix's FocusScope does.
       const dialog = document.body.appendChild(document.createElement('div'))
@@ -154,7 +154,7 @@ describe('writeClipboardText', () => {
         await writeClipboardText('copy me')
         await copySvgAsPng('<svg/>')
         // Copy path / Copy link call the bridge directly.
-        expect(await desktopWindow.hermesDesktop!.writeClipboard('/repo/file.ts')).toBe(true)
+        expect(await desktopWindow.zeusDesktop!.writeClipboard('/repo/file.ts')).toBe(true)
         expect(copied).toEqual(['copy:copy me', 'copy:<svg/>', 'copy:/repo/file.ts'])
         // A copy the browser refuses fails, and still gives back focus and the page's selection.
         copies = false

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events'
 
-import type { GatewayEvent } from '@hermes/shared/gateway-events'
+import type { GatewayEvent } from '@zeus/shared/gateway-events'
 import {
   DEFAULT_HEARTBEAT_DEADLINE_MS,
   DEFAULT_HEARTBEAT_INTERVAL_MS,
@@ -8,8 +8,8 @@ import {
   JsonRpcRequestChannel,
   type ServerRequest,
   wireFrameText
-} from '@hermes/shared/json-rpc-channel'
-import { reconnectBackoffDelayMs } from '@hermes/shared/reconnect-backoff'
+} from '@zeus/shared/json-rpc-channel'
+import { reconnectBackoffDelayMs } from '@zeus/shared/reconnect-backoff'
 import { WebSocket as UndiciWebSocket } from 'undici'
 
 import {
@@ -29,15 +29,15 @@ const MAX_GATEWAY_LOG_LINES = 200
 const MAX_LOG_LINE_BYTES = 4096
 const MAX_BUFFERED_EVENTS = 2000
 const MAX_LOG_PREVIEW = 240
-const STARTUP_TIMEOUT_MS = Math.max(5000, parseInt(process.env.HERMES_TUI_STARTUP_TIMEOUT_MS ?? '15000', 10) || 15000)
-const REQUEST_TIMEOUT_MS = Math.max(30000, parseInt(process.env.HERMES_TUI_RPC_TIMEOUT_MS ?? '120000', 10) || 120000)
+const STARTUP_TIMEOUT_MS = Math.max(5000, parseInt(process.env.ZEUS_TUI_STARTUP_TIMEOUT_MS ?? '15000', 10) || 15000)
+const REQUEST_TIMEOUT_MS = Math.max(30000, parseInt(process.env.ZEUS_TUI_RPC_TIMEOUT_MS ?? '120000', 10) || 120000)
 const WS_CONNECTING = 0
 const WS_OPEN = 1
 const WS_CLOSING = 2
 const WS_CLOSED = 3
 
 // Keepalive + dead-connection detection (issue #32997) lives in
-// @hermes/shared's JsonRpcRequestChannel; these re-exports keep the TUI's
+// @zeus/shared's JsonRpcRequestChannel; these re-exports keep the TUI's
 // timing constants readable at their call sites and in tests.
 export const WS_HEARTBEAT_INTERVAL_MS = DEFAULT_HEARTBEAT_INTERVAL_MS
 export const WS_HEARTBEAT_DEAD_MS = DEFAULT_HEARTBEAT_DEADLINE_MS
@@ -54,13 +54,13 @@ const truncateLine = (line: string) =>
   line.length > MAX_LOG_LINE_BYTES ? `${line.slice(0, MAX_LOG_LINE_BYTES)}… [truncated ${line.length} bytes]` : line
 
 const resolveGatewayAttachUrl = () => {
-  const raw = process.env.HERMES_TUI_GATEWAY_URL?.trim()
+  const raw = process.env.ZEUS_TUI_GATEWAY_URL?.trim()
 
   return raw ? raw : null
 }
 
 const resolveSidecarUrl = () => {
-  const raw = process.env.HERMES_TUI_SIDECAR_URL?.trim()
+  const raw = process.env.ZEUS_TUI_SIDECAR_URL?.trim()
 
   return raw ? raw : null
 }
@@ -99,7 +99,7 @@ const redactUrl = (raw: string): string => {
 
 // Reconnects after the first launch are discovery-only, except that a bounded number per window
 // re-ensure an owner that is not ready (gateway_bootstrap.py --recover): crashed, idle-exited,
-// stopped with `hermes gateway stop` while this TUI is open, or an older Hermes's gateway. Main's
+// stopped with `zeus gateway stop` while this TUI is open, or an older Zeus's gateway. Main's
 // TUI owned its sidecar, so an open TUI comes back on its own; the budget keeps a crash-looping
 // owner from being respawned without pause.
 export const OWNER_RECOVERY_LIMIT = 3
@@ -189,7 +189,7 @@ export class GatewayClient extends EventEmitter {
   private publishWire(ev: AnyGatewayEvent) {
     if (!this.isCanonical && ev.type === 'gateway.ready' && this.attachUrl !== null &&
         (ev as { payload?: { session_authority?: boolean } }).payload?.session_authority === true) {
-      // An explicit HERMES_TUI_GATEWAY_URL endpoint whose session verbs belong to an authority:
+      // An explicit ZEUS_TUI_GATEWAY_URL endpoint whose session verbs belong to an authority:
       // negotiate the canonical wire exactly like a local grant, keeping the listener's skin.
       return this.adoptCanonicalAttach(ev as GatewayEvent<'gateway.ready'>)
     }
@@ -581,7 +581,7 @@ export class GatewayClient extends EventEmitter {
       } })
       this.channel.detach(this.bootstrapError)
 
-      // The helper's interpreter cannot load Hermes (gateway_bootstrap.py `gateway unavailable:`):
+      // The helper's interpreter cannot load Zeus (gateway_bootstrap.py `gateway unavailable:`):
       // no reconnect fixes that, so report it once instead of retrying every 30 s forever (#138878).
       if (isTerminalBootstrapFailure(this.bootstrapError.message)) {
         this.lifecycle(`[lifecycle] gateway bootstrap cannot start; not retrying: ${this.bootstrapError.message.match(/^gateway unavailable: .*$/m)?.[0]}`)

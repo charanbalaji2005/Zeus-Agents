@@ -554,14 +554,14 @@ def detect_self_repo_git_mutation(
 
 
 def _block_message(operation: str, root: Path) -> str:
-    hermes_home = os.environ.get("HERMES_HOME", "").strip()
-    scratch = (Path(hermes_home).expanduser() if hermes_home else Path.home() / ".hermes") / "scratch"
+    zeus_home = os.environ.get("ZEUS_HOME", "").strip()
+    scratch = (Path(zeus_home).expanduser() if zeus_home else Path.home() / ".zeus") / "scratch"
     return (
-        f"Blocked: `{operation}` would rewrite Hermes's live source checkout "
+        f"Blocked: `{operation}` would rewrite Zeus's live source checkout "
         f"({root}) and can mix module versions in this running process. "
         f"Use a separate worktree or a shared clone on real disk, e.g. "
         f"`git clone --shared {root} {scratch}/<task>` — avoid /tmp for "  # no-tmp: ok — guidance telling the model to AVOID /tmp
         "clones that install node/python deps: /tmp is usually RAM-backed tmpfs and a few "  # no-tmp: ok — guidance telling the model to AVOID /tmp
         "dependency installs can fill it and ENOSPC other work. Delete the clone when the branch "
-        "is pushed. To change this checkout, stop Hermes, run the command externally, then restart "
-        "Hermes.")
+        "is pushed. To change this checkout, stop Zeus, run the command externally, then restart "
+        "Zeus.")

@@ -7,7 +7,7 @@ import type { MutableRefObject } from 'react'
 import { useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { type SessionInfo } from '@/hermes'
+import { type SessionInfo } from '@/zeus'
 import { $approvalModes, approvalModeForProfile, reconcileApprovalModeForProfile } from '@/store/approval-mode'
 import { requestGatewayForAgent } from '@/store/gateway'
 import { $activeGatewayProfile } from '@/store/profile'
@@ -18,7 +18,7 @@ import type { ClientSessionState } from '../../../types'
 
 import { useSessionActions } from './index'
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   deleteSession: vi.fn(),
   getSession: vi.fn(),

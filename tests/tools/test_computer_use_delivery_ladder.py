@@ -1,6 +1,6 @@
 """Regression tests for the cua-driver verify → escalate ladder.
 
-Covers NousResearch/hermes-agent#67052:
+Covers charanbalaji2005/Zeus-Agents#67052:
   - Phase A: cua-driver structured verdicts (verified/effect/escalation/code/
     degraded/path) are preserved through ActionResult and surfaced in the
     model-facing response, additively (old drivers omit them cleanly).
@@ -234,7 +234,7 @@ def _interactive_session(monkeypatch):
     from tools import approval
     from tools.approval_context import reset_current_session_key, set_current_session_key
 
-    monkeypatch.setenv("HERMES_INTERACTIVE", "1")
+    monkeypatch.setenv("ZEUS_INTERACTIVE", "1")
     monkeypatch.setattr(approval, "save_permanent_allowlist", lambda patterns: None)
     keys: list[str] = []
 

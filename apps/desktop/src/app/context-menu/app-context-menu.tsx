@@ -7,7 +7,7 @@ import { terminalMenuHandleFor } from '@/app/right-sidebar/terminal/terminal-con
 import { openStarMapNodeMenuFor } from '@/app/starmap/context-menu-handle'
 import { DROPDOWN_KIT } from '@/components/ui/actions-menu'
 import { Codicon } from '@/components/ui/codicon'
-import { HERMES_CONTEXT_MENU_TRIGGER_ATTR } from '@/components/ui/context-menu'
+import { ZEUS_CONTEXT_MENU_TRIGGER_ATTR } from '@/components/ui/context-menu'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,7 +99,7 @@ function composerSectionsFor(contributions: readonly Contribution[], target: Com
 /** Our Cut, Copy and Paste run through Electron main (`contextMenuEdit`) and our spelling rows
  * come from its spellcheck feed; a browser host has neither. */
 function lacksEditVerbs(): boolean {
-  return !hostHas('mainProcessEditVerbs') && !window.hermesDesktop?.contextMenuEdit
+  return !hostHas('mainProcessEditVerbs') && !window.zeusDesktop?.contextMenuEdit
 }
 
 /** Without them an editable keeps the browser's own menu, where both work: pane and row menus
@@ -195,7 +195,7 @@ function terminalSections(open: Extract<OpenContextMenu, { kind: 'terminal' }>, 
           key="terminal-paste"
           label={t.contextMenu.edit.paste}
           onSelect={() =>
-            void window.hermesDesktop?.readClipboard().then(text => (text ? terminal.paste?.(text) : undefined))
+            void window.zeusDesktop?.readClipboard().then(text => (text ? terminal.paste?.(text) : undefined))
           }
         />
       ) : null,
@@ -254,7 +254,7 @@ function domSections(
   }
 
   const editableCommand = (command: 'copy' | 'cut' | 'paste') => {
-    withEditableFocus(() => void window.hermesDesktop?.contextMenuEdit?.(command))
+    withEditableFocus(() => void window.zeusDesktop?.contextMenuEdit?.(command))
   }
 
   // Select all runs entirely in the renderer, scoped to the editable itself.
@@ -286,7 +286,7 @@ function domSections(
   }
 
   const spellcheckAction = (action: { kind: 'add' | 'replace'; word: string }) => {
-    withEditableFocus(() => void window.hermesDesktop?.contextMenuSpellcheck?.(action))
+    withEditableFocus(() => void window.zeusDesktop?.contextMenuSpellcheck?.(action))
   }
 
   if (linkUrl) {
@@ -354,7 +354,7 @@ function domSections(
           icon="file-media"
           key="image-copy"
           label={copy.image.copyImage}
-          onSelect={() => void window.hermesDesktop?.contextMenuCopyImage?.()}
+          onSelect={() => void window.zeusDesktop?.contextMenuCopyImage?.()}
         />,
         target.imageUrl ? (
           <Item
@@ -369,7 +369,7 @@ function domSections(
             icon="save"
             key="image-save"
             label={copy.image.saveImageAs}
-            onSelect={() => void window.hermesDesktop?.saveImageFromUrl?.(target.imageUrl)}
+            onSelect={() => void window.zeusDesktop?.saveImageFromUrl?.(target.imageUrl)}
           />
         ) : null
       ].filter(Boolean)
@@ -547,7 +547,7 @@ function guestSections(open: Extract<OpenContextMenu, { kind: 'guest' }>, t: Tra
             icon="save"
             key="guest-image-save"
             label={copy.image.saveImageAs}
-            onSelect={() => void window.hermesDesktop?.saveImageFromUrl?.(imageUrl)}
+            onSelect={() => void window.zeusDesktop?.saveImageFromUrl?.(imageUrl)}
           />
         ) : null
       ].filter(Boolean)
@@ -685,7 +685,7 @@ export function AppContextMenu() {
         return
       }
 
-      const trigger = element?.closest(`[${HERMES_CONTEXT_MENU_TRIGGER_ATTR}], [data-slot="context-menu-trigger"]`)
+      const trigger = element?.closest(`[${ZEUS_CONTEXT_MENU_TRIGGER_ATTR}], [data-slot="context-menu-trigger"]`)
 
       // Only the pane-body wrapper is a fallback menu. Explicit row, tab and
       // status-bar menus still own their whole gesture, even inside a pane.
@@ -764,7 +764,7 @@ export function AppContextMenu() {
 
   // Spell-check facts arrive from main after the menu opens (Chromium reports
   // them on its own context-menu event); attach them to the open menu.
-  useEffect(() => window.hermesDesktop?.onContextMenuSpellcheck?.(augmentSpellcheck), [])
+  useEffect(() => window.zeusDesktop?.onContextMenuSpellcheck?.(augmentSpellcheck), [])
 
   if (!open) {
     return null

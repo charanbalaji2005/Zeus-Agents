@@ -4,13 +4,13 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 beforeEach(() => {
   vi.resetModules()
   localStorage.clear()
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 })
 
 afterEach(() => {
   cleanup()
   window.document.body.replaceChildren()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 it('renders the resolved browser binding in the first-run tip, tooltips and settings, including remaps', async () => {

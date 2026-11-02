@@ -96,14 +96,14 @@ describe('MarkdownTextContent overflow containment', () => {
   // The browser host sizes the fence's <pre> to its longest line, so the card's
   // scroller scrolls it sideways in place and draws the fade at the cut edge.
   it('sizes the fence to its longest line in browser-hosted Desktop', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       const { fencePre } = await renderWideReply()
 
       expect(fencePre.className).toContain('min-w-max')
     } finally {
-      delete window.document.documentElement.dataset.hermesDesktopHost
+      delete window.document.documentElement.dataset.zeusDesktopHost
     }
   })
 })

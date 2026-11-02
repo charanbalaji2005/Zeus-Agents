@@ -1,5 +1,5 @@
 import { useAui, useAuiState, useComposerRuntime } from '@assistant-ui/react'
-import { SLASH_COMMAND_RE } from '@hermes/shared'
+import { SLASH_COMMAND_RE } from '@zeus/shared'
 import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { isElementInHiddenPane } from '@/components/pane-shell/pane-visibility'

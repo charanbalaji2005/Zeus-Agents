@@ -57,7 +57,7 @@ function SideVersionRow({ label, value }: { label: string; value?: string }) {
 
 /**
  * Shared build-provenance display. Reads from `$desktopVersion`
- * (populated from the build stamp / `hermes:version` IPC), so every
+ * (populated from the build stamp / `zeus:version` IPC), so every
  * surface — the About settings page, the updates overlay — shows the
  * same version, branch, commit, distribution, runtime, and install id
  * from one source of truth.
@@ -84,11 +84,11 @@ export function VersionDetails({ version, channelAction }: { version: DesktopVer
           : null
 
   const runtime =
-    version.hermesRuntime?.type === 'embedded'
+    version.zeusRuntime?.type === 'embedded'
       ? u.versionDetailsRuntimeEmbedded
-      : version.hermesRuntime?.type === 'external' && version.hermesRuntime.source
-        ? runtimeSourceLabel(version.hermesRuntime.source)
-        : version.hermesRuntime?.type === 'external'
+      : version.zeusRuntime?.type === 'external' && version.zeusRuntime.source
+        ? runtimeSourceLabel(version.zeusRuntime.source)
+        : version.zeusRuntime?.type === 'external'
           ? u.versionDetailsRuntimeExternal
           : null
 
@@ -109,7 +109,7 @@ export function VersionDetails({ version, channelAction }: { version: DesktopVer
           <dd className="break-all text-right">
             <ExternalLink
               className="break-all font-mono text-xs"
-              href={`https://github.com/NousResearch/hermes-agent/commit/${version.commit}`}
+              href={`https://github.com/charanbalaji2005/Zeus-Agents/commit/${version.commit}`}
               native
             >
               {version.commit.slice(0, 14)}
@@ -144,7 +144,7 @@ export function VersionDetails({ version, channelAction }: { version: DesktopVer
         <div className="flex justify-between gap-4">
           <dt className="text-muted-foreground">{u.versionDetailsInstallId}</dt>
           <dd className="break-all text-right font-mono text-xs">
-            {version.installId} ({version.hermesRoot})
+            {version.installId} ({version.zeusRoot})
           </dd>
         </div>
       )}

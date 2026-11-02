@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import type { ModelSettingsTranslations } from './types_model_settings'
 import { zhAuxTasks } from './zh_aux_tasks'

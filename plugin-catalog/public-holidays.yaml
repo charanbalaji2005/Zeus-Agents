@@ -5,7 +5,7 @@ description: "Public holidays for 200+ countries and their regions, plus workday
 maintainer: Akloenx123
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/Akloenx123/hermes-public-holidays#readme
 version: "0.1.0"
 readme: true

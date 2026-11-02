@@ -114,7 +114,7 @@ describe('readActivePreview (read_preview tool)', () => {
   it('says a browser-hosted URL tab is unreadable instead of promising a retry', async () => {
     // The Webapp renders URLs in a sandboxed iframe: no page reader can ever
     // register, so "retry in a moment" would loop the agent forever.
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       openPreview(urlTarget('https://example.com'))
@@ -129,7 +129,7 @@ describe('readActivePreview (read_preview tool)', () => {
 
       expect(await readActivePreview()).not.toHaveProperty('surface')
     } finally {
-      delete document.documentElement.dataset.hermesDesktopHost
+      delete document.documentElement.dataset.zeusDesktopHost
     }
   })
 

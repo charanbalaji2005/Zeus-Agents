@@ -27,11 +27,11 @@ _LATER_FIELDS = ('kanban_json', 'safe_mode', 'ignore_user_config', 'skills_promp
 
 def _home(monkeypatch):
     from gateway import run
-    from hermes_constants import get_hermes_home
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
     (home / 'config.yaml').write_text(CONFIG)
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     return home
 
 
@@ -48,7 +48,7 @@ def _older_gateway_reference(policy):
 
 
 def _store_reference(store, sid, ref):
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     def write(conn):
         saved = json.loads(conn.execute('SELECT value FROM state_meta WHERE key=?',
                                         (POLICY_PREFIX + sid,)).fetchone()[0])
@@ -59,7 +59,7 @@ def _store_reference(store, sid, ref):
 
 def _stored_policy(store, sid):
     from gateway.session_policy import restore_policy
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     return restore_policy(local_receipt(store._db, sid)['policy'])
 
 
@@ -86,7 +86,7 @@ async def test_a_reference_stamped_by_an_older_gateway_still_runs_its_session(tm
         # Its values are still gated by their fingerprints: the route key rotated is refused by name.
         (home / 'config.yaml').write_text(CONFIG.replace('route-token', 'rotated-token'))
         fresh = SimpleNamespace(db=store._db, profile_id=cold.profile_id)
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         with pytest.raises(RuntimeStoreError, match='launch_credentials_unavailable') as refused:
             _stored_policy(store, sid).config(fresh)
         assert refused.value.field == 'model.api_key'
@@ -96,7 +96,7 @@ async def test_a_reference_stamped_by_an_older_gateway_still_runs_its_session(tm
 
 @pytest.mark.asyncio
 async def test_model_re_stamps_a_reference_an_older_gateway_wrote(tmp_path, monkeypatch):
-    from hermes_cli import model_switch
+    from zeus_cli import model_switch
     from gateway.session_policy_credentials import PREFIX, policy_identity
     monkeypatch.setattr(model_switch, 'switch_model', lambda **k: model_switch.ModelSwitchResult(
         success=True, new_model='m2', target_provider='custom', base_url='http://127.0.0.1:9/v1'))
@@ -125,7 +125,7 @@ async def test_model_re_stamps_a_reference_an_older_gateway_wrote(tmp_path, monk
 async def test_a_non_secret_profile_edit_keeps_the_session_and_its_model_switch(tmp_path, monkeypatch, edit):
     """The profile edit the issue names, then a restart, a resume (its settings refresh re-stamps the
     reference) and the session's next turn read and ``/model``."""
-    from hermes_cli import model_switch
+    from zeus_cli import model_switch
     monkeypatch.setattr(model_switch, 'switch_model', lambda **k: model_switch.ModelSwitchResult(
         success=True, new_model='m2', target_provider='custom', base_url='http://127.0.0.1:9/v1'))
     home = _home(monkeypatch)
@@ -157,7 +157,7 @@ def _bound_policy(tmp_path, monkeypatch):
     from gateway.session_policy import bind_launch_key, build_policy
     home = tmp_path / 'profile'
     home.mkdir()
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     cfg = {'model': {'provider': 'custom', 'api_key': 'route-token', 'base_url': 'http://127.0.0.1:1234/v1'},
            'mcp_servers': {'docs': {'command': 'docs-mcp', 'env': {'DOCS_TOKEN': 'mcp-token'}}}}
     (home / 'config.yaml').write_text(json.dumps(cfg))
@@ -186,7 +186,7 @@ def test_a_non_secret_policy_change_keeps_the_reference(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize('scope', ['home', 'profile'])
 def test_another_home_or_profile_is_refused_by_name(tmp_path, monkeypatch, scope):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     _home_dir, _cfg, owner, policy = _bound_policy(tmp_path, monkeypatch)
     wrong = owner(path=tmp_path) if scope == 'home' else owner(profile='other')
     with pytest.raises(RuntimeStoreError, match='launch_credentials_unavailable') as refused:
@@ -195,7 +195,7 @@ def test_another_home_or_profile_is_refused_by_name(tmp_path, monkeypatch, scope
 
 
 def test_a_revoked_route_secret_is_still_refused(tmp_path, monkeypatch):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     home, cfg, owner, policy = _bound_policy(tmp_path, monkeypatch)
     del cfg['model']['api_key']
     (home / 'config.yaml').write_text(json.dumps(cfg))
@@ -208,7 +208,7 @@ def test_a_revoked_route_secret_is_still_refused(tmp_path, monkeypatch):
 def test_a_secret_paired_with_a_moved_endpoint_is_refused_by_name(tmp_path, monkeypatch, moved):
     """The scoped check still binds each secret to the endpoint it authenticates in the frozen policy: a
     policy rewrite that repoints it without re-binding never sends the key to the new endpoint."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     _home_dir, _cfg, owner, policy = _bound_policy(tmp_path, monkeypatch)
     config = json.loads(policy.config_json)
     if moved == 'model':
@@ -226,7 +226,7 @@ def _bind(tmp_path, monkeypatch, cfg):
     from gateway.session_policy import bind_launch_key, build_policy
     home = tmp_path / 'profile'
     home.mkdir(exist_ok=True)
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     (home / 'config.yaml').write_text(json.dumps(cfg))
 
     def owner():
@@ -266,7 +266,7 @@ _ROUTED = {
 def test_a_secret_is_bound_to_the_endpoint_its_route_resolves_to(tmp_path, monkeypatch, case):
     """Independent review P2-2: moving the URL the secret actually authenticates, even when it lives in
     another block or under ``api``, refuses the secret by name instead of pairing it with the new URL."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     cfg, mutate, field = _ROUTED[case]
     owner, policy = _bind(tmp_path, monkeypatch, cfg)
     assert policy.config(owner())  # the unmoved policy recovers
@@ -284,7 +284,7 @@ def test_a_legacy_reference_keeps_the_endpoint_guard(tmp_path, monkeypatch):
     """Independent review P2-3: a reference without ``bound`` still matches its own policy (the later
     fields at their defaults are not hashed), but a moved endpoint, or any other policy rewrite its whole-
     policy hash covers, is refused instead of degrading to the fingerprints alone."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     _home_dir, _cfg, owner, policy = _bound_policy(tmp_path, monkeypatch)
     legacy = _legacy(policy)
     assert legacy.config(owner())['model']['api_key'] == 'route-token'
@@ -352,7 +352,7 @@ _SHAPES = {
 
 @pytest.mark.parametrize('case', sorted(_SHAPES))
 def test_every_route_shape_binds_its_secret_to_the_owning_route(tmp_path, monkeypatch, case):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     cfg, mutate, field = _SHAPES[case]
     owner, policy = _bind(tmp_path, monkeypatch, json.loads(json.dumps(cfg)))
     assert policy.config(owner())  # the unmoved policy recovers
@@ -437,7 +437,7 @@ def test_a_moved_route_never_sends_its_frozen_key_to_the_new_endpoint(tmp_path, 
     """The review's wire repro: bind at loopback A, move the frozen route to loopback B without a re-bind,
     and drive the real consumer (the main runtime's fallback walker / the auxiliary client). A's key must
     reach A while the route is unmoved and never reach B."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     seen, urls, servers = _loopback()
     try:
         if route == 'fallback_providers_dict':
@@ -466,7 +466,7 @@ def test_a_moved_route_never_sends_its_frozen_key_to_the_new_endpoint(tmp_path, 
             else:
                 from agent import auxiliary_client
                 from agent.auxiliary_task_config import session_auxiliary_scope
-                from hermes_cli import runtime_provider
+                from zeus_cli import runtime_provider
                 config = frozen.config(authority)
                 with runtime_provider.frozen_runtime_config(config), session_auxiliary_scope(config['auxiliary']):
                     client, model = auxiliary_client.get_text_auxiliary_client('compression')

@@ -13,7 +13,7 @@ from pathlib import Path
 from gateway.config import Platform
 from gateway.session import SessionEntry, SessionSource
 from gateway.session_contract import SessionRef
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 def bind_native_transport(authority, actor, identity):
@@ -36,7 +36,7 @@ def unbind_native_transport(authority, actor):
 def require_history_claim(authority, conn, actor, sid):
     """Import receipts confer ownership; merely knowing an old ID does not."""
     from gateway.owner_identity import same_owner
-    from hermes_state_mutation_binding import BINDING_PREFIX, _owner_user
+    from zeus_state_mutation_binding import BINDING_PREFIX, _owner_user
     row = conn.execute('SELECT * FROM sessions WHERE id=?', (sid,)).fetchone()
     if row is None or row['session_key'] or row['chat_id'] or row['origin_json']:
         return
@@ -55,13 +55,13 @@ def resolve_local_target(authority, actor, sid):
     row = db.get_session(sid)
     if row is None:
         raise RuntimeStoreError('not_found')
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     with db._read_ctx() as conn:
-        from hermes_state_local_migration import LEGACY_PREFIX
+        from zeus_state_local_migration import LEGACY_PREFIX
         bound = conn.execute('SELECT 1 FROM state_meta WHERE key IN (?,?)',
             (POLICY_PREFIX + (row.get('chat_id') or sid), LEGACY_PREFIX + (row.get('chat_id') or sid))).fetchone()
         if bound and row.get('chat_id'):
-            from hermes_state_local import local_lineage_owner
+            from zeus_state_local import local_lineage_owner
             # A copied chat_id is not evidence that this row belongs to the owner's lineage.
             if local_lineage_owner(conn, sid) != row['chat_id']:
                 raise RuntimeStoreError('storage_unavailable')
@@ -83,9 +83,9 @@ def legacy_launch_params(row):
     returned apart.
     """
     params = {key: row[key] for key in ('cwd', 'model') if row.get(key)}
-    from hermes_state_sessions import _parse_model_config
+    from zeus_state_sessions import _parse_model_config
     saved = _parse_model_config(row.get('model_config'))
-    from hermes_state_gateway import SessionGatewayMixin
+    from zeus_state_gateway import SessionGatewayMixin
     route = SessionGatewayMixin.session_gateway_runtime(row)
     route = {key: value.strip() for key, value in route.items() if isinstance(value, str) and value.strip()}
     billing_base_url = row.get('billing_base_url')
@@ -102,7 +102,7 @@ def legacy_launch_params(row):
     if isinstance(reasoning, dict):
         reasoning = 'none' if reasoning.get('enabled') is False else reasoning.get('effort')
     if isinstance(reasoning, str):
-        from hermes_constants import parse_reasoning_effort
+        from zeus_constants import parse_reasoning_effort
         if parse_reasoning_effort(reasoning) is not None:
             params['reasoning'] = reasoning
     tier = saved.get('service_tier')
@@ -120,7 +120,7 @@ def legacy_launch_params(row):
 def bot_chat_row(row):
     """Main's Bot Chat rule for a stored row: the ``follow_profile_config`` marker, or, for a row
     written before the marker existed, the exact title ``Bot Chat``."""
-    from hermes_state_sessions import _parse_model_config
+    from zeus_state_sessions import _parse_model_config
     saved = _parse_model_config(row.get('model_config'))
     return saved.get('follow_profile_config') is True or str(row.get('title') or '').strip() == 'Bot Chat'
 
@@ -128,7 +128,7 @@ def bot_chat_row(row):
 def composer_pick_holds(row, config):
     """Whether *row*'s composer pick still holds: the profile (*config*) targets what it diverged from."""
     from gateway.session_policy import profile_target
-    from hermes_state_sessions import _parse_model_config
+    from zeus_state_sessions import _parse_model_config
     composer = _parse_model_config(row.get('model_config')).get('composer_override_profile')
     return isinstance(composer, dict) and (
         str(composer.get('model') or '').strip(), str(composer.get('provider') or '').strip(),
@@ -175,7 +175,7 @@ def follow_bot_chat(authority, session_id, policy, live, picked=()):
         titled = db.get_session_by_title('Bot Chat')
         if titled is None:
             return policy
-        from hermes_state_local import local_conversation_ids
+        from zeus_state_local import local_conversation_ids
         with db._read_ctx() as conn:
             if titled['id'] not in local_conversation_ids(conn, session_id):
                 return policy
@@ -197,7 +197,7 @@ def _route_is_usage_stamp(row):
     usage stamp: no ``gateway_runtime`` and no top-level ``provider``/``base_url`` in ``model_config``.
     That stamp records which endpoint billed the last turn (the profile's route at the time), not a
     route the user picked for this session."""
-    from hermes_state_sessions import _parse_model_config
+    from zeus_state_sessions import _parse_model_config
     saved = _parse_model_config(row.get('model_config'))
     runtime = saved.get('gateway_runtime')
     if isinstance(runtime, dict) and runtime.get('provider'):
@@ -241,14 +241,14 @@ def adopt_legacy_session(authority, actor, row):
     if (getattr(authority, '_native_legacy_transports', {}).get(actor.transport_id) != actor
             or not {'session:read', 'session:create'} <= actor.capabilities):
         raise RuntimeStoreError('not_found')
-    from hermes_state_local_migration import LEGACY_CREATION_SOURCES, validate_legacy_row
+    from zeus_state_local_migration import LEGACY_CREATION_SOURCES, validate_legacy_row
     validate_legacy_row(authority.db, row, subject=actor.subject)
     authority._require_admission_open()
     from gateway.run import _load_gateway_config, _resolve_gateway_model
     from gateway.session_policy import build_policy, bind_launch_key
     from gateway.session_local_recovery import restore_local_session
-    from hermes_state_local import commit_local_session
-    from hermes_cli.active_sessions import active_session_liveness_guard, ActiveSessionRegistryError
+    from zeus_state_local import commit_local_session
+    from zeus_cli.active_sessions import active_session_liveness_guard, ActiveSessionRegistryError
 
     request_id = 'legacy:' + row['id']
     sid = row['id']

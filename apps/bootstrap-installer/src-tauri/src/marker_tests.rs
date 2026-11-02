@@ -6,7 +6,7 @@ use super::*;
 fn update_marker_guard_writes_then_removes_on_drop() {
     let dir = unique_tmp_dir("marker-guard");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     {
         let _g = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
@@ -43,7 +43,7 @@ fn update_marker_guard_writes_then_removes_on_drop() {
 fn update_marker_guard_drop_is_quiet_when_already_gone() {
     let dir = unique_tmp_dir("marker-guard-gone");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     let guard = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
         .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
@@ -85,11 +85,11 @@ fn spawn_foreign_holder() -> std::process::Child {
 fn acquire_refuses_while_a_live_updater_owns_the_marker() {
     let dir = unique_tmp_dir("marker-contended");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     // A live *foreign* updater holds it. We must NOT clobber the marker and
     // run concurrently over the same checkout — that race is what let a
-    // dashboard `hermes update` and install-mode bootstrap mutate one tree
+    // dashboard `zeus update` and install-mode bootstrap mutate one tree
     // at once. Own-pid markers are adoptable (#74761), so the foreign pid
     // must be a real sibling process.
     let mut foreign = spawn_foreign_holder();
@@ -123,7 +123,7 @@ fn own_pid_v1_prewrite_is_a_previous_incarnation_and_reclaimed() {
     // It is dead: reclaimed under the mutex and replaced by our exact v2 claim.
     let dir = unique_tmp_dir("marker-own-pid");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, format!("{me}\n{}", now_secs() - 2)).unwrap();
 
@@ -141,7 +141,7 @@ fn own_pid_v1_prewrite_is_a_previous_incarnation_and_reclaimed() {
 fn own_pid_with_a_creation_time_6ms_off_is_not_us() {
     // R12: the 2 s foreign tolerance never applies to our own pid.
     let dir = unique_tmp_dir("marker-own-pid-6ms");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, now_secs(), ct_of(me) - 0.006)).unwrap();
     assert!(live_marker_owner(&marker).is_none());
@@ -154,7 +154,7 @@ fn own_pid_with_a_creation_time_6ms_off_is_not_us() {
 
 // ---- exit-2 self-marker heal (#75788) --------------------------------
 // The deadlock: the updater holds the marker with its own PID; a stale
-// checkout's `hermes update` reads it as a live foreign update and exits
+// checkout's `zeus update` reads it as a live foreign update and exits
 // 2; the generic retry deliberately skips exit 2 — so the refusal loops
 // forever. These tests pin the heal decision's full contract. On
 // merge-base product code (no heal) the decision function does not exist
@@ -163,7 +163,7 @@ fn own_pid_with_a_creation_time_6ms_off_is_not_us() {
 #[test]
 fn self_owned_marker_plus_exit_2_heals() {
     let dir = unique_tmp_dir("heal-self-owned");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, 123, ct_of(me))).unwrap();
 
@@ -188,7 +188,7 @@ fn self_owned_marker_plus_exit_2_heals() {
 #[test]
 fn foreign_owned_marker_never_heals() {
     let dir = unique_tmp_dir("heal-foreign");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     // A live sibling process stands in for a genuinely concurrent updater.
     let mut foreign = spawn_foreign_holder();
     std::fs::write(&marker, format!("{}\n123\n", foreign.id())).unwrap();
@@ -219,7 +219,7 @@ fn missing_or_garbage_marker_never_heals() {
         "no marker on disk = the child refused over something else entirely"
     );
 
-    let garbage = dir.join(".hermes-update-in-progress");
+    let garbage = dir.join(".zeus-update-in-progress");
     std::fs::write(&garbage, "not-a-pid\n123\n").unwrap();
     assert!(
         !should_heal_self_marker_refusal(
@@ -235,7 +235,7 @@ fn missing_or_garbage_marker_never_heals() {
 #[test]
 fn non_exit_2_outcomes_never_heal() {
     let dir = unique_tmp_dir("heal-wrong-exit");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, 123, ct_of(me))).unwrap();
 
@@ -256,7 +256,7 @@ fn heal_end_to_end_marker_lifecycle() {
     // complete() drops the claim → the retry's precondition (no marker,
     // or a marker the child can now claim) holds.
     let dir = unique_tmp_dir("heal-e2e");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     let guard = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
         .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
@@ -280,7 +280,7 @@ fn heal_end_to_end_marker_lifecycle() {
     );
 
     // And with the marker gone the heal can never fire twice (the retry's
-    // own exit 2, e.g. a genuinely still-running Hermes, stays terminal).
+    // own exit 2, e.g. a genuinely still-running Zeus, stays terminal).
     assert!(!should_heal_self_marker_refusal(
         Some(UPDATE_EXIT_CONCURRENT),
         &marker,
@@ -293,7 +293,7 @@ fn heal_end_to_end_marker_lifecycle() {
 fn acquire_reclaims_a_marker_owned_by_a_dead_pid() {
     let dir = unique_tmp_dir("marker-dead-pid");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     // pid 1 exists everywhere, so fabricate a dead one: a very large pid
     // that no live process owns. A crashed updater must never wedge every
@@ -320,7 +320,7 @@ fn acquire_reclaims_a_marker_owned_by_a_dead_pid() {
 fn acquire_reclaims_a_marker_past_the_age_ceiling() {
     let dir = unique_tmp_dir("marker-stale-age");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     // LEGACY v1 marker (no ct line): our own live pid, but started past
     // the ceiling. Without a creation time the pid may be recycled, so
@@ -346,7 +346,7 @@ fn live_marker_owner_removes_stale_marker_with_dead_pid() {
     // ignored — otherwise the stale bytes keep failing every acquire
     // until the 20-minute age ceiling expires.
     let dir = unique_tmp_dir("marker-read-dead");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let started_at = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -367,7 +367,7 @@ fn live_marker_owner_removes_stale_marker_with_dead_pid() {
 #[test]
 fn live_marker_owner_removes_marker_past_the_age_ceiling() {
     let dir = unique_tmp_dir("marker-read-stale-age");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     // LEGACY v1 marker (no ct line): our own live pid, but started past
     // the ceiling: age alone must stale a v1 claim, and the stale file
     // must not survive to wedge the next run.
@@ -391,7 +391,7 @@ fn live_marker_owner_removes_malformed_marker() {
     // A torn write (garbage pid line) is not a live update either; leaving
     // it would wedge every future acquire the same way a dead pid does.
     let dir = unique_tmp_dir("marker-read-malformed");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     std::fs::write(&marker, "not-a-pid\n").unwrap();
 
     assert!(live_marker_owner(&marker).is_none());
@@ -408,7 +408,7 @@ fn live_marker_owner_keeps_live_foreign_marker() {
     // let two updaters mutate one checkout concurrently.
     let mut foreign = spawn_foreign_holder();
     let dir = unique_tmp_dir("marker-read-live-foreign");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let started_at = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
@@ -431,7 +431,7 @@ fn live_marker_owner_keeps_own_live_marker() {
     // A claim that is our exact incarnation is reported (so `acquire` adopts it), never
     // deleted as stale.
     let dir = unique_tmp_dir("marker-read-own-live");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, now_secs(), ct_of(me))).unwrap();
 
@@ -581,7 +581,7 @@ fn pid_is_alive_false_for_zombie() {
 fn completed_update_releases_marker_before_guard_drop() {
     let dir = unique_tmp_dir("marker-complete");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
 
     let guard = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
         .unwrap_or_else(|_| panic!("no live owner => acquire must succeed"));
@@ -620,7 +620,7 @@ fn v2_live_owner_is_never_aged_out() {
     // lock from a slow but healthy update.
     let mut foreign = spawn_foreign_holder();
     let dir = unique_tmp_dir("marker-v2-old-live");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let body = v2_body(foreign.id(), now_secs() - 25 * 60, ct_of(foreign.id()));
     std::fs::write(&marker, &body).unwrap();
 
@@ -641,7 +641,7 @@ fn v2_marker_with_mismatched_creation_time_is_reclaimed() {
     // V22: a live pid whose creation time differs from the recorded one is
     // a recycled pid, not the owner — the marker is dead.
     let dir = unique_tmp_dir("marker-v2-ct-mismatch");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, now_secs(), ct_of(me) + 100.0)).unwrap();
 
@@ -662,7 +662,7 @@ fn v2_marker_with_mismatched_creation_time_is_reclaimed() {
 #[test]
 #[ignore = "spawned by second_claimant_process_is_refused_by_exclusive_publish"]
 fn marker_claim_child_helper() {
-    let Some(path) = std::env::var_os("HERMES_TEST_MARKER_CLAIM_PATH") else {
+    let Some(path) = std::env::var_os("ZEUS_TEST_MARKER_CLAIM_PATH") else {
         return;
     };
     let path = PathBuf::from(path);
@@ -686,7 +686,7 @@ fn run_claim_child(marker: &Path) -> (i32, u32) {
     );
     let child = std::process::Command::new(std::env::current_exe().unwrap())
         .args([test_name.as_str(), "--exact", "--ignored", "--nocapture"])
-        .env("HERMES_TEST_MARKER_CLAIM_PATH", marker)
+        .env("ZEUS_TEST_MARKER_CLAIM_PATH", marker)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
@@ -701,7 +701,7 @@ fn second_claimant_process_is_refused_by_exclusive_publish() {
     // V4: the claim is an exclusive publish, so a second updater process
     // racing a fresh claim is refused and never truncates our bytes.
     let dir = unique_tmp_dir("marker-exclusive");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let guard = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
         .unwrap_or_else(|_| panic!("fresh acquire must succeed"));
     let ours = std::fs::read(&marker).unwrap();
@@ -732,7 +732,7 @@ fn compare_and_delete_spares_changed_bytes() {
     // V4: a delete decided on earlier bytes must not remove a marker that
     // was replaced since (a new claim, or our claim plus a delegate line).
     let dir = unique_tmp_dir("marker-cas");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     std::fs::write(&marker, "2147483647\n1\n").unwrap();
     assert!(!compare_and_delete(&marker, b"2147483647\n0\n"));
     assert!(
@@ -758,11 +758,11 @@ fn compare_and_delete_spares_changed_bytes() {
 
 #[test]
 fn live_delegate_keeps_a_dead_owner_marker_live() {
-    // Rule 6: `hermes update` running under a claim appends line 4; the
+    // Rule 6: `zeus update` running under a claim appends line 4; the
     // marker is live while EITHER the owner or the delegate is.
     let mut foreign = spawn_foreign_holder();
     let dir = unique_tmp_dir("marker-delegate");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let delegate = format!("delegate:{} ct:{:.3}\n", foreign.id(), ct_of(foreign.id()));
     let body = format!("{}{delegate}", v2_body(2147483647, now_secs(), 1.0));
     std::fs::write(&marker, &body).unwrap();
@@ -887,7 +887,7 @@ fn parse_matrix_follows_the_shared_contract() {
 fn malformed_started_at_marker_is_dead_and_deleted() {
     // Our own live pid, but a fractional line 2: malformed, so dead.
     let dir = unique_tmp_dir("marker-fractional");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     std::fs::write(
         &marker,
         format!("{}\n{}.5\n", std::process::id(), now_secs()),
@@ -1052,7 +1052,7 @@ fn fresh_empty_marker_is_a_claim_in_flight() {
     // A3: a 0-byte marker younger than 5 s is a claimant between its
     // exclusive create and its write — live, and never deleted.
     let dir = unique_tmp_dir("marker-empty-fresh");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     std::fs::write(&marker, "").unwrap();
     assert_eq!(
         busy(UpdateMarkerGuard::acquire(
@@ -1073,7 +1073,7 @@ fn fresh_empty_marker_is_a_claim_in_flight() {
 #[test]
 fn old_empty_marker_is_reclaimed_and_claim_leaves_no_tmp() {
     let dir = unique_tmp_dir("marker-empty-old");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let file = std::fs::File::create(&marker).unwrap();
     file.set_modified(SystemTime::now() - Duration::from_secs(10))
         .unwrap();
@@ -1101,7 +1101,7 @@ fn own_exact_v2_claim_is_adopted_verbatim_and_released() {
     // Our exact incarnation's claim (any age) is adopted byte-for-byte; complete() releases it.
     let me = std::process::id();
     let dir = unique_tmp_dir("marker-own-v2");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let body = v2_body(me, now_secs() - 25 * 60, ct_of(me));
     std::fs::write(&marker, &body).unwrap();
     let guard = UpdateMarkerGuard::acquire(marker.clone(), &install_root_of(&marker))
@@ -1128,7 +1128,7 @@ fn marker_under_a_regular_file_is_unwritable() {
     let dir = unique_tmp_dir("marker-under-file");
     let not_a_dir = dir.join("home");
     std::fs::write(&not_a_dir, "x").unwrap();
-    let marker = not_a_dir.join(".hermes-update-in-progress");
+    let marker = not_a_dir.join(".zeus-update-in-progress");
     let msg = unwritable_message(UpdateMarkerGuard::acquire(
         marker.clone(),
         &install_root_of(&marker),
@@ -1151,7 +1151,7 @@ fn marker_in_a_read_only_dir_is_unwritable() {
     // No marker yet, and a dead marker that cannot be removed: both refuse.
     for existing in [None, Some(format!("2147483647\n{}\n", now_secs()))] {
         let dir = unique_tmp_dir("marker-read-only");
-        let marker = dir.join(".hermes-update-in-progress");
+        let marker = dir.join(".zeus-update-in-progress");
         if let Some(body) = &existing {
             std::fs::write(&marker, body).unwrap();
         }
@@ -1171,14 +1171,14 @@ fn marker_in_a_read_only_dir_is_unwritable() {
 fn claim_sweeps_dead_claimants_tmp_litter() {
     // m10: a claimant that died mid-publish leaves its tmp sibling.
     let dir = unique_tmp_dir("marker-litter");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
     let dead = [
-        ".hermes-update-in-progress.2147483647.123.tmp",
-        ".hermes-update-in-progress.2147483647.tmp",
+        ".zeus-update-in-progress.2147483647.123.tmp",
+        ".zeus-update-in-progress.2147483647.tmp",
     ];
     let kept = [
-        format!(".hermes-update-in-progress.{me}.123.tmp"),
+        format!(".zeus-update-in-progress.{me}.123.tmp"),
         "other.2147483647.123.tmp".to_string(),
     ];
     for name in dead
@@ -1205,10 +1205,10 @@ fn stale_tmp_under_our_own_pid_number_is_swept() {
     // Containers reuse pid numbers every boot: a tmp a previous holder of our pid left is
     // litter once it is older than any write of ours; a fresh one may be in flight.
     let dir = unique_tmp_dir("marker-own-pid-litter");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let me = std::process::id();
-    let stale = dir.join(format!(".hermes-update-in-progress.{me}.deadbeef.tmp"));
-    let fresh = dir.join(format!(".hermes-update-in-progress.{me}.cafe.tmp"));
+    let stale = dir.join(format!(".zeus-update-in-progress.{me}.deadbeef.tmp"));
+    let fresh = dir.join(format!(".zeus-update-in-progress.{me}.cafe.tmp"));
     std::fs::write(&fresh, "").unwrap();
     let file = std::fs::File::create(&stale).unwrap();
     file.set_modified(SystemTime::now() - Duration::from_secs(3600))
@@ -1232,14 +1232,14 @@ fn busy(result: Result<UpdateMarkerGuard, AcquireError>) -> MarkerOwner {
     }
 }
 
-/// The install root a marker guards, laid out as in production: `<HERMES_HOME>/hermes-agent`.
+/// The install root a marker guards, laid out as in production: `<ZEUS_HOME>/zeus-agents`.
 fn install_root_of(marker: &Path) -> PathBuf {
-    marker.with_file_name("hermes-agent")
+    marker.with_file_name("zeus-agents")
 }
 
 fn unique_tmp_dir(tag: &str) -> PathBuf {
     let base = std::env::temp_dir().join(format!(
-        "hermes-marker-test-{tag}-{}-{}",
+        "zeus-marker-test-{tag}-{}-{}",
         std::process::id(),
         std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -1253,7 +1253,7 @@ fn unique_tmp_dir(tag: &str) -> PathBuf {
 // ---- R6: a dead marker is never reclaimed while the checkout lock is held ----
 
 /// Take `lock`'s checkout kernel lock on its OWN open file description, as a process an
-/// earlier `hermes update` started would; held until the returned file is dropped.
+/// earlier `zeus update` started would; held until the returned file is dropped.
 fn hold_checkout_lock(lock: &Path) -> std::fs::File {
     std::fs::create_dir_all(lock.parent().unwrap()).unwrap();
     let file = std::fs::OpenOptions::new()
@@ -1304,21 +1304,21 @@ fn release_checkout_lock(holder: std::fs::File, install: &Path) {
 
 #[test]
 fn checkout_lock_path_follows_the_git_common_dir() {
-    // update_lock.py::checkout_lock_path: <common git dir>/hermes-update.lock, else
-    // <root>/.hermes-update.lock.
+    // update_lock.py::checkout_lock_path: <common git dir>/zeus-update.lock, else
+    // <root>/.zeus-update.lock.
     let dir = unique_tmp_dir("checkout-lock-path");
     let plain = dir.join("plain");
     std::fs::create_dir_all(&plain).unwrap();
     assert_eq!(
         checkout_lock_path(&plain),
-        plain.join(".hermes-update.lock")
+        plain.join(".zeus-update.lock")
     );
 
     let repo = dir.join("repo");
     std::fs::create_dir_all(repo.join(".git").join("worktrees").join("wt")).unwrap();
     assert_eq!(
         checkout_lock_path(&repo),
-        repo.join(".git").join("hermes-update.lock")
+        repo.join(".git").join("zeus-update.lock")
     );
 
     // A linked worktree: `.git` is a `gitdir:` file whose target names the shared dir.
@@ -1335,7 +1335,7 @@ fn checkout_lock_path_follows_the_git_common_dir() {
     .unwrap();
     assert_eq!(
         checkout_lock_path(&worktree),
-        repo.join(".git").join("hermes-update.lock")
+        repo.join(".git").join("zeus-update.lock")
     );
     let _ = std::fs::remove_dir_all(&dir);
 }
@@ -1352,7 +1352,7 @@ fn checkout_lock_held_sees_a_lease_without_its_owner() {
     use windows_sys::Win32::System::IO::OVERLAPPED;
 
     let dir = unique_tmp_dir("checkout-lease-held");
-    let install = dir.join("hermes-agent");
+    let install = dir.join("zeus-agents");
     std::fs::create_dir_all(install.join(".git")).unwrap();
     let lock = checkout_lock_path(&install);
     let lease = std::fs::OpenOptions::new()
@@ -1380,7 +1380,7 @@ fn checkout_lock_held_sees_a_lease_without_its_owner() {
 #[test]
 fn checkout_lock_held_sees_another_open_file_holding_it() {
     let dir = unique_tmp_dir("checkout-lock-held");
-    let install = dir.join("hermes-agent");
+    let install = dir.join("zeus-agents");
     std::fs::create_dir_all(install.join(".git")).unwrap();
     assert!(
         !checkout_lock_held(&install),
@@ -1403,12 +1403,12 @@ fn dead_marker_is_never_reclaimed_while_the_checkout_lock_is_held() {
     // checkout lock (and still mutates the install). Neither a claimer nor a reader may
     // delete the marker then: the claim is refused as `held` and the bytes stay on disk.
     let dir = unique_tmp_dir("marker-dead-held");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let install = install_root_of(&marker);
     std::fs::create_dir_all(install.join(".git")).unwrap();
     let body = format!("2147483647\n{}\n", now_secs() - 90);
     std::fs::write(&marker, &body).unwrap();
-    let holder = hold_checkout_lock(&install.join(".git").join("hermes-update.lock"));
+    let holder = hold_checkout_lock(&install.join(".git").join("zeus-update.lock"));
 
     let owner = busy(UpdateMarkerGuard::acquire(marker.clone(), &install));
     assert!(owner.held, "the refusal names the held checkout");
@@ -1444,11 +1444,11 @@ fn self_owned_marker_never_heals_while_the_checkout_lock_is_held() {
     // An exit 2 over our own claim while some process holds the checkout lock is a real
     // concurrent update (R6): the refusal stands. The plain (no `.git`) lock path is used.
     let dir = unique_tmp_dir("heal-held");
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     let install = install_root_of(&marker);
     let me = std::process::id();
     std::fs::write(&marker, v2_body(me, 123, ct_of(me))).unwrap();
-    let holder = hold_checkout_lock(&install.join(".hermes-update.lock"));
+    let holder = hold_checkout_lock(&install.join(".zeus-update.lock"));
 
     assert!(
         !should_heal_self_marker_refusal(Some(UPDATE_EXIT_CONCURRENT), &marker, &install),
@@ -1470,7 +1470,7 @@ fn self_owned_marker_never_heals_while_the_checkout_lock_is_held() {
 #[test]
 #[ignore = "spawned by marker_mutations_wait_for_the_mutex_another_process_holds"]
 fn marker_mutex_child_helper() {
-    let Some(path) = std::env::var_os("HERMES_TEST_MARKER_MUTEX_PATH") else {
+    let Some(path) = std::env::var_os("ZEUS_TEST_MARKER_MUTEX_PATH") else {
         return;
     };
     let path = PathBuf::from(path);
@@ -1486,7 +1486,7 @@ fn marker_mutations_wait_for_the_mutex_another_process_holds() {
     // holds that lock (as a paused reader would): our reclaim of a dead marker waits for it.
     let dir = unique_tmp_dir("marker-mutex");
     std::fs::create_dir_all(&dir).unwrap();
-    let marker = dir.join(".hermes-update-in-progress");
+    let marker = dir.join(".zeus-update-in-progress");
     std::fs::write(&marker, "0\n0\n").unwrap();
     let module = module_path!();
     let test_name = format!(
@@ -1495,7 +1495,7 @@ fn marker_mutations_wait_for_the_mutex_another_process_holds() {
     );
     let mut child = std::process::Command::new(std::env::current_exe().unwrap())
         .args([test_name.as_str(), "--exact", "--ignored", "--nocapture"])
-        .env("HERMES_TEST_MARKER_MUTEX_PATH", &marker)
+        .env("ZEUS_TEST_MARKER_MUTEX_PATH", &marker)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()

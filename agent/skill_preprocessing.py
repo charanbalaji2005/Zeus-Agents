@@ -1,4 +1,4 @@
-"""Shared SKILL.md preprocessing helpers: ``${HERMES_*}`` template tokens and
+"""Shared SKILL.md preprocessing helpers: ``${ZEUS_*}`` template tokens and
 inline ``!`cmd``` shell expansion."""
 
 import json
@@ -8,13 +8,13 @@ import subprocess
 from pathlib import Path
 
 from agent.compression_marker import elide
-from hermes_cli._subprocess_compat import IS_WINDOWS, windows_hide_flags
+from zeus_cli._subprocess_compat import IS_WINDOWS, windows_hide_flags
 
 logger = logging.getLogger(__name__)
 
-# ${HERMES_SKILL_DIR} / ${HERMES_SESSION_ID} tokens. Unresolvable ones (e.g. no
+# ${ZEUS_SKILL_DIR} / ${ZEUS_SESSION_ID} tokens. Unresolvable ones (e.g. no
 # session) are left as-is so the author can spot them.
-_SKILL_TEMPLATE_RE = re.compile(r"\$\{(HERMES_SKILL_DIR|HERMES_SESSION_ID)\}")
+_SKILL_TEMPLATE_RE = re.compile(r"\$\{(ZEUS_SKILL_DIR|ZEUS_SESSION_ID)\}")
 # Inline shell snippets like !`date +%Y-%m-%d` — single-line only.
 _INLINE_SHELL_RE = re.compile(r"!`([^`\n]+)`")
 # Cap inline-shell output so a runaway command can't blow out the context.
@@ -24,7 +24,7 @@ _INLINE_SHELL_MAX_OUTPUT = 4000
 def load_skills_config() -> dict:
     """Load the ``skills`` section of config.yaml (best-effort)."""
     try:
-        from hermes_cli.config import load_config_readonly
+        from zeus_cli.config import load_config_readonly
         skills_cfg = (load_config_readonly() or {}).get("skills")
         if isinstance(skills_cfg, dict):
             return skills_cfg
@@ -34,12 +34,12 @@ def load_skills_config() -> dict:
 
 
 def substitute_template_vars(content: str, skill_dir: Path | None, session_id: str | None) -> str:
-    """Replace ${HERMES_SKILL_DIR} / ${HERMES_SESSION_ID}; tokens without a value stay in place."""
+    """Replace ${ZEUS_SKILL_DIR} / ${ZEUS_SESSION_ID}; tokens without a value stay in place."""
     if not content:
         return content
     values = {
-        "HERMES_SKILL_DIR": str(skill_dir) if skill_dir else None,
-        "HERMES_SESSION_ID": str(session_id) if session_id else None,
+        "ZEUS_SKILL_DIR": str(skill_dir) if skill_dir else None,
+        "ZEUS_SESSION_ID": str(session_id) if session_id else None,
     }
     return _SKILL_TEMPLATE_RE.sub(lambda m: values[m.group(1)] or m.group(0), content)
 

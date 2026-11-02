@@ -7,7 +7,7 @@ description: >-
 maintainer: Cody292
 tier: community
 category: general
-requires_hermes: '>=0.19'
+requires_zeus: '>=0.19'
 docs_url: https://github.com/Cody292/hermes-zh
 version: "0.1.7"
 platforms: []

@@ -14,7 +14,7 @@ import { ProfileRail } from './profile-switcher'
 
 vi.hoisted(() => {
   // The bridge marks the page before the rail module decides it is always condensed.
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 })
 
 const selectProfile = vi.fn()
@@ -93,7 +93,7 @@ vi.mock('@/store/profile-share', () => ({ runExportProfileFlow: vi.fn(), runImpo
 vi.mock('./use-profile-prewarm', () => ({
   useProfilePrewarm: () => ({ cancelPrewarm: vi.fn(), notePointerMove: vi.fn(), startPrewarm: vi.fn() })
 }))
-vi.mock('@/hermes', () => ({ getProfileSoul: vi.fn().mockResolvedValue({ content: '' }), updateProfileSoul: vi.fn() }))
+vi.mock('@/zeus', () => ({ getProfileSoul: vi.fn().mockResolvedValue({ content: '' }), updateProfileSoul: vi.fn() }))
 vi.mock('@/components/chat/code-editor', () => ({ CodeEditor: () => null }))
 vi.mock('../../profiles/create-profile-dialog', () => ({ CreateProfileDialog: () => null }))
 vi.mock('../../profiles/delete-profile-dialog', () => ({ DeleteProfileDialog: () => null }))
@@ -105,7 +105,7 @@ function standaloneRoster(): DesktopAgentRoster {
     connectionId: 'local',
     connectionKind: 'local' as const,
     connectionLabel: 'localhost:9119',
-    handle: profile === 'default' ? 'hermes' : profile,
+    handle: profile === 'default' ? 'zeus' : profile,
     profile,
     targetProfile: profile,
     ...(served ? {} : { reachable: false })
@@ -121,14 +121,14 @@ function standaloneRoster(): DesktopAgentRoster {
 const getAgentRoster = vi.fn(async () => standaloneRoster())
 
 beforeEach(() => {
-  Object.assign(window, { hermesDesktop: { getAgentRoster } })
+  Object.assign(window, { zeusDesktop: { getAgentRoster } })
 })
 
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 })
 
 async function openMenu(trigger: HTMLElement) {
@@ -177,7 +177,7 @@ it("the rail's profile menu shows them the same way, and its home pill offers no
 })
 
 it('native Desktop with one gateway reads no roster for the menu and marks nothing', async () => {
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
   render(<ProfileSwitcher compact />)
   await openMenu(screen.getByRole('button', { name: 'Profiles: solo' }))
 

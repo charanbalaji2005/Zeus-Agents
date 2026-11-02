@@ -5,7 +5,7 @@ description: Model-aware prompt rewriting with quality scoring, analytics, and c
 maintainer: Sahil-SS9
 tier: community
 category: tools
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/Sahil-SS9/hermes-multichannel-prompt-optimizer
 platforms: []
 capabilities:

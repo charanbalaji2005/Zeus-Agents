@@ -2,7 +2,7 @@
  * Consume the detached update hand-off's result file (#82328 follow-up).
  *
  * scripts/desktop-update/windows.ps1 runs hidden/detached — the user never sees its
- * console. It writes HERMES_HOME/.hermes-update-result.json on every exit
+ * console. It writes ZEUS_HOME/.zeus-update-result.json on every exit
  * path; the relaunched Desktop reads it exactly once on boot and surfaces
  * failures (a silent failed update looks identical to "nothing happened",
  * which is how the 2026-08-09 'closed the app then nothing' report was
@@ -13,7 +13,7 @@
  * manual:true results are exempt from the freshness window. They are the
  * durable action-required channel — on a browserless Linux box with no
  * working notifier, the boot dialog is the FIRST and ONLY place the message
- * ever surfaces, and the user may not reopen Hermes within 30 minutes.
+ * ever surfaces, and the user may not reopen Zeus within 30 minutes.
  * Dropping it as stale strands exactly the machine it exists to serve. It is
  * still consumed once (the file is unlinked before any age check), so it
  * cannot resurface on a later boot.
@@ -46,7 +46,7 @@ export interface HandoffResult {
   runId: string | null
   /** C2: `ok:true` with follow-up work that failed after the commit point. */
   warnings: string[]
-  /** #101789: programs outside Hermes whose working folder blocked the Desktop app swap. */
+  /** #101789: programs outside Zeus whose working folder blocked the Desktop app swap. */
   releaseHolders: ReleaseHolder[]
 }
 
@@ -77,8 +77,8 @@ function toReleaseHolders(raw: unknown): ReleaseHolder[] {
     )
 }
 
-export function handoffResultPath(hermesHome: string): string {
-  return path.join(hermesHome, '.hermes-update-result.json')
+export function handoffResultPath(zeusHome: string): string {
+  return path.join(zeusHome, '.zeus-update-result.json')
 }
 
 /** Read, parse, then consume the result file; null when absent or unparseable (a JSON `null` body is
@@ -186,7 +186,7 @@ function toHandoffResult(parsed: any, manual: boolean): HandoffResult {
  * time inside the run (started_at..finished_at), never as its exact start.
  */
 export function readAndConsumeHandoffResult(
-  hermesHome: string,
+  zeusHome: string,
   {
     now = Date.now,
     maxAgeMs = HANDOFF_RESULT_MAX_AGE_MS,
@@ -201,7 +201,7 @@ export function readAndConsumeHandoffResult(
     log?: (line: string) => void
   } = {}
 ): HandoffResult | null {
-  const consumed = consumeHandoffResultFile(handoffResultPath(hermesHome), log)
+  const consumed = consumeHandoffResultFile(handoffResultPath(zeusHome), log)
 
   if (consumed === null) {
     return null

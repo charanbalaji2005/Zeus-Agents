@@ -33,8 +33,8 @@
  * we never disable the GPU pipeline wholesale.
  *
  * Skipped when a remote display already forced software rendering, under WSLg
- * (vGPU is healthy there), or when `HERMES_DESKTOP_DISABLE_GPU=0` keeps the
- * GPU on. `HERMES_DESKTOP_NVIDIA_SWIFTSHADER=1` forces the fallback on;
+ * (vGPU is healthy there), or when `ZEUS_DESKTOP_DISABLE_GPU=0` keeps the
+ * GPU on. `ZEUS_DESKTOP_NVIDIA_SWIFTSHADER=1` forces the fallback on;
  * `=0` opts out entirely.
  *
  * Pure + dependency-free so it can be unit-tested and called before app ready.
@@ -202,7 +202,7 @@ export interface NvidiaEglFallbackDecision {
  * - `ok` or no marker → boot with hardware GL, write `booting` so a death
  *   mid-boot is attributable.
  *
- * The env override `HERMES_DESKTOP_NVIDIA_SWIFTSHADER=1` forces the fallback
+ * The env override `ZEUS_DESKTOP_NVIDIA_SWIFTSHADER=1` forces the fallback
  * on regardless of the marker; `=0` keeps it off during startup and GPU death.
  * The lock owner records a healthy boot or clean exit before removing the override.
  */
@@ -234,8 +234,8 @@ export function nvidiaEglFallbackAllowed(options: NvidiaEglFallbackOptions): boo
     options.driverMajor !== null &&
     !options.isWsl &&
     !options.remoteDisplayReason &&
-    !off('HERMES_DESKTOP_NVIDIA_SWIFTSHADER') &&
-    !off('HERMES_DESKTOP_DISABLE_GPU')
+    !off('ZEUS_DESKTOP_NVIDIA_SWIFTSHADER') &&
+    !off('ZEUS_DESKTOP_DISABLE_GPU')
   )
 }
 
@@ -255,12 +255,12 @@ export function decideNvidiaEglFallback(options: NvidiaEglFallbackOptions): Nvid
     return { enable: false, reason: null, nextMarker: bootMarker }
   }
 
-  const nvidiaOverride = String(env.HERMES_DESKTOP_NVIDIA_SWIFTSHADER || '')
+  const nvidiaOverride = String(env.ZEUS_DESKTOP_NVIDIA_SWIFTSHADER || '')
     .trim()
     .toLowerCase()
 
   if (OVERRIDE_ON.has(nvidiaOverride)) {
-    return { enable: true, reason: 'override (HERMES_DESKTOP_NVIDIA_SWIFTSHADER)', nextMarker: bootMarker }
+    return { enable: true, reason: 'override (ZEUS_DESKTOP_NVIDIA_SWIFTSHADER)', nextMarker: bootMarker }
   }
 
   const sameBuild =

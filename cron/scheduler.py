@@ -1,6 +1,6 @@
 # health: allow FILE_LINES -- security fix for #82010: distinguish an explicitly-empty toolset allowlist (fail closed, nothing allowed) from an absent one (no restriction); the added lines are minimal fail-closed branches at this existing chokepoint. Also #141468: match the `mcp-<server>` toolset spelling so a narrow job's MCP allowlist is not widened into every enabled server — a minimal branch at the same chokepoint.
 """Cron job scheduler: tick() runs due jobs (gateway calls it every 60s from a background thread).
-A file lock (~/.hermes/cron/.tick.lock) keeps overlapping processes to one tick at a time.
+A file lock (~/.zeus/cron/.tick.lock) keeps overlapping processes to one tick at a time.
 """
 
 import atexit
@@ -33,19 +33,19 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
 # Must precede repo-level imports: standalone invocations (e.g. module reload after
-# `hermes update`) otherwise fail with ModuleNotFoundError for hermes_time et al.
+# `zeus update`) otherwise fail with ModuleNotFoundError for zeus_time et al.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from cron.worker_bootstrap import WORKER_MARKER, finish_worker_boot
-from hermes_constants import get_hermes_home, hermes_home_key
-from hermes_cli.observability.shared_metrics_gateway import note_cron_execution, note_cron_skipped
+from zeus_constants import get_zeus_home, zeus_home_key
+from zeus_cli.observability.shared_metrics_gateway import note_cron_execution, note_cron_skipped
 from cron.env_settings import cron_env_setting
-from hermes_cli._subprocess_compat import windows_hide_flags
-from hermes_cli.config import (
+from zeus_cli._subprocess_compat import windows_hide_flags
+from zeus_cli.config import (
     load_config, load_config_readonly)
-from hermes_cli.config_backend import ConfigBackendUnavailable
-from hermes_cli.fallback_config import get_fallback_chain, scoped_fallback_chain
-from hermes_time import now as _hermes_now, safe_strftime
+from zeus_cli.config_backend import ConfigBackendUnavailable
+from zeus_cli.fallback_config import get_fallback_chain, scoped_fallback_chain
+from zeus_time import now as _zeus_now, safe_strftime
 from agent.interrupt_compat import request_hard_interrupt
 from agent.delegation_context import (
     enter_non_dispatcher_owned_context, exit_non_dispatcher_owned_context)
@@ -115,7 +115,7 @@ def _fallback_chain_phrase(job: Optional[dict] = None) -> str:
     if job is not None and _job_route_pinned(job):
         return (
             "This job is pinned to its own provider/model, so it does not fall back to "
-            f"`fallback_providers`; `hermes cron edit {job.get('id')} --unpin` lets it follow the "
+            f"`fallback_providers`; `zeus cron edit {job.get('id')} --unpin` lets it follow the "
             "main model and its fallback chain."
         )
     try:
@@ -126,7 +126,7 @@ def _fallback_chain_phrase(job: Optional[dict] = None) -> str:
     if chain:
         return "No backup provider succeeded either."
     return (
-        "No backup provider is configured — add one with `hermes fallback add`, "
+        "No backup provider is configured — add one with `zeus fallback add`, "
         "or set a cron-wide default via `cron.model` + `cron.model_provider` in config.yaml."
     )
 
@@ -155,7 +155,7 @@ def _failure_streak_nudge(job: dict) -> str:
     job_ref = job.get("name") or job.get("id") or "this job"
     return (
         f"\nThis job has failed {streak} runs in a row — worth a review. "
-        f"Fix its prompt/config, or pause it with `hermes cron pause {job_ref}` "
+        f"Fix its prompt/config, or pause it with `zeus cron pause {job_ref}` "
         "(resume/remove also available) to stop the noise."
     )
 
@@ -187,7 +187,7 @@ class CronTickYielded(RuntimeError):
     Raised by ``tick()`` BEFORE the tick lock when boot fingerprint ≠ disk, this process does NOT
     own the runtime lock and its live holder reports the disk revision — the stale process must
     stay out of the dispatch race (contention would starve the fresh ticker). Skew ``None`` never
-    yields (fail open). Raised, not returned, so ``record_ticker_error`` sees it and ``hermes cron
+    yields (fail open). Raised, not returned, so ``record_ticker_error`` sees it and ``zeus cron
     status`` isn't green.
     """
 
@@ -206,7 +206,7 @@ _STALE_YIELD_RE = re.compile(r"stale code: booted on (\S+), disk is at (\S+)\)")
 def stale_code_yield_labels(recorded_error: str | None) -> tuple[str, str] | None:
     """``(boot_rev, disk_rev)`` when a persisted ``ticker_last_error`` is a ``CronTickYielded``.
 
-    ``hermes cron status`` runs in another process and only sees the marker text; a yielding
+    ``zeus cron status`` runs in another process and only sees the marker text; a yielding
     ticker still refreshes its heartbeat, so this is the one signal that separates "stale code,
     firing nothing" from a healthy loop (#117275).
     """
@@ -243,7 +243,7 @@ def _should_yield_tick_to_fresh_gateway() -> tuple[str, str] | None:
     try:
         from cron.scheduler_ownership import live_gateway_ticking, owns_cron_tick_for
 
-        home = _get_hermes_home()
+        home = _get_zeus_home()
         if owns_cron_tick_for(home):
             return None
         holder_status = live_gateway_ticking(home)
@@ -300,7 +300,7 @@ def _summarize_cron_failure_for_delivery(job: dict, error: str | None) -> str:
     message = generic_failure_notice(job_name, job_id, cleaned)
 
     # Import-class failures (#95294 part 3): a long-lived gateway whose checkout was updated
-    # underneath it (interrupted `hermes update`, manual git pull) serves MIXED modules and every
+    # underneath it (interrupted `zeus update`, manual git pull) serves MIXED modules and every
     # agent cron job dies with `cannot import name X`. The error reads like a code bug, so APPEND
     # cause + fix — never replace the raw error, which carries the failing symbol. Fail-safe: skew
     # is None on non-git/no-fingerprint; no_agent jobs excluded (a fresh subprocess resolves
@@ -317,7 +317,7 @@ def _summarize_cron_failure_for_delivery(job: dict, error: str | None) -> str:
             message += (
                 f" Likely cause: the gateway is running stale code (booted "
                 f"on {boot_rev}, disk is at {disk_rev}) — run "
-                "`hermes gateway restart` to fix it."
+                "`zeus gateway restart` to fix it."
             )
 
     return message
@@ -350,7 +350,7 @@ def _repeat_alert_withheld(incident: dict) -> bool:
         last = _ensure_aware(datetime.fromisoformat(str(alerted_at)))
     except (TypeError, ValueError):
         return False
-    return _elapsed_seconds(_hermes_now(), last) < hours * 3600
+    return _elapsed_seconds(_zeus_now(), last) < hours * 3600
 
 
 def _upsert_incident_for_failure(
@@ -443,15 +443,15 @@ def _merge_mcp_into_per_job_toolsets(per_job: list[str], cfg: dict) -> list[str]
     result = [t for t in per_job if t != "no_mcp"]
     if "no_mcp" in per_job:
         return result
-    # lazy: avoid heavy hermes_cli import at module load; shares MCP-membership with gateway/CLI
-    from hermes_cli.tools_config import enabled_mcp_server_names
+    # lazy: avoid heavy zeus_cli import at module load; shares MCP-membership with gateway/CLI
+    from zeus_cli.tools_config import enabled_mcp_server_names
     enabled_mcp = enabled_mcp_server_names(cfg)
     # A job names an MCP server by its TOOLSET name (``mcp-<server>``) or by the bare alias the
     # registry registers for it; compare against BOTH, or a job that named one server never matched
     # and the fallback below unioned EVERY enabled server into its allowlist (#141468).
     # A server that is CONFIGURED but disabled still counts as named: it is the user's selection, it
     # stays off, and it must not fall through to every enabled server either - the same rule the
-    # interactive resolver follows (hermes_cli.tools_config._merge_mcp_servers).
+    # interactive resolver follows (zeus_cli.tools_config._merge_mcp_servers).
     configured = cfg.get("mcp_servers") if isinstance(cfg.get("mcp_servers"), dict) else {}
     known = enabled_mcp | {str(name) for name in configured}
     if set(result) & (known | {f"mcp-{name}" for name in known}):
@@ -487,12 +487,12 @@ def _resolve_cron_enabled_toolsets(job: dict, cfg: dict) -> list[str]:
             return []
         return _merge_mcp_into_per_job_toolsets(list(per_job), cfg or {})
     try:
-        from hermes_cli.tools_config import _get_platform_tools  # lazy: avoid heavy import at cron module load
+        from zeus_cli.tools_config import _get_platform_tools  # lazy: avoid heavy import at cron module load
         return sorted(_get_platform_tools(cfg or {}, "cron"))
     except Exception as exc:
         raise RuntimeError(
             "Cron toolset resolution failed, so this run was refused rather than given every "
-            f"tool. Check `platform_toolsets.cron` in config.yaml (`hermes cron doctor`): {exc}"
+            f"tool. Check `platform_toolsets.cron` in config.yaml (`zeus cron doctor`): {exc}"
         ) from exc
 
 
@@ -500,7 +500,7 @@ def _resolve_job_reasoning_config(job: dict, cfg: dict, model: str) -> dict | No
     """Effective reasoning config for a cron run. A per-job ``reasoning_effort`` pin beats global
     and per-model config and is model-independent by design (also governs an auth-fallback swap);
     clamping stays with provider transports. An unparseable pin warns and falls back to config."""
-    from hermes_constants import parse_reasoning_effort, resolve_reasoning_config
+    from zeus_constants import parse_reasoning_effort, resolve_reasoning_config
 
     pinned = job.get("reasoning_effort")
     if pinned is not None:
@@ -586,10 +586,10 @@ def _inflight_key(job_id: str, home: Optional[Path | str] = None) -> tuple:
     profile's run read as a duplicate of the first and get skipped. ``home`` defaults to the
     active cron scope's home, which the ticker binds per profile for the whole tick.
     """
-    return (hermes_home_key(home) if home is not None else hermes_home_key(_get_hermes_home()), job_id)
+    return (zeus_home_key(home) if home is not None else zeus_home_key(_get_zeus_home()), job_id)
 
 
-# Home key -> the real home Path that produced it. ``hermes_home_key`` normcases (it lower-cases on
+# Home key -> the real home Path that produced it. ``zeus_home_key`` normcases (it lower-cases on
 # Windows), so ``Path(key[0])`` is a case-folded path that matches nothing else on disk; bookkeeping
 # that needs the profile home reads it here instead of reconstructing it from the key.
 _inflight_home_paths: dict[str, Path] = {}
@@ -597,7 +597,7 @@ _inflight_home_paths: dict[str, Path] = {}
 
 def _remember_inflight_home(home: Path) -> Path:
     """Record ``home`` under its key so a claim can be mapped back to a usable path."""
-    _inflight_home_paths[hermes_home_key(home)] = home
+    _inflight_home_paths[zeus_home_key(home)] = home
     return home
 
 
@@ -675,7 +675,7 @@ def get_running_job_ids() -> frozenset[str]:
 def get_running_job_details() -> list[dict]:
     """Per in-flight job: ``{"job_id", "elapsed_s", "worker_pid", "restart_safe"}`` (``worker_pid``
     None for in-process runs; ``restart_safe`` True when the worker owns its own systemd scope). The
-    drain wait publishes this so ``hermes update`` can say WHICH job it is waiting on."""
+    drain wait publishes this so ``zeus update`` can say WHICH job it is waiting on."""
     now = time.time()
     with _running_lock:
         return [
@@ -716,7 +716,7 @@ def _wedged_inflight_keys() -> frozenset[tuple]:
         with contextlib.suppress(Exception):
             from cron.jobs import load_jobs
             by_id = {j.get("id"): j for j in load_jobs()}
-        local_home = hermes_home_key(_get_hermes_home())
+        local_home = zeus_home_key(_get_zeus_home())
         with _running_lock:
             for key in unresolved:
                 allowance = floor_seconds
@@ -808,9 +808,9 @@ def try_register_running_job(job_id: str, *, owner=None, future=_FUTURE_PENDING)
     and ``mark_running_jobs_interrupted``. Dedupe is per PROFILE: the key carries the active cron
     scope's home, so one multiplexing process never treats two profiles' same-named jobs as one.
     """
-    from hermes_cli.backend_retirement import retirement
+    from zeus_cli.backend_retirement import retirement
 
-    key = _inflight_key(job_id, _remember_inflight_home(_get_hermes_home()))
+    key = _inflight_key(job_id, _remember_inflight_home(_get_zeus_home()))
     with retirement.work() as admitted, _running_lock:
         if not admitted or key in _running_job_ids:
             return False
@@ -857,7 +857,7 @@ def _inflight_min_allowance_minutes() -> float:
             val = float(_cfg_val)
             if val > 0:
                 return val
-    raw = cron_env_setting("HERMES_CRON_INFLIGHT_MAX_MINUTES").strip()
+    raw = cron_env_setting("ZEUS_CRON_INFLIGHT_MAX_MINUTES").strip()
     if raw:
         try:
             val = float(raw)
@@ -865,7 +865,7 @@ def _inflight_min_allowance_minutes() -> float:
                 return val
         except (ValueError, TypeError):
             logger.warning(
-                "Invalid HERMES_CRON_INFLIGHT_MAX_MINUTES=%r; using default %s",
+                "Invalid ZEUS_CRON_INFLIGHT_MAX_MINUTES=%r; using default %s",
                 raw,
                 _INFLIGHT_MIN_ALLOWANCE_MINUTES)
     return _INFLIGHT_MIN_ALLOWANCE_MINUTES
@@ -943,12 +943,12 @@ def _record_forced_release(job_id: str, name: str, age_seconds: float, allowance
         "name": name,
         "age_seconds": round(age_seconds, 1),
         "allowance_seconds": round(allowance_seconds, 1),
-        "at": _hermes_now().isoformat()}
+        "at": _zeus_now().isoformat()}
     with _running_lock:
         _forced_releases.append(entry)
         del _forced_releases[:-_FORCED_RELEASE_HISTORY]
     try:
-        path = _get_hermes_home() / "cron" / "inflight_forced_releases.jsonl"
+        path = _get_zeus_home() / "cron" / "inflight_forced_releases.jsonl"
         _ensure_cron_dir(path.parent)
         with open(path, "a", encoding="utf-8") as fh:
             fh.write(json.dumps(entry) + "\n")
@@ -963,7 +963,7 @@ def _latest_executions_for_releasable_claims() -> dict:
 
     Scoped to the ACTIVE profile's claims: the executions ledger it queries is that home's.
     """
-    local_home = hermes_home_key(_get_hermes_home())
+    local_home = zeus_home_key(_get_zeus_home())
     with _running_lock:
         claim_futures = {
             key[1]: _running_futures.get(key)
@@ -1049,7 +1049,7 @@ def sweep_stale_inflight(due_jobs: Optional[list] = None) -> list:
     from cron.executions import _TERMINAL_STATES as _terminal_states
 
     _latest = _latest_executions_for_releasable_claims()
-    _local_home = hermes_home_key(_get_hermes_home())
+    _local_home = zeus_home_key(_get_zeus_home())
     # Compute intervals OUTSIDE _running_lock so croniter doesn't block try_register/release.
     _intervals = {jid: _job_interval_minutes(j) for jid, j in by_id.items()}
 
@@ -1184,16 +1184,16 @@ def _consume_interrupted_flag(job_id: str, token: Optional[object] = None) -> bo
 
 
 def _cron_inactivity_seconds() -> float:
-    """Parse HERMES_CRON_TIMEOUT (seconds). 0 = unlimited; bad input = 600. Shared by the
+    """Parse ZEUS_CRON_TIMEOUT (seconds). 0 = unlimited; bad input = 600. Shared by the
     inactivity monitor and the cwd-lock bound so they can't drift: the lock bound must stay >= the
     inactivity limit or waiters fail while a healthy holder runs."""
-    raw = cron_env_setting("HERMES_CRON_TIMEOUT").strip()
+    raw = cron_env_setting("ZEUS_CRON_TIMEOUT").strip()
     if not raw:
         return 600.0
     try:
         return float(raw)
     except (ValueError, TypeError):
-        logger.warning("Invalid HERMES_CRON_TIMEOUT=%r; using default 600s", raw)
+        logger.warning("Invalid ZEUS_CRON_TIMEOUT=%r; using default 600s", raw)
         return 600.0
 
 
@@ -1204,7 +1204,7 @@ def _get_parallel_pool(max_workers: Optional[int]) -> concurrent.futures.ThreadP
     a single process-global pool is created by whichever profile the multiplexing gateway ticks
     first and then silently imposes that profile's limit on every other profile.
     """
-    home = hermes_home_key(_remember_inflight_home(_get_hermes_home()))
+    home = zeus_home_key(_remember_inflight_home(_get_zeus_home()))
     pool = _parallel_pools.get(home)
     if pool is None or _parallel_pool_max_workers.get(home) != max_workers:
         if pool is not None:
@@ -1240,9 +1240,9 @@ def _shutdown_parallel_pool() -> None:
 
 
 atexit.register(_shutdown_parallel_pool)
-# Per-fire usage audit log; resolves via _get_hermes_home() so profile-scoped paths work.
+# Per-fire usage audit log; resolves via _get_zeus_home() so profile-scoped paths work.
 def _usage_audit_path() -> Path:
-    return _get_hermes_home() / "cron" / "usage_audit.jsonl"
+    return _get_zeus_home() / "cron" / "usage_audit.jsonl"
 
 
 def _utcnow_iso_ms() -> str:
@@ -1269,7 +1269,7 @@ def _interpreter_shutting_down(exc: Optional[BaseException] = None) -> bool:
     futures/asyncio refuse new work, so delivery attempts only pollute errors.log — callers skip
     with a warning. ``exc`` lets an already-raised scheduling error count as a shutdown signal.
 
-    A cron tick can fire while the gateway is tearing down — SIGTERM from ``hermes update`` / ``hermes
+    A cron tick can fire while the gateway is tearing down — SIGTERM from ``zeus update`` / ``zeus
     gateway stop`` / systemd restart, or an OOM-kill. Once finalization starts, ``concurrent.futures``
     refuses new work with ``RuntimeError: cannot schedule new futures after interpreter shutdown`` and
     asyncio's default executor is gone, so *any* attempt to schedule delivery (live-adapter,
@@ -1282,24 +1282,24 @@ def _interpreter_shutting_down(exc: Optional[BaseException] = None) -> bool:
 
 
 # Module override hook for tests / emergency monkeypatches.
-_hermes_home: Path | None = None
+_zeus_home: Path | None = None
 
 
-def _get_hermes_home() -> Path:
-    """Hermes home at call time (honouring the test override). Cron is per-profile: never freeze
+def _get_zeus_home() -> Path:
+    """Zeus home at call time (honouring the test override). Cron is per-profile: never freeze
     this at import or anchor it at the shared default root — either breaks profile isolation.
 
     Cron is per-profile by design (#4707): the in-process ticker runs inside a profile-scoped gateway, so
-    resolving the active HERMES_HOME at call time means a profile's jobs are stored AND executed under that
+    resolving the active ZEUS_HOME at call time means a profile's jobs are stored AND executed under that
     profile's home (its .env, config.yaml, scripts, skills).
     """
-    return _hermes_home or get_hermes_home()
+    return _zeus_home or get_zeus_home()
 
 
 def _get_lock_paths() -> tuple[Path, Path]:
     """Resolve cron lock paths at call time so profile/env changes are honored."""
-    hermes_home = _get_hermes_home()
-    lock_dir = hermes_home / "cron"
+    zeus_home = _get_zeus_home()
+    lock_dir = zeus_home / "cron"
     return lock_dir, lock_dir / ".tick.lock"
 
 
@@ -1348,7 +1348,7 @@ def _reclaim_fds_best_effort() -> None:
 
         gc.collect()
     with contextlib.suppress(Exception):
-        from hermes_cli.resource_limits import apply_nofile_soft_limit
+        from zeus_cli.resource_limits import apply_nofile_soft_limit
 
         apply_nofile_soft_limit(None)
 
@@ -1390,7 +1390,7 @@ def _cron_cleanup_timeout_seconds() -> float:
     """Return the wall-clock bound for cron post-run cleanup."""
     default = 10.0
     try:
-        from hermes_cli.config import load_config
+        from zeus_cli.config import load_config
 
         cfg = load_config() or {}
         cron_cfg = cfg.get("cron", {}) if isinstance(cfg, dict) else {}
@@ -1507,9 +1507,9 @@ def _run_no_agent_job(
     # Load .env first so auto-delivery can resolve *_HOME_CHANNEL: the agent path's per-run dotenv
     # reload never runs for no_agent jobs. Does not override existing values.
     try:
-        from hermes_cli.env_loader import load_hermes_dotenv
+        from zeus_cli.env_loader import load_zeus_dotenv
 
-        load_hermes_dotenv(hermes_home=_get_hermes_home())
+        load_zeus_dotenv(zeus_home=_get_zeus_home())
     except Exception:
         logger.debug("Job '%s': no_agent .env reload failed", job_id, exc_info=True)
 
@@ -1529,7 +1529,7 @@ def _run_no_agent_job(
         logger.exception("Job '%s': script execution raised unexpectedly", job_id)
         ok, output = False, f"Script execution failed: {exc}"
 
-    now_iso = _hermes_now().strftime("%Y-%m-%d %H:%M:%S")
+    now_iso = _zeus_now().strftime("%Y-%m-%d %H:%M:%S")
     header = _job_doc_header(job_name, job_id, now_iso, "no_agent (script)")
 
     if not ok:
@@ -1566,7 +1566,7 @@ def _apply_monitor_gate(
     if not job_has_monitor(job):
         return None, extra_prompt, None
     _mon = check_monitor(job)
-    _mon_now = _hermes_now().strftime("%Y-%m-%d %H:%M:%S")
+    _mon_now = _zeus_now().strftime("%Y-%m-%d %H:%M:%S")
     header = _job_doc_header(job_name, job_id, _mon_now, "monitor")
     if not _mon.ok:
         # Source failure is an ERROR, never a change: alert so a broken monitor can't silently
@@ -1603,17 +1603,17 @@ class _CronJobConfig:
 
 def _load_cron_job_config(job: dict, job_id: str, job_name: str) -> _CronJobConfig:
     """Load config.yaml and resolve the run's model: per-job pin > cron.model (fleet default) >
-    the main agent model (config ``model:``, then HERMES_MODEL) > the claimed welcome trial's. Re-read
-    every tick (no cache) so ``hermes cron edit --model`` and ``hermes model`` both apply next tick."""
-    from hermes_cli.anon_auth import trial_model
-    model = job.get("model") or cron_env_setting("HERMES_MODEL") or ""
+    the main agent model (config ``model:``, then ZEUS_MODEL) > the claimed welcome trial's. Re-read
+    every tick (no cache) so ``zeus cron edit --model`` and ``zeus model`` both apply next tick."""
+    from zeus_cli.anon_auth import trial_model
+    model = job.get("model") or cron_env_setting("ZEUS_MODEL") or ""
     _cron_default_provider = ""
     _cfg: dict = {}
     _model_cfg: Any = {}
     try:
-        from hermes_cli.config_backend import config_exists
-        from hermes_cli.config_effective import load_user_config_effective
-        _cfg_path = str(_get_hermes_home() / "config.yaml")
+        from zeus_cli.config_backend import config_exists
+        from zeus_cli.config_effective import load_user_config_effective
+        _cfg_path = str(_get_zeus_home() / "config.yaml")
         if config_exists(_cfg_path):
             _cfg = load_user_config_effective(Path(_cfg_path))
             # Coerce null to {} so a falsy default never clobbers a resolved env value.
@@ -1640,15 +1640,15 @@ def _load_cron_job_config(job: dict, job_id: str, job_name: str) -> _CronJobConf
         raise RuntimeError(
             f"Cron job '{job_name}' has no model configured "
             f"(job.model={job.get('model')!r}, "
-            f"HERMES_MODEL={cron_env_setting('HERMES_MODEL')!r}, "
+            f"ZEUS_MODEL={cron_env_setting('ZEUS_MODEL')!r}, "
             "config.yaml model.default missing or empty). "
             f"Set a per-job model via "
-            f"`hermes cron edit {job_id} --model <name>` or set a "
-            "default with `hermes model <name>`."
+            f"`zeus cron edit {job_id} --model <name>` or set a "
+            "default with `zeus model <name>`."
         )
 
     with contextlib.suppress(Exception):
-        from hermes_constants import apply_ipv4_preference
+        from zeus_constants import apply_ipv4_preference
         _net_cfg = _cfg.get("network", {})
         if isinstance(_net_cfg, dict) and _net_cfg.get("force_ipv4"):
             apply_ipv4_preference(force=True)
@@ -1659,7 +1659,7 @@ def _load_prefill_messages(cfg: dict, job_id: str) -> Optional[list]:
     """Prefill messages from env or config.yaml (top-level key canonical; agent.* is legacy)."""
     agent_cfg = cfg.get("agent", {}) if isinstance(cfg.get("agent", {}), dict) else {}
     prefill_file = (
-        cron_env_setting("HERMES_PREFILL_MESSAGES_FILE")
+        cron_env_setting("ZEUS_PREFILL_MESSAGES_FILE")
         or cfg.get("prefill_messages_file", "")
         or agent_cfg.get("prefill_messages_file", "")
     )
@@ -1667,7 +1667,7 @@ def _load_prefill_messages(cfg: dict, job_id: str) -> Optional[list]:
         return None
     pfpath = Path(prefill_file).expanduser()
     if not pfpath.is_absolute():
-        pfpath = _get_hermes_home() / pfpath
+        pfpath = _get_zeus_home() / pfpath
     if not pfpath.exists():
         return None
     try:
@@ -1725,13 +1725,13 @@ def _blocked_config_result(job_id: str, job_name: str, _pf_reason: str) -> tuple
     blocked_doc = (
         f"# Cron Job: {job_name}\n\n"
         f"**Job ID:** {job_id}\n"
-        f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"**Run Time:** {_zeus_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"**Status:** BLOCKED (configuration)\n\n"
         "The pre-run configuration check found a problem, so the agent did not run "
         "(nothing was charged).\n\n"
         f"**Reason:** {_pf_reason}\n\n"
-        "Hermes tries again at the next scheduled time and clears this state on the first healthy "
-        "run; this alert is not repeated. Check with `hermes cron doctor`. Set `cron.preflight: "
+        "Zeus tries again at the next scheduled time and clears this state on the first healthy "
+        "run; this alert is not repeated. Check with `zeus cron doctor`. Set `cron.preflight: "
         "false` in config.yaml to disable this check."
     )
     return False, blocked_doc, "", f"{marker} {_pf_reason}"
@@ -1743,14 +1743,14 @@ def _resolve_job_runtime(job: dict, job_id: str, jc: _CronJobConfig) -> tuple[di
     a paid primary model). Provider precedence: per-job pin > cron.model_provider > persisted
     global config (None lets resolve_runtime_provider read it). A pinned job has no chain here
     (``_job_fallback_chain``): its resolve failure is the job's failure."""
-    from hermes_cli.runtime_provider import (
+    from zeus_cli.runtime_provider import (
         resolve_runtime_provider, format_runtime_provider_error)
-    from hermes_cli.auth import AuthError
+    from zeus_cli.auth import AuthError
 
     model = jc.model
     requested = job.get("provider") or jc.cron_default_provider or None
     try:
-        # Do NOT pass HERMES_INFERENCE_PROVIDER as `requested`: it would override persisted config
+        # Do NOT pass ZEUS_INFERENCE_PROVIDER as `requested`: it would override persisted config
         # and resurrect stale providers for unpinned jobs.
         runtime_kwargs = {
             "requested": requested,
@@ -1782,7 +1782,7 @@ def _resolve_job_runtime(job: dict, job_id: str, jc: _CronJobConfig) -> tuple[di
             if not fb_provider or not fb_model:
                 continue
             try:
-                from hermes_cli.fallback_config import effective_runtime_provider, resolve_entry_api_key
+                from zeus_cli.fallback_config import effective_runtime_provider, resolve_entry_api_key
 
                 fb_kwargs = {"requested": fb_provider, "target_model": fb_model}
                 if entry.get("base_url"):
@@ -1799,7 +1799,7 @@ def _resolve_job_runtime(job: dict, job_id: str, jc: _CronJobConfig) -> tuple[di
                     job_id, runtime.get("provider"), fb_model)
                 # Delivered with the job output (#74349): a cron agent has no status rail, so the
                 # switch would otherwise stay in the scheduler log only. run_job pops it.
-                from hermes_cli.fallback_config import pre_agent_fallback_notice
+                from zeus_cli.fallback_config import pre_agent_fallback_notice
                 runtime["_fallback_notice"] = pre_agent_fallback_notice(
                     requested or (jc.model_cfg.get("provider") if isinstance(jc.model_cfg, dict) else ""),
                     model, runtime.get("provider"), fb_model)
@@ -1852,7 +1852,7 @@ def _open_cron_session_db(job: dict):
     # Initialize the SQLite session store so cron job messages are persisted and discoverable via
     # session_search (same pattern as gateway/run.py) — only now, after every early-return path (wake-gate,
     # prompt validation, drift skip) has passed, so a gated run never opens state.db just to abandon the
-    # handle (#96290). Bounded with its own timeout (separate from HERMES_CRON_TIMEOUT, which only watches
+    # handle (#96290). Bounded with its own timeout (separate from ZEUS_CRON_TIMEOUT, which only watches
     # the agent's run_conversation below): SessionDB.__init__ opens/migrates state.db synchronously and has
     # no timeout of its own against a wedged sqlite3.connect (e.g. a stale flock left by a crashed sibling
     # process). An unbounded hang here would wedge the job's worker thread, so the init is bounded and a
@@ -1866,14 +1866,14 @@ def _open_cron_session_db(job: dict):
         raise WorkerPersistenceError('worker_cron_registration_required')
     _session_db_timeout = _get_session_db_timeout()
     try:
-        from hermes_state_registry import acquire
+        from zeus_state_registry import acquire
 
         def acquire_store():
             if owner is None:
                 return acquire()
             db = acquire(Path(owner[0].db.db_path))
             if db is not owner[0].db:
-                from hermes_state_registry import release_or_close
+                from zeus_state_registry import release_or_close
                 release_or_close(db)
                 raise RuntimeError('cron requires the canonical owner store')
             return db
@@ -1939,7 +1939,7 @@ def _run_agent_with_watchdog(
     worker_state: Optional[dict] = None,
 ) -> dict:
     """Run ``agent.run_conversation`` on a worker thread under the inactivity (not wall-clock)
-    watchdog: default 600s, override HERMES_CRON_TIMEOUT, 0 = unlimited."""
+    watchdog: default 600s, override ZEUS_CRON_TIMEOUT, 0 = unlimited."""
     _cron_timeout = _cron_inactivity_seconds()
     _cron_inactivity_limit = _cron_timeout if _cron_timeout > 0 else None
     _POLL_INTERVAL = 5.0
@@ -2087,7 +2087,7 @@ def _final_response_from_result(result: dict, job_id: str, job_name: str, AIAgen
         # Render every persistence-cause variant or cause-refined text slips through.
         _explainer_variants = []
         try:
-            from hermes_state_errors import PERSISTENCE_ERROR_CAUSES as _causes
+            from zeus_state_errors import PERSISTENCE_ERROR_CAUSES as _causes
         except Exception:
             _causes = ("locked", "disk", "unknown")
         # The finalizer fills the model name into the explainer; render with the same name (and
@@ -2130,7 +2130,7 @@ def _finalize_cron_session(session_db, agent, job_id: str, job_name: str, cron_s
         with contextlib.suppress((Exception, KeyboardInterrupt)):
             _agent_session_id = getattr(agent, "session_id", None)
             # CLI (single-process) path: the approval contextvar is only bound during gateway/TUI turns and
-            # HERMES_SESSION_KEY is not in the CLI environment, so the key resolves empty here. Since #64240
+            # ZEUS_SESSION_KEY is not in the CLI environment, so the key resolves empty here. Since #64240
             # the CLI drains completions through a positive-ownership filter keyed on the durable
             # AIAgent.session_id — an empty session_key would fail closed and the CLI could never claim its
             # own completions, while a restored foreign event with an empty key could leak into any
@@ -2145,7 +2145,7 @@ def _finalize_cron_session(session_db, agent, job_id: str, job_name: str, cron_s
         # Title the cron session from the job (name -> id) and PERSIST it BEFORE end_session()/close() tear
         # the connection down, so the close can never run over an in-flight title write (#50536).
         _title_base = " ".join(job_name.split())[:60].strip() or f"cron {job_id}"
-        _cron_title = f"{_title_base} · {safe_strftime(_hermes_now(), '%b %d %H:%M')}"
+        _cron_title = f"{_title_base} · {safe_strftime(_zeus_now(), '%b %d %H:%M')}"
         if not _set_cron_session_title(_session_db, _final_cron_session_id, _cron_title):
             _set_cron_session_title(_session_db, _final_cron_session_id, f"cron {job_id}")
     except (Exception, KeyboardInterrupt) as e:
@@ -2169,7 +2169,7 @@ def _finalize_cron_session(session_db, agent, job_id: str, job_name: str, cron_s
     # mid-API-wait, or without any assistant text leaves the last row as a tool result / pending call / user
     # prompt and must not surface as a healthy run. session_lifecycle_statuses is the existing cost-bounded
     # classifier for exactly this shape. Only a POSITIVELY recognized pathological status (see the status
-    # vocabulary in hermes_state's session_lifecycle_statuses docstring — keep the tuple below in sync when
+    # vocabulary in zeus_state's session_lifecycle_statuses docstring — keep the tuple below in sync when
     # it grows) downgrades the booking: an unknown value (newer classifier shape, test doubles) keeps the
     # historical reason, and so does a failed probe — the booking itself is FAIL-OPEN on probe errors,
     # because classification is best-effort metadata and must not mislabel a healthy run.
@@ -2205,7 +2205,7 @@ def _finalize_cron_session(session_db, agent, job_id: str, job_name: str, cron_s
     except (Exception, KeyboardInterrupt) as e:
         logger.debug("Job '%s': failed to end session: %s", job_id, e)
     try:
-        from hermes_state_registry import release_or_close
+        from zeus_state_registry import release_or_close
         release_or_close(_session_db)
     except (Exception, KeyboardInterrupt) as e:
         logger.debug("Job '%s': failed to close SQLite session store: %s", job_id, e)
@@ -2221,7 +2221,7 @@ def _run_doc_header(job: dict, title: str, job_id: str, prompt: str, *, prompt_s
     return (
         f"# Cron Job: {title}\n\n"
         f"**Job ID:** {job_id}\n"
-        f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+        f"**Run Time:** {_zeus_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         f"**Schedule:** {job.get('schedule_display', 'N/A')}\n\n"
         f"{prompt_stamp}{_PROMPT_HEADING}{prompt}{_PROMPT_SEPARATOR}"
     )
@@ -2237,9 +2237,9 @@ def _prepare_job_prompt(
     result short-circuits ``run_job`` (no_agent job, empty payload, monitor gate, wake gate,
     injection block, empty prompt); otherwise ``prompt`` is set."""
     # Fail closed on a corrupt config.yaml: defaults would let auto-detection bill a provider the
-    # user never chose. no_agent jobs are exempt. Escape hatch: HERMES_IGNORE_USER_CONFIG=1.
+    # user never chose. no_agent jobs are exempt. Escape hatch: ZEUS_IGNORE_USER_CONFIG=1.
     if not job.get("no_agent"):
-        from hermes_cli.config import InvalidUserConfigError, require_parseable_user_config
+        from zeus_cli.config import InvalidUserConfigError, require_parseable_user_config
 
         try:
             require_parseable_user_config()
@@ -2284,7 +2284,7 @@ def _prepare_job_prompt(
             silent_doc = (
                 f"# Cron Job: {job_name}\n\n"
                 f"**Job ID:** {job_id}\n"
-                f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
+                f"**Run Time:** {_zeus_now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
                 "Script gate returned `wakeAgent=false` — agent skipped.\n"
             )
             return (True, silent_doc, SILENT_MARKER, None), None
@@ -2302,7 +2302,7 @@ def _prepare_job_prompt(
         blocked_doc = (
             f"# Cron Job: {job_name}\n\n"
             f"**Job ID:** {job_id}\n"
-            f"**Run Time:** {_hermes_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"**Run Time:** {_zeus_now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"**Status:** BLOCKED\n\n"
             "The assembled prompt (user prompt + loaded skill content) tripped "
             "the cron injection scanner and the agent was NOT run.\n\n"
@@ -2321,9 +2321,9 @@ def _prepare_job_prompt(
 
 
 _CRON_DELIVERY_VARS = (
-    "HERMES_CRON_AUTO_DELIVER_PLATFORM",
-    "HERMES_CRON_AUTO_DELIVER_CHAT_ID",
-    "HERMES_CRON_AUTO_DELIVER_THREAD_ID")
+    "ZEUS_CRON_AUTO_DELIVER_PLATFORM",
+    "ZEUS_CRON_AUTO_DELIVER_CHAT_ID",
+    "ZEUS_CRON_AUTO_DELIVER_THREAD_ID")
 
 
 class _CronRunScope:
@@ -2331,9 +2331,9 @@ class _CronRunScope:
     parallel jobs don't clobber each other). Construct before the try, ``enter()`` as its first
     statement, ``exit()`` in the finally — every setter here has a matching reset there.
 
-    HERMES_SESSION_* are deliberately NOT seeded from job["origin"]: it is delivery metadata, not
+    ZEUS_SESSION_* are deliberately NOT seeded from job["origin"]: it is delivery metadata, not
     a sender, and terminal/tts/skills/send_message tools would act as if the origin user were
-    driving the agent. Delivery reads job["origin"] / HERMES_CRON_AUTO_DELIVER_* directly.
+    driving the agent. Delivery reads job["origin"] / ZEUS_CRON_AUTO_DELIVER_* directly.
     """
 
     def __init__(self, job: dict, job_id: str, execution_id: Optional[str]):
@@ -2349,12 +2349,12 @@ class _CronRunScope:
             chat_name="",
             # Cron can't receive completions after its turn; async delegation output could
             # otherwise route to an unrelated chat via the ambient session key => inline delegation.
-            # We clear the HERMES_SESSION_* routing keys just below, so an async delegation's completion
+            # We clear the ZEUS_SESSION_* routing keys just below, so an async delegation's completion
             # event carries session_key="" — _enrich_async_delegation_routing cannot resolve it and
             # _inject_watch_notification drops it ("no routing metadata"). And by the time a child finishes,
             # run_job has already shipped the job's final response via _deliver_result; there is no turn
             # left to re-enter. (Worse, get_current_session_key() can fall back to the ambient os.environ
-            # HERMES_SESSION_KEY, which risks routing a cron subagent's output into an unrelated user chat.)
+            # ZEUS_SESSION_KEY, which risks routing a cron subagent's output into an unrelated user chat.)
             # Declaring the channel stateless routes delegate_task to its existing inline/synchronous path,
             # so results return within the job's own turn. See declare_stateless_channel(). Upstream:
             # #53027, #63142.
@@ -2368,7 +2368,7 @@ class _CronRunScope:
         self.task_id = f"cron:{job_id}:{execution_id or job.get('execution_id') or uuid.uuid4().hex}"
         if self.workdir:
             record_session_cwd(self.task_id, self.workdir)
-        self._cron_session_var = _VAR_MAP["HERMES_CRON_SESSION"]
+        self._cron_session_var = _VAR_MAP["ZEUS_CRON_SESSION"]
         self._cron_session_token = None
         self._non_dispatcher_token = None
         self._spend_token = None
@@ -2378,7 +2378,7 @@ class _CronRunScope:
         # os.environ fallback used by standalone entrypoints/tests).
         self._cron_session_token = self._cron_session_var.set("1")
         # Mark NOT the kanban worker: a worker's cronjob(action="run") lands here with
-        # HERMES_KANBAN_TASK in env, and an unrelated job could close the worker's task. Must be a
+        # ZEUS_KANBAN_TASK in env, and an unrelated job could close the worker's task. Must be a
         # ContextVar, NOT an os.environ clear (env is shared with the worker heartbeat and
         # concurrent jobs); copy_context() carries it into the agent thread.
         self._non_dispatcher_token = enter_non_dispatcher_owned_context()
@@ -2407,17 +2407,17 @@ def _reload_dotenv_and_publish_delivery_target(job: dict) -> None:
     """Re-read .env for this run and publish the auto-deliver target into the session ContextVars."""
     # Reset the secret-source cache FIRST or a Bitwarden/BSM-backed secret is never re-resolved
     # (only the placeholder reloads -> 401s).
-    from hermes_cli.env_loader import load_hermes_dotenv, reset_secret_source_cache
+    from zeus_cli.env_loader import load_zeus_dotenv, reset_secret_source_cache
     from gateway.session_context import _VAR_MAP
 
-    reset_secret_source_cache(_get_hermes_home())
-    load_hermes_dotenv(hermes_home=_get_hermes_home())
+    reset_secret_source_cache(_get_zeus_home())
+    load_zeus_dotenv(zeus_home=_get_zeus_home())
 
     delivery_target = _resolve_delivery_target(job)
     if delivery_target:
-        _VAR_MAP["HERMES_CRON_AUTO_DELIVER_PLATFORM"].set(delivery_target["platform"])
-        _VAR_MAP["HERMES_CRON_AUTO_DELIVER_CHAT_ID"].set(str(delivery_target["chat_id"]))
-        _VAR_MAP["HERMES_CRON_AUTO_DELIVER_THREAD_ID"].set(
+        _VAR_MAP["ZEUS_CRON_AUTO_DELIVER_PLATFORM"].set(delivery_target["platform"])
+        _VAR_MAP["ZEUS_CRON_AUTO_DELIVER_CHAT_ID"].set(str(delivery_target["chat_id"]))
+        _VAR_MAP["ZEUS_CRON_AUTO_DELIVER_THREAD_ID"].set(
             "" if delivery_target.get("thread_id") is None else str(delivery_target["thread_id"])
         )
 
@@ -2444,7 +2444,7 @@ def _resolve_cron_agent_setup(job: dict, job_id: str, job_name: str, jc) -> _Cro
     setup.prefill_messages = _load_prefill_messages(_cfg, job_id)
 
     # resolve_turn_limit() honors none/unlimited (sys.maxsize) and explicit 0 / null.
-    from hermes_cli.config import resolve_turn_limit as _resolve_turn_limit
+    from zeus_cli.config import resolve_turn_limit as _resolve_turn_limit
     _mt = _cfg.get("agent", {}).get("max_turns")
     if _mt is None:
         _mt = _cfg.get("max_turns")
@@ -2575,7 +2575,7 @@ def run_job(
     from run_agent import AIAgent
 
     _cron_session_id = (owner_execution[1] if owner_execution is not None else
-                        f"cron_{job_id}_{_hermes_now().strftime('%Y%m%d_%H%M%S')}")
+                        f"cron_{job_id}_{_zeus_now().strftime('%Y%m%d_%H%M%S')}")
     logger.info("Running job '%s' (ID: %s)", job_name, job_id)
     logger.info("Prompt: %s", prompt[:100])
 
@@ -2813,7 +2813,7 @@ def run_one_job(
 
     execution_id = str(job["execution_id"])
     note_cron_execution(job)
-    external_owner = os.environ.get("_HERMES_CRON_EXTERNAL_WORKER") == execution_id
+    external_owner = os.environ.get("_ZEUS_CRON_EXTERNAL_WORKER") == execution_id
     if not external_owner:
         try:
             handed_off = _launch_external_cron_worker(job)
@@ -2872,7 +2872,7 @@ def run_one_job(
     claim = job.get("fire_claim")
     fire_owner = str(claim.get("by") or "") if isinstance(claim, dict) else ""
     execution_token = object()
-    profile_home = _get_hermes_home().resolve()
+    profile_home = _get_zeus_home().resolve()
     _fire_key = _inflight_key(job["id"])
     with _running_lock:
         _running_fire_owners.setdefault(_fire_key, {})[execution_token] = (
@@ -2991,7 +2991,7 @@ class _FireOwnership:
         self.claim_lost = claim_lost
         self.transport_cancel = transport_cancel
         self.operator_cancel = operator_cancel
-        # ``operator_cancel`` (``hermes cron cancel``) is a THIRD source, deliberately not folded
+        # ``operator_cancel`` (``zeus cron cancel``) is a THIRD source, deliberately not folded
         # into ``transport_cancel``: only a transport cancel counts as claim loss for bookkeeping,
         # while an operator cancel is a real outcome this run records itself.
         # What ``run_job`` receives as its ``cancel_event``: any source cancels the run.
@@ -3216,10 +3216,10 @@ def _install_fire_secret_scope() -> tuple[contextvars.Token, Optional[contextvar
     """
     from agent.secret_scope import set_multiplex_context, set_secret_scope
     from cron.scheduler_provider import routed_profile_fire
-    from hermes_cli.env_loader import hydrate_profile_secret_sources
+    from zeus_cli.env_loader import hydrate_profile_secret_sources
     from tui_gateway.launch_profile_policy import owner_secret_scope
 
-    home = Path(_get_hermes_home())
+    home = Path(_get_zeus_home())
     hydrate_profile_secret_sources(home)
     scope_token = set_secret_scope(owner_secret_scope(home), profile_home=str(home))
     context_token = set_multiplex_context(True) if routed_profile_fire() else None
@@ -3250,7 +3250,7 @@ def _fire_secret_scope():
 def _start_owned_run(job: dict, execution_id: str) -> Optional[contextvars.Token]:
     """Win the run's ``claimed`` → ``running`` CAS and bind its cron identity; ``None`` when the run
     lost ownership first. A restart-safe worker already won it by adopting the row."""
-    if os.environ.get("_HERMES_CRON_EXTERNAL_WORKER") == execution_id:
+    if os.environ.get("_ZEUS_CRON_EXTERNAL_WORKER") == execution_id:
         record = get_execution(execution_id)
     elif (record := mark_execution_running(execution_id)) is None:
         return None
@@ -3281,7 +3281,7 @@ def _run_one_job_body(
         execution_id = create_execution(
             job["id"], source="direct", scheduled_instant=job.get("_scheduled_instant"))["id"]
     job = dict(job, execution_id=execution_id)
-    # The execution id is resolved BEFORE the fence so ``hermes cron cancel`` can join the same
+    # The execution id is resolved BEFORE the fence so ``zeus cron cancel`` can join the same
     # cancel seam: the marker it writes is polled by whichever process owns this attempt.
     fence = _FireOwnership(job, claim_lost, transport_cancel, CancelRequest(execution_id))
     fire_owner = fence.owner
@@ -3329,7 +3329,7 @@ def _run_one_job_body(
         from tools.terminal_scope import (
             install_profile_terminal_scope)
 
-        _terminal_scope_token = install_profile_terminal_scope(_get_hermes_home())
+        _terminal_scope_token = install_profile_terminal_scope(_get_zeus_home())
         # Defer agent teardown until AFTER delivery: closing first races the live send against a
         # torn-down async client (#58720). run_job hands the agent back via this list instead.
         _deferred_agents: list = []
@@ -3616,7 +3616,7 @@ def _launch_external_cron_worker(job: dict) -> bool:
     """
     execution_id = str(job["execution_id"])
     job_id = str(job["id"])
-    handoff_dir = _get_hermes_home() / "cron" / "external-workers"
+    handoff_dir = _get_zeus_home() / "cron" / "external-workers"
     payload_path = handoff_dir / f"{execution_id}.json"
     ack_path = handoff_dir / f"{execution_id}.ready"
     # Captured so a worker that dies before its acknowledgement can name the cause (#112729).
@@ -3675,7 +3675,7 @@ def _launch_external_cron_worker(job: dict) -> bool:
             json.dump(
                 {
                     "job": job,
-                    "profile_home": str(_get_hermes_home().resolve()),
+                    "profile_home": str(_get_zeus_home().resolve()),
                     "multiplex_active": multiplex_active,
                 },
                 payload_file,
@@ -3686,35 +3686,35 @@ def _launch_external_cron_worker(job: dict) -> bool:
         payload_path.unlink(missing_ok=True)
         raise
 
-    profile_home = _get_hermes_home().resolve()
+    profile_home = _get_zeus_home().resolve()
     # Same hydrate -> scope -> (routed) multiplex-context install the in-process fire uses, for exactly
     # the env build; the helper's reset order keeps the context from outliving its scope.
     with _fire_secret_scope():
-        # No restore_managed_env here: the worker re-runs load_hermes_dotenv -> _apply_managed_env at
+        # No restore_managed_env here: the worker re-runs load_zeus_dotenv -> _apply_managed_env at
         # import, and strip_launch_profile_env leaves managed keys in place.
         worker_env = strip_launch_profile_env(build_subprocess_env(
             scrub_secrets=multiplex_active,
             inherit_profile_home=True,
-            extra={"HERMES_HOME": str(profile_home)},
+            extra={"ZEUS_HOME": str(profile_home)},
         ))
     worker_env = systemd_user_bus_env(worker_env)
-    # Unattended worker: the gateway sets HERMES_EXEC_ASK at startup (interactive launches set
+    # Unattended worker: the gateway sets ZEUS_EXEC_ASK at startup (interactive launches set
     # the other two), and an inherited presence var makes every env-fallback consumer in the
     # child (`_is_interactive_cli`, sudo prompting, `check_cronjob_requirements`) believe a
     # human is present to answer (#110932).
     for _presence_var in (
-        "HERMES_INTERACTIVE",
-        "HERMES_GATEWAY_SESSION",
-        "HERMES_EXEC_ASK",
+        "ZEUS_INTERACTIVE",
+        "ZEUS_GATEWAY_SESSION",
+        "ZEUS_EXEC_ASK",
     ):
         worker_env.pop(_presence_var, None)
-    # `-m cron.scheduler` has no hermes_cli.main bootstrap; pin this checkout explicitly
+    # `-m cron.scheduler` has no zeus_cli.main bootstrap; pin this checkout explicitly
     # (PYTHONSAFEPATH / stale editable mapping, #112729), hand the child the committed
     # dependency generation (#122222), and mark it so its own entry runs the PM dependency
     # boot. See cron/scheduler_worker_env.py and cron/worker_bootstrap.py.
-    from cron.scheduler_worker_env import pin_hermes_tree_on_pythonpath
+    from cron.scheduler_worker_env import pin_zeus_tree_on_pythonpath
     repo_root = Path(__file__).resolve().parent.parent
-    worker_env = pin_hermes_tree_on_pythonpath(worker_env, repo_root)
+    worker_env = pin_zeus_tree_on_pythonpath(worker_env, repo_root)
     worker_env[WORKER_MARKER] = "1"
     try:
         stderr_fd = os.open(stderr_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
@@ -3870,23 +3870,23 @@ def _run_external_worker_payload(payload_path: Path, ack_path: Path) -> bool:
         set_secret_scope,
     )
     from cron.executions import adopt_claimed_execution
-    from hermes_cli.env_loader import hydrate_profile_secret_sources
-    from hermes_constants import (
-        reset_hermes_home_override,
-        set_hermes_home_override,
+    from zeus_cli.env_loader import hydrate_profile_secret_sources
+    from zeus_constants import (
+        reset_zeus_home_override,
+        set_zeus_home_override,
     )
 
     previous_multiplex = is_multiplex_active()
     home_token = secret_token = None
     try:
-        home_token = set_hermes_home_override(profile_home)
+        home_token = set_zeus_home_override(profile_home)
         multiplex_active = bool(payload.get("multiplex_active", False))
         set_multiplex_active(multiplex_active)
         # Plugin secret sources (``ctx.register_secret_source()``) only exist after plugin
         # discovery; this process starts with the builtin registry alone, so hydrating without it
         # silently dropped every plugin-sourced credential (#121929). Runs under the home override
         # so a multiplexed worker loads the OWNING profile's plugins, not the launch profile's.
-        from hermes_cli.plugins import discover_plugins
+        from zeus_cli.plugins import discover_plugins
 
         discover_plugins()
         hydrate_profile_secret_sources(profile_home)
@@ -3932,8 +3932,8 @@ def _run_external_worker_payload(payload_path: Path, ack_path: Path) -> bool:
                     execution_id,
                 )
                 return False
-            old_external_execution = os.environ.get("_HERMES_CRON_EXTERNAL_WORKER")
-            os.environ["_HERMES_CRON_EXTERNAL_WORKER"] = execution_id
+            old_external_execution = os.environ.get("_ZEUS_CRON_EXTERNAL_WORKER")
+            os.environ["_ZEUS_CRON_EXTERNAL_WORKER"] = execution_id
             try:
                 completed = run_one_job(job, adapters=None, loop=None, verbose=False)
                 # Successful return: the worker recorded its outcome. If it raises,
@@ -3943,15 +3943,15 @@ def _run_external_worker_payload(payload_path: Path, ack_path: Path) -> bool:
                 return completed
             finally:
                 if old_external_execution is None:
-                    os.environ.pop("_HERMES_CRON_EXTERNAL_WORKER", None)
+                    os.environ.pop("_ZEUS_CRON_EXTERNAL_WORKER", None)
                 else:
-                    os.environ["_HERMES_CRON_EXTERNAL_WORKER"] = old_external_execution
+                    os.environ["_ZEUS_CRON_EXTERNAL_WORKER"] = old_external_execution
     finally:
         if secret_token is not None:
             reset_secret_scope(secret_token)
         set_multiplex_active(previous_multiplex)
         if home_token is not None:
-            reset_hermes_home_override(home_token)
+            reset_zeus_home_override(home_token)
 
 
 def _notify_provider_jobs_changed() -> None:
@@ -4028,16 +4028,16 @@ _worktree_maintenance_lock = threading.Lock()
 
 
 def _worktree_maintenance_repos() -> list[str]:
-    """Repos whose ``.worktrees/`` to keep pruned: the hermes checkout, job workdir repo roots and
+    """Repos whose ``.worktrees/`` to keep pruned: the zeus checkout, job workdir repo roots and
     every repo this profile created a worktree in (``worktree_registry``), filtered to those that
     actually have a ``.worktrees/`` dir."""
     repos: set = set()
 
     with contextlib.suppress(Exception):
-        from hermes_cli.worktree_registry import registered_repos
+        from zeus_cli.worktree_registry import registered_repos
         repos.update(registered_repos())
 
-    # Hermes source checkout (git installs only; wheel installs have no .git).
+    # Zeus source checkout (git installs only; wheel installs have no .git).
     with contextlib.suppress(Exception):
         install_root = Path(__file__).resolve().parent.parent
         if (install_root / ".git").exists():
@@ -4065,16 +4065,16 @@ def _worktree_maintenance_repos() -> list[str]:
 
 def _maybe_run_worktree_maintenance() -> None:
     """Throttled worktree prune from the cron tick, on a daemon thread so the tick never waits on
-    git. Same pruner as ``hermes -w`` startup (idle dirty/unpushed trees archived before removal,
+    git. Same pruner as ``zeus -w`` startup (idle dirty/unpushed trees archived before removal,
     live trees untouched). Discovery is throttled per profile home, the prune once per repo across
     served profiles, and ``cron.scheduler_worktree_maintenance`` runs one sweep at a time per
     process. Runs in a copy of the caller's context (profile-home override); never raises."""
     global _last_worktree_maintenance_at
     import contextvars
 
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
-    home = str(get_hermes_home())
+    home = str(get_zeus_home())
     now = time.monotonic()
     with _worktree_maintenance_lock:
         stamps = _last_worktree_maintenance_at or {}
@@ -4144,12 +4144,12 @@ def _maybe_reap_dead_owners() -> None:
     whose owner process is proved gone are released (_owner_is_live), as are rows whose live owner
     holds a claim older than the derived stale bound (the process is not killed). Throttled."""
     # Dead-owner claim reclaim (#86721): execution rows carry their owner pid + process start time, but
-    # recovery previously ran only at scheduler STARTUP. A one-shot `hermes cron run` that claimed a job and
+    # recovery previously ran only at scheduler STARTUP. A one-shot `zeus cron run` that claimed a job and
     # died mid-run (its runner thread lived in the exiting CLI process) left the row 'claimed' forever while
     # the long-lived gateway ticker kept running — blocking every future run of that job. Reap provably-dead
     # owners periodically so stale claims auto-clear without a gateway restart. Throttled so idle 60s ticks
     # don't pay a ledger connection every cycle (#33612).
-    _reap_key = hermes_home_key(_get_hermes_home())
+    _reap_key = zeus_home_key(_get_zeus_home())
     _reap_now = time.monotonic()
     _last_reap = _last_dead_owner_reap_at.get(_reap_key)
     if (
@@ -4174,7 +4174,7 @@ def _maybe_reap_dead_owners() -> None:
 def _sweep_stale_inflight_for_tick(due_jobs: list) -> None:
     """Bound the in-flight set BEFORE the dedup guard so a leaked claim is force-released now
     rather than eating every later fire until restart. Skipped when nothing is in flight."""
-    _local_home = hermes_home_key(_get_hermes_home())
+    _local_home = zeus_home_key(_get_zeus_home())
     if not any(key[0] == _local_home for key in _running_job_ids):
         return
     _sweep_jobs = due_jobs
@@ -4192,13 +4192,13 @@ def _sweep_stale_inflight_for_tick(due_jobs: list) -> None:
 
 
 def _resolve_max_parallel_workers() -> Optional[int]:
-    """Max workers: env > config.yaml > unbounded (HERMES_CRON_MAX_PARALLEL=1 restores serial)."""
+    """Max workers: env > config.yaml > unbounded (ZEUS_CRON_MAX_PARALLEL=1 restores serial)."""
     try:
-        _env_par = cron_env_setting("HERMES_CRON_MAX_PARALLEL").strip()
+        _env_par = cron_env_setting("ZEUS_CRON_MAX_PARALLEL").strip()
         if _env_par:
             return int(_env_par) or None
     except (ValueError, TypeError):
-        logger.warning("Invalid HERMES_CRON_MAX_PARALLEL value; defaulting to unbounded")
+        logger.warning("Invalid ZEUS_CRON_MAX_PARALLEL value; defaulting to unbounded")
     with contextlib.suppress(Exception):
         _ucfg = load_config() or {}
         _cfg_par = (_ucfg.get("cron", {}) if isinstance(_ucfg, dict) else {}).get("max_parallel_jobs")
@@ -4294,7 +4294,7 @@ def _submit_with_guard(job: dict, pool: concurrent.futures.ThreadPoolExecutor, p
     # The home the claim was registered under. The pool worker's ``finally`` runs OUTSIDE
     # ``ctx.run``, where the per-profile cron scope is not bound, so releasing without it would
     # discard the LAUNCH home's key and leak every secondary profile's claim.
-    _claim_home = _get_hermes_home()
+    _claim_home = _get_zeus_home()
     # Record the attempt before dispatch; recovery marks abandoned rows unknown (no retry).
     execution = None
     try:
@@ -4405,9 +4405,9 @@ if __name__ == "__main__":
         # log handler every adoption/ack failure below would otherwise be
         # invisible to the persistent log.
         try:
-            from hermes_logging import setup_logging
+            from zeus_logging import setup_logging
 
-            setup_logging(hermes_home=_get_hermes_home(), mode="cron")
+            setup_logging(zeus_home=_get_zeus_home(), mode="cron")
         except Exception:
             pass
         raise SystemExit(

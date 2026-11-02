@@ -5,7 +5,7 @@ import { afterEach, expect, it } from 'vitest'
 
 import { setApiRequestConnection } from '@/api/client'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { $connectionsRegistry } from '@/store/connection-registry-state'
 import { setPrimaryGatewayConnection } from '@/store/gateway'
 import { $sidebarRowMeta, setSidebarGrouping } from '@/store/layout'
@@ -43,7 +43,7 @@ const mount = () =>
 
 afterEach(() => {
   cleanup()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
   $connection.set(null)
   setPrimaryGatewayConnection(null)
   setApiRequestConnection(null)
@@ -56,7 +56,7 @@ afterEach(() => {
 
 // The Webapp publishes no connection registry: its one gateway is the `local` source.
 it('names the Webapp gateway section after the host instead of its raw `local` id', () => {
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   mount()
   act(() => {
     $connectionsRegistry.set(null)
@@ -82,7 +82,7 @@ it('names the Webapp gateway section after the host instead of its raw `local` i
   const sections = window.document.querySelectorAll('[data-gateway-section]')
   expect(sections).toHaveLength(1)
   const gateway = sections[0] as HTMLElement
-  expect(within(gateway).getByText('Hermes host')).toBeTruthy()
+  expect(within(gateway).getByText('Zeus host')).toBeTruthy()
   expect(screen.queryByText('local')).toBeNull()
   expect(gateway.querySelectorAll('[data-gateway-group]')).toHaveLength(2)
   expect(within(gateway).getByText('listed title')).toBeTruthy()
@@ -103,7 +103,7 @@ it.each([
   { host: 'native Desktop', browser: false, connectionId: null }
 ])('shows a profile with no chats as its own section ($host)', ({ browser, connectionId }) => {
   if (browser) {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   }
 
   mount()
@@ -159,7 +159,7 @@ it.each([
       setPrimaryGatewayConnection(
         primary ? { connectionId: primary === 'remote' ? 'remote-1' : 'local', mode: primary } : null
       )
-      $connection.set(active ? ({ mode: active } as HermesConnection) : null)
+      $connection.set(active ? ({ mode: active } as ZeusConnection) : null)
       setApiRequestConnection('local')
       $connectionsRegistry.set({
         version: 2,

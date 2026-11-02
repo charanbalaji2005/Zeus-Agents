@@ -224,11 +224,11 @@ const svg = k.figureSvg({
   width: WIDTH,
   height: HEIGHT,
   label:
-    "An all-in-one desk computer in the spirit of 1984 on a bench plate: a tall case with a CRT set into its front showing the Hermes mark and a typing prompt, a floppy slot and speaker grille below, vents and a rocker switch on the side, and a keyboard joined to a side port by a coiled cord.",
+    "An all-in-one desk computer in the spirit of 1984 on a bench plate: a tall case with a CRT set into its front showing the Zeus mark and a typing prompt, a floppy slot and speaker grille below, vents and a rocker switch on the side, and a keyboard joined to a side port by a coiled cord.",
   body: [plate(), computer(), keyboard(), cable()],
 });
 
-const PHRASES = ["hello, hermes", "what is a crt?", "draw it isometric"];
+const PHRASES = ["hello, zeus", "what is a crt?", "draw it isometric"];
 
 const live = `
 const P = ${JSON.stringify(P)};
@@ -421,12 +421,12 @@ const body =
     hint: "Type on it · click it to switch",
     readout: "on · 0 chars",
     keys: [
-      { mark: "lit", label: "The screen: the Hermes mark and what you type" },
+      { mark: "lit", label: "The screen: the Zeus mark and what you type" },
       { mark: "raised", label: "Fifty-eight keys; each one goes down as it is typed" },
       { mark: "edge", label: "A coiled cord from the keyboard to the side port" },
     ],
     caption:
-      "An all-in-one desk computer in the spirit of 1984: a CRT set into a tall case, a floppy slot and speaker grille under it, vents and a rocker switch on the side. Focus it and type: each key you press goes down on the keyboard and the character lands on the screen beneath the Hermes mark. Backspace and Return work, Escape or a click on the case switches it off and the picture collapses to a line and a dot, as a CRT does.",
+      "An all-in-one desk computer in the spirit of 1984: a CRT set into a tall case, a floppy slot and speaker grille under it, vents and a rocker switch on the side. Focus it and type: each key you press goes down on the keyboard and the character lands on the screen beneath the Zeus mark. Backspace and Return work, Escape or a click on the case switches it off and the picture collapses to a line and a dot, as a CRT does.",
     body: `<div class="iso-stage" tabindex="0" role="group" aria-label="Desk computer. Type to write on its screen; Escape switches the power.">${svg}<span class="pc-sr" role="status" aria-live="polite" data-status></span></div>`,
   });
 

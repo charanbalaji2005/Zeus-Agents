@@ -19,7 +19,7 @@ def test_macos_record_binds_filename_version_and_provenance(tmp_path, monkeypatc
     request = channel_request(commit, sequence=6) if channel else None
     tag = None if channel else "v1.2.3"
     version = request["version"] if request else "1.2.3"
-    identity = request["identity"]["appId"] if request else "ai.hermes.test"
+    identity = request["identity"]["appId"] if request else "ai.zeus.test"
     stamp = ({"source": "channel-build", "channelBuild": request, "commit": commit, "tag": None}
              if request else {"commit": commit, "tag": tag, "baseVersion": version})
     root = tmp_path / "release"

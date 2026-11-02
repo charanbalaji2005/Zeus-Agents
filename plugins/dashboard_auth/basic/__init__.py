@@ -5,7 +5,7 @@ verify, refresh, ws-tickets and logout are the shared framework. Sessions are st
 HMAC-signed tokens (no IDP, no database); passwords use stdlib scrypt and login always hashes
 even for an unknown username (no username-enumeration timing oracle). Config: ``dashboard.
 basic_auth.{username,password_hash|password,secret,session_ttl_seconds}`` or the
-``HERMES_DASHBOARD_BASIC_AUTH_*`` env vars (env wins when non-empty; see ``_settings``).
+``ZEUS_DASHBOARD_BASIC_AUTH_*`` env vars (env wins when non-empty; see ``_settings``).
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import sys
 import time
 from typing import Optional
 
-from hermes_cli.dashboard_auth import DashboardAuthProvider, InvalidCredentialsError, RefreshExpiredError, Session
+from zeus_cli.dashboard_auth import DashboardAuthProvider, InvalidCredentialsError, RefreshExpiredError, Session
 from plugins.dashboard_auth._shared import (
     NonInteractiveMixin, SkipRegistration, load_config_section, register_provider, resolve_env_or_cfg)
 
@@ -198,8 +198,8 @@ def _load_config_basic_auth_section() -> dict:
 # these (nor a space), and everyone who copied the same line would share the same key.
 _UNEXPANDED_SHELL_MARKERS = ("$(", "`", "openssl rand")
 
-# The error above only reaches the log files, not the console of ``hermes serve`` /
-# ``hermes dashboard``; one stderr line per process makes it visible there too.
+# The error above only reaches the log files, not the console of ``zeus serve`` /
+# ``zeus dashboard``; one stderr line per process makes it visible there too.
 _shell_text_secret_reported = False
 
 
@@ -208,26 +208,26 @@ def _resolve_secret(cfg_section: dict) -> bytes:
     a random per-process secret (sessions then don't survive a restart or span multiple
     workers — logged at INFO). A value holding unexpanded shell text is never used as the
     key: it is logged as an error and replaced by a random per-process secret."""
-    raw = resolve_env_or_cfg("HERMES_DASHBOARD_BASIC_AUTH_SECRET", cfg_section.get("secret"))
+    raw = resolve_env_or_cfg("ZEUS_DASHBOARD_BASIC_AUTH_SECRET", cfg_section.get("secret"))
     if not raw:
         logger.info(
             "dashboard-auth-basic: no 'secret' configured; generating a random "
             "per-process signing key. Sessions will not survive a restart or span "
             "multiple workers. Set dashboard.basic_auth.secret (or "
-            "HERMES_DASHBOARD_BASIC_AUTH_SECRET) for stable sessions.")
+            "ZEUS_DASHBOARD_BASIC_AUTH_SECRET) for stable sessions.")
         return secrets.token_bytes(32)
     if any(marker in raw for marker in _UNEXPANDED_SHELL_MARKERS):
         logger.error(
             "dashboard-auth-basic: the configured signing secret contains unexpanded shell "
             "text (such as '$(openssl rand -base64 32)') instead of a random value, so it "
             "is ignored and a random per-process signing key is used. Set "
-            "HERMES_DASHBOARD_BASIC_AUTH_SECRET (or dashboard.basic_auth.secret) to the "
+            "ZEUS_DASHBOARD_BASIC_AUTH_SECRET (or dashboard.basic_auth.secret) to the "
             "output of 'openssl rand -base64 32' to keep sessions across restarts.")
         global _shell_text_secret_reported
         if not _shell_text_secret_reported:
             _shell_text_secret_reported = True
             print(
-                "hermes: dashboard login: HERMES_DASHBOARD_BASIC_AUTH_SECRET (or "
+                "zeus: dashboard login: ZEUS_DASHBOARD_BASIC_AUTH_SECRET (or "
                 "dashboard.basic_auth.secret) holds shell text instead of a random value; "
                 "using a per-process key, so sessions end on restart. Replace it with the "
                 "output of: openssl rand -base64 32", file=sys.stderr, flush=True)
@@ -249,13 +249,13 @@ def _settings() -> dict:
     def setting(env_name: str, cfg_key: str) -> str:
         return resolve_env_or_cfg(env_name, section.get(cfg_key, ""))
 
-    username = setting("HERMES_DASHBOARD_BASIC_AUTH_USERNAME", "username")
-    password_hash = setting("HERMES_DASHBOARD_BASIC_AUTH_PASSWORD_HASH", "password_hash")
-    plaintext = setting("HERMES_DASHBOARD_BASIC_AUTH_PASSWORD", "password")
-    ttl_raw = setting("HERMES_DASHBOARD_BASIC_AUTH_TTL_SECONDS", "session_ttl_seconds")
+    username = setting("ZEUS_DASHBOARD_BASIC_AUTH_USERNAME", "username")
+    password_hash = setting("ZEUS_DASHBOARD_BASIC_AUTH_PASSWORD_HASH", "password_hash")
+    plaintext = setting("ZEUS_DASHBOARD_BASIC_AUTH_PASSWORD", "password")
+    ttl_raw = setting("ZEUS_DASHBOARD_BASIC_AUTH_TTL_SECONDS", "session_ttl_seconds")
     if not username:
         raise SkipRegistration(
-            "dashboard.basic_auth.username is not set (and HERMES_DASHBOARD_BASIC_AUTH_USERNAME "
+            "dashboard.basic_auth.username is not set (and ZEUS_DASHBOARD_BASIC_AUTH_USERNAME "
             "is empty). Set a username and a password (or password_hash) under "
             "dashboard.basic_auth in config.yaml to enable username/password dashboard "
             "login, or use the OAuth provider, or pass --insecure to skip the auth gate.")
@@ -268,7 +268,7 @@ def _settings() -> dict:
     # Precedence: env password (hashed in-memory) overrides any config password_hash so
     # operators can rotate without editing config; a config password_hash wins over a
     # config-only plaintext password (preferred at-rest form).
-    plaintext_from_env = os.environ.get("HERMES_DASHBOARD_BASIC_AUTH_PASSWORD", "").strip()
+    plaintext_from_env = os.environ.get("ZEUS_DASHBOARD_BASIC_AUTH_PASSWORD", "").strip()
     if plaintext_from_env:
         password_hash = hash_password(plaintext_from_env)
         logger.info("dashboard-auth-basic: hashed env-supplied password in-memory (overrides any config password_hash).")

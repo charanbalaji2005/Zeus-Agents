@@ -8,13 +8,13 @@ import { installBrowserDesktopBridge } from './browser-desktop-bridge'
 import { announceWebappWindow, createBrowserWindowOpener } from './browser-window'
 
 const POPUP_BLOCKED = 'Webapp window did not open. Allow popups for this site and try again.'
-const bootstrap = window as Window & { __HERMES_AUTH_REQUIRED__?: boolean }
+const bootstrap = window as Window & { __ZEUS_AUTH_REQUIRED__?: boolean }
 
 afterEach(() => {
   vi.useRealTimers()
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  delete bootstrap.__HERMES_AUTH_REQUIRED__
-  window.document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  delete bootstrap.__ZEUS_AUTH_REQUIRED__
+  window.document.documentElement.removeAttribute('data-zeus-desktop-host')
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -40,7 +40,7 @@ function outcome(pending: Promise<unknown>): () => string | undefined {
 /** `/webapp/window` as the gateway serves it: says ready on the channel its fragment names, done once it has a ticket. */
 function handoffPage(href: string): unknown[] {
   const id = new URLSearchParams(new URL(href).hash.slice(1)).get('channel')
-  const channel = new BroadcastChannel(`hermes.webapp.window:${id}`)
+  const channel = new BroadcastChannel(`zeus.webapp.window:${id}`)
   const received: unknown[] = []
 
   channel.onmessage = event => {
@@ -83,7 +83,7 @@ describe('a window that says ready after the deadline', () => {
     const channels = stubBroadcastChannels()
     const open = vi.spyOn(window, 'open').mockReturnValue(null)
     const api = vi.fn().mockResolvedValue({ ticket })
-    Reflect.set(window, 'hermesDesktop', { openWindow: () => opener(privateSession, api)(target()) })
+    Reflect.set(window, 'zeusDesktop', { openWindow: () => opener(privateSession, api)(target()) })
 
     const opening = openNewWindow()
     await vi.advanceTimersByTimeAsync(3_000)
@@ -131,7 +131,7 @@ describe('gated host pop-out', () => {
     expect([name, features]).toEqual(['_blank', 'noopener,noreferrer'])
 
     // The window loads that address and boots the Webapp.
-    bootstrap.__HERMES_AUTH_REQUIRED__ = true
+    bootstrap.__ZEUS_AUTH_REQUIRED__ = true
     window.history.replaceState(null, '', String(href))
     expect(installBrowserDesktopBridge()).toBe(true)
     await vi.advanceTimersByTimeAsync(5_000)

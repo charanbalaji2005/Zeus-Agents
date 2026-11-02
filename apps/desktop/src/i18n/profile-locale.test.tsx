@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { afterEach, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection } from '@/api/client'
-import type { HermesApiRequest } from '@/global'
-import type { HermesConfigRecord } from '@/hermes'
+import type { ZeusApiRequest } from '@/global'
+import type { ZeusConfigRecord } from '@/zeus'
 import { $gateway } from '@/store/gateway'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $connection, $gatewayState } from '@/store/session'
@@ -39,23 +39,23 @@ afterEach(() => {
   resetAppLocaleRegistry()
   $requestedLocale.set(null)
   route('default')
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
   vi.restoreAllMocks()
 })
 
 // Regression for #113980: exercise the real provider, API origin binding and
 // profile routing, including an explicit pick before leaving and a fresh mount.
 it('reads and persists the owning profile through A → B → A and restart', async () => {
-  const configs: Record<string, HermesConfigRecord> = {
+  const configs: Record<string, ZeusConfigRecord> = {
     default: { display: { language: 'en' } },
     coder: { display: { language: 'zh', skin: 'mono' } }
   }
 
-  const api = vi.fn(async (request: HermesApiRequest) => {
+  const api = vi.fn(async (request: ZeusApiRequest) => {
     const key = request.profile || 'default'
 
     if (request.method === 'PUT') {
-      configs[key] = structuredClone((request.body as { config: HermesConfigRecord }).config)
+      configs[key] = structuredClone((request.body as { config: ZeusConfigRecord }).config)
 
       return { ok: true }
     }
@@ -63,7 +63,7 @@ it('reads and persists the owning profile through A → B → A and restart', as
     return structuredClone(configs[key])
   })
 
-  window.hermesDesktop = { api } as never
+  window.zeusDesktop = { api } as never
 
   const view = render(
     <I18nProvider>
@@ -91,12 +91,12 @@ it('reads and persists the owning profile through A → B → A and restart', as
 })
 
 it('isolates stale reads and failed saves when the same profile moves between connections', async () => {
-  let finishBoot!: (config: HermesConfigRecord) => void
-  let finishSaveRead!: (config: HermesConfigRecord) => void
+  let finishBoot!: (config: ZeusConfigRecord) => void
+  let finishSaveRead!: (config: ZeusConfigRecord) => void
   let rejectSave!: (reason: Error) => void
   let reads = 0
 
-  const api = vi.fn((request: HermesApiRequest) => {
+  const api = vi.fn((request: ZeusApiRequest) => {
     if (request.method === 'PUT') {
       return new Promise((_, reject) => {
         rejectSave = reject
@@ -120,7 +120,7 @@ it('isolates stale reads and failed saves when the same profile moves between co
     return Promise.resolve({ display: { language: request.connectionId === 'remote' ? 'zh' : 'en' } })
   })
 
-  window.hermesDesktop = { api } as never
+  window.zeusDesktop = { api } as never
   render(
     <I18nProvider>
       <Probe />
@@ -153,7 +153,7 @@ it('isolates stale reads and failed saves when the same profile moves between co
   await waitFor(() => expect(screen.getByTestId('locale').textContent).toBe('ar'))
 })
 
-// A backend whose hermes-lang-ko pack carries Desktop strings.
+// A backend whose zeus-lang-ko pack carries Desktop strings.
 function koPackRequest() {
   return vi.fn(async (method: string) =>
     method === 'i18n.languages'
@@ -163,7 +163,7 @@ function koPackRequest() {
               id: 'ko',
               endonym: '한국어',
               rtl: false,
-              source: 'plugin:hermes-lang-ko',
+              source: 'plugin:zeus-lang-ko',
               surfaces: ['core', 'tui', 'desktop']
             }
           ]
@@ -180,7 +180,7 @@ function savedKoWithDeferredProbe() {
     resolveProfile = resolve
   })
 
-  window.hermesDesktop = {
+  window.zeusDesktop = {
     api: vi.fn(async () => ({ display: { language: 'ko' } })),
     getMachineProfile: vi.fn(() => machineProfile)
   } as never
@@ -205,13 +205,13 @@ function mountWithOpenSocket() {
 
 // Boot reports the socket `open` before the client is published in `$gateway`.
 // The backend-pack sync must still run once the client arrives, or a language
-// only a pack renders (ko via hermes-lang-ko) never leaves English.
+// only a pack renders (ko via zeus-lang-ko) never leaves English.
 it('pulls the backend language pack once the gateway client is published after the socket opened', async () => {
-  window.hermesDesktop = { api: vi.fn(async () => ({ display: { language: 'ko' } })) } as never
+  window.zeusDesktop = { api: vi.fn(async () => ({ display: { language: 'ko' } })) } as never
   const request = koPackRequest()
 
   mountWithOpenSocket()
-  await waitFor(() => expect(window.hermesDesktop.api).toHaveBeenCalled())
+  await waitFor(() => expect(window.zeusDesktop.api).toHaveBeenCalled())
   expect(request).not.toHaveBeenCalled()
 
   act(() => $gateway.set({ request } as never))
@@ -225,7 +225,7 @@ it('keeps a pack-rendered saved language when the OS-language probe resolves aft
   const resolveProbe = savedKoWithDeferredProbe()
 
   mountWithOpenSocket()
-  await waitFor(() => expect(window.hermesDesktop.getMachineProfile).toHaveBeenCalled())
+  await waitFor(() => expect(window.zeusDesktop.getMachineProfile).toHaveBeenCalled())
 
   act(() => $gateway.set({ request: koPackRequest() } as never))
   await waitFor(() => expect(screen.getByTestId('locale').textContent).toBe('ko'))
@@ -240,7 +240,7 @@ it('promotes a saved pack language that arrives after the OS-language probe', as
   const resolveProbe = savedKoWithDeferredProbe()
 
   mountWithOpenSocket()
-  await waitFor(() => expect(window.hermesDesktop.getMachineProfile).toHaveBeenCalled())
+  await waitFor(() => expect(window.zeusDesktop.getMachineProfile).toHaveBeenCalled())
 
   await resolveProbe('en-US')
   expect(screen.getByTestId('locale').textContent).toBe('en')

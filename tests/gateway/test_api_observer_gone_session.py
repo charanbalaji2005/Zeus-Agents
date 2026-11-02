@@ -24,7 +24,7 @@ async def test_streaming_retry_after_delete_replays_terminal_receipt(api, owner)
         first = await client.post('/v1/chat/completions', json=body, headers=headers)
         assert first.status == 200, await first.text()
         assert 'answer' in await first.text()
-        sid = first.headers['X-Hermes-Session-Id']
+        sid = first.headers['X-Zeus-Session-Id']
         assert owner.db.delete_session(sid)
         owner.sessions.pop(sid, None)  # the owner's prune drops the live session with the row
         retry = await client.post('/v1/chat/completions', json=body, headers=headers)

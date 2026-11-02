@@ -72,8 +72,8 @@ def emitted_event_names() -> set[str]:
 
     for src in _tool_module_candidates(REPO / "tools"):
         names.update(_DESKTOP_UI_EMIT.findall(_read(src)))
-    names.update(_SETUP_READY.findall(_read(REPO / "hermes_cli" / "free_tier_bootstrap.py")))
-    names.update(_FREE_TIER_CHALLENGE.findall(_read(REPO / "hermes_cli" / "anon_challenge.py")))
+    names.update(_SETUP_READY.findall(_read(REPO / "zeus_cli" / "free_tier_bootstrap.py")))
+    names.update(_FREE_TIER_CHALLENGE.findall(_read(REPO / "zeus_cli" / "anon_challenge.py")))
     names.update(_LOCAL_VIEWER_PUBLISH.findall(_read(REPO / "gateway" / "local_viewer_events.py")))
     return names
 

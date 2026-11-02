@@ -138,7 +138,7 @@ export async function resolveGatewayFileBackend<T>(
 // concurrent saves into the same directory from sharing a temp file. The leading
 // dot hides the in-flight file in Finder/ls while it exists.
 export function downloadTempPath(destPath: string): string {
-  return path.join(path.dirname(destPath), `.hermes-download-${crypto.randomBytes(4).toString('hex')}.part`)
+  return path.join(path.dirname(destPath), `.zeus-download-${crypto.randomBytes(4).toString('hex')}.part`)
 }
 
 // Stream `res` to `destPath`, honoring backpressure. Bytes land in a sibling
@@ -425,7 +425,7 @@ export function destroyStalledBody(res: StallWatchableBody, idleMs: number): voi
 
   const arm = (): void => {
     stop()
-    timer = setTimeout(() => res.destroy(new Error(`Hermes backend download stalled: no data for ${idleMs}ms`)), idleMs)
+    timer = setTimeout(() => res.destroy(new Error(`Zeus backend download stalled: no data for ${idleMs}ms`)), idleMs)
   }
 
   const watch = (): void => {

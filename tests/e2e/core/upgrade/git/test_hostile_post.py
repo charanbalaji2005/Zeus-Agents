@@ -1,4 +1,4 @@
-"""Once ``hermes update`` has committed the new code, the update never fails (contract C3).
+"""Once ``zeus update`` has committed the new code, the update never fails (contract C3).
 
 One real HEAD install (``_git_world``: the real ``scripts/install.sh`` over real smart HTTP, every
 command in a ``bwrap`` sandbox) is shared by the cells. Each cell publishes a hostile upstream
@@ -9,9 +9,9 @@ release and breaks something that runs AFTER the checkout moved, for real:
     itself lives under ``scripts/build``, plus a new file under ``web/``) so ``freshness.mjs`` reports
     the web UI stale and the updater must build it. A config migration is owed too
     (``_config_version`` lowered by one): one failed step must not skip later independent ones.
-(b) a gateway that refuses to restart: a credential-free, platform-less (cron-only) ``hermes
+(b) a gateway that refuses to restart: a credential-free, platform-less (cron-only) ``zeus
     gateway run`` lives in the same PID namespace as the updater (``handoff._nshost``). The release
-    makes ``hermes_cli.gateway.run_gateway`` exit 1 before booting while
+    makes ``zeus_cli.gateway.run_gateway`` exit 1 before booting while
     ``$HOME/.e2e-break-gateway-boot`` exists. The updater drains the OLD gateway (pre-update code,
     no fault) and its relaunch boots the NEW code, which refuses to start: the restart fails for real,
     no gateway serves the new commit. Removing the toggle and updating again must retry the owed
@@ -21,15 +21,15 @@ release and breaks something that runs AFTER the checkout moved, for real:
     update runs in the shared namespace; once the slow build started, every process born after the
     update was spawned is SIGSTOPped then SIGKILLed (that is the whole update tree, including a
     completion child in its own session or reparented to the namespace init).
-(d) a sticky profile (``hermes profile use e2epost``) must not move update.log / update receipts off
-    the root hermes home, and ``hermes logs update`` under that profile reads the root's update.log;
-    pm's own sync receipts stay where pm writes them and ``hermes pm status`` there still shows them.
+(d) a sticky profile (``zeus profile use e2epost``) must not move update.log / update receipts off
+    the root zeus home, and ``zeus logs update`` under that profile reads the root's update.log;
+    pm's own sync receipts stay where pm writes them and ``zeus pm status`` there still shows them.
 (e) the dependency sync fails after the tree moved (contract amendment A6): the release's
     ``pm.client.ensure_tools_for_sync`` raises while ``$HOME/.e2e-break-deps-sync`` exists; it runs in
     the completion bootstrap from the NEW tree, after the checkout moved. Exit 0, a ``dependencies``
     follow-up, the tail obligation armed; the next update completes it.
 (f) Ctrl-C after the commit point: SIGINT (what a terminal's Ctrl-C delivers to the foreground
-    ``hermes update``; the completion child runs in its own session) while the slow web build runs.
+    ``zeus update``; the completion child runs in its own session) while the slow web build runs.
     The user must read that the new code is in place and the rest is owed, never a failure.
 
 What is asserted is what the user sees: the exit code, ``⚠`` lines, the receipt at
@@ -54,7 +54,7 @@ from typing import Iterator
 
 import pytest
 
-import hermes_yaml as yaml
+import zeus_yaml as yaml
 from tests.e2e.core.upgrade import _helpers as H
 from tests.e2e.core.upgrade import _install_helpers as I
 from tests.e2e.core.upgrade.git import _git_world as G
@@ -114,8 +114,8 @@ _HOSTILE_DEPS = f"""    {_DEPS_MARK}
 
 @pytest.fixture(scope="module")
 def w() -> Iterator[G.World]:
-    """A SHORT root (the gateway's AF_UNIX control socket lives under ``$HERMES_HOME``; pytest's deep
-    ``tmp_path`` overflows ``sun_path``). Set ``HERMES_E2E_KEEP_ROOT=1`` to keep it for a post-mortem."""
+    """A SHORT root (the gateway's AF_UNIX control socket lives under ``$ZEUS_HOME``; pytest's deep
+    ``tmp_path`` overflows ``sun_path``). Set ``ZEUS_E2E_KEEP_ROOT=1`` to keep it for a post-mortem."""
     base = os.environ.get("TMPDIR") or tempfile.gettempdir()
     root = Path(tempfile.mkdtemp(prefix="hp", dir=base))
     try:
@@ -123,12 +123,12 @@ def w() -> Iterator[G.World]:
             _edit_config(world, lambda cfg: cfg.update(updates={**(cfg.get("updates") or {}), "check": False}))
             yield world
     finally:
-        if not os.environ.get("HERMES_E2E_KEEP_ROOT"):
+        if not os.environ.get("ZEUS_E2E_KEEP_ROOT"):
             shutil.rmtree(root, ignore_errors=True)
 
 
 def _config_path(w: G.World) -> Path:
-    return w.sb.hermes_home / "config.yaml"
+    return w.sb.zeus_home / "config.yaml"
 
 
 def _load_config(w: G.World) -> dict:
@@ -163,7 +163,7 @@ def _clear_toggles(w: G.World) -> None:
 
 def _pending_markers(w: G.World) -> list[str]:
     """The ``source-completion-pending`` obligation(s) in the install-state dir(s)."""
-    installs = w.sb.hermes_home / "installs"
+    installs = w.sb.zeus_home / "installs"
     return sorted(str(p) for p in installs.glob("**/source-completion-pending")) if installs.is_dir() else []
 
 
@@ -177,7 +177,7 @@ def _followup_steps(rec: dict) -> set[str]:
 
 
 def _update_log(w: G.World) -> Path:
-    return w.sb.hermes_home / "logs" / "update.log"
+    return w.sb.zeus_home / "logs" / "update.log"
 
 
 def _read(p: Path) -> str:
@@ -200,7 +200,7 @@ def _obligation(w: G.World) -> str:
     """The host fleet-restart obligation record(s) anywhere in the sandbox (diagnostics only)."""
     found = []
     for base, dirs, files in os.walk(w.sb.root):
-        dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", "venv", ".venv", "hermes-agent")]
+        dirs[:] = [d for d in dirs if d not in ("node_modules", ".git", "venv", ".venv", "zeus-agents")]
         if "host-update-restart.json" in files:
             path = Path(base) / "host-update-restart.json"
             found.append(f"{path}: {_read(path)[:600]}")
@@ -253,14 +253,14 @@ def _publish_web_release(w: G.World, tag: str) -> str:
 
 
 def _publish_gateway_fault_release(w: G.World, tag: str) -> str:
-    """A release whose ``hermes gateway run`` refuses to boot while the toggle exists."""
-    text = _head_file(w, "hermes_cli/gateway.py")
+    """A release whose ``zeus gateway run`` refuses to boot while the toggle exists."""
+    text = _head_file(w, "zeus_cli/gateway.py")
     if _GATEWAY_MARK not in text:
         m = re.search(r"^def run_gateway\(.*?\):\n    \"\"\".*?\"\"\"\n", text, re.DOTALL | re.MULTILINE)
-        assert m, "premise: hermes_cli/gateway.py has no run_gateway() with a docstring to inject after"
+        assert m, "premise: zeus_cli/gateway.py has no run_gateway() with a docstring to inject after"
         text = text[:m.end()] + _HOSTILE_GATEWAY + text[m.end():]
     return w.publish(f"release: e2e hostile post gateway {tag}", {
-        "hermes_cli/gateway.py": text,
+        "zeus_cli/gateway.py": text,
         f"docs/e2e-hostile-post-{tag}.txt": f"release {tag}\n",
     })
 
@@ -294,8 +294,8 @@ def _namespace(w: G.World) -> Iterator[NamespaceHost]:
 
 
 def _ns_cli(host: NamespaceHost, w: G.World, *args: str, timeout: float = 600):
-    cp = host.run([w.sb.hermes, *args], timeout=timeout)
-    w.transcripts.append(f"$ hermes {' '.join(args)} -> rc={cp.returncode}\n{(cp.stdout or '')[-6000:]}\n"
+    cp = host.run([w.sb.zeus, *args], timeout=timeout)
+    w.transcripts.append(f"$ zeus {' '.join(args)} -> rc={cp.returncode}\n{(cp.stdout or '')[-6000:]}\n"
                          f"{(cp.stderr or '')[-3000:]}")
     return cp
 
@@ -308,7 +308,7 @@ def _identify(w: G.World) -> dict | None:
     from gateway.control_socket import identify_gateway
 
     with contextlib.suppress(Exception):
-        return identify_gateway(w.sb.hermes_home, timeout=5.0)
+        return identify_gateway(w.sb.zeus_home, timeout=5.0)
     return None
 
 
@@ -337,7 +337,7 @@ def _kill_born_after(host: NamespaceHost, before: set[int]) -> list[int]:
 
 
 def _gateway_logs(w: G.World) -> str:
-    logs = w.sb.hermes_home / "logs"
+    logs = w.sb.zeus_home / "logs"
     chunks = [_read(p)[-4000:] for p in sorted(logs.glob("*.log"))] if logs.is_dir() else []
     chunks += [_read(p)[-4000:] for p in sorted(w.sb.root.glob("gateway-*.log"))]
     return "\n".join(chunks)
@@ -351,7 +351,7 @@ def test_failed_web_build_after_commit_is_a_followup_not_a_failed_update(w):
     _clear_toggles(w)
     latest = _config_version(w)
     if latest is None:
-        from hermes_cli.config_defaults import DEFAULT_CONFIG
+        from zeus_cli.config_defaults import DEFAULT_CONFIG
 
         latest = int(DEFAULT_CONFIG["_config_version"])
     owed = latest - 1
@@ -372,7 +372,7 @@ def test_failed_web_build_after_commit_is_a_followup_not_a_failed_update(w):
 
     assert w.head() == target, f"premise: the release never committed, so this is no post-commit cell:\n{diag}"
     assert WEB_FAULT_TEXT in out + log, f"premise: the hostile web build never ran (web UI not seen stale?):\n{diag}"
-    assert cp.returncode == 0, f"the code committed, yet a failed web build failed `hermes update`:\n{diag}"
+    assert cp.returncode == 0, f"the code committed, yet a failed web build failed `zeus update`:\n{diag}"
     assert _warn_lines(out), f"the failed web build was not surfaced with a ⚠ line:\n{diag}"
     assert rec.get("outcome") == "success", f"receipt outcome is not success after the commit:\n{diag}"
     assert "build" in _followup_steps(rec), f"receipt followups do not name the failed `build` step:\n{diag}"
@@ -388,7 +388,7 @@ def test_failed_web_build_after_commit_is_a_followup_not_a_failed_update(w):
     assert cp.returncode == 0 and w.head() == target, f"the healing update failed:\n{diag}"
     assert not _followups(rec), f"the healing update still reports followups:\n{diag}"
     assert not _pending_markers(w), f"the healing update left the completion obligation armed:\n{diag}"
-    assert (w.checkout / "hermes_cli" / "web_dist" / "index.html").is_file(), \
+    assert (w.checkout / "zeus_cli" / "web_dist" / "index.html").is_file(), \
         f"the healing update did not build the web UI:\n{diag}"
 
 
@@ -401,7 +401,7 @@ def test_gateway_that_cannot_reboot_is_an_owed_restart_not_a_failed_update(w):
     _clear_toggles(w)
     with _namespace(w) as host:
         try:
-            gw = host.spawn([w.sb.hermes, "gateway", "run"], log=w.sb.root / "gateway-b.log")  # sandbox-writable
+            gw = host.spawn([w.sb.zeus, "gateway", "run"], log=w.sb.root / "gateway-b.log")  # sandbox-writable
             before_sha = w.head()
             try:
                 ident = H.wait_for(lambda: _serving(w, before_sha), timeout=240, interval=1.0,
@@ -419,11 +419,11 @@ def test_gateway_that_cannot_reboot_is_an_owed_restart_not_a_failed_update(w):
             facts = _facts(w, cp, gateway_before=f"pid {ident.get('pid')} sha {before_sha[:12]} (spawned {gw})",
                            identify_after=_identify(w), obligation_after_update=obligation_after_update)
             diag = (facts + w.diag(cp) + "\n--- gateway logs ---\n" + _gateway_logs(w)[-6000:]
-                    + "\n--- sandbox ---\n" + host.ps_text() + "\n--- hermes status ---\n" + G.output(status)[-3000:])
+                    + "\n--- sandbox ---\n" + host.ps_text() + "\n--- zeus status ---\n" + G.output(status)[-3000:])
 
             assert w.head() == target, f"premise: the release never committed:\n{diag}"
             assert not _serving(w, target), f"premise: a gateway serves the new commit; the restart fault never fired:\n{diag}"
-            assert cp.returncode == 0, f"the code committed, yet a failed gateway restart failed `hermes update`:\n{diag}"
+            assert cp.returncode == 0, f"the code committed, yet a failed gateway restart failed `zeus update`:\n{diag}"
             assert _warn_lines(out), f"the failed gateway restart was not surfaced with a ⚠ line:\n{diag}"
             assert rec.get("outcome") == "success", f"receipt outcome is not success after the commit:\n{diag}"
             assert "gateway_restart" in _followup_steps(rec), \
@@ -443,7 +443,7 @@ def test_gateway_that_cannot_reboot_is_an_owed_restart_not_a_failed_update(w):
             status = _ns_cli(host, w, "status", timeout=300)
             diag = (_facts(w, cp, identify_after=_identify(w)) + w.diag(cp) + "\n--- gateway logs ---\n"
                     + _gateway_logs(w)[-6000:] + "\n--- sandbox ---\n" + host.ps_text()
-                    + "\n--- hermes status ---\n" + G.output(status)[-3000:])
+                    + "\n--- zeus status ---\n" + G.output(status)[-3000:])
             assert cp.returncode == 0, f"the retrying update failed:\n{diag}"
             assert served, f"the retry did not relaunch the paused gateway on {target[:12]}:\n{diag}"
             assert OWED_RESTART not in G.output(status), \
@@ -454,7 +454,7 @@ def test_gateway_that_cannot_reboot_is_an_owed_restart_not_a_failed_update(w):
                 if p["pid"] > 2 and "gateway" in p["cmdline"]:
                     host.kill(p["pid"], signal.SIGKILL)  # windows-footgun: ok - linux-only (bwrap) module
     # The namespace (and its gateways) is gone; its PID file names a PID of a dead namespace.
-    (w.sb.hermes_home / "gateway.pid").unlink(missing_ok=True)
+    (w.sb.zeus_home / "gateway.pid").unlink(missing_ok=True)
 
 
 def test_sigkill_during_post_commit_tail_leaves_a_running_receipt(w):
@@ -470,7 +470,7 @@ def test_sigkill_during_post_commit_tail_leaves_a_running_receipt(w):
         with _namespace(w) as host:
             before = {p["pid"] for p in host.procs()}
             spawn_log = w.sb.root / "update-c.log"  # sandbox-writable
-            upd = host.spawn([w.sb.hermes, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
+            upd = host.spawn([w.sb.zeus, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
                              log=spawn_log)
 
             def _slow_build_running():
@@ -515,7 +515,7 @@ def test_sigkill_during_post_commit_tail_leaves_a_running_receipt(w):
 def test_sticky_profile_update_logs_and_receipts_land_in_the_root_home(w):
     w.reset_clean()
     _clear_toggles(w)
-    root = w.sb.hermes_home
+    root = w.sb.zeus_home
     prof_receipts = root / "profiles" / PROFILE / "logs" / "update_receipts"
     if not (root / "profiles" / PROFILE).is_dir():
         cp = w.sb.cli("profile", "create", PROFILE, "--no-alias", timeout=300)
@@ -550,14 +550,14 @@ def test_sticky_profile_update_logs_and_receipts_land_in_the_root_home(w):
             f"pm's sync receipt for this update is missing from the profile home {prof_receipts}:\n{diag}"
         pm_cp = w.sb.cli("pm", "status", timeout=300)
         assert pm_cp.returncode == 0 and json.loads(pm_cp.stdout).get("update_id") == rec.get("update_id"), \
-            f"`hermes pm status` under the profile does not show this run's newest receipt:\n{H.describe(pm_cp)}\n{diag}"
+            f"`zeus pm status` under the profile does not show this run's newest receipt:\n{H.describe(pm_cp)}\n{diag}"
         assert log1 > log0, f"the root update.log did not grow:\n{diag}"
         assert rec.get("update_id") != prev.get("update_id") and rec.get("outcome") == "success", \
             f"root latest.json is not this run's success:\n{diag}"
-        # The readers follow the writers: `hermes logs update` under the profile shows the root log.
+        # The readers follow the writers: `zeus logs update` under the profile shows the root log.
         logs_cp = w.sb.cli("logs", "update", "-n", "400", timeout=300)
-        assert logs_cp.returncode == 0 and "hermes update started" in G.output(logs_cp), \
-            f"`hermes logs update` under the sticky profile does not show the root update.log:\n{H.describe(logs_cp)}\n{diag}"
+        assert logs_cp.returncode == 0 and "zeus update started" in G.output(logs_cp), \
+            f"`zeus logs update` under the sticky profile does not show the root update.log:\n{H.describe(logs_cp)}\n{diag}"
     finally:
         w.sb.cli("profile", "use", "default", timeout=300)
 
@@ -577,7 +577,7 @@ def test_dependency_sync_failure_after_commit_is_a_followup_not_a_failed_update(
 
     assert w.head() == target, f"premise: the release never committed, so this is no post-commit cell:\n{diag}"
     assert DEPS_FAULT_TEXT in out, f"premise: the hostile dependency sync never ran:\n{diag}"
-    assert cp.returncode == 0, f"the code committed, yet a failed dependency sync failed `hermes update`:\n{diag}"
+    assert cp.returncode == 0, f"the code committed, yet a failed dependency sync failed `zeus update`:\n{diag}"
     assert any(DEPS_OWED in line for line in _warn_lines(out)), \
         f"no ⚠ line says the dependencies are not installed yet:\n{diag}"
     assert rec.get("outcome") == "success", f"receipt outcome is not success after the commit:\n{diag}"
@@ -617,7 +617,7 @@ def test_ctrl_c_after_commit_reports_the_new_code_not_a_failed_update(w):
     try:
         with _namespace(w) as host:
             spawn_log = w.sb.root / "update-f.log"  # sandbox-writable
-            upd = host.spawn([w.sb.hermes, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
+            upd = host.spawn([w.sb.zeus, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
                              log=spawn_log)
 
             def _slow_build_running():

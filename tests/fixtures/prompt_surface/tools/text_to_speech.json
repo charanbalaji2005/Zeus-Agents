@@ -8,7 +8,7 @@
         "type": "string"
       },
       "output_path": {
-        "description": "Optional custom file path to save the audio. Defaults to ~/.hermes/audio_cache/<timestamp>.mp3",
+        "description": "Optional custom file path to save the audio. Defaults to ~/.zeus/audio_cache/<timestamp>.mp3",
         "type": "string"
       },
       "speed": {

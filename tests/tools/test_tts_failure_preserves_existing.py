@@ -17,7 +17,7 @@ from tools import tts_tool
 def _edge_without_session_platform(monkeypatch):
     for var in _VAR_MAP.values():
         var.set(_UNSET)
-    monkeypatch.delenv("HERMES_SESSION_PLATFORM", raising=False)
+    monkeypatch.delenv("ZEUS_SESSION_PLATFORM", raising=False)
     monkeypatch.setattr(tts_tool, "_load_tts_config", lambda: {"provider": "edge"})
     monkeypatch.setattr(tts_tool, "_import_edge_tts", lambda: object())
     yield
@@ -27,7 +27,7 @@ def _edge_without_session_platform(monkeypatch):
 
 @pytest.fixture
 def audio_dir(tmp_path):
-    path = tmp_path / "audio"  # tmp_path also holds the conftest's isolated HERMES_HOME
+    path = tmp_path / "audio"  # tmp_path also holds the conftest's isolated ZEUS_HOME
     path.mkdir()
     return path
 

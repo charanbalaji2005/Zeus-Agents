@@ -1,4 +1,4 @@
-import type { ProjectInfo, SessionLiveInfo, SubagentStatus, ToolLabel } from '@hermes/shared/gateway-events'
+import type { ProjectInfo, SessionLiveInfo, SubagentStatus, ToolLabel } from '@zeus/shared/gateway-events'
 
 import type { SharedControl } from './canonicalGateway.js'
 

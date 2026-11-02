@@ -113,7 +113,7 @@ function windowPlan(
   return { billing: okBilling(billing), subscription: okSubscription(subscription) }
 }
 
-// Mirrors hermes_cli/model_picker_usage.py::gauge_style (green > 0.5, yellow >= 0.2, red below).
+// Mirrors zeus_cli/model_picker_usage.py::gauge_style (green > 0.5, yellow >= 0.2, red below).
 function styleFor(left: number): string {
   return left < 0.2 ? 'red' : left < 0.5 ? 'yellow' : 'green'
 }

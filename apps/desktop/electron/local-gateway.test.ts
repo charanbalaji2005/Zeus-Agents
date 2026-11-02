@@ -7,22 +7,22 @@ import { shortSocketTmpDir } from './local-gateway.test-helpers'
 
 test('the ensure client inherits the caller-scrubbed parent env, not the raw Desktop env', async () => {
   // #68367: a sibling profile's `gateway ensure` must not see the launch profile's dotenv
-  // credentials. The parent env passed in IS the environment; only HERMES_HOME and the
+  // credentials. The parent env passed in IS the environment; only ZEUS_HOME and the
   // backend's own entries are layered on top.
-  const printEnv = ['-e', 'process.stdout.write(JSON.stringify({ leak: process.env.LEAK ?? null, home: process.env.HERMES_HOME, own: process.env.OWN }))']
+  const printEnv = ['-e', 'process.stdout.write(JSON.stringify({ leak: process.env.LEAK ?? null, home: process.env.ZEUS_HOME, own: process.env.OWN }))']
 
   const result = await runGatewayEnsure(
     { command: process.execPath, args: printEnv, env: { OWN: '1' }, shell: false },
     process.cwd(),
-    '/home/x/.hermes',
+    '/home/x/.zeus',
     { PATH: process.env.PATH ?? '', OWN: '0' }
   )
 
-  expect(JSON.parse(result.stdout)).toEqual({ leak: null, home: '/home/x/.hermes', own: '1' })
+  expect(JSON.parse(result.stdout)).toEqual({ leak: null, home: '/home/x/.zeus', own: '1' })
 })
 
 test('a shell-delegated ensure quotes a spaced Windows install path (#74064)', async () => {
-  // cmd.exe cuts an unquoted `C:\Users\John Doe\...\hermes.cmd` at the first space.
+  // cmd.exe cuts an unquoted `C:\Users\John Doe\...\zeus.cmd` at the first space.
   const spawned: string[] = []
   vi.resetModules()
   vi.doMock('node:child_process', () => ({
@@ -36,7 +36,7 @@ test('a shell-delegated ensure quotes a spaced Windows install path (#74064)', a
 
   try {
     const { runGatewayEnsure: ensure } = await import('./local-gateway')
-    const command = 'C:\\Users\\John Doe\\AppData\\Local\\hermes\\hermes.cmd'
+    const command = 'C:\\Users\\John Doe\\AppData\\Local\\zeus\\zeus.cmd'
     await expect(ensure({ command, args: ['gateway', 'ensure'], env: {}, shell: true }, 'C:\\', 'C:\\h')).rejects.toThrow('stop after spawn')
     await expect(ensure({ command, args: [], env: {}, shell: false }, 'C:\\', 'C:\\h')).rejects.toThrow('stop after spawn')
     expect(spawned).toEqual([`"${command}"`, command])
@@ -82,8 +82,8 @@ test.skipIf(process.platform === 'win32').each([0o700, 0o750, 0o701])('native HT
     const descriptor = { gatewayEndpoint: endpoint, baseUrl: endpoint.api_origin }
     const a = await nativeGatewayHttpHeaders(descriptor, endpoint.api_origin + '/api/config')
     const b = await nativeGatewayHttpHeaders(descriptor, endpoint.api_origin + '/api/config')
-    expect(a).toEqual({ 'X-Hermes-Gateway-Ticket': 'grant-1' })
-    expect(b).toEqual({ 'X-Hermes-Gateway-Ticket': 'grant-2' })
+    expect(a).toEqual({ 'X-Zeus-Gateway-Ticket': 'grant-1' })
+    expect(b).toEqual({ 'X-Zeus-Gateway-Ticket': 'grant-2' })
     expect(requests.map(r => r.params)).toEqual([1, 2].map(() => ({ profile_id: home, instance_id: 'owner', purpose: 'native-http' })))
     await expect(nativeGatewayHttpHeaders(descriptor, 'http://127.0.0.1:4567/api/config')).rejects.toThrow('origin')
     expect(requests).toHaveLength(2)
@@ -178,7 +178,7 @@ test('a restart-wait owner is attached to answer a parked prompt; a plain drain 
 })
 
 test('a stale owner this window restarts is attached in its restart wait before the restart finishes (#139041)', async () => {
-  // `hermes gateway restart` waits for the old owner to exit; a turn parked on approval/clarify
+  // `zeus gateway restart` waits for the old owner to exit; a turn parked on approval/clarify
   // there waits for an answer only this window can give. Awaiting the restart first deadlocked both.
   const { createStaleGatewayRestarter } = await import('./local-gateway')
   const endpoint = { profile_id: '/h', instance_id: 'old', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1234', capabilities: ['session-authority-v1'], supervisor: 'none', code_sha: 'old' }
@@ -199,14 +199,14 @@ test('a stale owner this window restarts is attached in its restart wait before 
 })
 
 test('an ensure child that never reached the protocol boundary is diagnosed from stderr, not as a JSON parse error', async () => {
-  // `main`'s hermes has no `gateway ensure` subcommand: argparse usage on stderr, nothing on stdout.
-  const legacy = { code: 2, stdout: '', stderr: "usage: hermes gateway [-h] ...\nhermes gateway: 'ensure' is not a `hermes gateway` command.\nRun `hermes gateway --help` to see all commands.\n" }
-  await expect(ensureLocalGateway(async () => legacy)).rejects.toThrow(/produced no result \(exit 2\): Run `hermes gateway --help`/)
+  // `main`'s zeus has no `gateway ensure` subcommand: argparse usage on stderr, nothing on stdout.
+  const legacy = { code: 2, stdout: '', stderr: "usage: zeus gateway [-h] ...\nzeus gateway: 'ensure' is not a `zeus gateway` command.\nRun `zeus gateway --help` to see all commands.\n" }
+  await expect(ensureLocalGateway(async () => legacy)).rejects.toThrow(/produced no result \(exit 2\): Run `zeus gateway --help`/)
   // A missing profile: the CLI exits 1 before the ensure command runs.
   await expect(ensureLocalGateway(async () => ({ code: 1, stdout: '', stderr: "Error: Profile 'gone' does not exist.\n" }))).rejects.toThrow(/exit 1\): Error: Profile 'gone' does not exist\./)
   // A protocol outcome is never re-diagnosed: `incompatible` stays the gateway's own verdict.
   await expect(ensureLocalGateway(async () => ({ code: 3, stdout: '{"endpoint":null,"reason_code":"runtime_protocol","state":"incompatible"}', stderr: 'noise' }))).rejects.toThrow('Gateway incompatible (runtime_protocol)')
-  await expect(ensureLocalGateway(async () => ({ code: 0, stdout: '', stderr: '' }))).rejects.toThrow(/produced no result \(exit 0\)\. Update Hermes/)
+  await expect(ensureLocalGateway(async () => ({ code: 0, stdout: '', stderr: '' }))).rejects.toThrow(/produced no result \(exit 0\)\. Update Zeus/)
 })
 
 test('private dial credential is one-use and bound to the requesting native window', () => {
@@ -216,13 +216,13 @@ test('private dial credential is one-use and bound to the requesting native wind
   dial.searchParams.delete('ticket')
   const url = dial.toString()
   expect(url).not.toContain('private-ticket')
-  const details = { url, webContentsId: 8, resourceType: 'webSocket', requestHeaders: { Origin: 'http://renderer', 'Sec-WebSocket-Protocol': 'hermes-gateway-v1, hermes-gateway-ticket.private-ticket' } }
+  const details = { url, webContentsId: 8, resourceType: 'webSocket', requestHeaders: { Origin: 'http://renderer', 'Sec-WebSocket-Protocol': 'zeus-gateway-v1, zeus-gateway-ticket.private-ticket' } }
   expect(dials.headers(details)).toBeNull()
   // The dial may cross a loopback proxy that rewrites host:port but keeps the nonce.
   const proxied = url.replace('127.0.0.1:1234', '127.0.0.1:4321')
   const headers = dials.headers({ ...details, url: proxied, webContentsId: 7 })!
   expect(headers).not.toHaveProperty('Origin')
-  expect(headers['Sec-WebSocket-Protocol']).toBe('hermes-gateway-v1, hermes-gateway-ticket.private-ticket')
+  expect(headers['Sec-WebSocket-Protocol']).toBe('zeus-gateway-v1, zeus-gateway-ticket.private-ticket')
   expect(dials.headers({ ...details, webContentsId: 7 })).toBeNull()
 })
 
@@ -274,8 +274,8 @@ test('a redial whose re-ensure comes back without a gateway endpoint names that,
   expect(mint).toHaveBeenCalledTimes(1)
 })
 
-test('a ready owner running other code than this Hermes is restarted once, then re-ensured', async () => {
-  // After `hermes update` the live gateway still serves the old code and answers model calls
+test('a ready owner running other code than this Zeus is restarted once, then re-ensured', async () => {
+  // After `zeus update` the live gateway still serves the old code and answers model calls
   // 503 "Restart required"; attaching to it on every dial pinned the user to it forever.
   const { createStaleGatewayRestarter } = await import('./local-gateway')
   const endpoint = { profile_id: '/h/profiles/w', control_home: '/h', instance_id: 'old', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1234', capabilities: ['session-authority-v1'], supervisor: 'none', code_sha: 'OLD' }
@@ -377,7 +377,7 @@ test.skipIf(process.platform === 'win32')('a corrupt control pointer is a stale 
   const home = await shortSocketTmpDir('desktop-pointer-')
   const runtime = await shortSocketTmpDir('desktop-gw-')
   const hash = crypto.createHash('sha256').update(home).digest('hex').slice(0, 16)
-  const socketPath = path.join(runtime, `hermes-gw-${hash}`, 'control.sock')
+  const socketPath = path.join(runtime, `zeus-gw-${hash}`, 'control.sock')
   const pointer = path.join(home, 'gateway.sock.path')
   const endpoint = { profile_id: home, instance_id: 'owner', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1234', capabilities: ['session-authority-v1'], supervisor: 'none' }
   await fs.mkdir(path.dirname(socketPath), { mode: 0o700 })
@@ -446,7 +446,7 @@ test.skipIf(process.platform === 'win32')('a group-accessible control socket is 
   }
 })
 
-// R7: the profile home keeps the operator's mode (Python `home_mode_unsafe`: HERMES_HOME_MODE
+// R7: the profile home keeps the operator's mode (Python `home_mode_unsafe`: ZEUS_HOME_MODE
 // 0750/0701, a 0755 home); only write by another user can swap the socket. The socket stays 0600.
 test.skipIf(process.platform === 'win32')('a supported home mode mints its ticket; a home others can write is refused', async () => {
   const fs = await import('node:fs/promises')
@@ -483,30 +483,30 @@ test.skipIf(process.platform === 'win32')('a supported home mode mints its ticke
 })
 
 test('a ?profile= request on the shared host descriptor mints for the sibling profile home', () => {
-  const endpoint = { profile_id: path.resolve('hermes-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/sessions?profile=p2', path.resolve('hermes-home'))).toMatchObject({ profile_id: path.resolve('hermes-home', 'profiles', 'p2'), control_home: path.resolve('hermes-home') })
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/sessions?profile=default', path.resolve('hermes-home'))).toBe(endpoint)
-  expect(routedGatewayEndpoint({ ...endpoint, profile_id: path.resolve('hermes-home', 'profiles', 'p2'), control_home: path.resolve('hermes-home') }, 'http://127.0.0.1:1/x?profile=default', path.resolve('hermes-home'))).toMatchObject({ profile_id: path.resolve('hermes-home') })
-  expect(() => routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/x?profile=../evil', path.resolve('hermes-home'))).toThrow('Invalid profile route')
+  const endpoint = { profile_id: path.resolve('zeus-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/sessions?profile=p2', path.resolve('zeus-home'))).toMatchObject({ profile_id: path.resolve('zeus-home', 'profiles', 'p2'), control_home: path.resolve('zeus-home') })
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/sessions?profile=default', path.resolve('zeus-home'))).toBe(endpoint)
+  expect(routedGatewayEndpoint({ ...endpoint, profile_id: path.resolve('zeus-home', 'profiles', 'p2'), control_home: path.resolve('zeus-home') }, 'http://127.0.0.1:1/x?profile=default', path.resolve('zeus-home'))).toMatchObject({ profile_id: path.resolve('zeus-home') })
+  expect(() => routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/x?profile=../evil', path.resolve('zeus-home'))).toThrow('Invalid profile route')
 })
 
 test('a profile SOUL route mints for the profile named in its path', () => {
-  const endpoint = { profile_id: path.resolve('hermes-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
+  const endpoint = { profile_id: path.resolve('zeus-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
 
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/p2/soul', path.resolve('hermes-home'))).toMatchObject({
-    profile_id: path.resolve('hermes-home', 'profiles', 'p2'),
-    control_home: path.resolve('hermes-home')
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/p2/soul', path.resolve('zeus-home'))).toMatchObject({
+    profile_id: path.resolve('zeus-home', 'profiles', 'p2'),
+    control_home: path.resolve('zeus-home')
   })
 })
 
 // Every /api/profiles/<name>/* route the Profiles screen calls is checked against the path's
 // profile (native_http._check_profile_scope); collection routes beneath it stay on their selector.
 test('every named Profiles-screen route mints for its profile; collection routes do not', () => {
-  const endpoint = { profile_id: path.resolve('hermes-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
+  const endpoint = { profile_id: path.resolve('zeus-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
   const route = (p: string) => routedGatewayEndpoint(endpoint, `http://127.0.0.1:1${p}`, endpoint.profile_id).profile_id
 
   for (const p of ['/api/profiles/p2', '/api/profiles/p2/soul', '/api/profiles/p2/setup-command', '/api/profiles/p2/export']) {
-    expect(route(p)).toBe(path.resolve('hermes-home', 'profiles', 'p2'))
+    expect(route(p)).toBe(path.resolve('zeus-home', 'profiles', 'p2'))
   }
 
   expect(route('/api/profiles/default/soul')).toBe(endpoint.profile_id)
@@ -515,31 +515,31 @@ test('every named Profiles-screen route mints for its profile; collection routes
     expect(route(p)).toBe(endpoint.profile_id)
   }
 
-  expect(route('/api/profiles/sessions?profile=p2')).toBe(path.resolve('hermes-home', 'profiles', 'p2'))
+  expect(route('/api/profiles/sessions?profile=p2')).toBe(path.resolve('zeus-home', 'profiles', 'p2'))
 })
 
 // A profile may be NAMED like a collection route: only the exact collection paths stay on their
 // selector, so `/api/profiles/projects/soul` still mints for the `projects` profile.
 test('a profile named like a collection route still gets its own ticket', () => {
-  const endpoint = { profile_id: path.resolve('hermes-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
+  const endpoint = { profile_id: path.resolve('zeus-home'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: null }
   const route = (p: string) => routedGatewayEndpoint(endpoint, `http://127.0.0.1:1${p}`, endpoint.profile_id).profile_id
 
   for (const name of ['projects', 'sessions', 'active', 'import']) {
-    expect(route(`/api/profiles/${name}/soul`)).toBe(path.resolve('hermes-home', 'profiles', name))
+    expect(route(`/api/profiles/${name}/soul`)).toBe(path.resolve('zeus-home', 'profiles', name))
   }
 
-  expect(route('/api/profiles/sessions/sidebar?recents_profile=p2')).toBe(path.resolve('hermes-home', 'profiles', 'p2'))
-  expect(route('/api/profiles/sessions/pull-requests?profile=p2')).toBe(path.resolve('hermes-home', 'profiles', 'p2'))
+  expect(route('/api/profiles/sessions/sidebar?recents_profile=p2')).toBe(path.resolve('zeus-home', 'profiles', 'p2'))
+  expect(route('/api/profiles/sessions/pull-requests?profile=p2')).toBe(path.resolve('zeus-home', 'profiles', 'p2'))
 })
 
 // The batched sidebar names its owner in `recents_profile`; a grant for the window's own profile
 // is refused there (profile_scope_mismatch) and the sidebar drops that profile's sessions.
 test('a sidebar read mints for the profile its recents_profile names', () => {
-  const endpoint = { profile_id: path.resolve('hermes-home', 'profiles', 'p2'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: path.resolve('hermes-home') }
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?recents_profile=default&recents_limit=40', path.resolve('hermes-home'))).toMatchObject({ profile_id: path.resolve('hermes-home') })
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?recents_profile=p2', path.resolve('hermes-home'))).toBe(endpoint)
+  const endpoint = { profile_id: path.resolve('zeus-home', 'profiles', 'p2'), instance_id: 'i', authority_epoch: 1, runtime_protocol: 1, api_origin: 'http://127.0.0.1:1', capabilities: [], supervisor: 'none', control_home: path.resolve('zeus-home') }
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?recents_profile=default&recents_limit=40', path.resolve('zeus-home'))).toMatchObject({ profile_id: path.resolve('zeus-home') })
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?recents_profile=p2', path.resolve('zeus-home'))).toBe(endpoint)
   // `profile` is not the sidebar's selector.
-  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?profile=default&recents_profile=p2', path.resolve('hermes-home'))).toBe(endpoint)
+  expect(routedGatewayEndpoint(endpoint, 'http://127.0.0.1:1/api/profiles/sessions/sidebar?profile=default&recents_profile=p2', path.resolve('zeus-home'))).toBe(endpoint)
 })
 
 // A native gateway grant is minted only by main's shared transport (fetchJsonForBackend), which
@@ -615,17 +615,17 @@ test('a session write that names its owner only in the body gets a grant for tha
 
 test('an ensure refusal names its remedy instead of only a status pointer', async () => {
   // A gateway another install owns is refused, not replaced; ensure says what to do in `detail`.
-  const detail = "another Hermes install's gateway owns this profile; stop it there: hermes gateway stop"
+  const detail = "another Zeus install's gateway owns this profile; stop it there: zeus gateway stop"
 
   await expect(ensureLocalGateway(async () => ({
     code: 3, stdout: JSON.stringify({ state: 'incompatible', reason_code: 'runtime_protocol', detail, endpoint: null })
-  }))).rejects.toThrow(`Gateway incompatible (runtime_protocol). ${detail}. Use hermes gateway status for recovery.`)
+  }))).rejects.toThrow(`Gateway incompatible (runtime_protocol). ${detail}. Use zeus gateway status for recovery.`)
 })
 
 test('an elevated or other-session gateway is named with its remedy, not as authorization (#139845, #140252)', async () => {
   const cases = [
-    ['gateway_elevated', 'The running gateway (PID 23460) was started as administrator, so this non-elevated app cannot reach it. Stop it from an administrator prompt (hermes gateway stop), then start Hermes without elevation'],
-    ['gateway_other_session', 'The running gateway (PID 23460) runs in another Windows logon session (session 0, e.g. a boot-time scheduled task), so this app cannot reach it. Stop it (hermes gateway stop from an administrator prompt) and let only one auto-start task launch the gateway']
+    ['gateway_elevated', 'The running gateway (PID 23460) was started as administrator, so this non-elevated app cannot reach it. Stop it from an administrator prompt (zeus gateway stop), then start Zeus without elevation'],
+    ['gateway_other_session', 'The running gateway (PID 23460) runs in another Windows logon session (session 0, e.g. a boot-time scheduled task), so this app cannot reach it. Stop it (zeus gateway stop from an administrator prompt) and let only one auto-start task launch the gateway']
   ]
 
   for (const [reason_code, detail] of cases) {
@@ -641,5 +641,5 @@ test('an elevated or other-session gateway is named with its remedy, not as auth
 test('an update-paused ensure refusal points to the restart that completes its tail', async () => {
   await expect(ensureLocalGateway(async () => ({
     code: 6, stdout: JSON.stringify({ state: 'draining', reason_code: 'update_paused', endpoint: null })
-  }))).rejects.toThrow('Gateway draining (update_paused). Use hermes gateway restart for recovery.')
+  }))).rejects.toThrow('Gateway draining (update_paused). Use zeus gateway restart for recovery.')
 })

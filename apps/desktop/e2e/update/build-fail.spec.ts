@@ -7,7 +7,7 @@
  * compile; the user clicks "Update now".
  *
  * The build runs after the code committed, so under contract C3 the update
- * succeeds with an owed follow-up: Hermes IS on the new code and only this
+ * succeeds with an owed follow-up: Zeus IS on the new code and only this
  * app was not rebuilt. The relaunched (old-build) app must say exactly that
  * and what to do — the action-required dialog, logged as `[updates] detached
  * update finished with manual action` — never "finished OK" (a silent stale
@@ -73,7 +73,7 @@ test('a Desktop build failure during Update now tells the user the app was not r
         /detached update finished with manual action/
       )
       expect(outcome, 'the user is told the Desktop app could not be rebuilt and how to rebuild it').toMatch(
-        /Desktop app could not be rebuilt.*hermes desktop --force-build/
+        /Desktop app could not be rebuilt.*zeus desktop --force-build/
       )
       expect(outcome).not.toMatch(/detached update finished OK/)
       // The code committed: "FAILED / still on the previous version" would be false.

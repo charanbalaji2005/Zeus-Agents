@@ -13,7 +13,7 @@ from gateway.config import GatewayConfig, Platform
 from gateway.platforms.event import MessageEvent
 from gateway.run import GatewayRunner
 from gateway.session import SessionSource
-from hermes_cli.cli_render import _prepend_note_to_message
+from zeus_cli.cli_render import _prepend_note_to_message
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ async def _prepare(runner, event):
 
 
 # The classic CLI's API-only prefixes: a voice turn, and the one-shot /model and /reload-skills notes
-# (hermes_cli/cli_chat_turn_mixin.py puts them in front through _prepend_note_to_message).
+# (zeus_cli/cli_chat_turn_mixin.py puts them in front through _prepend_note_to_message).
 _API_ONLY_PREFIXES = {
     'voice': lambda text: f'[voice] {text}',
     'model': lambda text: _prepend_note_to_message(
@@ -149,7 +149,7 @@ def _managed(tmp_path, monkeypatch, text):
         async def next_frame(self, *_args, **_kwargs):
             if not sent:
                 return {'pid': 1}
-            from hermes_state_runtime import RuntimeStoreError
+            from zeus_state_runtime import RuntimeStoreError
             raise RuntimeStoreError('managed_worker_failed')  # end the turn once the bootstrap went out
 
         def send(self, frame):

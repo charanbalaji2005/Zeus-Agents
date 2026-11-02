@@ -36,13 +36,13 @@ test.skipIf(process.platform === 'win32').each(['procfs', 'ps'])(
       return
     }
 
-    vi.stubEnv('HERMES_E2E_PROC_CENSUS', mode === 'ps' ? 'ps' : '')
+    vi.stubEnv('ZEUS_E2E_PROC_CENSUS', mode === 'ps' ? 'ps' : '')
     const { sandboxProcessesOf, processesTagged } = await import('./process-census')
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'core census home '))
     const tag = `core-census-${process.pid}-${mode}`
     // A stand-in gateway whose child is tagged; the child's environment carries the home too.
     const gateway = spawn('bash', ['-c', '(exec -a "$CORE_TAG" sleep 60) & wait'], {
-      env: { ...process.env, HERMES_HOME: home, CORE_TAG: tag },
+      env: { ...process.env, ZEUS_HOME: home, CORE_TAG: tag },
       stdio: 'ignore'
     })
     fs.writeFileSync(path.join(home, 'gateway.lock'), JSON.stringify({ pid: gateway.pid }))

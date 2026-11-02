@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { createClientSessionState } from '@/lib/chat-runtime'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { $queuedPromptsBySession } from './composer-queue'
 import { requestGatewayForProfile } from './gateway'
@@ -19,7 +19,7 @@ vi.mock('@/store/gateway', async importOriginal => {
   return { ...actual, requestGatewayForProfile: vi.fn(actual.requestGatewayForProfile) }
 })
 
-const connectionAt = (wsUrl: string) => ({ mode: 'local', wsUrl }) as HermesConnection
+const connectionAt = (wsUrl: string) => ({ mode: 'local', wsUrl }) as ZeusConnection
 
 const row = (id: string, extra: Partial<SessionInfo> = {}): SessionInfo =>
   ({ id, message_count: 4, source: 'desktop', started_at: 0, title: id, ...extra }) as SessionInfo

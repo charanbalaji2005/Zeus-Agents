@@ -6,7 +6,7 @@ tool_call schemas re-dieted, and the "Async handoff" system-prompt block removed
 ships in the delegate_task description and in the background dispatch result).
 
 Real in-process `AIAgent`s from two plain checkouts (base = main, pr = the branch), each cell in its
-own subprocess with a temp `HERMES_HOME`, host side effects sandboxed by
+own subprocess with a temp `ZEUS_HOME`, host side effects sandboxed by
 `../core_tool_deferral/sandbox.py`.
 
 ## Tasks
@@ -30,13 +30,13 @@ discovery, not browser plumbing. Terminal, files, cron and the session DB are re
 ```bash
 git worktree add .worktrees/main-snap origin/main
 export PRD_BASE_TREE=$PWD/.worktrees/main-snap PRD_PR_TREE=$PWD
-export PRD_PYTHON=<the install's committed env python>   # see hermes-agent-dev: worktree probes
-export PRD_RESULTS=$HERMES_HOME/cache/scratch/prefix_rediet
+export PRD_PYTHON=<the install's committed env python>   # see zeus-agents-dev: worktree probes
+export PRD_RESULTS=$ZEUS_HOME/cache/scratch/prefix_rediet
 python3 evals/prefix_rediet/run.py qwen/qwen3.8-27b 3 --parallel=7
 python3 evals/prefix_rediet/run.py --report
 ```
 
-Inference defaults to the Nous Portal agent key, read fresh from `$HERMES_HOME/auth.json` for every
+Inference defaults to the Nous Portal agent key, read fresh from `$ZEUS_HOME/auth.json` for every
 cell (read-only; the grant is never refreshed or copied). Set `PRD_INFERENCE_URL` +
 `PRD_INFERENCE_KEY` for any other OpenAI-compatible endpoint.
 

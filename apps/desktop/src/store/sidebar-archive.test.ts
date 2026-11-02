@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { $apiRequestScope } from '@/api/client'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { $sidebarShowArchived } from './layout'
 import {

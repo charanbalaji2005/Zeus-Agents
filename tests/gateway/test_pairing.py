@@ -41,7 +41,7 @@ class TestSplitPairingDirMigration:
             "ou_user": {"user_name": "Alice", "approved_at": 123.0}
         }))
 
-        with patch("gateway.pairing.PAIRING_DIR", legacy), patch("gateway.pairing.get_hermes_home", return_value=home):
+        with patch("gateway.pairing.PAIRING_DIR", legacy), patch("gateway.pairing.get_zeus_home", return_value=home):
             store = PairingStore()
             assert store.is_approved("feishu", "ou_user") is True
 
@@ -61,16 +61,16 @@ class TestProfileScopedDiscovery:
         global_dir = tmp_path / "global-pairing"
         global_dir.mkdir(parents=True)
 
-        # A profile's store anchors to the hermes ROOT, not the current
-        # HERMES_HOME — the current home may itself be a profile, and nesting
+        # A profile's store anchors to the zeus ROOT, not the current
+        # ZEUS_HOME — the current home may itself be a profile, and nesting
         # profiles inside profiles is how a `-p work` CLI and its gateway end
-        # up reading different files. Patch that seam, not get_hermes_home.
+        # up reading different files. Patch that seam, not get_zeus_home.
         with patch("gateway.pairing.PAIRING_DIR", global_dir), patch(
-            "gateway.pairing.get_default_hermes_root", return_value=home
+            "gateway.pairing.get_default_zeus_root", return_value=home
         ):
             store = PairingStore(profile="alice")
             # Scoped under the mocked root's profile dir, using the same
-            # consolidated layout a standalone `hermes -p alice` resolves —
+            # consolidated layout a standalone `zeus -p alice` resolves —
             # and provably distinct from the module-global PAIRING_DIR.
             assert store._dir == home / "profiles" / "alice" / "platforms" / "pairing"
             assert store._dir != global_dir
@@ -379,7 +379,7 @@ class TestApprovalFlow:
             json.dumps("15551234567@s.whatsapp.net"),
             encoding="utf-8",
         )
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
 
         approved_path = tmp_path / "whatsapp-approved.json"
         approved_path.write_text(
@@ -510,7 +510,7 @@ class TestRevoke:
             assert store.is_approved("telegram", "user1") is False
 
     def test_revoke_from_other_store_is_not_undone_by_inflight_approval(self, tmp_path, monkeypatch):
-        """Dashboard requests and the ``hermes pairing`` CLI each build their own store, so
+        """Dashboard requests and the ``zeus pairing`` CLI each build their own store, so
         an approval that read approved.json before a revoke landed must not write it back."""
         with patch("gateway.pairing.PAIRING_DIR", tmp_path), \
                 patch("gateway.pairing._sync_allowlist_add"), patch("gateway.pairing._sync_allowlist_remove"):
@@ -605,7 +605,7 @@ class TestUnreadablePairingFile:
         # And the warning should include actionable advice
         msgs = " ".join(rec.getMessage() for rec in caplog.records)
         assert "docker exec" in msgs
-        assert "-u hermes" in msgs
+        assert "-u zeus" in msgs
 
 # Profile-scoped storage (multiplexing gateway isolation)
 # ---------------------------------------------------------------------------
@@ -613,15 +613,15 @@ class TestUnreadablePairingFile:
 
 class TestProfileScopedStorage:
     """PairingStore(profile="<name>") should isolate per-profile whitelists
-    under each profile's own Hermes home so a multiplexing gateway can keep
+    under each profile's own Zeus home so a multiplexing gateway can keep
     every profile's allowlist separate.
     """
 
     def test_default_store_uses_global_dir(self, tmp_path, monkeypatch):
         """PairingStore() (no profile) keeps the legacy global path so the
-        ``hermes pairing`` CLI continues to work without a profile context."""
-        from hermes_constants import get_hermes_home
-        monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: tmp_path)
+        ``zeus pairing`` CLI continues to work without a profile context."""
+        from zeus_constants import get_zeus_home
+        monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: tmp_path)
         # Re-import PAIRING_DIR (it's a module-level constant resolved at
         # import time) so the test exercises the right path. We patch it
         # rather than re-importing so the assertion is unambiguous.
@@ -635,10 +635,10 @@ class TestProfileScopedStorage:
         """Regression test for #93449.
 
         PairingStore() (no profile) must not freeze its directory to
-        whatever HERMES_HOME resolved to the first time this module's
+        whatever ZEUS_HOME resolved to the first time this module's
         default path was computed. A long-lived process (the gateway,
         started once at container/process boot) can construct a
-        PairingStore before HERMES_HOME/profile context is fully
+        PairingStore before ZEUS_HOME/profile context is fully
         established; a later store in the same process must still pick up
         the real, current value instead of being stuck with a stale one.
         Deliberately does not patch PAIRING_DIR directly, unlike the sibling
@@ -648,17 +648,17 @@ class TestProfileScopedStorage:
         first_home = tmp_path / "first"
         second_home = tmp_path / "second"
 
-        monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: first_home)
+        monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: first_home)
         first_store = PairingStore()
         assert first_store._dir == first_home / "platforms" / "pairing"
 
-        monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: second_home)
+        monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: second_home)
         second_store = PairingStore()
         assert second_store._dir == second_home / "platforms" / "pairing"
 
     def test_profile_store_uses_profiles_subdir(self, tmp_path, monkeypatch):
-        """Explicit profile stores use that profile's normal Hermes layout."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        """Explicit profile stores use that profile's normal Zeus layout."""
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
         store = PairingStore(profile="yangyang")
         assert store.profile == "yangyang"
         expected = tmp_path / "profiles" / "yangyang" / "platforms" / "pairing"
@@ -668,15 +668,15 @@ class TestProfileScopedStorage:
         assert expected.is_dir()
 
     def test_profile_store_matches_profile_cli_home(self, tmp_path, monkeypatch):
-        """Gateway and ``hermes -p`` must resolve the same pairing store."""
-        from hermes_constants import get_hermes_dir
+        """Gateway and ``zeus -p`` must resolve the same pairing store."""
+        from zeus_constants import get_zeus_dir
 
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
         profile_home = tmp_path / "profiles" / "coder"
         profile_home.mkdir(parents=True)
 
         gateway_store = PairingStore(profile="coder")
-        cli_dir = get_hermes_dir(
+        cli_dir = get_zeus_dir(
             "platforms/pairing",
             "pairing",
             home=profile_home,
@@ -686,10 +686,10 @@ class TestProfileScopedStorage:
 
     def test_default_profile_store_is_global_store(self, tmp_path, monkeypatch):
         """Multiplexing must not invent a ``profiles/default`` store."""
-        from hermes_constants import get_hermes_dir
+        from zeus_constants import get_zeus_dir
 
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-        expected = get_hermes_dir(
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
+        expected = get_zeus_dir(
             "platforms/pairing",
             "pairing",
             home=tmp_path,
@@ -702,7 +702,7 @@ class TestProfileScopedStorage:
         self, tmp_path, monkeypatch
     ):
         """Existing approvals survive either profile directory layout."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
         profile_home = tmp_path / "profiles" / "coder"
         legacy_dir = profile_home / "pairing"
         consolidated_dir = profile_home / "platforms" / "pairing"
@@ -725,7 +725,7 @@ class TestProfileScopedStorage:
     def test_profile_approval_does_not_leak_to_global(self, tmp_path, monkeypatch):
         """Approving in a profile-scoped store must not appear in the global
         store — and vice versa. This is the whole point of the fix."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
         with patch("gateway.pairing.PAIRING_DIR", tmp_path):
             global_store = PairingStore()
             profile_store = PairingStore(profile="yangyang")
@@ -744,7 +744,7 @@ class TestProfileScopedStorage:
     def test_profile_uses_distinct_rate_limit_file(self, tmp_path, monkeypatch):
         """Rate-limit state is per-profile, not shared globally — otherwise
         one profile's flood would lock out the other profile's users."""
-        monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+        monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
         with patch("gateway.pairing.PAIRING_DIR", tmp_path):
             global_store = PairingStore()
             profile_store = PairingStore(profile="yangyang")

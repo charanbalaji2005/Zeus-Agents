@@ -21,7 +21,7 @@ from tests.scripts.desktop_update.windows_handoff_support import _HeldLock
 
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SCRIPT = ROOT / 'scripts/desktop-update/windows.ps1'
-MARKER = '.hermes-update-in-progress'
+MARKER = '.zeus-update-in-progress'
 CLI = """
 import sys
 from pathlib import Path
@@ -89,8 +89,8 @@ def _dead_pid() -> int:
 
 def _run(home: Path, *args: str, install: Path | None = None, timeout: int = 120):
     command = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
-               '-InstallRoot', str(install or home / 'hermes-agent'), '-NoUi', *args]
-    env = {**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(home / 'empty-store')}
+               '-InstallRoot', str(install or home / 'zeus-agents'), '-NoUi', *args]
+    env = {**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(home / 'empty-store')}
     proc = subprocess.Popen(command, cwd=home, env=env,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     try:
@@ -103,7 +103,7 @@ def _run(home: Path, *args: str, install: Path | None = None, timeout: int = 120
 
 
 def _result(home: Path) -> dict:
-    return json.loads((home / '.hermes-update-result.json').read_text(encoding='utf-8-sig'))
+    return json.loads((home / '.zeus-update-result.json').read_text(encoding='utf-8-sig'))
 
 
 @pytest.mark.platforms('windows')
@@ -131,7 +131,7 @@ def test_live_foreign_owner_refuses_and_reused_pid_is_reclaimed(
         assert code == 2, out
         assert (tmp_path / MARKER).read_bytes() == body
         # A refused run changed nothing and owns no result (A4): the other update reports.
-        assert not (tmp_path / '.hermes-update-result.json').exists()
+        assert not (tmp_path / '.zeus-update-result.json').exists()
     else:
         assert code == 0, out
         lines = (tmp_path / MARKER).read_bytes().decode().split('\n')
@@ -200,7 +200,7 @@ def test_desktop_started_handoff_only_adopts_its_bridge(
     finally:
         other.kill(); other.wait()
     assert code == 2, out
-    assert not (tmp_path / '.hermes-update-result.json').exists()
+    assert not (tmp_path / '.zeus-update-result.json').exists()
     if bridge == 'absent':
         assert not (tmp_path / MARKER).exists()
     else:
@@ -238,7 +238,7 @@ def test_desktop_that_never_exits_is_not_relaunched_over(
 ) -> None:
     # The verdict (refuse with 4, never relaunch) is the same at any ceiling; the production
     # 150 s one alone pushed this file to the runner's 300 s per-file cap on a loaded runner.
-    monkeypatch.setenv('HERMES_UPDATE_DESKTOP_EXIT_SECONDS', '5')
+    monkeypatch.setenv('ZEUS_UPDATE_DESKTOP_EXIT_SECONDS', '5')
     install = tmp_path / 'checkout'
     publish_fixture_launcher(install, CLI)
     home = tmp_path / 'home'; home.mkdir()
@@ -255,14 +255,14 @@ def test_desktop_that_never_exits_is_not_relaunched_over(
 
 @pytest.mark.platforms('windows')
 def test_ui_profile_sweep_keeps_dirs_of_live_handoffs(tmp_path: Path, sleeper: subprocess.Popen) -> None:
-    live = tmp_path / f'hermes-update-ui-{sleeper.pid}'
-    dead = tmp_path / f'hermes-update-ui-{_dead_pid()}'
+    live = tmp_path / f'zeus-update-ui-{sleeper.pid}'
+    dead = tmp_path / f'zeus-update-ui-{_dead_pid()}'
     live.mkdir(); dead.mkdir()
     home = tmp_path / 'home'; home.mkdir()
     result = subprocess.run(
         ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT), '-SelfTestUi', '-NoUi'],
-        cwd=tmp_path, env={**os.environ, 'HERMES_HOME': str(home), 'TEMP': str(tmp_path),
-                           'HERMES_SELFTEST_HOLD_SECONDS': '0'},
+        cwd=tmp_path, env={**os.environ, 'ZEUS_HOME': str(home), 'TEMP': str(tmp_path),
+                           'ZEUS_SELFTEST_HOLD_SECONDS': '0'},
         capture_output=True, text=True, timeout=120,
         check=False,
     )
@@ -309,7 +309,7 @@ def _parent_pid(pid: int) -> int:
 @pytest.mark.platforms('windows')
 def test_script_killed_right_after_spawning_the_update_leaves_a_live_marker(tmp_path: Path) -> None:
     """C1 rule 6, written by the script itself: windows.ps1 is killed (taskkill /F, no /T) while
-    its `hermes update` child is only starting up and has not taken the update lock. The marker
+    its `zeus update` child is only starting up and has not taken the update lock. The marker
     must still read LIVE through the child named on line 4 -- also to an old packaged Desktop,
     which judges line 1 alone, so line 1 names the hand-off's custodian before the update starts
     and the first old-reader read right after the kill (the marker lock held, so nothing can
@@ -324,7 +324,7 @@ def test_script_killed_right_after_spawning_the_update_leaves_a_live_marker(tmp_
         ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
          '-InstallRoot', str(install), '-NoUi'],
         cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        env={**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(tmp_path / 'empty-store'),
+        env={**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(tmp_path / 'empty-store'),
              'HANDOFF_HOLD': str(hold)},
     )
     child_pid_file = Path(str(hold) + '.pid')

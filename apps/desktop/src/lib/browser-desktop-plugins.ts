@@ -1,7 +1,7 @@
-import type { HermesApiRequest, HermesReadFileTextResult } from '@/global'
+import type { ZeusApiRequest, ZeusReadFileTextResult } from '@/global'
 
 type DesktopPluginsBridge = Pick<
-  Window['hermesDesktop'],
+  Window['zeusDesktop'],
   | 'desktopPluginsRoot'
   | 'readDir'
   | 'readFileText'
@@ -11,13 +11,13 @@ type DesktopPluginsBridge = Pick<
 >
 
 interface BrowserDesktopPluginsOptions {
-  api: <T>(request: HermesApiRequest) => Promise<T>
+  api: <T>(request: ZeusApiRequest) => Promise<T>
   /** The page's /api/fs readers, kept for every path outside the plugins folder. */
-  files: Pick<Window['hermesDesktop'], 'readDir' | 'readFileText'>
+  files: Pick<Window['zeusDesktop'], 'readDir' | 'readFileText'>
 }
 
 /** The runtime loader's disk door, answered by the server that serves this page: its app-level
- *  desktop-plugins folder (hermes_cli/web_routers/desktop_plugins.py). /api/fs is the wrong
+ *  desktop-plugins folder (zeus_cli/web_routers/desktop_plugins.py). /api/fs is the wrong
  *  reader there: it follows the profile's SSH workspace and truncates at the preview cap. */
 export function createBrowserDesktopPluginsBridge({ api, files }: BrowserDesktopPluginsOptions): DesktopPluginsBridge {
   let root: null | string = null
@@ -30,7 +30,7 @@ export function createBrowserDesktopPluginsBridge({ api, files }: BrowserDesktop
   const inside = (path: string) =>
     root !== null && (path === root || path.startsWith(`${root}/`) || path.startsWith(`${root}\\`))
 
-  const readFile = (path: string) => get<HermesReadFileTextResult>('read', path)
+  const readFile = (path: string) => get<ZeusReadFileTextResult>('read', path)
 
   const reconcile = () =>
     api<{ refused?: { name: string; reason: string }[]; touched: string[] }>({

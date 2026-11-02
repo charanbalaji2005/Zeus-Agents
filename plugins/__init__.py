@@ -1,1 +1,1 @@
-# Hermes plugins package
+# Zeus plugins package

@@ -93,7 +93,7 @@ export function useStepUpFlow({ autoOpen = false }: { autoOpen?: boolean } = {})
       return
     }
 
-    void window.hermesDesktop?.openExternal?.(verification.url)
+    void window.zeusDesktop?.openExternal?.(verification.url)
   }, [verification?.url])
 
   /** Resolves true once Remote Spending is allowed (billing queries already refetched), else false. */
@@ -130,7 +130,7 @@ export function useStepUpFlow({ autoOpen = false }: { autoOpen?: boolean } = {})
         // The user just asked for this (clicked a control that needs it): open the approval page
         // right away, like sign-in does, instead of making them click a second button for it.
         if (autoOpen) {
-          void window.hermesDesktop?.openExternal?.(url)
+          void window.zeusDesktop?.openExternal?.(url)
         }
       }) ?? null
 

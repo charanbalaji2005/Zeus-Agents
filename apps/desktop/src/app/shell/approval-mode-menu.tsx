@@ -44,7 +44,7 @@ export function useApprovalModeStatusbarItem(
 
   useEffect(() => {
     // The shell (and this chip) mount before the gateway socket opens at
-    // boot, and a sync issued that early rejects with "Hermes gateway
+    // boot, and a sync issued that early rejects with "Zeus gateway
     // unavailable" — the swallow below then leaves the chip on its
     // optimistic 'smart' default until some later session event reconciles
     // it. Gate on the open socket and re-run when it opens (or a reconnect

@@ -73,7 +73,7 @@ export const slashCmdCoreEn = {
     copy: {
       copiedCharsOne: (count: string) => `copied ${count} character`,
       copiedCharsOther: (count: string) => `copied ${count} characters`,
-      clipboardFailed: 'clipboard copy failed — try HERMES_TUI_FORCE_OSC52=1 to force the escape sequence',
+      clipboardFailed: 'clipboard copy failed — try ZEUS_TUI_FORCE_OSC52=1 to force the escape sequence',
       usage: 'usage: /copy [number]',
       nothingToCopy: 'nothing to copy — start a conversation first',
       sentOsc52: 'sent OSC52 copy sequence (terminal support required)',
@@ -98,7 +98,7 @@ export const slashCmdCoreEn = {
     history: {
       noConversation: 'no conversation yet',
       youTag: (index: string) => `You #${index}`,
-      hermesTag: (index: string) => `Hermes #${index}`,
+      zeusTag: (index: string) => `Zeus #${index}`,
       toolCallsOne: (count: string) => `(${count} tool call)`,
       toolCallsOther: (count: string) => `(${count} tool calls)`,
       empty: '(empty)',
@@ -151,7 +151,7 @@ export const slashCmdCoreEn = {
     // A refused /undo or /retry: main's busy text (tui_gateway/user_messages.py::busy_message).
     busy: {
       replying: (command: string) =>
-        `session busy — Hermes is still replying. Stop the current reply first (Stop button, or Ctrl+C in a terminal), then run /${command}.`,
+        `session busy — Zeus is still replying. Stop the current reply first (Stop button, or Ctrl+C in a terminal), then run /${command}.`,
       compressing: (command: string) => `session busy — a /compress is running; run /${command} when it finishes.`
     }
   },

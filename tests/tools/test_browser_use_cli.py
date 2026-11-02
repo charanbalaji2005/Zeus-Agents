@@ -1,4 +1,4 @@
-"""Tests for ``browser_exec`` (tools/browser_use_cli.py), Hermes' only core browser tool.
+"""Tests for ``browser_exec`` (tools/browser_use_cli.py), Zeus' only core browser tool.
 
 Covers the seams the integration relies on:
 
@@ -87,8 +87,8 @@ class TestSubprocessEnvironment:
         """#83427/#84841/#86006/#86104: an inherited PYTHONPATH/PYTHONHOME must never reach the
         harness child; PYTHONPATH is replaced by the harness's own site dir, unrelated vars survive."""
         monkeypatch.setattr(bs, "build_browser_env", lambda: {
-            "PYTHONPATH": "/hermes:/hermes/venv/lib/site-packages",
-            "PYTHONHOME": "/hermes/venv",
+            "PYTHONPATH": "/zeus:/zeus/venv/lib/site-packages",
+            "PYTHONHOME": "/zeus/venv",
             "KEEP_ME": "yes",
         })
         monkeypatch.setattr(bu_cli, "_harness_site_dir", lambda: "/harness-site")
@@ -165,7 +165,7 @@ class TestVaultSupervisorAttach:
     def test_exec_attaches_supervisor_to_the_browser_it_drives(self, tmp_path, monkeypatch, _fake_supervisor_registry):
         """browser_vault_fill injects secrets only over the supervisor's CDP WebSocket. Without this attach the
         default (Browser Use) backend had no supervisor at all and every fill failed with supervisor_required."""
-        monkeypatch.setattr("hermes_cli.config_effective.load_user_config_effective", lambda: {"browser": {}})
+        monkeypatch.setattr("zeus_cli.config_effective.load_user_config_effective", lambda: {"browser": {}})
         cli = _fake_cli(tmp_path, 'cat > /dev/null\necho ok\n')
         monkeypatch.setattr(bu_cli, "_find_cli", lambda: [cli])
         monkeypatch.setattr("tools.browser_session_cdp.resolve_cdp_override", lambda url: url)
@@ -258,7 +258,7 @@ class TestLegacyCloudMigration:
 
 
     def test_migrated_config_gets_bu_autospawn(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("hermes_cli.config_effective.load_user_config_effective", lambda: self._LEGACY)
+        monkeypatch.setattr("zeus_cli.config_effective.load_user_config_effective", lambda: self._LEGACY)
         monkeypatch.setenv("BROWSER_USE_API_KEY", "bu-key")
         cli = _fake_cli(tmp_path, 'cat > /dev/null\necho "autospawn:$BU_AUTOSPAWN"\n')
         monkeypatch.setattr(bu_cli, "_find_cli", lambda: [cli])
@@ -267,7 +267,7 @@ class TestLegacyCloudMigration:
 
     def test_non_legacy_config_does_not_set_bu_autospawn(self, tmp_path, monkeypatch):
         monkeypatch.setattr(
-            "hermes_cli.config_effective.load_user_config_effective",
+            "zeus_cli.config_effective.load_user_config_effective",
             lambda: {"browser": {}},
         )
         cli = _fake_cli(tmp_path, 'cat > /dev/null\necho "autospawn:[$BU_AUTOSPAWN]"\n')
@@ -457,7 +457,7 @@ class TestBackendCdpResolution:
         assert _fake_managed_chromium == ["t1"]
 
     def test_picker_managed_selection_resolves_gateway_provider(self, monkeypatch):
-        """``cloud_provider: nous`` (the `hermes tools` managed row) must resolve through the
+        """``cloud_provider: nous`` (the `zeus tools` managed row) must resolve through the
         provider: the picker never writes the legacy ``use_gateway`` flag, and the direct-API
         branch leaves browser_exec with no CDP endpoint at all (#108310)."""
         class _BUProvider:
@@ -536,26 +536,26 @@ class TestOwnTabPreamble:
     def test_named_shared_browser_gets_preamble(self, tmp_path, monkeypatch):
         result = self._run(tmp_path, monkeypatch, session="r7k2", shared_cdp="http://127.0.0.1:9222")
         assert result["success"] is True
-        assert "_hermes_ensure_own_tab" in result["output"]
+        assert "_zeus_ensure_own_tab" in result["output"]
         # model code still present, after the preamble
-        assert result["output"].index("_hermes_ensure_own_tab") < result["output"].index("print('payload')")
+        assert result["output"].index("_zeus_ensure_own_tab") < result["output"].index("print('payload')")
 
     def test_named_packaged_chromium_skips_preamble(self, tmp_path, monkeypatch):
         """Each named session launches its own packaged Chromium — nothing to share a tab with."""
         result = self._run(tmp_path, monkeypatch, session="r7k2")
         assert result["success"] is True
-        assert "_hermes_ensure_own_tab" not in result["output"]
+        assert "_zeus_ensure_own_tab" not in result["output"]
 
     def test_unnamed_session_gets_no_preamble(self, tmp_path, monkeypatch):
         result = self._run(tmp_path, monkeypatch, session="")
         assert result["success"] is True
-        assert "_hermes_ensure_own_tab" not in result["output"]
+        assert "_zeus_ensure_own_tab" not in result["output"]
 
     def test_named_provider_browser_skips_preamble(self, tmp_path, monkeypatch):
         """Per-name provider browsers are private — preamble would leak a tab."""
         result = self._run(tmp_path, monkeypatch, session="r7k2", provider=True)
         assert result["success"] is True
-        assert "_hermes_ensure_own_tab" not in result["output"]
+        assert "_zeus_ensure_own_tab" not in result["output"]
 
     def test_sentinel_never_reaches_subprocess_env(self, tmp_path, monkeypatch):
 
@@ -565,7 +565,7 @@ class TestOwnTabPreamble:
             bs, "get_session_info",
             lambda key: {"cdp_url": "wss://browser.example/cdp/" + key},
         )
-        cli = _fake_cli(tmp_path, 'cat > /dev/null\necho "sentinel:${_HERMES_BU_PRIVATE_BROWSER:-unset}"\n')
+        cli = _fake_cli(tmp_path, 'cat > /dev/null\necho "sentinel:${_ZEUS_BU_PRIVATE_BROWSER:-unset}"\n')
         monkeypatch.setattr(bu_cli, "_find_cli", lambda: [cli])
         result = json.loads(bu_cli.browser_exec("print(1)", session="r7k2"))
         assert "sentinel:unset" in result["output"]
@@ -579,12 +579,12 @@ class TestOwnTabPreamble:
 
 
 class TestProviderPickerIntegration:
-    """The `hermes tools` Browser Automation picker rows."""
+    """The `zeus tools` Browser Automation picker rows."""
 
     def test_picker_row_names_stay_unique(self):
         """The CLI row is named "Browser Use"; the legacy plugin API row must
         keep a distinct name — apply_provider_selection matches by name."""
-        from hermes_cli.tools_config import TOOL_CATEGORIES, _plugin_browser_providers
+        from zeus_cli.tools_config import TOOL_CATEGORIES, _plugin_browser_providers
 
         names = [r["name"] for r in TOOL_CATEGORIES["browser"]["providers"]]
         names += [r["name"] for r in _plugin_browser_providers()]
@@ -600,7 +600,7 @@ class TestBrowserSlashDispatch:
         import contextlib
         import io
 
-        import hermes_cli.cli_commands_mixin as mod
+        import zeus_cli.cli_commands_mixin as mod
 
         calls = []
         monkeypatch.setattr(mod, "_browser_connect", lambda cli, url: calls.append(("connect", url)))
@@ -612,7 +612,7 @@ class TestBrowserSlashDispatch:
         return calls, buf.getvalue()
 
     def test_connect_keeps_url_case_and_defaults_to_status(self, monkeypatch):
-        from hermes_cli.browser_connect import DEFAULT_BROWSER_CDP_URL
+        from zeus_cli.browser_connect import DEFAULT_BROWSER_CDP_URL
 
         assert self._run("/browser CONNECT ws://127.0.0.1:9222/devtools/browser/AbC", monkeypatch)[0] == [
             ("connect", "ws://127.0.0.1:9222/devtools/browser/AbC")]
@@ -920,7 +920,7 @@ class TestLightpandaPreamble:
         monkeypatch.setattr(bu_cli, "_find_cli", lambda: [cli])
         result = json.loads(bu_cli.browser_exec("print('payload')", session="r7k2"))
         assert result["success"] is True
-        assert "_hermes_ensure_own_tab" not in result["output"]
+        assert "_zeus_ensure_own_tab" not in result["output"]
         assert "print('payload')" in result["output"]
 
 
@@ -952,7 +952,7 @@ class TestLightpandaHeader:
 
 class TestLightpandaPickerRow:
     def _rows(self):
-        from hermes_cli.tools_config import TOOL_CATEGORIES
+        from zeus_cli.tools_config import TOOL_CATEGORIES
 
         return TOOL_CATEGORIES["browser"]["providers"]
 
@@ -961,7 +961,7 @@ class TestLightpandaPickerRow:
 
 
     def test_selecting_lightpanda_writes_engine_and_local(self):
-        from hermes_cli.tools_config import _write_provider_config
+        from zeus_cli.tools_config import _write_provider_config
 
         config = {"browser": {"cloud_provider": "browserbase"}}
         _write_provider_config(self._row("Lightpanda"), config, managed_feature=None)
@@ -969,14 +969,14 @@ class TestLightpandaPickerRow:
         assert config["browser"]["engine"] == "lightpanda"
 
     def test_selecting_local_browser_resets_engine(self):
-        from hermes_cli.tools_config import _write_provider_config
+        from zeus_cli.tools_config import _write_provider_config
 
         config = {"browser": {"cloud_provider": "local", "engine": "lightpanda"}}
         _write_provider_config(self._row("Local Browser"), config, managed_feature=None)
         assert config["browser"]["engine"] == "auto"
 
     def test_active_row_follows_engine(self):
-        from hermes_cli.tools_config import _is_provider_active
+        from zeus_cli.tools_config import _is_provider_active
 
         lp_row, local_row = self._row("Lightpanda"), self._row("Local Browser")
         lp_cfg = {"browser": {"cloud_provider": "local", "engine": "lightpanda"}}
@@ -1002,7 +1002,7 @@ class TestTimeoutProcessGroupKill:
         """A grandchild that outlives the direct child and holds the inherited stdout
         pipe must not keep browser_exec blocked past the timeout (it wedged permanently
         before the group kill)."""
-        monkeypatch.setattr("hermes_cli.config_effective.load_user_config_effective", dict)
+        monkeypatch.setattr("zeus_cli.config_effective.load_user_config_effective", dict)
         pid_file = tmp_path / "grandchild.pid"
         cli = _fake_cli(tmp_path, (
             "cat > /dev/null\n"

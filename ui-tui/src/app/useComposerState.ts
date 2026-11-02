@@ -3,7 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-import { useStdin, withInkSuspended } from '@hermes/ink'
+import { useStdin, withInkSuspended } from '@zeus/ink'
 import { useStore } from '@nanostores/react'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
@@ -517,7 +517,7 @@ export function useComposerState({ gw, submitRef, sys }: UseComposerStateOptions
   const openEditor = useCallback(async () => {
     const destination = captureDestination()
     const revision = composerRevision.current
-    const dir = mkdtempSync(join(tmpdir(), 'hermes-'))
+    const dir = mkdtempSync(join(tmpdir(), 'zeus-'))
     const file = join(dir, 'prompt.md')
     const [cmd, ...args] = resolveEditor()
 

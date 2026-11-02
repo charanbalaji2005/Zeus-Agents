@@ -2,7 +2,7 @@ name: signal-notify
 repo: https://github.com/dbrosnan/hermes-signal-notify
 sha: 16bff1f8bd5f19bb639a44e96091eef615a4fc6c
 description: >-
-  Signal texts when a Hermes turn pauses, fails or is interrupted, and when Hermes
+  Signal texts when a Zeus turn pauses, fails or is interrupted, and when Zeus
   waits on a clarify question, approval or sudo prompt. Sends through the user's own
   signal-cli HTTP daemon (the same SIGNAL_* settings as the core Signal gateway);
   skips Signal-origin, cron and subagent turns, and dedupes identical texts within 60s.
@@ -16,7 +16,7 @@ description: >-
 maintainer: dbrosnan
 tier: community
 category: automation
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/dbrosnan/hermes-signal-notify#readme
 version: "1.0.0"
 platforms: []

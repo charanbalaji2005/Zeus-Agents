@@ -9,7 +9,7 @@ const sent = vi.hoisted(() => {
   const calls: unknown[] = []
 
   Object.defineProperty(globalThis.navigator, 'platform', { configurable: true, value: 'Linux x86_64' })
-  Object.defineProperty(globalThis.window, 'hermesDesktop', {
+  Object.defineProperty(globalThis.window, 'zeusDesktop', {
     configurable: true,
     value: {
       glassSupported: false,
@@ -21,7 +21,7 @@ const sent = vi.hoisted(() => {
   return calls
 })
 
-import { type TranslucencyState, windowOpacityFor } from '@hermes/shared/translucency'
+import { type TranslucencyState, windowOpacityFor } from '@zeus/shared/translucency'
 
 import { $translucency, setTranslucency, TRANSLUCENCY_SUPPORTED } from './translucency'
 
@@ -39,6 +39,6 @@ describe('translucency where Settings hides the row', () => {
     }
 
     expect(sent.length).toBeGreaterThan(0)
-    expect(document.documentElement.hasAttribute('data-hermes-clear')).toBe(false)
+    expect(document.documentElement.hasAttribute('data-zeus-clear')).toBe(false)
   })
 })

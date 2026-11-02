@@ -12,7 +12,7 @@ description: >-
 maintainer: EloquentBrush0x
 tier: community
 category: web
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/EloquentBrush0x/hermes-context-refs/tree/main/gh-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/EloquentBrush0x/hermes-context-refs/bb0001012c5b213ce5a09b5905d859635c440c17/docs/gh-ref-card.png

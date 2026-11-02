@@ -1,12 +1,12 @@
 /**
  * Harness for the Desktop install/update suite: a REAL local install (made by
- * scripts/install.sh + `hermes desktop --build-only` in the upgrade suite's
+ * scripts/install.sh + `zeus desktop --build-only` in the upgrade suite's
  * sandbox, see seed.py), a local bare origin standing in for GitHub, the
  * packaged app that install built, and the core suite's scripted provider.
  *
  * The one fake per external edge: the git server (a local bare repo behind a
  * url.insteadOf rewrite) and the LLM provider (e2e/core/provider.ts). Nothing
- * inside Hermes is mocked.
+ * inside Zeus is mocked.
  *
  * Synchronisation rule (same as e2e/core): wait on an observable fact — a log
  * line, a pid, a file, a DOM state — with a deadline, never a fixed sleep.
@@ -31,21 +31,21 @@ export const REPO_ROOT = path.resolve(DESKTOP_ROOT, '..', '..')
 const SEED = path.join(import.meta.dirname, 'seed.py')
 
 /** Where the seeded install lives. Short on purpose: the install bakes it into AF_UNIX socket paths. */
-export const UPDATE_ROOT = process.env.HERMES_E2E_UPDATE_ROOT || path.join(os.tmpdir(), 'hdu-e2e')
+export const UPDATE_ROOT = process.env.ZEUS_E2E_UPDATE_ROOT || path.join(os.tmpdir(), 'hdu-e2e')
 
 export interface InstallFacts {
   sandboxRoot: string
   home: string
-  hermesHome: string
+  zeusHome: string
   checkout: string
-  hermes: string
+  zeus: string
   origin: string
   env: Record<string, string>
   headSha: string
 }
 
 function python(): string {
-  return process.env.HERMES_E2E_PYTHON || 'python3'
+  return process.env.ZEUS_E2E_PYTHON || 'python3'
 }
 
 function seed(args: string[], timeoutMs = 60_000): string {
@@ -145,13 +145,13 @@ export function releaseDir(facts: InstallFacts): string {
   return path.join(facts.checkout, 'apps', 'desktop', 'release', 'linux-unpacked')
 }
 
-/** The packaged executable `hermes desktop` built into the install (electron-builder names it after productName). */
+/** The packaged executable `zeus desktop` built into the install (electron-builder names it after productName). */
 export function packagedExe(facts: InstallFacts): string {
   const dir = releaseDir(facts)
-  const name = fs.readdirSync(dir).find(entry => /^hermes$/i.test(entry))
+  const name = fs.readdirSync(dir).find(entry => /^zeus$/i.test(entry))
 
   if (!name) {
-    throw new Error(`no packaged Hermes executable in ${dir}: ${fs.readdirSync(dir).join(', ')}`)
+    throw new Error(`no packaged Zeus executable in ${dir}: ${fs.readdirSync(dir).join(', ')}`)
   }
 
   return path.join(dir, name)
@@ -185,8 +185,8 @@ function displayEnv(): Record<string, string> {
 
 /**
  * The environment a user's desktop session hands the app: the install's HOME /
- * HERMES_HOME / PATH (with the git URL rewrite that points "GitHub" at the
- * local origin) plus the display. No HERMES_DESKTOP_HERMES_ROOT: the app must
+ * ZEUS_HOME / PATH (with the git URL rewrite that points "GitHub" at the
+ * local origin) plus the display. No ZEUS_DESKTOP_ZEUS_ROOT: the app must
  * find the install the way it does for a real user.
  */
 export function appEnv(facts: InstallFacts, extra: Record<string, string> = {}): Record<string, string> {
@@ -200,23 +200,23 @@ export function appEnv(facts: InstallFacts, extra: Record<string, string> = {}):
   return {
     ...facts.env,
     ...displayEnv(),
-    HERMES_DESKTOP_USER_DATA_DIR: userDataDir(facts),
-    HERMES_DESKTOP_SKIP_QUIT_CONFIRM: '1',
-    // Never repoint the user's OS hermes:// handler (HKCU on Windows) at a test checkout.
-    HERMES_DESKTOP_SKIP_PROTOCOL_REGISTRATION: '1',
-    HERMES_DESKTOP_CDP_PORT: 'off',
+    ZEUS_DESKTOP_USER_DATA_DIR: userDataDir(facts),
+    ZEUS_DESKTOP_SKIP_QUIT_CONFIRM: '1',
+    // Never repoint the user's OS zeus:// handler (HKCU on Windows) at a test checkout.
+    ZEUS_DESKTOP_SKIP_PROTOCOL_REGISTRATION: '1',
+    ZEUS_DESKTOP_CDP_PORT: 'off',
     ...extra
   }
 }
 
 /** A user who configured a custom OpenAI-compatible endpoint (the scripted provider). */
 export function configureProvider(facts: InstallFacts, providerUrl: string): void {
-  const config = path.join(facts.hermesHome, 'config.yaml')
+  const config = path.join(facts.zeusHome, 'config.yaml')
   // Keep the seed's top-level `update:` block (the install's `--set-channel main` record): the
   // specs publish commits on main, never a release, so the stable default would offer nothing.
   const update = /^update:\n(?:[ \t].*\n?)*/m.exec(readText(config))?.[0] ?? ''
   fs.writeFileSync(config, providerConfigYaml(providerUrl, update.endsWith('\n') || !update ? update : `${update}\n`))
-  fs.writeFileSync(path.join(facts.hermesHome, '.env'), 'MOCK_API_KEY=update-e2e-key\n')
+  fs.writeFileSync(path.join(facts.zeusHome, '.env'), 'MOCK_API_KEY=update-e2e-key\n')
 }
 
 export interface LaunchedApp {
@@ -257,11 +257,11 @@ export async function launchInstalledApp(facts: InstallFacts, env: Record<string
 // ─── Observation ───────────────────────────────────────────────────────
 
 /**
- * Processes carrying this install's HERMES_HOME, plus every process of its packaged app:
+ * Processes carrying this install's ZEUS_HOME, plus every process of its packaged app:
  * Electron 44 zeroes the app's /proc environ, so only the executable path names those.
  */
 export function installProcesses(facts: InstallFacts): ProcInfo[] {
-  const census = sandboxProcesses({ hermesHome: facts.hermesHome } as CoreSandbox)
+  const census = sandboxProcesses({ zeusHome: facts.zeusHome } as CoreSandbox)
   const known = new Set(census.map(proc => proc.pid))
 
   return [...census, ...processesRunningFrom(releaseDir(facts)).filter(proc => !known.has(proc.pid))]
@@ -287,10 +287,10 @@ export function desktopMainProcesses(facts: InstallFacts): ProcInfo[] {
   return candidates.filter(proc => !pids.has(proc.ppid))
 }
 
-/** The `hermes serve` backend(s) of this install (children of the backend excluded). */
+/** The `zeus serve` backend(s) of this install (children of the backend excluded). */
 export function backendServeProcesses(facts: InstallFacts): ProcInfo[] {
-  // The local backend is the gateway `hermes gateway ensure` attached to or started
-  // (`hermes_cli.main [--profile X] gateway run --quiet`); `serve` covers a pool backend.
+  // The local backend is the gateway `zeus gateway ensure` attached to or started
+  // (`zeus_cli.main [--profile X] gateway run --quiet`); `serve` covers a pool backend.
   const serve = installProcesses(facts).filter(
     proc =>
       (/ serve( |$)/.test(proc.cmdline) || / gateway run( |$)/.test(proc.cmdline)) &&
@@ -310,9 +310,9 @@ export function nonGatewayProcesses(facts: InstallFacts): ProcInfo[] {
   return installProcesses(facts).filter(proc => !gateways.has(proc.pid) && !gateways.has(proc.ppid))
 }
 
-/** `hermes gateway stop` with the install's own CLI: attach-mode Desktop never owns the gateway. */
+/** `zeus gateway stop` with the install's own CLI: attach-mode Desktop never owns the gateway. */
 export function stopInstallGateway(facts: InstallFacts): { code: number | null; output: string } {
-  const result = spawnSync(facts.hermes, ['gateway', 'stop'], { env: facts.env, encoding: 'utf8', timeout: 90_000 })
+  const result = spawnSync(facts.zeus, ['gateway', 'stop'], { env: facts.env, encoding: 'utf8', timeout: 90_000 })
 
   return { code: result.status, output: `${result.stdout ?? ''}${result.stderr ?? ''}` }
 }
@@ -326,11 +326,11 @@ export function readText(file: string): string {
 }
 
 export function desktopLog(facts: InstallFacts): string {
-  return readText(path.join(facts.hermesHome, 'logs', 'desktop.log'))
+  return readText(path.join(facts.zeusHome, 'logs', 'desktop.log'))
 }
 
 export function handoffLog(facts: InstallFacts): string {
-  return readText(path.join(facts.hermesHome, 'logs', 'desktop-update-handoff.log'))
+  return readText(path.join(facts.zeusHome, 'logs', 'desktop-update-handoff.log'))
 }
 
 function tail(text: string, n: number): string {
@@ -339,7 +339,7 @@ function tail(text: string, n: number): string {
 
 /** Everything a red cell needs to explain itself. */
 export function diagnostics(facts: InstallFacts, extra = ''): string {
-  const logsDir = path.join(facts.hermesHome, 'logs')
+  const logsDir = path.join(facts.zeusHome, 'logs')
   const parts: string[] = [extra]
 
   try {
@@ -355,7 +355,7 @@ export function diagnostics(facts: InstallFacts, extra = ''): string {
     }
   }
 
-  const receipts = path.join(facts.hermesHome, 'update-receipts')
+  const receipts = path.join(facts.zeusHome, 'update-receipts')
 
   if (fs.existsSync(receipts)) {
     for (const name of fs.readdirSync(receipts).slice(-3)) {
@@ -372,7 +372,7 @@ export function diagnostics(facts: InstallFacts, extra = ''): string {
   return parts.filter(Boolean).join('\n')
 }
 
-/** SIGKILL every process that carries this install's HERMES_HOME (end of every spec). */
+/** SIGKILL every process that carries this install's ZEUS_HOME (end of every spec). */
 export function killInstallProcesses(facts: InstallFacts | null): void {
   if (!facts) {
     return
@@ -413,11 +413,11 @@ export async function waitFor<T>(
 
 /** Copy of the first-run chooser / bootstrap installer overlay (the screens a healthy install must never show). */
 export const FIRST_RUN_SCREENS = [
-  'Set up Hermes Desktop',
-  'Hermes needs a one-time install',
-  'Setting up Hermes Agent',
-  'Install Hermes locally',
-  'Use Hermes on this computer'
+  'Set up Zeus Desktop',
+  'Zeus needs a one-time install',
+  'Setting up Zeus Agents',
+  'Install Zeus locally',
+  'Use Zeus on this computer'
 ]
 
 /**
@@ -534,8 +534,8 @@ export interface UpdateStatus {
 export async function checkForUpdates(page: Page): Promise<null | UpdateStatus> {
   return page.evaluate(() => {
     const bridge = (
-      window as unknown as { hermesDesktop: { updates: { check(o: { force: boolean }): Promise<unknown> } } }
-    ).hermesDesktop
+      window as unknown as { zeusDesktop: { updates: { check(o: { force: boolean }): Promise<unknown> } } }
+    ).zeusDesktop
 
     return bridge.updates.check({ force: true }) as Promise<null | UpdateStatus>
   })

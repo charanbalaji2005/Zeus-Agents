@@ -13,7 +13,7 @@ import re
 from pathlib import Path
 
 import pytest
-import hermes_yaml as yaml
+import zeus_yaml as yaml
 
 from agent.skill_utils import SKILL_PROMPT_DESC_LIMIT
 
@@ -87,9 +87,9 @@ def test_required_frontmatter_fields(p):
     ]
     if missing and not _grandfathered(p, "fields"):
         pytest.fail(f"{_rel(p)}: missing frontmatter fields: {missing}")
-    hermes = (fm.get("metadata") or {}).get("hermes") or {}
-    if not (hermes.get("tags") or fm.get("tags")) and not _grandfathered(p, "tags"):
-        pytest.fail(f"{_rel(p)}: no tags (metadata.hermes.tags or top-level tags)")
+    zeus = (fm.get("metadata") or {}).get("zeus") or {}
+    if not (zeus.get("tags") or fm.get("tags")) and not _grandfathered(p, "tags"):
+        pytest.fail(f"{_rel(p)}: no tags (metadata.zeus.tags or top-level tags)")
 
 @pytest.mark.parametrize("p", _params())
 def test_name_matches_directory(p):
@@ -115,9 +115,9 @@ def test_description_hardline(p):
 @pytest.mark.parametrize("p", _params())
 def test_related_skills_resolve(p):
     fm, _ = _frontmatter(p)
-    hermes = (fm.get("metadata") or {}).get("hermes") or {}
+    zeus = (fm.get("metadata") or {}).get("zeus") or {}
     dangling = [
-        rs for rs in (hermes.get("related_skills") or []) if rs not in _all_names()
+        rs for rs in (zeus.get("related_skills") or []) if rs not in _all_names()
     ]
     if dangling and not _grandfathered(p, "related"):
         pytest.fail(f"{_rel(p)}: dangling related_skills: {dangling}")

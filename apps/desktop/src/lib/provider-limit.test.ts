@@ -1,4 +1,4 @@
-import type { ModelOptionProvider } from '@hermes/shared'
+import type { ModelOptionProvider } from '@zeus/shared'
 import { describe, expect, it } from 'vitest'
 
 import { accountResetMs, modelResetMs, usageWindows } from './provider-limit'

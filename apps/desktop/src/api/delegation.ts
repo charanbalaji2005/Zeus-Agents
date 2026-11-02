@@ -58,14 +58,14 @@ export interface DelegationRouting {
 }
 
 export function getDelegationRouting(scope?: ProfileScope): Promise<DelegationRouting> {
-  return window.hermesDesktop.api<DelegationRouting>({ ...capabilityScoped(scope), path: '/api/delegation/routing' })
+  return window.zeusDesktop.api<DelegationRouting>({ ...capabilityScoped(scope), path: '/api/delegation/routing' })
 }
 
 export function selectDelegationBackend(
   backend: string,
   scope?: ProfileScope
 ): Promise<{ ok: boolean; backend: string }> {
-  return window.hermesDesktop.api<{ ok: boolean; backend: string }>({
+  return window.zeusDesktop.api<{ ok: boolean; backend: string }>({
     ...capabilityScoped(scope),
     path: '/api/delegation/backend',
     method: 'PUT',
@@ -77,7 +77,7 @@ export function saveDelegationModelRoutes(
   routes: DelegationModelMap,
   scope?: ProfileScope
 ): Promise<{ ok: boolean; model_map: DelegationModelMap }> {
-  return window.hermesDesktop.api<{ ok: boolean; model_map: DelegationModelMap }>({
+  return window.zeusDesktop.api<{ ok: boolean; model_map: DelegationModelMap }>({
     ...capabilityScoped(scope),
     path: '/api/delegation/backends/model_map',
     method: 'PUT',
@@ -89,7 +89,7 @@ export function saveDelegationProfileRoutes(
   routes: DelegationProfileRoutes,
   scope?: ProfileScope
 ): Promise<{ ok: boolean; profile_routes: DelegationProfileRoutes }> {
-  return window.hermesDesktop.api<{ ok: boolean; profile_routes: DelegationProfileRoutes }>({
+  return window.zeusDesktop.api<{ ok: boolean; profile_routes: DelegationProfileRoutes }>({
     ...capabilityScoped(scope),
     path: '/api/delegation/backends/profile_routes',
     method: 'PUT',

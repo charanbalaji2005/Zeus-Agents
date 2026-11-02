@@ -50,7 +50,7 @@ describe('interpretRuntimeReadiness', () => {
     })
   })
 
-  const NOT_CONNECTED = 'Hermes is not connected to any AI provider yet. Run `hermes model` to pick one.'
+  const NOT_CONNECTED = 'Zeus is not connected to any AI provider yet. Run `zeus model` to pick one.'
 
   it.each([
     ['runtime_check', { runtime: { error: NOT_CONNECTED, ok: false }, runtimeError: null }],

@@ -90,7 +90,7 @@ async def test_retired_terminal_retry_after_eviction_keeps_compact_outcome(api, 
     async with TestClient(TestServer(app)) as client:
         response = await client.post('/v1/responses', json={'input': 'work'}, headers=headers)
         original = await response.json()
-        assert owner.db.delete_session(response.headers['X-Hermes-Session-Id'])
+        assert owner.db.delete_session(response.headers['X-Zeus-Session-Id'])
         store = api._current_response_store()
         store._max_size = 1
         store.put('unrelated', {'response': {}})

@@ -1,4 +1,4 @@
-import { Box, Text, useInput, useStdout } from '@hermes/ink'
+import { Box, Text, useInput, useStdout } from '@zeus/ink'
 import type {
   ConnectionOperationStatus,
   ConnectionOperationTarget,
@@ -6,8 +6,8 @@ import type {
   ConnectorAccountsResult,
   ConnectorsConnectResult,
   ConnectorsListResult
-} from '@hermes/shared/gateway-events'
-import { JsonRpcGatewayError } from '@hermes/shared/json-rpc-channel'
+} from '@zeus/shared/gateway-events'
+import { JsonRpcGatewayError } from '@zeus/shared/json-rpc-channel'
 import { useStore } from '@nanostores/react'
 import { type ReactNode, useEffect, useState } from 'react'
 

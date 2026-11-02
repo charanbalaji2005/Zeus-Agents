@@ -1,6 +1,6 @@
 'use client'
 
-import type { CatalogPluginPresence, PluginsManageResult } from '@hermes/shared'
+import type { CatalogPluginPresence, PluginsManageResult } from '@zeus/shared'
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { Puzzle } from 'lucide-react'

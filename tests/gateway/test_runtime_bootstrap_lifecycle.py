@@ -13,12 +13,12 @@ async def test_runtime_preserves_browser_ticket_gate(tmp_path):
     from gateway.run_runtime import (initialize_gateway_runtime, start_gateway_runtime_api,
                                      publish_gateway_runtime_ready)
     from gateway.runtime_ownership import process_ownership
-    from hermes_constants import get_hermes_home
-    from hermes_cli.dashboard_auth import register_provider, clear_providers
-    from hermes_cli.dashboard_auth.ws_tickets import mint_ticket
-    from tests.hermes_cli.conftest_dashboard_auth import StubAuthProvider
+    from zeus_constants import get_zeus_home
+    from zeus_cli.dashboard_auth import register_provider, clear_providers
+    from zeus_cli.dashboard_auth.ws_tickets import mint_ticket
+    from tests.zeus_cli.conftest_dashboard_auth import StubAuthProvider
 
-    home = get_hermes_home()
+    home = get_zeus_home()
     (home / 'config.yaml').write_text('dashboard:\n  public_url: https://gateway.example.test\n')
     register_provider(StubAuthProvider())
     process_ownership.reserve([home])
@@ -34,7 +34,7 @@ async def test_runtime_preserves_browser_ticket_gate(tmp_path):
         ticket = mint_ticket(user_id='browser-owner', provider='stub')
         url = runner.session_api.api_origin.replace('http:', 'ws:') + '/api/ws'
         async with connect(url, origin='https://gateway.example.test', subprotocols=[
-                'hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket]) as ws:
+                'zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket]) as ws:
             await ws.send(json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'gateway.ping'}))
             while True:
                 reply = json.loads(await asyncio.wait_for(ws.recv(), 10))
@@ -57,7 +57,7 @@ async def test_drain_withdraws_native_admission_before_listener_close(tmp_path):
     from gateway.run_runtime import initialize_gateway_runtime, drain_gateway_runtime
     from gateway.runtime_ownership import process_ownership
     from gateway.session import SessionSource
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     class LocalAdapter(BasePlatformAdapter):
         async def connect(self, *, is_reconnect=False):
@@ -72,7 +72,7 @@ async def test_drain_withdraws_native_admission_before_listener_close(tmp_path):
         async def send(self, *args, **kwargs):
             return SendResult(success=True)
 
-    home = get_hermes_home()
+    home = get_zeus_home()
     process_ownership.reserve([home])
     runner = GatewayRunner(GatewayConfig())
     adapter = LocalAdapter(PlatformConfig(enabled=True), Platform.TELEGRAM)

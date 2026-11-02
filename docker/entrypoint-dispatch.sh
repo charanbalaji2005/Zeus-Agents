@@ -23,11 +23,11 @@ if [ "$$" -eq 1 ]; then
         export S6_LOGGING="${S6_LOGGING:-2}"
         export S6_CMD_USE_TERMINAL="${S6_CMD_USE_TERMINAL:-1}"
     fi
-    exec /init /opt/hermes/docker/main-wrapper.sh "$@"
+    exec /init /opt/zeus/docker/main-wrapper.sh "$@"
 fi
 
-echo "[hermes] WARNING: container entrypoint is not PID 1; skipping s6-overlay /init and falling back to direct bootstrap. Supervised services are unavailable in this runtime, but the requested command will still run." >&2
+echo "[zeus] WARNING: container entrypoint is not PID 1; skipping s6-overlay /init and falling back to direct bootstrap. Supervised services are unavailable in this runtime, but the requested command will still run." >&2
 # /init normally seeds PATH with s6's helpers; the non-PID-1 fallback skips it.
 export PATH="/command:/package/admin/s6/command:${PATH}"
-/opt/hermes/docker/stage2-hook.sh
-exec /opt/hermes/docker/main-wrapper.sh "$@"
+/opt/zeus/docker/stage2-hook.sh
+exec /opt/zeus/docker/main-wrapper.sh "$@"

@@ -219,16 +219,16 @@ describe('buildToolView web-search query', () => {
   it('keeps the query separate from structured search results', () => {
     const view = buildToolView(
       part({
-        args: { query: 'Hermes Agent Desktop tool calls' },
-        result: { web: [{ snippet: 'Desktop docs', title: 'Hermes docs', url: 'https://example.com/docs' }] },
+        args: { query: 'Zeus Agents Desktop tool calls' },
+        result: { web: [{ snippet: 'Desktop docs', title: 'Zeus docs', url: 'https://example.com/docs' }] },
         toolName: 'web_search'
       }),
       ''
     )
 
-    expect(view.searchQuery).toBe('Hermes Agent Desktop tool calls')
+    expect(view.searchQuery).toBe('Zeus Agents Desktop tool calls')
     expect(view.searchHits).toEqual([
-      { snippet: 'Desktop docs', title: 'Hermes docs', url: 'https://example.com/docs' }
+      { snippet: 'Desktop docs', title: 'Zeus docs', url: 'https://example.com/docs' }
     ])
   })
 })
@@ -238,28 +238,28 @@ describe('buildToolView browser_navigate title', () => {
     const view = buildToolView(
       part({
         toolName: 'browser_navigate',
-        args: { url: 'https://hermes-agent.nousresearch.com/docs' },
+        args: { url: 'https://charanbalaji2005.github.io/Zeus-Agents/docs' },
         result: { success: false, error: 'Command timed out after 60 seconds' }
       }),
       ''
     )
 
     expect(view.status).toBe('error')
-    expect(view.title).toContain('hermes-agent.nousresearch.com/docs')
+    expect(view.title).toContain('charanbalaji2005.github.io/Zeus-Agents/docs')
   })
 
   it('shows opened title on success', () => {
     const view = buildToolView(
       part({
         toolName: 'browser_navigate',
-        args: { url: 'https://hermes-agent.nousresearch.com/docs' },
-        result: { success: true, url: 'https://hermes-agent.nousresearch.com/docs', title: 'Docs' }
+        args: { url: 'https://charanbalaji2005.github.io/Zeus-Agents/docs' },
+        result: { success: true, url: 'https://charanbalaji2005.github.io/Zeus-Agents/docs', title: 'Docs' }
       }),
       ''
     )
 
     expect(view.status).toBe('success')
-    expect(view.title).toContain('hermes-agent.nousresearch.com/docs')
+    expect(view.title).toContain('charanbalaji2005.github.io/Zeus-Agents/docs')
   })
 })
 
@@ -462,7 +462,7 @@ describe('buildToolView title actions', () => {
     // prepends ("Running grep …") otherwise renders as "Running Running grep …".
     const view = buildToolView(
       part({
-        args: { context: 'Running grep -rn -i "bedrock" ~/.hermes/' },
+        args: { context: 'Running grep -rn -i "bedrock" ~/.zeus/' },
         result: undefined,
         toolName: 'terminal'
       }),
@@ -470,11 +470,11 @@ describe('buildToolView title actions', () => {
     )
 
     expect(view.title.startsWith('Running Running')).toBe(false)
-    expect(view.title).toBe('Running grep -rn -i "bedrock" ~/.hermes/')
+    expect(view.title).toBe('Running grep -rn -i "bedrock" ~/.zeus/')
     expect(view.titleAction).toEqual({
       prefix: '',
       text: 'Running',
-      suffix: ' grep -rn -i "bedrock" ~/.hermes/'
+      suffix: ' grep -rn -i "bedrock" ~/.zeus/'
     })
   })
 

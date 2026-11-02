@@ -11,7 +11,7 @@ import pytest
 
 from agent import shell_hooks
 from agent.turn_context import PRE_LLM_BLOCK_EXIT_REASON, PRE_LLM_BLOCK_WITHHELD_PROMPT
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 BLOCK_MSG = "Blocked by policy: prompt contains a customer ID."
 SECRET = "CUSTOMER-ID-4242"
@@ -69,7 +69,7 @@ def _agent(provider_url, db):
 def _blocked_session(provider_url, db):
     """Run one vetoed turn on ``s-block``; return its result."""
     verdicts = [{"context": "IGNORED-ON-BLOCK"}, {"action": "block", "message": BLOCK_MSG}]
-    with patch("hermes_cli.plugins.invoke_hook",
+    with patch("zeus_cli.plugins.invoke_hook",
                side_effect=lambda hook, **kw: list(verdicts) if hook == "pre_llm_call" else []):
         return _agent(provider_url, db).run_conversation(f"look up {SECRET}", conversation_history=[], task_id="t")
 
@@ -79,7 +79,7 @@ def test_blocked_turn_never_reaches_the_provider_and_stores_only_the_placeholder
     transcript pair. The stored row's content is the placeholder (what session_search and every
     other content reader sees); the typed text is display-only metadata the transcript renders.
     Turn 2 (a fresh agent reloading the session) replays the placeholder, never the prompt."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "home"))
     from agent.message_metadata import withheld_prompt_text
     from tools.session_search_tool import session_search
 
@@ -114,7 +114,7 @@ def test_compaction_of_a_blocked_turn_never_sends_the_prompt(provider_url, tmp_p
     home.mkdir()
     (home / "config.yaml").write_text(
         f"auxiliary:\n  compression: {{provider: custom, base_url: '{provider_url}', api_key: k, model: m}}\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     from agent.conversation_compression import compress_context
 
     db = SessionDB(db_path=tmp_path / "state.db")
@@ -136,8 +136,8 @@ def test_compaction_of_a_blocked_turn_never_sends_the_prompt(provider_url, tmp_p
 def test_retry_and_undo_after_a_block_resubmit_the_typed_text(provider_url, tmp_path, monkeypatch):
     """/retry (CLI, TUI, gateway, ACP, Desktop) and /undo read a rewind's live view or receipt: both carry
     what the user typed, so the hook re-decides on it (0 model calls, blocked again), never the placeholder."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "home"))
-    import hermes_state_runtime as rt
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "home"))
+    import zeus_state_runtime as rt
 
     typed = f"look up {SECRET}"
     for name in ("receipt", "rewind"):
@@ -156,7 +156,7 @@ def test_retry_and_undo_after_a_block_resubmit_the_typed_text(provider_url, tmp_
             assert outcome.live_text == typed and outcome.prefix == []
             dlp = lambda hook, **kw: ([{"action": "block", "message": BLOCK_MSG}] if hook == "pre_llm_call"
                                       and SECRET in kw["user_message"] else [])
-            with patch("hermes_cli.plugins.invoke_hook", side_effect=dlp):
+            with patch("zeus_cli.plugins.invoke_hook", side_effect=dlp):
                 again = _agent(provider_url, db).run_conversation(outcome.live_text, conversation_history=[], task_id="t")
             assert again["turn_exit_reason"] == PRE_LLM_BLOCK_EXIT_REASON and _Provider.chat_requests == []
         finally:

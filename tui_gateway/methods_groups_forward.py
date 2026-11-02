@@ -1,6 +1,6 @@
 """Standalone backend -> owning gateway for Group Chat calls (WA-19).
 
-A standalone ``hermes serve``/``hermes dashboard`` has no session authority: on its own it keeps
+A standalone ``zeus serve``/``zeus dashboard`` has no session authority: on its own it keeps
 rooms in the root ``shared-state.db`` and drives them here. Once a ready gateway serves the
 profile, that gateway's store is the one Group Chat list native Desktop and the Webapp share, so
 the room calls a Desktop makes go to it instead (the owner-forward path prompts already use:
@@ -60,8 +60,8 @@ def _home(server, params: dict):
         if home is None:
             raise ValueError(f"profile '{profile}' is unavailable")
         return Path(home)
-    from hermes_constants import get_hermes_home
-    return Path(get_hermes_home())
+    from zeus_constants import get_zeus_home
+    return Path(get_zeus_home())
 
 
 def _root_home():
@@ -71,7 +71,7 @@ def _root_home():
 
 
 def _discover(home):
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint
+    from zeus_cli.gateway_runtime import discover_gateway_endpoint
     return discover_gateway_endpoint(home, timeout=5)
 
 
@@ -122,7 +122,7 @@ def _standalone_rooms(params: dict | None = None) -> list[dict]:
 
 
 def _call(server, rid, home, endpoint, method: str, params: dict) -> dict:
-    from hermes_cli.gateway_client import GatewayRPCError
+    from zeus_cli.gateway_client import GatewayRPCError
     from tui_gateway import owner_forward
     try:
         result = owner_forward.forward_rpc(home, endpoint, method, params)
@@ -130,7 +130,7 @@ def _call(server, rid, home, endpoint, method: str, params: dict) -> dict:
         return server._err(rid, exc.code if isinstance(exc.code, int) else 5000, str(exc), exc.data or None)
     except Exception as exc:  # health: allow BLE001 -- transport boundary: any dial/IO failure is one refusal
         logger.warning("Group Chat %s: the gateway that owns it did not answer: %s", method, exc)
-        return server._err(rid, OWNER_LOST_CODE, "The Hermes gateway did not answer. Try again.")
+        return server._err(rid, OWNER_LOST_CODE, "The Zeus gateway did not answer. Try again.")
     result = result if isinstance(result, dict) else {}
     if method == "groups.capabilities" and isinstance(result.get("methods"), list):
         # Advertise only what this wire can carry: the room methods it forwards.
@@ -141,7 +141,7 @@ def _call(server, rid, home, endpoint, method: str, params: dict) -> dict:
 
 def _busy(server, rid, why) -> dict:
     return server._err(rid, OWNER_LOST_CODE,
-                       f"The Hermes gateway is not ready yet ({why}). Try again in a moment.")
+                       f"The Zeus gateway is not ready yet ({why}). Try again in a moment.")
 
 
 def forward(server, rid, method: str, params: dict) -> dict | None:
@@ -171,7 +171,7 @@ def forward(server, rid, method: str, params: dict) -> dict | None:
         if holder == "gateway":
             # Only the gateway's store holds this room; the standalone copy is frozen and never
             # imported again, so a local call would acknowledge a change the owner never sees.
-            return server._err(rid, OWNER_LOST_CODE, "The Hermes gateway that holds this Group Chat "
+            return server._err(rid, OWNER_LOST_CODE, "The Zeus gateway that holds this Group Chat "
                                "is not running. Start it and try again.")
         return None
     return _call(server, rid, home, endpoint, method, params)

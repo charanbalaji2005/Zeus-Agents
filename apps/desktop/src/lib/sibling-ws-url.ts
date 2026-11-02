@@ -11,7 +11,7 @@
  * way chat does.
  */
 
-import { resolveGatewayWsUrl } from '@hermes/shared'
+import { resolveGatewayWsUrl } from '@zeus/shared'
 
 const RESOLVE_TIMEOUT_MS = 15_000
 
@@ -52,10 +52,10 @@ export async function resolveSiblingWsUrl(
   path: string,
   options: { stripGatewayCredential?: boolean } = {}
 ): Promise<string> {
-  const desktop = window.hermesDesktop
+  const desktop = window.zeusDesktop
 
   if (!desktop?.getConnection) {
-    throw new Error('Hermes Desktop connection bridge unavailable')
+    throw new Error('Zeus Desktop connection bridge unavailable')
   }
 
   const connectionId = route.connectionId?.trim() || null

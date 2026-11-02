@@ -11,7 +11,7 @@ from gateway.message_timestamps import (
     format_message_timestamp,
     render_user_content_with_timestamp,
 )
-from hermes_time import safe_strftime
+from zeus_time import safe_strftime
 
 
 BERLIN = ZoneInfo("Europe/Berlin")
@@ -236,8 +236,8 @@ def test_compactor_restatement_replays_unstamped_through_session_db(tmp_path):
     from gateway.config import GatewayConfig
     from gateway.run import _build_gateway_agent_history
     from gateway.session import SessionStore
-    from hermes_state import SessionDB
-    from hermes_time import get_timezone
+    from zeus_state import SessionDB
+    from zeus_time import get_timezone
 
     sent_at = _epoch(2026, 4, 28, 13, 40, 53)
     messages = [{"role": "system", "content": "sys"},
@@ -291,7 +291,7 @@ def test_compaction_summary_stays_unstamped_across_real_prune(tmp_path):
     from gateway.config import GatewayConfig
     from gateway.run import _build_gateway_agent_history
     from gateway.session import SessionStore
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     summary = {"role": "user", "content": "[CONTEXT COMPACTION — REFERENCE ONLY] retained summary",
                "_compressed_summary": True}

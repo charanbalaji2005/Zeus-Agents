@@ -5,8 +5,8 @@ import asyncio
 import acp
 import pytest
 
-from hermes_cli.gateway_client import GatewayClientError
-from hermes_state_runtime import list_session_admissions
+from zeus_cli.gateway_client import GatewayClientError
+from zeus_state_runtime import list_session_admissions
 from tests.acp_adapter import test_retained_identity_retirement as base
 from tests.acp_adapter.test_retained_identity_retirement import _acp, _model, _settled
 

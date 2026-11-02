@@ -46,11 +46,11 @@ beforeEach(() => {
   vi.resetModules()
   setUserAgent(CHROME_UA)
   localStorage.clear()
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 })
 
 afterEach(() => {
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
   setPlatform('')
   Reflect.deleteProperty(navigator, 'userAgent')
   vi.unstubAllGlobals()

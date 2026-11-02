@@ -1,4 +1,4 @@
-import type { GatewayEvent } from '@hermes/shared'
+import type { GatewayEvent } from '@zeus/shared'
 import { QueryClient } from '@tanstack/react-query'
 import { act, render } from '@testing-library/react'
 import type { MutableRefObject } from 'react'
@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 
 import type { ClientSessionState } from '@/app/types'
 import { createClientSessionState } from '@/lib/chat-runtime'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { useMessageStream } from '../use-message-stream'
 
@@ -175,7 +175,7 @@ export function Harness({
     queryClient: queryClient.current,
     updateSessionState,
     hydrateFromStoredSession: async () => undefined,
-    refreshHermesConfig: async () => undefined,
+    refreshZeusConfig: async () => undefined,
     refreshSessions
   })
 

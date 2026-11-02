@@ -6,7 +6,7 @@ maintainer: cortexuvula
 tier: community
 category: desktop
 title: Canadian Primary Care
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 version: "0.4.0"
 docs_url: https://github.com/cortexuvula/canadian-primary-care-calculators/blob/31f63539a15ade9ae3c78804f23ec2c09a7a04ea/README.md
 readme: true

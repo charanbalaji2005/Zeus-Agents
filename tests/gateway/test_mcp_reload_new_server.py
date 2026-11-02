@@ -22,11 +22,11 @@ OLD = {'old': {'command': 'old-mcp'}}
 
 def _home(monkeypatch):
     from gateway import run
-    from hermes_constants import get_hermes_home
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
     (home / 'config.yaml').write_text(CONFIG)
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     return home
 
 
@@ -59,7 +59,7 @@ def _worker_servers(frame, monkeypatch):
     from tools.mcp_tool_config import _load_mcp_config
     config, toolsets = json.loads(frame['policy']['config_json']), set(frame['policy']['toolsets'])
     with monkeypatch.context() as bound:
-        bound.setattr('hermes_cli.config.load_config', lambda *args, **kwargs: config)
+        bound.setattr('zeus_cli.config.load_config', lambda *args, **kwargs: config)
         servers = _load_mcp_config()
     return {name: cfg for name, cfg in servers.items() if name in toolsets}, toolsets
 
@@ -70,7 +70,7 @@ def _generation(store, sid):
 
 @pytest.mark.asyncio
 async def test_a_new_mcp_server_reaches_a_session_only_through_a_committed_generation(tmp_path, monkeypatch):
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     home = _home(monkeypatch)
     monkeypatch.setattr('gateway.session_policy.launch_key', lambda authority, policy: None)
     store, authority = await _owner_authority(home)
@@ -136,7 +136,7 @@ async def test_reload_never_changes_a_running_or_queued_turns_servers(tmp_path, 
     from gateway.session_authority import initialize_session_authority
     from gateway.session_contract import SessionRef, Submission
     from gateway.session_policy import policy_for_source
-    import hermes_state_runtime as rt
+    import zeus_state_runtime as rt
     home = _home(monkeypatch)
     monkeypatch.setattr('gateway.session_policy.launch_key', lambda authority, policy: None)
     store = SessionStore(home / 'sessions', GatewayConfig())
@@ -175,8 +175,8 @@ async def test_reload_never_changes_a_running_or_queued_turns_servers(tmp_path, 
 async def test_an_admission_queued_during_a_reload_commit_keeps_the_old_servers(tmp_path, monkeypatch):
     """reload.mcp's session commit is fenced inside its write transaction: a turn queued after the refresh
     read the stored policy refuses it (``session: busy``), and that turn runs without the new server."""
-    import hermes_state_runtime as rt
-    from hermes_state_local import local_receipt
+    import zeus_state_runtime as rt
+    from zeus_state_local import local_receipt
     from tests.gateway.test_session_resume_config_refresh import admit_during_refresh, hold_refresh_commit
     home = _home(monkeypatch)
     monkeypatch.setattr('gateway.session_policy.launch_key', lambda authority, policy: None)
@@ -218,7 +218,7 @@ async def test_a_rotated_mcp_secret_commits_a_generation_with_the_new_value(tmp_
     compares the private values' fingerprints too: ``reload.mcp`` and a resume (also after an owner restart)
     commit it, and the next turn's worker gets the new token, which never reaches state.db."""
     from gateway.session_authority import initialize_session_authority
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     home = _home(monkeypatch)
     (home / 'config.yaml').write_text(ADDED)
     monkeypatch.setattr('gateway.session_policy.launch_key', lambda authority, policy: None)
@@ -448,7 +448,7 @@ def test_reload_counts_only_changes_that_took_effect(monkeypatch):
     applied change. Only a server that registered (live or lazy), a completed removal or a committed session
     generation turns an unavailable server into partial success."""
     from gateway import session_ancillary
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     refreshed = []
     runner = SimpleNamespace(config=SimpleNamespace(multiplex_profiles=False),
                              _mcp_reload_refresh_cached_agents=lambda multiplex, profile: refreshed.append(profile))

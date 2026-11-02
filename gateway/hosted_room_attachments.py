@@ -10,7 +10,7 @@ room's frozen recipient roster.
 from __future__ import annotations
 
 from gateway.hosted_rooms import EventAttachmentConflictError
-from hermes_dir_acl import make_user_dir
+from zeus_dir_acl import make_user_dir
 
 import base64
 import binascii
@@ -415,7 +415,7 @@ class HostedRoomAttachmentStore:
         )
 
     def _connect(self) -> sqlite3.Connection:
-        from hermes_state_wal import apply_wal_with_fallback
+        from zeus_state_wal import apply_wal_with_fallback
 
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.db_path, timeout=10)

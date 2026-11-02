@@ -15,7 +15,7 @@ from agent import onboarding_record
 from agent.inline_tool_executors import INLINE_TOOL_EXECUTORS, InlineToolContext
 from agent.onboarding import observe_tool_result
 from agent.onboarding_flow import Facts
-from hermes_cli.config import read_user_config_raw
+from zeus_cli.config import read_user_config_raw
 from tui_gateway import server, server_requests
 
 SID, STORED = "ui-onboarding", "onboarding-chat"
@@ -25,10 +25,10 @@ FACTS = Facts(os="windows", arch="amd64", machine_kind="PC", nvidia_platform="di
 
 @pytest.fixture
 def chat(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr(server, "_hermes_home", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    monkeypatch.setattr(server, "_zeus_home", str(home))
     monkeypatch.setattr(server, "_db", None)
     db = server._get_db()
     db.create_session(STORED, "desktop")

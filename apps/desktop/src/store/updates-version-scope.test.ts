@@ -53,7 +53,7 @@ vi.mock('@/store/connections', () => ({
   refreshConnectionsRegistry: () => Promise.resolve($mockConnectionsRegistry.get())
 }))
 
-vi.mock('@/hermes', () => ({ checkHermesUpdate: vi.fn(), updateHermes: vi.fn(), getActionStatus: vi.fn() }))
+vi.mock('@/zeus', () => ({ checkZeusUpdate: vi.fn(), updateZeus: vi.fn(), getActionStatus: vi.fn() }))
 vi.mock('@/store/gateway-reconnect', () => ({ reconnectGateway: vi.fn() }))
 
 const { refreshDesktopVersion, $desktopVersion, startUpdatePoller, stopUpdatePoller } = await import('./updates')
@@ -76,7 +76,7 @@ describe('desktop version follows the request scope', () => {
   let getVersion: ReturnType<typeof vi.fn>
 
   const info = (appVersion: string): DesktopVersionInfo =>
-    ({ appVersion, electronVersion: '40', nodeVersion: '26', platform: 'linux', hermesRoot: '' }) as DesktopVersionInfo
+    ({ appVersion, electronVersion: '40', nodeVersion: '26', platform: 'linux', zeusRoot: '' }) as DesktopVersionInfo
 
   beforeEach(() => {
     setRemote(false)
@@ -86,7 +86,7 @@ describe('desktop version follows the request scope', () => {
     getVersion = vi.fn().mockResolvedValue(info('1.0.0'))
     // Same minimal window the startUpdatePoller suite installs (siblings delete it).
     ;(globalThis as unknown as { window: unknown }).window = {
-      hermesDesktop: {
+      zeusDesktop: {
         getVersion,
         updates: { check: vi.fn().mockResolvedValue({ supported: false }), onProgress: vi.fn(() => () => {}) }
       },

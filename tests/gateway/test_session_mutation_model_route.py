@@ -46,11 +46,11 @@ def endpoints():
 def home(monkeypatch):
     from agent import models_dev
     from gateway import run
-    from hermes_constants import get_hermes_home
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
     # gateway.run binds its home at first import; the loader itself is real.
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     catalog = {'custom': {'id': 'custom', 'models': {
         name: {'id': name, 'name': name, 'tool_call': True, 'cost': {'input': 0, 'output': 0},
                'limit': {'context': 100000, 'output': 4000}} for name in MODELS}}}
@@ -201,7 +201,7 @@ async def test_a_route_that_cannot_authenticate_does_not_block_switching_away(ho
     try:
         live = await _create(owner, authority, home, 'bare')
         sid = next(sid for sid, value in authority.sessions.items() if value is live)
-        from hermes_cli.auth_constants import AuthError
+        from zeus_cli.auth_constants import AuthError
         with pytest.raises(AuthError):
             _route(runner, live)
 

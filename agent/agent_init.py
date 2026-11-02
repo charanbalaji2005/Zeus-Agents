@@ -43,11 +43,11 @@ from agent.think_scrubber import StreamingThinkScrubber
 from agent.tool_guardrails import (
     ToolCallGuardrailConfig, ToolCallGuardrailController
 )
-from hermes_cli.config import DEFAULT_CONFIG, cfg_get
-from hermes_cli.route_identity import normalize_route_base_url
-from hermes_cli.timeouts import get_provider_request_timeout
-from hermes_constants import get_hermes_home
-from hermes_state_ids import new_session_id
+from zeus_cli.config import DEFAULT_CONFIG, cfg_get
+from zeus_cli.route_identity import normalize_route_base_url
+from zeus_cli.timeouts import get_provider_request_timeout
+from zeus_constants import get_zeus_home
+from zeus_state_ids import new_session_id
 from utils import base_url_host_matches, is_truthy_value
 
 # Same logger name as run_agent so caplog/patches on "run_agent" see our records.
@@ -64,8 +64,8 @@ def _provider_default_routes(provider: str) -> set[str]:
             routes.add(route)
 
     with suppress(Exception):
-        from hermes_cli.providers import HERMES_OVERLAYS, get_provider
-        overlay = HERMES_OVERLAYS.get(provider)
+        from zeus_cli.providers import ZEUS_OVERLAYS, get_provider
+        overlay = ZEUS_OVERLAYS.get(provider)
         provider_def = get_provider(provider, allow_network=False)
         add(getattr(overlay, "base_url_override", ""))
         add(getattr(provider_def, "base_url", ""))
@@ -75,9 +75,9 @@ def _provider_default_routes(provider: str) -> set[str]:
         add(getattr(get_provider_profile(provider), "base_url", ""))
 
     with suppress(Exception):
-        from hermes_cli.auth import PROVIDER_REGISTRY
-        from hermes_cli.models import normalize_provider as normalize_model_provider
-        from hermes_cli.providers import normalize_provider as normalize_registry_provider
+        from zeus_cli.auth import PROVIDER_REGISTRY
+        from zeus_cli.models import normalize_provider as normalize_model_provider
+        from zeus_cli.providers import normalize_provider as normalize_registry_provider
         for provider_id, config in PROVIDER_REGISTRY.items():
             if normalize_registry_provider(normalize_model_provider(provider_id)) == provider:
                 add(getattr(config, "inference_base_url", ""))
@@ -102,14 +102,14 @@ def _context_route_mismatch(
     if not configured_provider:
         return False
     try:
-        from hermes_cli.models import normalize_provider as normalize_model_provider
+        from zeus_cli.models import normalize_provider as normalize_model_provider
         configured_provider = normalize_model_provider(configured_provider)
         active_provider = normalize_model_provider(active_provider)
     except Exception:
         configured_provider = configured_provider.lower()
         active_provider = active_provider.lower()
     with suppress(Exception):
-        from hermes_cli.providers import normalize_provider as normalize_registry_provider
+        from zeus_cli.providers import normalize_provider as normalize_registry_provider
         configured_provider = normalize_registry_provider(configured_provider)
         active_provider = normalize_registry_provider(active_provider)
 
@@ -293,7 +293,7 @@ _EXPLICIT_API_MODES = {
 
 def _resolve_api_mode(agent, api_mode, provider_name, base_url):
     """Set ``agent.api_mode`` (and provider rewrites) — ordered ladder, first match wins."""
-    from hermes_cli.providers import is_actual_route
+    from zeus_cli.providers import is_actual_route
     from agent.transports import registered_api_modes
     host, url = agent._base_url_hostname, agent._base_url_lower
     if is_actual_route(agent.provider, base_url):
@@ -323,7 +323,7 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
     elif agent.provider in {"nous", "nous-portal", "nousresearch"}:
         # Portal is dual-wire (anthropic/* → Messages, else chat_completions); covers direct
         # AIAgent construction without a resolved runtime.
-        from hermes_cli.providers import nous_api_mode
+        from zeus_cli.providers import nous_api_mode
         agent.api_mode = nous_api_mode(agent.model)
     else:
         # Host-mandated wire check — LAST, so the provider-slug rewrites above always win.
@@ -335,7 +335,7 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
             # BY DESIGN, not provider-name-driven, because user config `providers.meta` may point at any
             # OpenAI-compatible endpoint, and forcing `codex_responses` on the provider name alone would
             # break custom endpoints named "meta" that do not host the Responses API. See #63425.
-            from hermes_cli.providers import host_mandated_api_mode as _host_mandated_api_mode
+            from zeus_cli.providers import host_mandated_api_mode as _host_mandated_api_mode
             _mandated = _host_mandated_api_mode(base_url or "")
         except Exception:
             _mandated = None
@@ -343,7 +343,7 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
 
 
 def _finalize_routing(agent, api_mode, credential_pool):
-    from hermes_cli.providers import is_actual_route
+    from zeus_cli.providers import is_actual_route
     # Credential-pool validation runs AFTER provider auto-detection so a pool scoped to
     # "anthropic" isn't rejected for provider=None + anthropic.com URL.
     # Regression from #63048 which placed this check before the URL-based auto-detection block above (fixed
@@ -370,11 +370,11 @@ def _finalize_routing(agent, api_mode, credential_pool):
     # process-wide, daemon.
     if agent.provider == "nous":
         with suppress(Exception):
-            from hermes_cli.nous_auth_keepalive import start_nous_auth_keepalive
+            from zeus_cli.nous_auth_keepalive import start_nous_auth_keepalive
             start_nous_auth_keepalive()
 
     with suppress(Exception):
-        from hermes_cli.model_normalize import (
+        from zeus_cli.model_normalize import (
             _AGGREGATOR_PROVIDERS, normalize_model_for_provider
         )
 
@@ -383,14 +383,14 @@ def _finalize_routing(agent, api_mode, credential_pool):
 
     # Nous model policy follows the ROUTE (the welcome host serves one model); a credential-pool
     # swap can change the route later, so ``_swap_credential`` applies the same helper again.
-    from hermes_cli.anon_auth import pin_model_for_route
+    from zeus_cli.anon_auth import pin_model_for_route
     agent.model = pin_model_for_route(agent.provider, agent.base_url, agent.model)
 
     # Auto-upgrade to Responses for GPT-5.x-style models and direct OpenAI URLs, unless
     # api_mode was explicit, the runtime is ACP (`acp://` clients route themselves, no
     # Responses surface) or Azure OpenAI (gpt-5.x on /chat/completions only). Provider
     # exceptions live in _provider_model_requires_responses_api.
-    from hermes_cli.runtime_provider_backends import _is_external_process_provider
+    from zeus_cli.runtime_provider_backends import _is_external_process_provider
 
     _base_lower = str(agent.base_url or "").lower()
     if (
@@ -495,7 +495,7 @@ _TURN_STATE: dict[str, Any] = {
     # a stale rebuild instead of clobbering a newer one.
     "_tool_snapshot_generation": 0,
     "_rate_limit_state": None,  # from x-ratelimit-* headers; read by /usage
-    # Credits tracking (dev-only, HERMES_DEV_CREDITS) from x-nous-credits-* headers; session
+    # Credits tracking (dev-only, ZEUS_DEV_CREDITS) from x-nous-credits-* headers; session
     # start is latched on the first header so cumulative spend can be reported.
     "_credits_state": None,
     "_credits_session_start_micros": None,
@@ -589,7 +589,7 @@ def _init_prompt_cache_config(agent):
     # inject their own cache_control markers (#13477).
     agent._cache_ttl = "5m"
     try:
-        from hermes_cli.config import load_config_readonly as _load_pc_cfg
+        from zeus_cli.config import load_config_readonly as _load_pc_cfg
         from agent.agent_runtime_helpers import cache_ttl_means_disabled
         from agent.prompt_caching import AUTO_CACHE_TTL, auto_cache_ttl_for_source
         _pc_cfg = _load_pc_cfg().get("prompt_caching", {}) or {}
@@ -610,8 +610,8 @@ def _init_prompt_cache_config(agent):
         # Config values and traceback frames may contain credentials.
         logger.warning(
             "Agent configuration for prompt_caching.cache_ttl could not be loaded (%s); "
-            "using default prompt caching settings. Check the active Hermes Python "
-            "environment and dependencies; run 'hermes config check' after "
+            "using default prompt caching settings. Check the active Zeus Python "
+            "environment and dependencies; run 'zeus config check' after "
             "configuration imports work again.",
             type(exc).__name__,
         )
@@ -629,18 +629,18 @@ def _init_turn_state(agent, run_budget_seconds):
 def _setup_logging(agent):
     # agent.log (INFO+) + errors.log (WARNING+); idempotent so per-message gateway agents
     # don't duplicate handlers.
-    from hermes_logging import setup_logging, setup_verbose_logging
+    from zeus_logging import setup_logging, setup_verbose_logging
     # The ACTIVE home, not run_agent's import-time freeze: a Desktop serve backend builds agents
-    # for several profiles inside set_hermes_home_override(), and the frozen launch home made
+    # for several profiles inside set_zeus_home_override(), and the frozen launch home made
     # setup_logging() see a home it already served, so it never adopted the profile and every
     # profile's records landed in the launch profile's agent.log (#125974).
-    setup_logging(hermes_home=get_hermes_home())
+    setup_logging(zeus_home=get_zeus_home())
 
     if agent.verbose_logging:
         setup_verbose_logging()
         _ra().logger.info("Verbose logging enabled (third-party library logs suppressed)")
     # Quiet mode must NOT raise per-logger levels: isEnabledFor() runs before propagation and
-    # would starve the root file handlers. Noise reduction belongs in hermes_logging.
+    # would starve the root file handlers. Noise reduction belongs in zeus_logging.
 
 
 def _print_key_banner(key, label: str, warn_missing: bool = False) -> None:
@@ -680,7 +680,7 @@ def _init_anthropic_client(agent, api_key, base_url, _provider_timeout):
     # auth.json, so other processes' refreshes are seen).
     if agent.provider == "minimax-oauth" and isinstance(effective_key, str) and effective_key:
         try:
-            from hermes_cli.auth import build_minimax_oauth_token_provider
+            from zeus_cli.auth import build_minimax_oauth_token_provider
             effective_key = build_minimax_oauth_token_provider()
         except Exception as _mm_exc:
             logging.getLogger(__name__).warning(
@@ -741,7 +741,7 @@ def _explicit_client_kwargs(agent, api_key, base_url, _provider_timeout) -> dict
         client_kwargs["timeout"] = _provider_timeout
     # ACP/subprocess providers take launch kwargs instead of HTTP credentials. Keyed on the profile's
     # auth_type, not a vendor slug: every external_process plugin gets this launch path (#102421).
-    from hermes_cli.runtime_provider_backends import _is_external_process_provider
+    from zeus_cli.runtime_provider_backends import _is_external_process_provider
 
     if _is_external_process_provider(agent.provider):
         client_kwargs["command"] = agent.acp_command
@@ -774,8 +774,8 @@ def _routed_client_kwargs(agent, fallback_model, _provider_timeout) -> Optional[
     _routed_client, _ = resolve_provider_client(
         agent.provider or "auto", model=agent.model, raw_codex=True)
     if _routed_client is not None:
-        from hermes_cli.providers import is_actual_route, normalize_provider
-        effective_provider = getattr(_routed_client, "_hermes_aux_effective_provider", "")
+        from zeus_cli.providers import is_actual_route, normalize_provider
+        effective_provider = getattr(_routed_client, "_zeus_aux_effective_provider", "")
         if is_actual_route(effective_provider):
             agent.provider = normalize_provider(effective_provider)
         return _client_kwargs_from_routed(_routed_client, _provider_timeout)
@@ -790,7 +790,7 @@ def _routed_client_kwargs(agent, fallback_model, _provider_timeout) -> Optional[
     for _fb in _fallback_entries(fallback_model):
         _fb_provider = str(_fb["provider"])
         try:
-            from hermes_cli.fallback_config import resolve_entry_api_key
+            from zeus_cli.fallback_config import resolve_entry_api_key
             _fb_explicit_key = resolve_entry_api_key(_fb)
             _fb_client, _fb_model = resolve_provider_client(
                 _fb["provider"], model=_fb["model"], raw_codex=True,
@@ -862,12 +862,12 @@ def _routed_client_kwargs(agent, fallback_model, _provider_timeout) -> Optional[
         # Explicit non-OpenRouter provider with no creds and no usable fallback: fail fast.
         from agent.auxiliary_unavailable import ProviderNotConfiguredError, missing_provider_credentials_message
         raise ProviderNotConfiguredError(missing_provider_credentials_message(_explicit))
-    from hermes_constants import profile_cli_selector
+    from zeus_constants import profile_cli_selector
     from agent.auxiliary_unavailable import ProviderNotConfiguredError
     _sel = profile_cli_selector()
     raise ProviderNotConfiguredError(
-        "No LLM provider configured. Run `hermes model` to "
-        "select a provider, or run `hermes setup` for first-time "
+        "No LLM provider configured. Run `zeus model` to "
+        "select a provider, or run `zeus setup` for first-time "
         "configuration."
     )
 
@@ -889,7 +889,7 @@ def _apply_openai_header_policy(agent, client_kwargs: dict[str, Any]) -> None:
     # model.default_headers override provider/SDK defaults (WAFs rejecting SDK headers).
     agent._apply_user_default_headers()
     try:
-        from hermes_cli.config import (
+        from zeus_cli.config import (
             apply_custom_provider_extra_headers_to_client_kwargs,
             apply_custom_provider_tls_to_client_kwargs, get_compatible_custom_providers,
             load_config,
@@ -914,7 +914,7 @@ def _init_openai_client(agent, api_key, base_url, fallback_model, _provider_time
             if not agent.quiet_mode:
                 print(f"🤖 AI Agent initialized with MoA preset: {agent.model}")
             return
-    from hermes_cli.providers import is_actual_route
+    from zeus_cli.providers import is_actual_route
     if is_actual_route(agent.provider, client_kwargs.get("base_url", "")):
         agent.api_mode = "chat_completions"
         if hasattr(agent, "_transport_cache"):
@@ -981,7 +981,7 @@ _HOST_DEFAULT_HEADERS: list[tuple[str, Callable[[Any, str], dict[str, str]]]] = 
     ("api.kimi.com", lambda _k, _b: {"User-Agent": "claude-code/0.1.0"}),
     ("portal.qwen.ai", _lazy_headers("agent.client_lifecycle", "_qwen_portal_headers")),
     ("chatgpt.com", _lazy_headers("agent.codex_headers", "codex_cloudflare_headers", pass_key=True)),
-    ("x.ai", _lazy_headers("tools.xai_http", "hermes_xai_default_headers")),
+    ("x.ai", _lazy_headers("tools.xai_http", "zeus_xai_default_headers")),
 ]
 
 
@@ -1011,12 +1011,12 @@ def _client_kwargs_from_routed(client, timeout) -> dict[str, Any]:
 def _load_tools(agent, enabled_toolsets, disabled_toolsets):
     # A feature that left core (Home Assistant) is installed once per process before discovery, so its tools
     # are in this snapshot; outcomes wait for a turn someone sees (deliver_kept_startup_notices), maybe not ours.
-    from hermes_cli.left_core_migration import recover_at_startup
+    from zeus_cli.left_core_migration import recover_at_startup
     recover_at_startup()
-    # A multiplexed gateway may have switched HERMES_HOME since model_tools was imported;
+    # A multiplexed gateway may have switched ZEUS_HOME since model_tools was imported;
     # make sure this profile's plugins are discovered before the tool snapshot.
     try:
-        from hermes_cli.plugins import discover_plugins
+        from zeus_cli.plugins import discover_plugins
         discover_plugins()
     except Exception:
         logger.warning("Plugin discovery failed during agent setup", exc_info=True)
@@ -1090,7 +1090,7 @@ def _publish_session_id(session_id: str) -> None:
         except Exception:
             delegated_child = False
         if not delegated_child:
-            os.environ["HERMES_SESSION_ID"] = session_id
+            os.environ["ZEUS_SESSION_ID"] = session_id
 
 
 def _init_session_state(agent, session_id, session_db, parent_session_id, reasoning_config, max_tokens,
@@ -1099,8 +1099,8 @@ def _init_session_state(agent, session_id, session_db, parent_session_id, reason
     agent.session_id = session_id or new_session_id(agent.session_start)
     _publish_session_id(agent.session_id)
 
-    # ~/.hermes/sessions/ — kept unconditionally for request_dump_*.json debug breadcrumbs.
-    agent.logs_dir = get_hermes_home() / "sessions"
+    # ~/.zeus/sessions/ — kept unconditionally for request_dump_*.json debug breadcrumbs.
+    agent.logs_dir = get_zeus_home() / "sessions"
     agent.logs_dir.mkdir(parents=True, exist_ok=True)
     _set_defaults(agent, _SESSION_STATE)
 
@@ -1119,7 +1119,7 @@ def _init_session_state(agent, session_id, session_db, parent_session_id, reason
         "reasoning_config": reasoning_config,
         "max_tokens": max_tokens,
     }
-    # Process-scoped --yolo is persisted so `hermes --resume` restores the bypass
+    # Process-scoped --yolo is persisted so `zeus --resume` restores the bypass
     # (SessionDB.session_yolo_enabled); session-scoped /yolo toggles persist separately.
     with suppress(Exception):
         from tools.approval import _YOLO_MODE_FROZEN
@@ -1175,7 +1175,7 @@ def _memory_provider_init_kwargs(agent, platform) -> dict[str, Any]:
     kwargs = {
         "session_id": agent.session_id,
         "platform": platform or "cli",
-        "hermes_home": str(get_hermes_home()),
+        "zeus_home": str(get_zeus_home()),
         # platform="cron" (scheduler) / "subagent" (delegate_task) → providers skip writes (MemoryProvider.initialize).
         "agent_context": platform if platform in ("cron", "subagent") else "primary",
     }
@@ -1201,9 +1201,9 @@ def _memory_provider_init_kwargs(agent, platform) -> dict[str, Any]:
         kwargs["cwd"] = agent.session_cwd
     # Profile identity for per-profile provider scoping
     with suppress(Exception):
-        from hermes_cli.profiles import get_active_profile_name
+        from zeus_cli.profiles import get_active_profile_name
         kwargs["agent_identity"] = get_active_profile_name()
-        kwargs["agent_workspace"] = "hermes"
+        kwargs["agent_workspace"] = "zeus"
     return kwargs
 
 
@@ -1396,10 +1396,10 @@ def _compression_threshold(agent, cfg: dict[str, Any]) -> tuple[float, bool]:
 def _compression_codex_settings(cfg: dict[str, Any]) -> tuple[str, bool, Optional[int]]:
     """``codex_app_server_auto`` / ``codex_responses_native`` / ``codex_responses_compact_threshold``."""
     app_server_auto = str(cfg.get("codex_app_server_auto", "native") or "native").lower()
-    if app_server_auto not in {"native", "hermes", "off"}:
+    if app_server_auto not in {"native", "zeus", "off"}:
         _ra().logger.warning(
             "Invalid compression.codex_app_server_auto=%r; using 'native'. "
-            "Valid values are: native, hermes, off.",
+            "Valid values are: native, zeus, off.",
             app_server_auto,
         )
         app_server_auto = "native"
@@ -1536,7 +1536,7 @@ def _custom_provider_configured_base_url(
     _user_providers = _agent_cfg.get("providers")
     _disabled_ids: set[str] = set()
     if isinstance(_user_providers, dict):
-        from hermes_cli.config import is_provider_enabled
+        from zeus_cli.config import is_provider_enabled
         for _key, _entry in _user_providers.items():
             if not isinstance(_entry, dict):
                 continue
@@ -1580,7 +1580,7 @@ def _configured_default_base_url(_agent_cfg, _model_cfg, _custom_providers) -> s
         _custom_provider_candidate = False
     elif _custom_provider_candidate and _norm != "custom" and not _norm.startswith("custom:"):
         with suppress(Exception):
-            from hermes_cli.auth import resolve_provider as resolve_auth_provider
+            from zeus_cli.auth import resolve_provider as resolve_auth_provider
             _custom_provider_candidate = (
                 str(resolve_auth_provider(_norm) or "").strip().lower() != _norm
             )
@@ -1614,14 +1614,14 @@ def _scope_context_length_to_default_runtime(
     """
     _default = _model_cfg.get("default")
     if isinstance(_default, dict):
-        from hermes_cli.config import split_model_config_default
+        from zeus_cli.config import split_model_config_default
         _default, _ = split_model_config_default(_default)
     _configured_default_model = str(_default or "").strip()
     _configured_default_runtime_model = _configured_default_model
     _active_runtime_model = agent.model
     if _configured_default_model:
         with suppress(Exception):
-            from hermes_cli.model_normalize import normalize_model_for_provider
+            from zeus_cli.model_normalize import normalize_model_for_provider
             _configured_default_runtime_model = normalize_model_for_provider(
                 _configured_default_model, agent.provider
             )
@@ -1677,7 +1677,7 @@ def config_context_length_for_runtime(agent, config=None) -> Optional[int]:
     the configured default route, so an unrelated runtime never inherits it.
     """
     try:
-        from hermes_cli.config import get_compatible_custom_providers, load_config
+        from zeus_cli.config import get_compatible_custom_providers, load_config
         _agent_cfg = config if isinstance(config, dict) else load_config()
         if not isinstance(_agent_cfg, dict):
             return None
@@ -1753,7 +1753,7 @@ def _resolve_context_length(agent, _agent_cfg, base_url):
 
     # Resolve custom_providers before route-scoping: a named provider may keep its URL here.
     try:
-        from hermes_cli.config import get_compatible_custom_providers
+        from zeus_cli.config import get_compatible_custom_providers
         _custom_providers = get_compatible_custom_providers(_agent_cfg)
     except Exception:
         _custom_providers = _agent_cfg.get("custom_providers")
@@ -1773,7 +1773,7 @@ def _resolve_context_length(agent, _agent_cfg, base_url):
 
     if _config_context_length is None and _custom_providers:
         with suppress(Exception):
-            from hermes_cli.config import get_custom_provider_context_length
+            from zeus_cli.config import get_custom_provider_context_length
             _cp_ctx_resolved = get_custom_provider_context_length(
                 model=agent.model, base_url=agent.base_url, custom_providers=_custom_providers
             )
@@ -1823,7 +1823,7 @@ def _select_context_engine(_agent_cfg):
 
     if _selected_engine is None:
         try:
-            from hermes_cli.plugins import get_plugin_context_engine
+            from zeus_cli.plugins import get_plugin_context_engine
             _candidate = get_plugin_context_engine()
         except Exception:
             _candidate = None
@@ -1990,19 +1990,19 @@ def _enforce_minimum_context(agent):
         raise ValueError(
             f"Model {agent.model} has a context window of {_ctx:,} tokens, "
             f"which is below the minimum {MINIMUM_CONTEXT_LENGTH:,} required "
-            f"by Hermes Agent.  {remedy}"
+            f"by Zeus Agents.  {remedy}"
         )
 
 
-def _warn_nonagentic_hermes_model(agent):
+def _warn_nonagentic_zeus_model(agent):
     # Nous Hermes 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
     # warns on the CLI, so skip platform=="cli"; non-quiet non-CLI surfaces still get it.
     if agent.quiet_mode or (agent.platform or "cli") == "cli":
         return
     with suppress(Exception):
-        from hermes_cli.model_switch import _check_hermes_model_warning
-        _hermes_warn = _check_hermes_model_warning(agent.model or "")
-        if _hermes_warn:
+        from zeus_cli.model_switch import _check_zeus_model_warning
+        _zeus_warn = _check_zeus_model_warning(agent.model or "")
+        if _zeus_warn:
             _user_msg = (
                 "⚠ Nous Research Hermes 3 & 4 models are NOT agentic — they "
                 "lack reliable tool-calling for agent workflows (delegation, "
@@ -2010,7 +2010,7 @@ def _warn_nonagentic_hermes_model(agent):
                 "(Claude, GPT, Gemini, Qwen-Coder, etc.)."
             )
             agent._emit_warning(_user_msg)
-            _ra().logger.warning(_hermes_warn)
+            _ra().logger.warning(_zeus_warn)
 
 
 def _inject_context_engine_tools(agent):
@@ -2056,7 +2056,7 @@ def _inject_context_engine_tools(agent):
     if agent.context_compressor:
         try:
             agent.context_compressor.on_session_start(
-                agent.session_id, hermes_home=str(get_hermes_home()),
+                agent.session_id, zeus_home=str(get_zeus_home()),
                 platform=agent.platform or "cli", model=agent.model,
                 context_length=getattr(agent.context_compressor, "context_length", 0),
                 conversation_id=getattr(agent, "_gateway_session_key", None),
@@ -2170,9 +2170,9 @@ def init_agent(
     agent.skip_background_review = bool(skip_background_review)
     agent.log_prefix = f"{log_prefix} " if log_prefix else ""
     # Effective base URL for feature detection (prompt caching, reasoning, etc.)
-    from hermes_cli.providers import is_actual_route
+    from zeus_cli.providers import is_actual_route
     if is_actual_route(provider, base_url):
-        from hermes_cli.auth import normalize_actual_base_url
+        from zeus_cli.auth import normalize_actual_base_url
         base_url = normalize_actual_base_url(base_url)
     agent.base_url = base_url or ""
     provider_name = provider.strip().lower() if isinstance(provider, str) and provider.strip() else None
@@ -2227,7 +2227,7 @@ def init_agent(
 
     # Load config once for memory, skills, and compression sections
     try:
-        from hermes_cli.config import load_config_readonly as _load_agent_config
+        from zeus_cli.config import load_config_readonly as _load_agent_config
         _agent_cfg = _load_agent_config()
     except Exception as exc:  # health: allow BLE001 -- init must survive any config failure; the class is logged
         # Config exceptions may contain secrets; omit their message and traceback
@@ -2235,7 +2235,7 @@ def init_agent(
         logger.warning(
             "Agent configuration could not be loaded (%s); using defaults for "
             "memory, skills, compression and related settings. Check the active "
-            "Hermes Python environment and dependencies; run 'hermes config check' "
+            "Zeus Python environment and dependencies; run 'zeus config check' "
             "after configuration imports work again.",
             type(exc).__name__,
         )
@@ -2251,7 +2251,7 @@ def init_agent(
     _build_context_engine(agent, _agent_cfg, cs, _custom_providers, _effective_context_length, session_db)
     _configure_ollama_num_ctx(agent, _model_cfg, _config_context_length)
     _enforce_minimum_context(agent)
-    _warn_nonagentic_hermes_model(agent)
+    _warn_nonagentic_zeus_model(agent)
     _inject_context_engine_tools(agent)
     _init_usage_state(agent)
     _clamp_compressor_to_ollama_num_ctx(agent)

@@ -7,7 +7,7 @@ name: Skills Index Freshness Check
 #
 # Triggered every 4 hours so we catch a stuck cron within one tick.
 #
-# The check-catalog-cors job watches the same host from Hermes Desktop's side:
+# The check-catalog-cors job watches the same host from Zeus Desktop's side:
 # it fetches /docs/api/plugins.json with a browser's Origin header and files
 # its own issue when a browser would block the fetch.
 
@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   check-freshness:
-    if: github.repository == 'NousResearch/hermes-agent'
+    if: github.repository == 'charanbalaji2005/Zeus-Agents'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 10
     environment: trusted-automation
@@ -39,7 +39,7 @@ jobs:
         id: probe
         run: |
           set -e
-          URL="https://hermes-agent.nousresearch.com/docs/api/skills-index.json"
+          URL="https://charanbalaji2005.github.io/Zeus-Agents/docs/api/skills-index.json"
           echo "Probing $URL"
           # -L follows redirects; -f fails on HTTP errors; -s suppresses progress
           if ! curl -fsSL --retry 3 --retry-delay 10 -o /tmp/skills-index.json "$URL"; then
@@ -171,11 +171,11 @@ jobs:
           fi
 
   check-catalog-cors:
-    # Desktop's hermes://plugin/install?catalog= links fetch /docs/api/plugins.json
+    # Desktop's zeus://plugin/install?catalog= links fetch /docs/api/plugins.json
     # cross-origin. A browser rejects that fetch when any response in the redirect
     # chain lacks Access-Control-Allow-Origin (#136483). The probe above uses
     # curl -L, which never checks CORS, so it stays green while Desktop is blocked.
-    if: github.repository == 'NousResearch/hermes-agent'
+    if: github.repository == 'charanbalaji2005/Zeus-Agents'
     runs-on: blacksmith-4vcpu-ubuntu-2404
     timeout-minutes: 5
     environment: trusted-automation
@@ -220,15 +220,15 @@ jobs:
             --json number,title \
             --jq '.[] | select(.title | startswith("'"$TITLE_PREFIX"'")) | .number' \
             | head -1)
-          BODY="Hermes Desktop cannot read the plugin catalog.
+          BODY="Zeus Desktop cannot read the plugin catalog.
 
           **Status:** \`$STATUS\`
           **Detail:** $DETAIL
 
-          Desktop's \`hermes://plugin/install?catalog=\` links fetch \`/docs/api/plugins.json\` cross-origin.
+          Desktop's \`zeus://plugin/install?catalog=\` links fetch \`/docs/api/plugins.json\` cross-origin.
           A browser rejects that fetch when any response in the redirect chain, including the docs host's
           redirect to GitHub Pages, lacks \`Access-Control-Allow-Origin\`. Every catalog install link then
-          shows \"Could not load the Hermes plugin catalog\". Background: #136483.
+          shows \"Could not load the Zeus plugin catalog\". Background: #136483.
 
           This issue was opened by \`.github/workflows/skills-index-freshness.yml\` (job \`check-catalog-cors\`). Close it once the header is back; the next probe will reopen it if it's still broken."
           if [ -n "$existing" ]; then

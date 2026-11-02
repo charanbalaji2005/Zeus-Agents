@@ -11,7 +11,7 @@ from gateway.platforms import base
 from gateway.session_api_turn import admit_api_turn
 from gateway.session_hosted_attachments import submission_payload
 from gateway.session_ingress_media import _media_root, admit_attachments, release_admission_media, restore_native_media
-from hermes_state_runtime import RuntimeStoreError, admit_session_input, claim_session_input, settle_session_input
+from zeus_state_runtime import RuntimeStoreError, admit_session_input, claim_session_input, settle_session_input
 
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=')
 
@@ -49,7 +49,7 @@ def test_api_image_survives_native_cleanup_while_unique_native_bytes_are_collect
 
 
 def test_hosted_batch_total_is_rejected_before_any_capture(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db_path = tmp_path / 'state.db'
     hosted_rooms.create_room(db_path, room_id='room', name='Room', authority_gateway_id='home',
         members=[dict(member_id='member', profile='default', handle='member')])

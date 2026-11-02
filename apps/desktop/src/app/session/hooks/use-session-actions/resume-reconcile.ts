@@ -13,7 +13,7 @@
  */
 
 import { type ChatMessage, toChatMessages } from '@/lib/chat-messages'
-import type { SessionMessage, SessionResumeResult } from '@/types/hermes'
+import type { SessionMessage, SessionResumeResult } from '@/types/zeus'
 
 import { reconcilePersistedLiveTurn } from './persisted-live-turn'
 import { turnSettledSince } from './settled-turns'

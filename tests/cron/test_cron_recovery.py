@@ -8,13 +8,13 @@ from gateway import run, session_cron
 from gateway.session import SessionStore
 from gateway.session_authority import SessionAuthority
 from gateway.config import GatewayConfig
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch, claim_session_input, settle_session_input
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch, claim_session_input, settle_session_input
 
 
 def test_lost_ack_reconciles_frozen_delivery_once(tmp_path, monkeypatch):
     from cron import scheduler_authority, delivery_queue
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'model': {}, 'platform_toolsets': {'cli': []}})
     with jobs.use_cron_store(tmp_path / 'cron'):
         job = jobs.create_job(prompt='original', schedule='every 1h', deliver='telegram:123')
@@ -47,7 +47,7 @@ def test_lost_ack_reconciles_frozen_delivery_once(tmp_path, monkeypatch):
                 unknown = dict(params, request_id='unknown')
                 accepted = await session_cron.operation(authority, 'submit', unknown)
                 claim_session_input(db, epoch=authority.epoch, session_id=accepted['session_id'])
-                from hermes_state_runtime import recover_session_inputs
+                from zeus_state_runtime import recover_session_inputs
                 authority.epoch = begin_runtime_epoch(db, instance_id='restart')
                 recover_session_inputs(db, epoch=authority.epoch)
                 unknown_journal = scheduler_authority.journal_path(job['id'], 'unknown')
@@ -65,13 +65,13 @@ def test_lost_ack_reconciles_frozen_delivery_once(tmp_path, monkeypatch):
 
 
 def test_failed_manual_run_exits_nonzero(monkeypatch):
-    from hermes_cli import cron
+    from zeus_cli import cron
     monkeypatch.setattr(cron, '_cron_api', lambda **kw: {'success': True, 'job': {'executed': True, 'execution_success': False}})
     assert cron._job_action('run', 'job', 'Triggered') == 1
 
 
 def _owner(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'model': {}, 'platform_toolsets': {'cli': []}})
     db = SessionDB(tmp_path / 'state.db')
     runner = SimpleNamespace(_draining=False, session_store=SessionStore(tmp_path / 'sessions', GatewayConfig()), adapters={})
@@ -97,7 +97,7 @@ def test_recovered_receipt_settles_the_departed_firers_execution_row(tmp_path, m
         firer = subprocess.run([sys.executable, '-c', (
             'import sys; from cron.executions import create_execution, mark_execution_running;'
             f'r = create_execution({job["id"]!r}, source="direct"); mark_execution_running(r["id"]);'
-            'print(r["id"])')], env={**os.environ, 'HERMES_HOME': str(tmp_path)},
+            'print(r["id"])')], env={**os.environ, 'ZEUS_HOME': str(tmp_path)},
             capture_output=True, text=True, check=True, timeout=60)
         fire = firer.stdout.strip().splitlines()[-1]
         assert executions.get_execution(fire)['status'] == 'running'

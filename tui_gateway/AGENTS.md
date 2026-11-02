@@ -1,13 +1,13 @@
 # tui_gateway/ + ui-tui/ — the TUI and its JSON-RPC backend
 
 Applies on top of the root `AGENTS.md`. The TUI fully replaces the classic prompt_toolkit CLI;
-activate with `hermes --tui` or `HERMES_TUI=1`. `tui_gateway` is ALSO the backend the Desktop app
+activate with `zeus --tui` or `ZEUS_TUI=1`. `tui_gateway` is ALSO the backend the Desktop app
 and the dashboard `/chat` talk to — changes here have three consumers.
 
 ## Process model
 
 ```
-hermes --tui
+zeus --tui
   └─ Node (Ink)  ──stdio JSON-RPC──  Python (tui_gateway)
        │                                  └─ AIAgent + tools + sessions
        └─ renders transcript, composer, prompts, activity
@@ -37,14 +37,14 @@ in an existing topical sibling, registered in the table — no `if method == ...
 has a `Params` + `Result` model, every server→client request a `Params` + `Result`, every event a
 `Payload` — one Pydantic class each, `extra="forbid"` by default (`OpenModel` for producer-owned dicts).
 `register_method` refuses an undeclared name at import; the dispatcher rejects unknown param keys
-(`4000` + key path) and, under `HERMES_TEST_ISOLATION=1`, raises `ContractViolation` when a handler's
+(`4000` + key path) and, under `ZEUS_TEST_ISOLATION=1`, raises `ContractViolation` when a handler's
 result or an emitted payload does not match its model (production only logs). `apps/shared/src/
 gateway-contract.generated.ts` (`RpcMethods`, `ServerRequestMap`, `BackendGatewayEventMap` + every value
 shape) and `gateway-contract.openrpc.json` are rendered by `scripts/gen_gateway_contracts.py`;
 `tests/tui_gateway/contracts/test_generated.py` fails when they are stale, so the loop is: change the model →
 regenerate → `tsc` shows every consumer the field moved. `apps/shared/src/gateway-events.ts` only adds
 the client-local synthetic events and the `GatewayEvent` envelope on top.
-The native `hermes-gateway-v1` transport has a separate `CANONICAL_METHODS` catalog in
+The native `zeus-gateway-v1` transport has a separate `CANONICAL_METHODS` catalog in
 `contracts/canonical*.py`, declared with `canonical_method(...)`. `gateway/session_controls.py::
 AuthorityConnection` validates parameters and successful results against it; unknown/missing
 parameter keys return `4001 invalid_params`. Reuse a standalone model only when its wire is
@@ -60,21 +60,21 @@ New event = `event("<type>", Payload)` in `contracts/events.py`; the emitter is 
 
 One `serve` process may host sessions from several profile homes (Desktop pooled backends launch
 under a profile; the dashboard serves several). The launch profile is a profile: "default" means
-the launch home, never `~/.hermes`. The first non-launch home hosted flips
+the launch home, never `~/.zeus`. The first non-launch home hosted flips
 `launch_profile_policy.py` → `set_multiplex_active(True)`; without it every fail-closed guard is
 silently off. Every method that reads or writes home-, config- or `.env`-derived state runs under
 `server.py::@_profile_scoped` (resolved from the live session's `profile_home`, or the explicit
 `profile` argument for sessionless calls) and, for tool/agent construction,
 `methods_tools.py::_profile_scoped_rpc`; the tokens come from `model_switch.py::
 _profile_runtime_scope_tokens(profile_home)` — home + secret scope + terminal scope together.
-**A method that sets only `get_hermes_home_override()` is half-bound**: config paths resolve to the
+**A method that sets only `get_zeus_home_override()` is half-bound**: config paths resolve to the
 right profile while credentials and `TERMINAL_*` policy still come from the launch profile.
 Off-turn paths bind the same way: `session_lifecycle.py::_finalize_session` / `_teardown_session`
 enter `_session_profile_runtime_scope(session)` around `on_session_end`, the memory commit and
 `agent.close()` (their callers are unscoped reapers, Timers, atexit and pool threads); background
 threads start via `agent.memory_provider.spawn_context_thread`, never bare `threading.Thread`;
 children act for the served profile through `tools/environments/local.py::served_profile_child_env`
-(`hermes -p X` workers, `key_cmd` helpers, browser drivers), never `dict(os.environ)`. Grep for
+(`zeus -p X` workers, `key_cmd` helpers, browser drivers), never `dict(os.environ)`. Grep for
 unscoped handlers before adding one: `rg -n "^(async )?def " tui_gateway/methods_*.py | rg -v
 _profile_scoped`. Probe with two on-disk homes and a `.env` name present only in the secondary:
 call the method for that session and assert the secondary's value resolves and the launch
@@ -136,7 +136,7 @@ retains its legacy unscoped contract.
 and skill-derived commands. `complete.slash` uses the existing CLI completer (registry, plugins,
 skills/bundles, argument completions); quick commands remain catalog-only. Shared data builders
 live in `tui_gateway/command_discovery.py`, without importing the legacy server. Definitions
-come from `hermes_cli/commands.py` (`hermes_cli/AGENTS.md`).
+come from `zeus_cli/commands.py` (`zeus_cli/AGENTS.md`).
 
 The canonical gateway exposes the same two discovery RPCs through `gateway/session_discovery.py`.
 It requires authenticated `session:read` capability and the authority's exact profile before any
@@ -190,9 +190,9 @@ remain session-scoped; composer model changes use `session.mutate`, never global
 ```bash
 cd ui-tui
 npm install       # first time
-npm run dev       # watch mode (rebuilds hermes-ink + tsx --watch)
+npm run dev       # watch mode (rebuilds zeus-ink + tsx --watch)
 npm start         # production
-npm run build     # full build (hermes-ink + tsc)
+npm run build     # full build (zeus-ink + tsc)
 npm run typecheck # tsc --noEmit
 npm run lint      # eslint
 npm run fmt       # prettier

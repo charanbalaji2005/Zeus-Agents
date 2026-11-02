@@ -1,7 +1,7 @@
 """An interrupted macOS app swap always comes back as one complete bundle.
 
 The Desktop hand-off (``scripts/desktop-update/posix.sh::mac_swap``) replaces
-the installed ``Hermes.app`` by staging a ditto copy, renaming the old bundle
+the installed ``Zeus.app`` by staging a ditto copy, renaming the old bundle
 aside and renaming the copy in. A hand-off killed anywhere in that sequence is
 finished or rolled back by ``mac_bundle_recover`` on the next run.
 
@@ -46,7 +46,7 @@ def test_killed_app_swap_recovers_to_a_complete_bundle(tmp_path: Path) -> None:
         env={
             "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
             "HOME": str(home),
-            "HERMES_HOME": str(home),
+            "ZEUS_HOME": str(home),
             "TMPDIR": str(tmp_path),
         },
         capture_output=True,

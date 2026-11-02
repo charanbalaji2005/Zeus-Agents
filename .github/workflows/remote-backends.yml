@@ -31,7 +31,7 @@ concurrency:
 env:
   # One small image for both the sshd host and the docker backend's sandbox, pinned
   # by digest so a tag move cannot change what the lane tests.
-  HERMES_TEST_IMAGE_REF: debian:trixie-20261020-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad
+  ZEUS_TEST_IMAGE_REF: debian:trixie-20261020-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad
 
 jobs:
   real-backends:
@@ -47,13 +47,13 @@ jobs:
       - name: Pull the test image
         uses: ./.github/actions/retry
         with:
-          command: docker pull -q "$HERMES_TEST_IMAGE_REF"
+          command: docker pull -q "$ZEUS_TEST_IMAGE_REF"
 
       - name: Start a throwaway sshd
-        # Exports HERMES_TEST_SSH_{HOST,USER,PORT,KEY} through $GITHUB_ENV.
+        # Exports ZEUS_TEST_SSH_{HOST,USER,PORT,KEY} through $GITHUB_ENV.
         env:
-          HERMES_TEST_SSHD_IMAGE: ${{ env.HERMES_TEST_IMAGE_REF }}
-        run: scripts/ci/start_test_sshd.sh "$RUNNER_TEMP/hermes-test-sshd"
+          ZEUS_TEST_SSHD_IMAGE: ${{ env.ZEUS_TEST_IMAGE_REF }}
+        run: scripts/ci/start_test_sshd.sh "$RUNNER_TEMP/zeus-test-sshd"
 
       - name: Set up locked Python and test dependencies
         uses: ./.github/actions/setup-pm
@@ -64,7 +64,7 @@ jobs:
 
       - name: Run the real-backend tests
         env:
-          HERMES_TEST_DOCKER_IMAGE: ${{ env.HERMES_TEST_IMAGE_REF }}
+          ZEUS_TEST_DOCKER_IMAGE: ${{ env.ZEUS_TEST_IMAGE_REF }}
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
           NOUS_API_KEY: ""
@@ -80,4 +80,4 @@ jobs:
 
       - name: sshd log
         if: failure()
-        run: docker logs hermes-test-sshd || true
+        run: docker logs zeus-test-sshd || true

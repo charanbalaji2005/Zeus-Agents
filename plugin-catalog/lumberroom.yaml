@@ -10,11 +10,11 @@ description: lumberroom memory provider. One durable store shared with every age
   https://mcp.lumberroom.cloud (operated by Cybersapien Technologies, India) unless base_url names a
   self-hosted engine; the model is instructed to store decisions, preferences and facts there through
   memory_write, the engine's live tool descriptions and server instructions are injected into the
-  system prompt each session, and setup switches off Hermes' built-in MEMORY.md/USER.md store.
+  system prompt each session, and setup switches off Zeus' built-in MEMORY.md/USER.md store.
 maintainer: lumberroom
 tier: community
 category: memory
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/lumberroom/lumberroom-hermes#readme
 capabilities:
   provides_tools: []

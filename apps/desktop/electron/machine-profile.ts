@@ -13,7 +13,7 @@ export interface MachineProfile {
 }
 
 export function registerMachineProfile(): void {
-  ipcMain.handle('hermes:machine:profile', readMachineProfile)
+  ipcMain.handle('zeus:machine:profile', readMachineProfile)
 }
 
 function readMachineProfile(): MachineProfile {

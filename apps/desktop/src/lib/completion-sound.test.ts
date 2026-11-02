@@ -13,10 +13,10 @@ import { playCompletionSound, previewCompletionSound } from './completion-sound'
 
 vi.mock('@/lib/audio-context', () => ({ getAudioContext: vi.fn(() => null) }))
 
-const original = window.hermesDesktop
+const original = window.zeusDesktop
 
 afterEach(() => {
-  window.hermesDesktop = original
+  window.zeusDesktop = original
   setHapticsMuted(false)
   $completionSoundVariantId.set(DEFAULT_COMPLETION_SOUND_VARIANT_ID)
   vi.clearAllMocks()
@@ -33,7 +33,7 @@ it('rechecks mute after ownership resolves, including a failed claim and a later
     })
 
     const claim = vi.fn(() => pending)
-    window.hermesDesktop = { ...original, claimAmbientCue: claim }
+    window.zeusDesktop = { ...original, claimAmbientCue: claim }
     setHapticsMuted(false)
     playCompletionSound('session')
     expect(claim).toHaveBeenCalledWith('sound:session')
@@ -54,7 +54,7 @@ it('rechecks mute after ownership resolves, including a failed claim and a later
   }
 
   setHapticsMuted(false)
-  window.hermesDesktop = { ...original, claimAmbientCue: vi.fn(async () => true) }
+  window.zeusDesktop = { ...original, claimAmbientCue: vi.fn(async () => true) }
   playCompletionSound('session')
   await Promise.resolve()
   await Promise.resolve()
@@ -64,7 +64,7 @@ it('rechecks mute after ownership resolves, including a failed claim and a later
 
 it('stays silent on None and never claims the cue from an audible peer', () => {
   const claim = vi.fn(async () => true)
-  window.hermesDesktop = { ...original, claimAmbientCue: claim }
+  window.zeusDesktop = { ...original, claimAmbientCue: claim }
   $completionSoundVariantId.set(NO_COMPLETION_SOUND_VARIANT_ID)
 
   playCompletionSound('session')

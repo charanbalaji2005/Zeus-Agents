@@ -133,7 +133,7 @@ function useOpenMediaFile(path: string) {
   const [openFailed, setOpenFailed] = useState(false)
 
   const open = () => {
-    if (window.hermesDesktop && isRemoteGateway()) {
+    if (window.zeusDesktop && isRemoteGateway()) {
       setOpenFailed(false)
       void downloadGatewayMediaFile(path, sessionId ? { sessionId } : undefined).catch(() =>
         setOpenFailed(true)
@@ -343,7 +343,7 @@ function MarkdownLink({ children, className, href, ...props }: ComponentProps<'a
 
   // Bare autolink → inline rich embed when a provider matches. Labeled links
   // (`[watch](url)`) stay plain. Desktop only (webview / iframe renderers).
-  if (window.hermesDesktop && text && normalizeExternalUrl(text) === target) {
+  if (window.zeusDesktop && text && normalizeExternalUrl(text) === target) {
     const embed = detectEmbed(target)
 
     if (embed) {

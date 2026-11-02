@@ -5,7 +5,7 @@ its own provider instance, bound by ``initialize_all`` to one profile home; the 
 the rule is the multiplexing contract in ``agent/memory_provider.py``. The manager's half lives here:
 
 - a tool call or lifecycle hook runs only when the caller explicitly names the profile the manager was
-  initialized for (the context's HERMES_HOME override, or the home its secret scope was built for).
+  initialized for (the context's ZEUS_HOME override, or the home its secret scope was built for).
   On a multiplexed process a caller that names no profile is refused, never resolved to the process's
   own profile; a single-profile process falls back to its home as before;
 - one provider instance serves one profile: a plugin that hands several agents the same instance is
@@ -35,26 +35,26 @@ _claims_lock = threading.RLock()  # reentrant: a weakref callback can fire from 
 
 def refused_tool_message(tool_name: str) -> str:
     """What the model/chat sees for a refused memory tool call: no check name, no home paths."""
-    return f"Memory tool '{tool_name}' refused. Ask the operator to check `hermes logs errors`."
+    return f"Memory tool '{tool_name}' refused. Ask the operator to check `zeus logs errors`."
 
 
 def _home_key(home: Any) -> Optional[str]:
     if not home:
         return None
-    from hermes_constants import hermes_home_key
+    from zeus_constants import zeus_home_key
     try:
-        return hermes_home_key(home)
+        return zeus_home_key(home)
     except (OSError, RuntimeError, ValueError):  # unresolvable path: no key, so the call is refused
         return None
 
 
 def _explicit_caller_home() -> Optional[str]:
-    """The profile the caller's context names: its HERMES_HOME override, else the home its secret
-    scope was built for. None when the context names no profile (``get_hermes_home()`` would only fall
+    """The profile the caller's context names: its ZEUS_HOME override, else the home its secret
+    scope was built for. None when the context names no profile (``get_zeus_home()`` would only fall
     back to the process home, which proves nothing on a multiplexed process)."""
     from agent.secret_scope import current_secret_scope_home
-    from hermes_constants import get_hermes_home_override
-    return get_hermes_home_override() or current_secret_scope_home()
+    from zeus_constants import get_zeus_home_override
+    return get_zeus_home_override() or current_secret_scope_home()
 
 
 def _refuse(label: str, reason: str, caller_home: Any, bound_home: Any, multiplexed: bool) -> None:
@@ -62,10 +62,10 @@ def _refuse(label: str, reason: str, caller_home: Any, bound_home: Any, multiple
                    label, CALLER_PROFILE_REFUSAL, reason, caller_home, bound_home, multiplexed)
 
 
-def bound_scope(hermes_home: Any, agent_identity: Any = None) -> dict[str, Any]:
+def bound_scope(zeus_home: Any, agent_identity: Any = None) -> dict[str, Any]:
     """What ``initialize_all`` records for ``caller_scope``: the bound home's key is resolved once
     here, so each call only resolves the caller's."""
-    return {"hermes_home": hermes_home, "agent_identity": agent_identity, "home_key": _home_key(hermes_home)}
+    return {"zeus_home": zeus_home, "agent_identity": agent_identity, "home_key": _home_key(zeus_home)}
 
 
 def caller_scope(bound: Optional[dict[str, Any]], label: str) -> Optional[dict[str, Any]]:
@@ -75,26 +75,26 @@ def caller_scope(bound: Optional[dict[str, Any]], label: str) -> Optional[dict[s
     log (``tool <name>`` / ``hook <name>``)."""
     from agent.secret_scope import is_multiplex_active
     bound = bound or {}
-    bound_home = bound.get("hermes_home")
+    bound_home = bound.get("zeus_home")
     multiplexed = is_multiplex_active()
     caller_home = _explicit_caller_home()
     if caller_home is None:
         if multiplexed:
             _refuse(label, "the caller names no profile on a process serving several", None, bound_home, multiplexed)
             return None
-        from hermes_constants import get_hermes_home
-        caller_home = str(get_hermes_home())  # single-profile process: its own home is the only one
+        from zeus_constants import get_zeus_home
+        caller_home = str(get_zeus_home())  # single-profile process: its own home is the only one
     if not bound_home:
         if multiplexed:
             _refuse(label, "the memory manager recorded no profile", caller_home, None, multiplexed)
             return None
-        return {"hermes_home": str(caller_home)}
+        return {"zeus_home": str(caller_home)}
     caller_key = _home_key(caller_home)
     if caller_key is None or caller_key != (bound.get("home_key") or _home_key(bound_home)):
         _refuse(label, "the caller's profile is not the one its provider was initialized for",
                 caller_home, bound_home, multiplexed)
         return None
-    scope: dict[str, Any] = {"hermes_home": str(bound_home)}
+    scope: dict[str, Any] = {"zeus_home": str(bound_home)}
     if bound.get("agent_identity"):
         scope["agent_identity"] = bound["agent_identity"]
     return scope
@@ -138,17 +138,17 @@ def claim_instance(provider: Any, home: Any) -> bool:
 
 
 def in_owner_home(bound: Optional[dict[str, Any]], fn: Callable[[], Any]) -> Callable[[], Any]:
-    """``fn`` run under the owning profile's HERMES_HOME override, set explicitly: a background
+    """``fn`` run under the owning profile's ZEUS_HOME override, set explicitly: a background
     worker must not depend on the submitter's context having carried it."""
-    home = (bound or {}).get("hermes_home")
+    home = (bound or {}).get("zeus_home")
     if not home:
         return fn
 
     def _run() -> Any:
-        from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-        token = set_hermes_home_override(str(home))
+        from zeus_constants import reset_zeus_home_override, set_zeus_home_override
+        token = set_zeus_home_override(str(home))
         try:
             return fn()
         finally:
-            reset_hermes_home_override(token)
+            reset_zeus_home_override(token)
     return _run

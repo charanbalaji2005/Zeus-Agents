@@ -23,7 +23,7 @@ vi.mock('node:child_process', async importOriginal => {
   return { ...actual, spawn: vi.fn(actual.spawn) }
 })
 
-const argv = ['/opt/Hermes/hermes', '--ozone-platform=x11', 'hermes://session/abc']
+const argv = ['/opt/Zeus/zeus', '--ozone-platform=x11', 'zeus://session/abc']
 
 function restoreEnv(saved: NodeJS.ProcessEnv) {
   for (const key of Object.keys(process.env)) {
@@ -46,7 +46,7 @@ describe('Linux runtime --no-sandbox relaunch', () => {
     })
 
     expect(relaunch).toEqual({
-      args: ['--ozone-platform=x11', 'hermes://session/abc', '--no-sandbox'],
+      args: ['--ozone-platform=x11', 'zeus://session/abc', '--no-sandbox'],
       target: process.execPath
     })
 
@@ -55,7 +55,7 @@ describe('Linux runtime --no-sandbox relaunch', () => {
       linuxNoSandboxRelaunch({
         platform: 'linux',
         runtimeNoSandbox: true,
-        argv: ['/opt/Hermes/hermes', ...relaunch!.args],
+        argv: ['/opt/Zeus/zeus', ...relaunch!.args],
         env: {},
         launchedWithoutSandbox: true
       })
@@ -92,7 +92,7 @@ describe('Linux runtime --no-sandbox relaunch', () => {
   // must not read that deliberate exit as a GPU abort mid-boot.
   it.skipIf(process.platform !== 'linux')('restarts without leaving the next launch a GPU-abort witness', async () => {
     const saved = { ...process.env }
-    const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-sandbox-relaunch-gpu-'))
+    const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-sandbox-relaunch-gpu-'))
 
     const launch = () =>
       createNvidiaEglRecovery({
@@ -140,11 +140,11 @@ describe('Linux runtime --no-sandbox relaunch', () => {
     'restarts without leaving the generic GPU ladder a boot-abort witness',
     async () => {
       const saved = { ...process.env }
-      const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-sandbox-relaunch-linux-gpu-'))
+      const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-sandbox-relaunch-linux-gpu-'))
 
       const launch = () => {
         const decision = decideLinuxGpuLaunch({
-          argv: ['/opt/Hermes/hermes'],
+          argv: ['/opt/Zeus/zeus'],
           env: {},
           marker: readLinuxGpuMarker(userData),
           appVersion: '2.0.0',
@@ -197,29 +197,29 @@ describe('Linux runtime --no-sandbox relaunch', () => {
     'starts a mounted AppImage again as a detached child once this process is gone',
     async () => {
       const saved = { ...process.env }
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-appimage-relaunch-'))
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-appimage-relaunch-'))
       const report = path.join(dir, 'report')
-      const image = path.join(dir, 'Hermes.AppImage')
-      const shortDir = '/run/user/1000/hermes-desktop'
+      const image = path.join(dir, 'Zeus.AppImage')
+      const shortDir = '/run/user/1000/zeus-desktop'
       const events: string[] = []
 
       fs.writeFileSync(
         image,
-        `#!/bin/sh\nprintf '%s\\n' "$*" "$(cut -d' ' -f6 /proc/$$/stat) $$" "$TMPDIR" "\${HERMES_DESKTOP_READY_FD:-unset}" > "${report}.part"\nmv "${report}.part" "${report}"\n`,
+        `#!/bin/sh\nprintf '%s\\n' "$*" "$(cut -d' ' -f6 /proc/$$/stat) $$" "$TMPDIR" "\${ZEUS_DESKTOP_READY_FD:-unset}" > "${report}.part"\nmv "${report}.part" "${report}"\n`,
         { mode: 0o755 }
       )
 
       try {
         process.env.TMPDIR = shortDir
-        process.env.HERMES_DESKTOP_TMPDIR = dir
-        process.env.HERMES_DESKTOP_READY_FD = '3'
+        process.env.ZEUS_DESKTOP_TMPDIR = dir
+        process.env.ZEUS_DESKTOP_READY_FD = '3'
         delete process.env.ELECTRON_DISABLE_SANDBOX
         vi.resetModules()
         const { relaunchIfNoSandboxCameTooLate } = await import('./linux-sandbox-relaunch')
         const { createAppRelauncher } = await import('./app-relaunch')
 
         process.env.TMPDIR = dir
-        delete process.env.HERMES_DESKTOP_TMPDIR
+        delete process.env.ZEUS_DESKTOP_TMPDIR
         process.env.APPIMAGE = image
         process.env.APPDIR = path.dirname(process.execPath)
 
@@ -269,27 +269,27 @@ describe('Linux runtime --no-sandbox relaunch', () => {
       linuxNoSandboxRelaunch({
         platform: 'linux',
         runtimeNoSandbox: true,
-        argv: [`${appDir}/hermes`],
-        execPath: `${appDir}/hermes`,
-        env: { APPIMAGE: '/home/u/Apps/Hermes.AppImage', APPDIR: appDir },
+        argv: [`${appDir}/zeus`],
+        execPath: `${appDir}/zeus`,
+        env: { APPIMAGE: '/home/u/Apps/Zeus.AppImage', APPDIR: appDir },
         launchedWithoutSandbox: false
       })
-    ).toEqual({ args: ['--no-sandbox'], target: `${appDir}/hermes` })
+    ).toEqual({ args: ['--no-sandbox'], target: `${appDir}/zeus` })
   })
 
   it('relaunches the AppImage itself rather than its vanishing mount', () => {
     const relaunch = linuxNoSandboxRelaunch({
       platform: 'linux',
       runtimeNoSandbox: true,
-      argv: ['/tmp/.mount_HermesX/hermes'],
-      execPath: '/tmp/.mount_HermesX/hermes',
-      env: { APPIMAGE: '/home/u/Apps/Hermes.AppImage', APPDIR: '/tmp/.mount_HermesX' },
+      argv: ['/tmp/.mount_ZeusX/zeus'],
+      execPath: '/tmp/.mount_ZeusX/zeus',
+      env: { APPIMAGE: '/home/u/Apps/Zeus.AppImage', APPDIR: '/tmp/.mount_ZeusX' },
       launchedWithoutSandbox: false
     })
 
     expect(relaunch).toEqual({
       args: ['--no-sandbox'],
-      target: '/home/u/Apps/Hermes.AppImage'
+      target: '/home/u/Apps/Zeus.AppImage'
     })
   })
 
@@ -299,20 +299,20 @@ describe('Linux runtime --no-sandbox relaunch', () => {
     const relaunch = linuxNoSandboxRelaunch({
       platform: 'linux',
       runtimeNoSandbox: true,
-      argv: ['/run/user/1000/.mount_HermesQ7x2Lp/hermes'],
-      execPath: '/run/user/1000/.mount_HermesQ7x2Lp/hermes',
-      env: { APPIMAGE: '/home/u/Apps/Hermes.AppImage' },
+      argv: ['/run/user/1000/.mount_ZeusQ7x2Lp/zeus'],
+      execPath: '/run/user/1000/.mount_ZeusQ7x2Lp/zeus',
+      env: { APPIMAGE: '/home/u/Apps/Zeus.AppImage' },
       launchedWithoutSandbox: false
     })
 
     expect(relaunch).toEqual({
       args: ['--no-sandbox'],
-      target: '/home/u/Apps/Hermes.AppImage'
+      target: '/home/u/Apps/Zeus.AppImage'
     })
   })
 
   // AppImage apps (terminals, IDEs) export APPIMAGE/APPDIR to everything they
-  // start; Hermes launched from one must relaunch itself, not that app.
+  // start; Zeus launched from one must relaunch itself, not that app.
   it('relaunches this executable when APPIMAGE was inherited from another AppImage', () => {
     for (const env of [
       { APPIMAGE: '/home/u/Apps/Terminal.AppImage' },
@@ -324,13 +324,13 @@ describe('Linux runtime --no-sandbox relaunch', () => {
           platform: 'linux',
           runtimeNoSandbox: true,
           argv,
-          execPath: '/opt/Hermes/hermes',
+          execPath: '/opt/Zeus/zeus',
           env,
           launchedWithoutSandbox: false
         })
       ).toEqual({
-        args: ['--ozone-platform=x11', 'hermes://session/abc', '--no-sandbox'],
-        target: '/opt/Hermes/hermes'
+        args: ['--ozone-platform=x11', 'zeus://session/abc', '--no-sandbox'],
+        target: '/opt/Zeus/zeus'
       })
     }
   })

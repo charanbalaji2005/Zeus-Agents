@@ -9,13 +9,13 @@ Two failures on a Windows desktop install talking to a remote gateway:
    path as argv, rewritten to forward slashes the way the delivery runner's
    argv is — the tracked local backend runs commands through Git Bash there.
 
-2. the delivery runner argv hardcoded ``"hermes"``, relying on PATH —
+2. the delivery runner argv hardcoded ``"zeus"``, relying on PATH —
    which service contexts (systemd units, desktop launchers, non-login
-   SSH shells) do not provide, so delivery died with ENOENT. ``_hermes_cli``
+   SSH shells) do not provide, so delivery died with ENOENT. ``_zeus_cli``
    resolves the CLI next to this gateway's own interpreter (the venv
    bin/Scripts sibling), falling back to the bare name. The #93091
    turn-lock recognition in bot_mode_dm matches the CLI element by
-   basename so resolved absolute paths (and ``hermes.exe``) still take
+   basename so resolved absolute paths (and ``zeus.exe``) still take
    the per-profile lock.
 """
 
@@ -36,26 +36,26 @@ ENV = {"id": "d" * 32, "target_handle": "researcher", "target_connection": "ssh-
 def test_waiter_argv_uses_forward_slashes_on_windows():
     """On native Windows the reply path rides as a forward-slash argv element, like the delivery
     runner's paths: Git Bash runs those, and parses a backslash path as a command name."""
-    parts = shlex.split(bot_relay.waiter_command("C:\\Users\\joshu\\.hermes", ENV))
+    parts = shlex.split(bot_relay.waiter_command("C:\\Users\\joshu\\.zeus", ENV))
 
     assert "-c" not in parts and "--wait-reply" in parts
-    assert parts[parts.index("--wait-reply") + 1] == f"C:/Users/joshu/.hermes/bot_relay/replies/{ENV['id']}.json"
+    assert parts[parts.index("--wait-reply") + 1] == f"C:/Users/joshu/.zeus/bot_relay/replies/{ENV['id']}.json"
     assert not any("\\" in part for part in parts)
 
 
 @pytest.mark.platforms("linux")
-def test_local_delivery_resolves_sibling_hermes(tmp_path, monkeypatch):
+def test_local_delivery_resolves_sibling_zeus(tmp_path, monkeypatch):
     bin_dir = tmp_path / "venv" / "bin"
     bin_dir.mkdir(parents=True)
-    sibling = bin_dir / "hermes"
+    sibling = bin_dir / "zeus"
     sibling.touch()
     sibling.chmod(0o755)
     monkeypatch.setattr("sys.executable", str(bin_dir / "python"))
-    # The checkout's own published launcher (.hermes/bin, written by scripts/run_tests.sh's venv
+    # The checkout's own published launcher (.zeus/bin, written by scripts/run_tests.sh's venv
     # step) outranks the sibling by design (#124868): keep it out of this probe.
     monkeypatch.setattr(bot_relay, "__file__", str(tmp_path / "checkout" / "tools" / "bot_relay.py"))
 
-    assert bot_relay._hermes_cli() == str(sibling)
+    assert bot_relay._zeus_cli() == str(sibling)
 
 
 def test_local_delivery_uses_shutil_which_when_no_sibling(tmp_path, monkeypatch):
@@ -67,12 +67,12 @@ def test_local_delivery_uses_shutil_which_when_no_sibling(tmp_path, monkeypatch)
     # Keep this checkout's own published install launcher out of the resolution
     # when probing the fallback ladder (#124868).
     monkeypatch.setattr(bot_relay, "__file__", str(empty / "bot_relay.py"))
-    which_hit = str(tmp_path / "usr-local-bin" / "hermes")
+    which_hit = str(tmp_path / "usr-local-bin" / "zeus")
     monkeypatch.setattr(
-        bot_relay.shutil, "which", lambda name: which_hit if name == "hermes" else None
+        bot_relay.shutil, "which", lambda name: which_hit if name == "zeus" else None
     )
 
-    assert bot_relay._hermes_cli() == which_hit
+    assert bot_relay._zeus_cli() == which_hit
 
 
 def test_local_delivery_falls_back_to_bare_name(tmp_path, monkeypatch):
@@ -82,12 +82,12 @@ def test_local_delivery_falls_back_to_bare_name(tmp_path, monkeypatch):
     monkeypatch.setattr(bot_relay.shutil, "which", lambda name: None)
     monkeypatch.setattr(bot_relay, "__file__", str(empty / "bot_relay.py"))
 
-    assert bot_relay._hermes_cli() == "hermes"
+    assert bot_relay._zeus_cli() == "zeus"
 
 
 def test_delivery_lock_recognizes_resolved_cli_paths(tmp_path, monkeypatch):
     """The #93091 per-profile turn lock must keep matching delivery argvs
-    now that argv[0] may be a resolved absolute path (or hermes.exe)."""
+    now that argv[0] may be a resolved absolute path (or zeus.exe)."""
     acquired = []
 
     class _Ctx:
@@ -99,17 +99,17 @@ def test_delivery_lock_recognizes_resolved_cli_paths(tmp_path, monkeypatch):
             return False
 
     monkeypatch.setattr(bot_relay, "acquire_turn_lock", lambda root, profile: _Ctx())
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
 
     with bot_mode_dm._delivery_lock(
-        [str(tmp_path / "venv" / "bin" / "hermes"), "-p", "ops", "chat"],
+        [str(tmp_path / "venv" / "bin" / "zeus"), "-p", "ops", "chat"],
         stdin_file=False,
     ):
         pass
-    with bot_mode_dm._delivery_lock(["hermes", "-p", "ops", "chat"], stdin_file=False):
+    with bot_mode_dm._delivery_lock(["zeus", "-p", "ops", "chat"], stdin_file=False):
         pass
     with bot_mode_dm._delivery_lock(
-        ["C:\\venv\\Scripts\\hermes.exe", "-p", "ops", "chat"], stdin_file=False
+        ["C:\\venv\\Scripts\\zeus.exe", "-p", "ops", "chat"], stdin_file=False
     ):
         pass
     assert acquired == ["locked", "locked", "locked"]

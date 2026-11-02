@@ -2,8 +2,8 @@ name: Windows Desktop attach E2E
 
 # Desktop attaching to a local gateway on a real Windows host (#134889 W3):
 # apps/desktop/e2e/core/local-gateway-attach.spec.ts against a gateway that is
-# already running (`hermes gateway run`, as a login item or console leaves it),
-# driven through Electron main's real attach path (`hermes gateway ensure`, the
+# already running (`zeus gateway run`, as a login item or console leaves it),
+# driven through Electron main's real attach path (`zeus gateway ensure`, the
 # SID-checked named-pipe ticket mint through the runtime helper), first on the
 # dev tree, then on the electron-builder `--dir` build of the same commit.
 #
@@ -62,7 +62,7 @@ jobs:
         run: npx playwright test -c e2e/core/playwright.config.ts local-gateway-attach.spec.ts
         env:
           CI: 'true'
-          HERMES_E2E_PYTHON: ${{ steps.pm.outputs.python-path }}
+          ZEUS_E2E_PYTHON: ${{ steps.pm.outputs.python-path }}
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
           NOUS_API_KEY: ''
@@ -88,12 +88,12 @@ jobs:
             Select-Object -First 1
           if (-not $exe) { Get-ChildItem -Recurse release | Select-Object -First 50 FullName; throw 'no packaged exe under release/win*-unpacked' }
           "packaged exe: $($exe.FullName)"
-          $env:HERMES_E2E_PACKAGED_EXE = $exe.FullName
+          $env:ZEUS_E2E_PACKAGED_EXE = $exe.FullName
           npx playwright test -c e2e/core/playwright.config.ts local-gateway-attach.spec.ts
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         env:
           CI: 'true'
-          HERMES_E2E_PYTHON: ${{ steps.pm.outputs.python-path }}
+          ZEUS_E2E_PYTHON: ${{ steps.pm.outputs.python-path }}
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
           NOUS_API_KEY: ''

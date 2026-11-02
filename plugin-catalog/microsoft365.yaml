@@ -5,7 +5,7 @@ description: Pre-release Microsoft 365 Graph tools for Outlook, SharePoint, OneD
 maintainer: Fabio Motta
 tier: community
 category: platform
-requires_hermes: ">=0.21.3,<0.22"
+requires_zeus: ">=0.21.3,<0.22"
 subdir: microsoft365
 docs_url: https://github.com/fabiomotta0311/hermes-microsoft365-plugin#readme
 version: "0.1.0a4"

@@ -12,7 +12,7 @@ import pytest_asyncio
 
 
 def _delete_past_the_horizon(authority, sid):
-    from hermes_state_mutation_retirement import prune_retired_tombstones
+    from zeus_state_mutation_retirement import prune_retired_tombstones
     assert authority.db.delete_session(sid)
     authority.sessions.pop(sid, None)
     authority.db._execute_write(lambda conn: prune_retired_tombstones(conn, older_than=0))
@@ -45,7 +45,7 @@ async def a2a(tmp_path, monkeypatch):
     from gateway.session import SessionStore
     from gateway.session_authority import initialize_session_authority
     from gateway.session_controls import AuthorityConnection
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config',
                         lambda: {'model': {'default': 'fixture'}, 'platform_toolsets': {'cli': []}})
     monkeypatch.setattr(run, '_resolve_gateway_model', lambda config: 'fixture')

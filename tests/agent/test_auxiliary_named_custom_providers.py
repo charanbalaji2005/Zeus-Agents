@@ -8,18 +8,18 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
-    """Redirect HERMES_HOME and clear module caches."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    """Redirect ZEUS_HOME and clear module caches."""
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
     # Write a minimal config so load_config doesn't fail
-    (hermes_home / "config.yaml").write_text("model:\n  default: test-model\n")
+    (zeus_home / "config.yaml").write_text("model:\n  default: test-model\n")
 
 
 def _write_config(tmp_path, config_dict):
-    """Write a config.yaml to the test HERMES_HOME."""
-    import hermes_yaml as yaml
-    config_path = tmp_path / ".hermes" / "config.yaml"
+    """Write a config.yaml to the test ZEUS_HOME."""
+    import zeus_yaml as yaml
+    config_path = tmp_path / ".zeus" / "config.yaml"
     config_path.write_text(yaml.safe_dump(config_dict))
 
 
@@ -70,7 +70,7 @@ class TestResolveProviderClientMainAlias:
         assert "beans.local" in str(client.base_url)
 
     def test_main_resolves_plugin_provider_alias(self, tmp_path, request):
-        import hermes_cli.auth
+        import zeus_cli.auth
         import providers
         from providers.base import ProviderProfile
 
@@ -80,13 +80,13 @@ class TestResolveProviderClientMainAlias:
         request.addfinalizer(lambda: (
             providers._REGISTRY.pop("acme-hub", None),
             providers._ALIASES.pop("acme-hub-alias", None),
-            hermes_cli.auth.PROVIDER_REGISTRY.pop("acme-hub", None),
-            hermes_cli.auth.PROVIDER_REGISTRY.pop("acme-hub-alias", None)))
+            zeus_cli.auth.PROVIDER_REGISTRY.pop("acme-hub", None),
+            zeus_cli.auth.PROVIDER_REGISTRY.pop("acme-hub-alias", None)))
         _write_config(tmp_path, {
             "model": {"default": "gpt-5.4", "provider": "acme-hub-alias"},
         })
         with (
-            patch("hermes_cli.auth.resolve_api_key_provider_credentials", return_value={
+            patch("zeus_cli.auth.resolve_api_key_provider_credentials", return_value={
                 "api_key": "acme_test_token",
                 "base_url": "https://api.acme-hub.test/v1",
             }),
@@ -131,7 +131,7 @@ class TestResolveProviderClientNamedCustom:
                 },
             },
         })
-        auth_path = tmp_path / ".hermes" / "auth.json"
+        auth_path = tmp_path / ".zeus" / "auth.json"
         auth_path.write_text(json.dumps({
             "version": 1,
             "providers": {},
@@ -163,7 +163,7 @@ class TestResolveProviderClientModelNormalization:
             "model": {"default": "zai/glm-5.1", "provider": "zai"},
         })
         with (
-            patch("hermes_cli.auth.resolve_api_key_provider_credentials", return_value={
+            patch("zeus_cli.auth.resolve_api_key_provider_credentials", return_value={
                 "api_key": "glm-key",
                 "base_url": "https://api.z.ai/api/paas/v4",
             }),
@@ -201,7 +201,7 @@ class TestResolveVisionProviderClientModelNormalization:
         })
         with (
             patch("agent.auxiliary_client._read_nous_auth", return_value=None),
-            patch("hermes_cli.auth.resolve_api_key_provider_credentials", return_value={
+            patch("zeus_cli.auth.resolve_api_key_provider_credentials", return_value={
                 "api_key": "glm-key",
                 "base_url": "https://api.z.ai/api/paas/v4",
             }),
@@ -478,16 +478,16 @@ class TestBareNamedAuxCredentialSurvivesAsyncRebuild:
     def _cfg(self):
         import sys
         return {
-            "model": {"provider": "hermes-gw", "default": "main-model"},
+            "model": {"provider": "zeus-gw", "default": "main-model"},
             "providers": {
-                "hermes-gw": {
+                "zeus-gw": {
                     "base_url": "http://127.0.0.1:1/openai/v1",
                     "api_mode": "chat_completions",
                     "key_cmd": f'"{sys.executable}" -c "print(\'vk-test-1234\')"',
                     "extra_headers": {"x-gw-session": "aux-session-tag"},
                 },
             },
-            "auxiliary": {"compression": {"provider": "hermes-gw", "model": "aux-model"}},
+            "auxiliary": {"compression": {"provider": "zeus-gw", "model": "aux-model"}},
         }
 
     @staticmethod
@@ -500,7 +500,7 @@ class TestBareNamedAuxCredentialSurvivesAsyncRebuild:
         import asyncio
         _write_config(tmp_path, self._cfg())
         from agent.auxiliary_client import resolve_provider_client
-        client, _model = resolve_provider_client("hermes-gw", "aux-model", async_mode=True, task="compression")
+        client, _model = resolve_provider_client("zeus-gw", "aux-model", async_mode=True, task="compression")
         assert client is not None
         asyncio.run(client._refresh_api_key())
         headers = self._wire_headers(client)
@@ -512,7 +512,7 @@ class TestBareNamedAuxCredentialSurvivesAsyncRebuild:
         import asyncio
         _write_config(tmp_path, self._cfg())
         from agent.auxiliary_client import _to_async_client, resolve_provider_client
-        sync_client, model = resolve_provider_client("hermes-gw", "aux-model", task="compression")
+        sync_client, model = resolve_provider_client("zeus-gw", "aux-model", task="compression")
         sync_client._refresh_api_key()  # what the SDK does in _prepare_options before each request
         assert self._wire_headers(sync_client)["authorization"] == "Bearer vk-test-1234"
         async_client, _ = _to_async_client(sync_client, model)

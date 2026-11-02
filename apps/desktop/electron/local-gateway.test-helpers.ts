@@ -4,7 +4,7 @@
  * sun_path is 104 bytes on macOS (108 on Linux). There os.tmpdir() is
  * /var/folders/xx/<28 chars>/T (~49 chars, /private/var/... once realpath'd),
  * and vitest.run-tmp.ts nests a vitest-XXXXXX root under it, so
- * `<home>/gateway.sock` and `<runtime>/hermes-gw-<16 hex>/control.sock` overflow.
+ * `<home>/gateway.sock` and `<runtime>/zeus-gw-<16 hex>/control.sock` overflow.
  * On darwin the base is /tmp (/private/tmp); never the user's home.
  */
 

@@ -27,7 +27,7 @@ import { $focusedTreePaneId as $focusedTreePaneIdMock } from '@/store/session-fo
 import { $sessionStates, $sessionTiles } from '@/store/session-states'
 import { $statusbarVisible, setStatusbarItemVisible } from '@/store/statusbar-prefs'
 import { $desktopVersion, $updateStatus } from '@/store/updates'
-import type { ContextBreakdown, FreeTierStatus, UsageStats } from '@/types/hermes'
+import type { ContextBreakdown, FreeTierStatus, UsageStats } from '@/types/zeus'
 
 import { useStatusbarItems } from './use-statusbar-items'
 
@@ -139,7 +139,7 @@ describe('statusbar update channel vocabulary', () => {
       $desktopVersion.set({
         appVersion: '0.21.6',
         electronVersion: '37',
-        hermesRoot: '/h',
+        zeusRoot: '/h',
         nodeVersion: '22',
         platform: 'linux'
       })
@@ -163,7 +163,7 @@ describe('statusbar update channel vocabulary', () => {
       $desktopVersion.set({
         appVersion: '0.21.7',
         electronVersion: '37',
-        hermesRoot: '/h',
+        zeusRoot: '/h',
         nodeVersion: '22',
         platform: 'linux'
       })

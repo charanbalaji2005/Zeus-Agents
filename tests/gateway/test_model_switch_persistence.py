@@ -207,7 +207,7 @@ class TestFallbackEvictionHonorsChannelOverrides:
     @pytest.mark.parametrize("global_model", ["nous/welcome", "default/model"])
     def test_the_welcome_host_pins_its_model_over_the_channel_model(self, monkeypatch, global_model):
         """AIAgent.__init__ runs a welcome-host agent on ``nous/welcome`` whatever the chat configured."""
-        from hermes_cli.anon_auth import pin_model_for_route
+        from zeus_cli.anon_auth import pin_model_for_route
 
         agent_model = pin_model_for_route("nous", self._WELCOME, "chan/model")
         assert agent_model == "nous/welcome"
@@ -305,24 +305,24 @@ class TestOneTurnNeverPersisted:
 
     @staticmethod
     def _runner_with_store(tmp_path, monkeypatch):
-        import hermes_yaml as _yaml
+        import zeus_yaml as _yaml
 
         import gateway.run as gateway_run
         from gateway.run import GatewayRunner
-        from hermes_cli.model_switch import ModelSwitchResult
+        from zeus_cli.model_switch import ModelSwitchResult
 
-        hermes_home = tmp_path / ".hermes"
-        hermes_home.mkdir()
-        (hermes_home / "config.yaml").write_text(
+        zeus_home = tmp_path / ".zeus"
+        zeus_home.mkdir()
+        (zeus_home / "config.yaml").write_text(
             _yaml.safe_dump(
                 {"model": {"default": "old-model", "provider": "openrouter"}}
             ),
             encoding="utf-8",
         )
-        monkeypatch.setattr(gateway_run, "_hermes_home", hermes_home)
+        monkeypatch.setattr(gateway_run, "_zeus_home", zeus_home)
         monkeypatch.setattr("agent.models_dev.fetch_models_dev", dict)
         monkeypatch.setattr(
-            "hermes_cli.model_switch.switch_model",
+            "zeus_cli.model_switch.switch_model",
             lambda **kw: ModelSwitchResult(
                 success=True,
                 new_model="gpt-5.5",
@@ -335,8 +335,8 @@ class TestOneTurnNeverPersisted:
                 provider_label="OpenRouter",
             ),
         )
-        monkeypatch.setattr("hermes_constants.get_hermes_home", lambda: hermes_home)
-        monkeypatch.setattr("hermes_cli.config.get_hermes_home", lambda: hermes_home)
+        monkeypatch.setattr("zeus_constants.get_zeus_home", lambda: zeus_home)
+        monkeypatch.setattr("zeus_cli.config.get_zeus_home", lambda: zeus_home)
 
         runner = object.__new__(GatewayRunner)
         runner.adapters = {}

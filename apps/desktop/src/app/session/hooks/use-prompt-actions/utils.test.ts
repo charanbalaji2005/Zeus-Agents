@@ -1,5 +1,5 @@
 import type { AppendMessage } from '@assistant-ui/react'
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ChatMessage } from '@/lib/chat-messages'
@@ -380,7 +380,7 @@ describe('readFileDataUrlForAttach', () => {
   it('prefers the attachment-specific desktop reader over the preview reader', async () => {
     const previewReader = vi.fn(async () => 'preview')
     const attachmentReader = vi.fn(async () => 'data:application/zip;base64,UEs=')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: previewReader, readFileDataUrlForAttach: attachmentReader }
     })
@@ -392,7 +392,7 @@ describe('readFileDataUrlForAttach', () => {
 
   it('falls back to the preview reader on older shells', async () => {
     const previewReader = vi.fn(async () => 'data:text/plain;base64,YQ==')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: previewReader }
     })
@@ -470,7 +470,7 @@ describe('renderRpcResult', () => {
 
   describe('session.status', () => {
     it('passes through the multi-line plain-text output verbatim', () => {
-      const output = 'Hermes TUI Status\n\nSession ID: s-1\nModel: nous-hermes-3 (unknown)'
+      const output = 'Zeus TUI Status\n\nSession ID: s-1\nModel: nous-hermes-3 (unknown)'
       expect(renderRpcResult({ output }, 'status')).toBe(output)
     })
   })

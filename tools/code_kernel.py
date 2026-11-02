@@ -74,7 +74,7 @@ def run_cell(request, execution_count):
 '''
 
 KERNEL_RUNNER_SOURCE = f'''\
-"""Auto-generated Hermes session-kernel runner. One exec cell per request."""
+"""Auto-generated Zeus session-kernel runner. One exec cell per request."""
 import contextlib
 import io
 import json
@@ -83,11 +83,11 @@ import sys
 import threading
 import traceback
 
-_SENTINEL = os.environ["HERMES_KERNEL_SENTINEL"]
+_SENTINEL = os.environ["ZEUS_KERNEL_SENTINEL"]
 _CAPTURE_LIMIT = {_RUNNER_CAPTURE_BYTES}
-_SPILL_DIR = os.environ.get("HERMES_KERNEL_SPILL_DIR", "")
+_SPILL_DIR = os.environ.get("ZEUS_KERNEL_SPILL_DIR", "")
 _SPILL_CAP = {5_000_000}
-_PARENT_PROCESS_HANDLE = os.environ.pop("HERMES_KERNEL_PARENT_PROCESS_HANDLE", "")
+_PARENT_PROCESS_HANDLE = os.environ.pop("ZEUS_KERNEL_PARENT_PROCESS_HANDLE", "")
 
 
 def _start_parent_process_watchdog():
@@ -137,7 +137,7 @@ def _start_parent_process_watchdog():
         if result == 0x00000000:  # WAIT_OBJECT_0: the parent exited
             os._exit(0)
 
-    threading.Thread(target=_wait, name="hermes-parent-watchdog", daemon=True).start()
+    threading.Thread(target=_wait, name="zeus-parent-watchdog", daemon=True).start()
 
 
 _start_parent_process_watchdog()
@@ -307,7 +307,7 @@ class SessionKernel:
             from tools.code_execution_tool import _kill_process_group
             _kill_process_group(self.proc, escalate=True)
         if self.proc is not None and not _IS_WINDOWS:
-            from hermes_cli.process_identity import release_process_group_once_empty
+            from zeus_cli.process_identity import release_process_group_once_empty
             release_process_group_once_empty(self.proc.pid, proc=self.proc)
         sock, self.server_sock = self.server_sock, None
         try:
@@ -394,7 +394,7 @@ def _resolve_owner(task_id: str) -> str:
         from agent.delegation_context import is_delegated_child_context
         if is_delegated_child_context():
             from gateway.session_context import get_session_env
-            child_id = get_session_env("HERMES_SESSION_ID", "") or (task_id or "")
+            child_id = get_session_env("ZEUS_SESSION_ID", "") or (task_id or "")
             owner = f"{owner}{_CHILD_OWNER_QUALIFIER}{child_id}"
     except Exception:
         pass
@@ -443,7 +443,7 @@ def _rpc_forever(kernel: SessionKernel, max_tool_calls: int,
                  sandbox_tools: frozenset) -> None:
     """Serve tool RPC for the kernel's whole life: ``_rpc_server_loop`` returns on disconnect or
     its 300s idle timeout, and a kernel idles longer between cells, so re-accept until teardown
-    (the client stub reconnects: HERMES_RPC_PERSISTENT). The serving thread carries NO frozen
+    (the client stub reconnects: ZEUS_RPC_PERSISTENT). The serving thread carries NO frozen
     authority — every dispatch routes through the CURRENT cell's ``CellAuthority``."""
     from tools.code_execution_rpc import _rpc_server_loop
     from tools.registry import tool_error
@@ -530,9 +530,9 @@ def _bind_rpc_socket(kernel: SessionKernel) -> str:
         host, port = server_sock.getsockname()[:2]
         rpc_endpoint = f"tcp://{host}:{port}"
     else:
-        from hermes_constants import socket_safe_tmpdir
+        from zeus_constants import socket_safe_tmpdir
         sock_tmpdir = socket_safe_tmpdir()
-        rpc_endpoint = kernel.sock_path = os.path.join(sock_tmpdir, f"hermes_rpc_{uuid.uuid4().hex}.sock")
+        rpc_endpoint = kernel.sock_path = os.path.join(sock_tmpdir, f"zeus_rpc_{uuid.uuid4().hex}.sock")
         server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         server_sock.bind(kernel.sock_path)
         os.chmod(kernel.sock_path, 0o600)
@@ -559,13 +559,13 @@ def _parent_process_handle(child_env: dict[str, str]):
         # SYNCHRONIZE; inherited only by the explicitly allow-listed child.
         handle = kernel32.OpenProcess(0x00100000, True, kernel32.GetCurrentProcessId())
         if handle:
-            child_env["HERMES_KERNEL_PARENT_PROCESS_HANDLE"] = str(int(handle))
+            child_env["ZEUS_KERNEL_PARENT_PROCESS_HANDLE"] = str(int(handle))
             startupinfo = subprocess.STARTUPINFO()
             startupinfo.lpAttributeList = {"handle_list": [int(handle)]}
     except (AttributeError, ImportError, OSError, TypeError, ValueError):
         if handle and close is not None:
             close(handle)
-        child_env.pop("HERMES_KERNEL_PARENT_PROCESS_HANDLE", None)
+        child_env.pop("ZEUS_KERNEL_PARENT_PROCESS_HANDLE", None)
         handle = close = startupinfo = None
     return handle, close, startupinfo
 
@@ -573,30 +573,30 @@ def _parent_process_handle(child_env: dict[str, str]):
 def _spawn(kernel: SessionKernel, *, child_python: str, child_cwd: str,
            sandbox_tools: frozenset, max_tool_calls: int, task_id: str = "") -> None:
     from tools.code_execution_env import _build_child_env
-    from tools.code_execution_tool import generate_hermes_tools_module
-    kernel.tmpdir = tempfile.mkdtemp(prefix="hermes_kernel_")
+    from tools.code_execution_tool import generate_zeus_tools_module
+    kernel.tmpdir = tempfile.mkdtemp(prefix="zeus_kernel_")
     kernel.rpc_token = secrets.token_urlsafe(32)
-    kernel.sentinel = "@@HERMES-KERNEL-" + secrets.token_urlsafe(16) + "@@"
+    kernel.sentinel = "@@ZEUS-KERNEL-" + secrets.token_urlsafe(16) + "@@"
     rpc_endpoint = _bind_rpc_socket(kernel)
-    for name, src in (("hermes_tools.py", generate_hermes_tools_module(list(sandbox_tools))),
-                      ("hermes_kernel_runner.py", KERNEL_RUNNER_SOURCE)):
+    for name, src in (("zeus_tools.py", generate_zeus_tools_module(list(sandbox_tools))),
+                      ("zeus_kernel_runner.py", KERNEL_RUNNER_SOURCE)):
         Path(kernel.tmpdir, name).write_text(src, encoding="utf-8")
     child_env = _build_child_env(rpc_endpoint=rpc_endpoint, rpc_token=kernel.rpc_token,
                                  tmpdir=kernel.tmpdir, child_python=child_python)
-    child_env["HERMES_KERNEL_SENTINEL"] = kernel.sentinel
+    child_env["ZEUS_KERNEL_SENTINEL"] = kernel.sentinel
     # Full clipped stdout spills to the kernel's tmpdir so the agent can read_file the middle.
-    child_env["HERMES_KERNEL_SPILL_DIR"] = kernel.tmpdir
+    child_env["ZEUS_KERNEL_SPILL_DIR"] = kernel.tmpdir
     # Generated client reconnects after the RPC server's 300s idle timeout between cells.
-    child_env["HERMES_RPC_PERSISTENT"] = "1"
+    child_env["ZEUS_RPC_PERSISTENT"] = "1"
     # Owner death: Windows inherits a SYNCHRONIZE handle to this process for the runner's watchdog.
     parent_handle, close_handle, startupinfo = _parent_process_handle(child_env) if _IS_WINDOWS else (None, None, None)
     # POSIX: spawn_owned makes the kernel lead its own group, which everything a cell spawns joins,
     # and hands that group to the owner-death supervisor: the whole group dies the moment this
     # process dies, by any cause. A kernel-only death pipe let a cell's subprocesses outlive the host.
-    from hermes_cli.process_identity import spawn_owned
+    from zeus_cli.process_identity import spawn_owned
     try:
         kernel.proc = spawn_owned(
-            [child_python, os.path.join(kernel.tmpdir, "hermes_kernel_runner.py")], purpose="code-kernel",
+            [child_python, os.path.join(kernel.tmpdir, "zeus_kernel_runner.py")], purpose="code-kernel",
             # Strict mode passes an empty cwd: the kernel's staging dir plays the per-call tmpdir's role.
             cwd=child_cwd or kernel.tmpdir, env=child_env,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE,
@@ -663,14 +663,14 @@ _REAPER_STARTED = False
 
 
 def _sweep_stale_staging_dirs(now: Optional[float] = None) -> int:
-    """Remove ``hermes_kernel_*`` staging dirs untouched for over a week. A live host
+    """Remove ``zeus_kernel_*`` staging dirs untouched for over a week. A live host
     rmtrees each dir within one idle timeout of the kernel's last use, so a week-old
     dir belongs to a host that died before its cleanup could run; younger dirs are left
     alone because a concurrently running host's live kernel may own one. rmtree never
     follows symlinks, so a planted link is rejected rather than chased."""
     now = time.time() if now is None else now
     removed = 0
-    for path in glob.glob(os.path.join(tempfile.gettempdir(), "hermes_kernel_*")):
+    for path in glob.glob(os.path.join(tempfile.gettempdir(), "zeus_kernel_*")):
         try:
             if now - os.path.getmtime(path) > _STALE_STAGING_DIR_AGE:
                 # No ignore_errors: a rejected symlink (or a half-removed dir) must not
@@ -700,7 +700,7 @@ def _ensure_background_reaper() -> None:
             return
         _REAPER_STARTED = True
     threading.Thread(target=_background_reaper, daemon=True,
-                     name="hermes-kernel-idle-reaper").start()
+                     name="zeus-kernel-idle-reaper").start()
 
 
 def _background_reaper() -> None:

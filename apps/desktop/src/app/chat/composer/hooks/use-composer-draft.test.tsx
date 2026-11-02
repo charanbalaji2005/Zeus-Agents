@@ -82,7 +82,7 @@ describe('useComposerDraft — attachment scope stays coherent with the committe
     }
 
     rotateFreshDraftKey()
-    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+    delete (window as unknown as { zeusDesktop?: unknown }).zeusDesktop
     vi.unstubAllGlobals()
     $connection.set(null)
   })
@@ -177,11 +177,11 @@ describe('useComposerDraft — attachment scope stays coherent with the committe
       id: 'file:new',
       kind: 'file',
       label: 'new.txt',
-      path: '/srv/hermes/profiles/owner/uploads/new.txt',
+      path: '/srv/zeus/profiles/owner/uploads/new.txt',
       stagedUpload: {
         install_id: '11111111111111111111111111111111',
-        path: '/srv/hermes/profiles/owner/uploads/new.txt',
-        profile_home: '/srv/hermes/profiles/owner'
+        path: '/srv/zeus/profiles/owner/uploads/new.txt',
+        profile_home: '/srv/zeus/profiles/owner'
       },
       titlePreview: 'Pasted text used to title the new session'
     }
@@ -346,9 +346,9 @@ describe('useComposerDraft — attachment scope stays coherent with the committe
 
     ;(
       window as unknown as {
-        hermesDesktop: { readFileDataUrl: typeof readFileDataUrl }
+        zeusDesktop: { readFileDataUrl: typeof readFileDataUrl }
       }
-    ).hermesDesktop = { readFileDataUrl }
+    ).zeusDesktop = { readFileDataUrl }
 
     let resolveBitmap!: (bitmap: { close: () => void; height: number; width: number }) => void
 
@@ -826,7 +826,7 @@ describe('useComposerDraft — touch never re-enters the editor on its own', () 
 
   beforeEach(() => {
     // Touch handling is the browser-hosted Desktop's.
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
   })
 
@@ -836,7 +836,7 @@ describe('useComposerDraft — touch never re-enters the editor on its own', () 
     clearSessionDraft('touch-clear')
     mainComposerScope.clear()
     markActiveComposer('main')
-    delete window.document.documentElement.dataset.hermesDesktopHost
+    delete window.document.documentElement.dataset.zeusDesktopHost
     vi.unstubAllGlobals()
   })
 

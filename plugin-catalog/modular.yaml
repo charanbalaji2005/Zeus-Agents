@@ -15,4 +15,4 @@ capabilities:
   provides_middleware: []
   requires_env:
     - MODULAR_API_KEY
-requires_hermes: ">=0.22.5"
+requires_zeus: ">=0.22.5"

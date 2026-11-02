@@ -48,8 +48,8 @@ async def admit_heartbeat(runner, adapter, source, session_id, route):
     """Coalesce overdue ticks behind the canonical FIFO, not an adapter-local slot."""
     import json
     from gateway.platforms.event import MessageEvent
-    from hermes_cli.heartbeat import HeartbeatManager
-    from hermes_state_runtime import list_session_admissions
+    from zeus_cli.heartbeat import HeartbeatManager
+    from zeus_state_runtime import list_session_admissions
 
     from gateway.session_authorities import active_authority
     authority = active_authority(runner)

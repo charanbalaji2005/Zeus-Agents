@@ -1,4 +1,4 @@
-"""Remote config backend: ``HERMES_CONFIG_BACKEND=remote`` serves each profile's config from the
+"""Remote config backend: ``ZEUS_CONFIG_BACKEND=remote`` serves each profile's config from the
 config plane (config-config) instead of ``config.yaml``. See ``backend.py``."""
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def get_remote_backend() -> RemoteBackend:
 
 
 def get_backend() -> RemoteBackend:
-    """The entry point ``hermes_cli.config_backend`` resolves ``HERMES_CONFIG_BACKEND=remote`` to."""
+    """The entry point ``zeus_cli.config_backend`` resolves ``ZEUS_CONFIG_BACKEND=remote`` to."""
     return get_remote_backend()
 
 

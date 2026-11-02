@@ -5,7 +5,7 @@ description: "Read-only paid-media analysis for Google Ads, Meta (Facebook) Ads,
 maintainer: HYPD AI
 tier: community
 category: tools
-requires_hermes: ">=0.20.1"
+requires_zeus: ">=0.20.1"
 docs_url: https://github.com/HYPD-AI/hypd-hermes-plugin#readme
 version: 1.0.0
 image: https://raw.githubusercontent.com/HYPD-AI/hypd-hermes-plugin/819c28303e4c8a71444c93d78789b7df3abdc68e/assets/icon.png

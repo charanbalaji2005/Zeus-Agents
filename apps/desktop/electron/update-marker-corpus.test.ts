@@ -125,7 +125,7 @@ describe('Electron never mutates a marker (A7 rule 3)', () => {
     await waitForHandoffClaim(home, deps.ownPid, { ...deps, timeoutMs: 0, startedAt: corpus.now })
 
     assert.ok(fs.readFileSync(file).equals(before), 'marker bytes unchanged')
-    assert.deepEqual(fs.readdirSync(home), ['.hermes-update-in-progress'], 'no tmp litter, no sidecar')
+    assert.deepEqual(fs.readdirSync(home), ['.zeus-update-in-progress'], 'no tmp litter, no sidecar')
   })
 
   test('no marker module unlinks, renames, truncates or overwrites a path', () => {

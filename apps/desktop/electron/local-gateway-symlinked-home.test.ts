@@ -6,8 +6,8 @@ import { expect, test } from 'vitest'
 
 import { routedGatewayEndpoint } from './local-gateway'
 
-// B2-17: with a symlinked ~/.hermes (dotfiles link, macOS /var -> /private/var) the raw launch
-// HERMES_HOME is not canonical. The sibling profile home is built from the endpoint's own resolved
+// B2-17: with a symlinked ~/.zeus (dotfiles link, macOS /var -> /private/var) the raw launch
+// ZEUS_HOME is not canonical. The sibling profile home is built from the endpoint's own resolved
 // profile_id, so mintLocalGatewayTicket's realpath check holds instead of 'Noncanonical gateway profile'.
 test.skipIf(process.platform === 'win32')('a sibling route under a symlinked launch home is canonical', () => {
   const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'desktop-symlink-home-')))

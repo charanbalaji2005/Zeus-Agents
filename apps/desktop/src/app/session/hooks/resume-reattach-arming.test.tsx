@@ -3,7 +3,7 @@ import { cleanup, render, waitFor } from '@testing-library/react'
 import { useEffect, useRef } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 
-import { getLatestSessionMessages } from '@/hermes'
+import { getLatestSessionMessages } from '@/zeus'
 import { recordFriction } from '@/store/desktop-metrics'
 import { $notifications, clearNotifications, notify } from '@/store/notifications'
 import {
@@ -22,7 +22,7 @@ import { clearAllSessionStates } from '@/store/session-states'
 import { useSessionActions } from './use-session-actions'
 import { useSessionStateCache } from './use-session-state-cache'
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getLatestSessionMessages: vi.fn(),
   getSession: vi.fn(),

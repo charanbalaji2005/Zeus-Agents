@@ -23,13 +23,13 @@ async def test_only_the_viewers_own_turn_skips_the_whole_script_gate(tmp_path, m
     from gateway.session_contract import Principal, Submission
     from gateway.session_local import create_local_session
     from gateway.session_policy import _ACTIVE_POLICY, policy_for_source
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from tools import approval as A
     from tools import approval_context
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    monkeypatch.setenv("HERMES_EXEC_ASK", "1")  # start_gateway() sets it process-wide
-    for name in ("HERMES_INTERACTIVE", "HERMES_GATEWAY_SESSION", "HERMES_CRON_SESSION"):
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_EXEC_ASK", "1")  # start_gateway() sets it process-wide
+    for name in ("ZEUS_INTERACTIVE", "ZEUS_GATEWAY_SESSION", "ZEUS_CRON_SESSION"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(approval_context, "_get_approval_mode", lambda: "manual")
     monkeypatch.setattr(A, "_YOLO_MODE_FROZEN", False)

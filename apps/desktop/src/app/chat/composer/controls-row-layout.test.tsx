@@ -49,7 +49,7 @@ function controlsRow() {
 
 afterEach(() => {
   cleanup()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 // Native Desktop lays out the minimal controls row as on main: packed from the
@@ -64,7 +64,7 @@ it('keeps the minimal controls row on one line, packed from the start, in native
 // The browser host's touch-size controls can outgrow a minimal row: they pack
 // to the end and wrap onto a second line instead of clipping Send.
 it('packs the minimal controls row to the end and lets it wrap in browser-hosted Desktop', () => {
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   const row = controlsRow()
 
   expect(row.className).toContain('justify-end')

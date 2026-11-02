@@ -1,5 +1,5 @@
 /**
- * The Webapp's half of `hermesDesktop.notify`: what Electron's notification IPC
+ * The Webapp's half of `zeusDesktop.notify`: what Electron's notification IPC
  * does in main, done with the browser's Notification API.
  *
  * Permission is asked only from a click in Settings (browsers ignore or
@@ -56,7 +56,7 @@ export interface BrowserNotifyPayload {
 
 /** Flash the tab, then show a browser notification when the user allowed it. */
 export function showBrowserNotification(payload: BrowserNotifyPayload): boolean {
-  const title = payload.title || 'Hermes'
+  const title = payload.title || 'Zeus'
 
   flagTabAttention(title)
 
@@ -69,7 +69,7 @@ export function showBrowserNotification(payload: BrowserNotifyPayload): boolean 
   const notification = new Notification(title, {
     body: payload.body,
     // One OS entry per session+kind: a replayed event replaces, never stacks.
-    tag: `hermes:${payload.kind ?? ''}:${focusSessionId ?? payload.tag ?? ''}`
+    tag: `zeus:${payload.kind ?? ''}:${focusSessionId ?? payload.tag ?? ''}`
   })
 
   notification.onclick = () => {

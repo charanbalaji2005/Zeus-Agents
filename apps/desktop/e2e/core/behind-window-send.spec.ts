@@ -150,7 +150,7 @@ async function routeLaterSockets(app: ElectronApplication, rec: WsRecorder) {
 
 /**
  * Let a window drop the cross-window transcript bus on demand: set
- * `window.__holdTranscriptBus = true` and its `hermes:transcript` listeners
+ * `window.__holdTranscriptBus = true` and its `zeus:transcript` listeners
  * stop firing. Installed on the app context so the second window gets it.
  */
 async function installTranscriptBusHold(app: ElectronApplication) {
@@ -163,7 +163,7 @@ async function installTranscriptBusHold(app: ElectronApplication) {
 
     window.BroadcastChannel = class extends Native {
       override addEventListener(type: string, listener: any, options?: any) {
-        if (this.name === 'hermes:transcript' && type === 'message') {
+        if (this.name === 'zeus:transcript' && type === 'message') {
           const held = (event: Event) => {
             if (!(window as any).__holdTranscriptBus) {
               listener.call(this, event)
@@ -182,7 +182,7 @@ async function installTranscriptBusHold(app: ElectronApplication) {
 test('a window behind its chat still sends, and the model sees the other windowâ€™s turn', async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('behind-send')
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
   const ws1 = recordWebSockets(page)
 
@@ -200,7 +200,7 @@ test('a window behind its chat still sends, and the model sees the other windowâ
     const ws2: WsRecorder = { events: [], sent: [], sockets: [] }
     const window2Wire = await routeLaterSockets(app, ws2)
     const opened = app.waitForEvent('window')
-    await page.evaluate(id => (window as any).hermesDesktop.openSessionWindow(id), session.sessionId)
+    await page.evaluate(id => (window as any).zeusDesktop.openSessionWindow(id), session.sessionId)
     const page2 = await opened
     const ws = mergedRecorder(ws1, ws2)
     await waitForInteractive(app, page2)

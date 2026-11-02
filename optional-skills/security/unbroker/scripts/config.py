@@ -41,7 +41,7 @@ VALID = {
     #   programmatic - CLI sends via SMTP + reads verify links via IMAP (needs EMAIL_* creds)
     #   alias        - AgentMail agent-owned inboxes / per-broker aliases
     "email_mode": {"draft_only", "browser", "programmatic", "alias"},
-    # browser_backend: local = Hermes's own Chromium via browser_exec; camofox = the `camofox`
+    # browser_backend: local = Zeus's own Chromium via browser_exec; camofox = the `camofox`
     # catalog plugin. Only browserbase (or auto + key) changes planning (soft-CAPTCHA clearing).
     "browser_backend": {"auto", "browserbase", "local", "camofox"},
     "tracker_backend": {"local-json", "google-sheets"},
@@ -49,7 +49,7 @@ VALID = {
 }
 
 
-# Values written by older installs, renamed when Hermes dropped agent-browser.
+# Values written by older installs, renamed when Zeus dropped agent-browser.
 LEGACY_VALUES = {"browser_backend": {"agent-browser": "local"}}
 
 
@@ -71,11 +71,11 @@ def save_config(cfg: dict) -> Path:
 
 
 def dotenv_env() -> dict:
-    """Shell env overlaid on `$HERMES_HOME/.env`, so capability detection sees the creds Hermes
+    """Shell env overlaid on `$ZEUS_HOME/.env`, so capability detection sees the creds Zeus
     loads for its own tools (BROWSERBASE_API_KEY, EMAIL_*, AGENTMAIL_API_KEY, ...) even though the
     terminal-tool shell doesn't export them. Shell env wins; the .env only fills gaps."""
     merged: dict = {}
-    p = paths.hermes_home() / ".env"
+    p = paths.zeus_home() / ".env"
     if p.exists():
         try:
             for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
@@ -93,7 +93,7 @@ def dotenv_env() -> dict:
 def detect_capabilities(env: dict | None = None) -> dict:
     """Report which opt-in upgrades are available without extra setup."""
     env = os.environ if env is None else env
-    home = paths.hermes_home()
+    home = paths.zeus_home()
     google = (
         (home / "google_token.json").exists()
         or (home / "skills" / "productivity" / "google-workspace").exists()

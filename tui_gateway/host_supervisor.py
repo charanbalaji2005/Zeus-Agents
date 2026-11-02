@@ -19,8 +19,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from hermes_constants import get_hermes_home
-from tools.environments.local import hermes_subprocess_env
+from zeus_constants import get_zeus_home
+from tools.environments.local import zeus_subprocess_env
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +146,10 @@ class HostSupervisor:
         cwd: str | Path | None = None, env: dict[str, str] | None = None,
         rpc_sink: Callable[[dict], None] | None = None, respawn_max: int = 3,
         heartbeat_secs: int = 15, expected_build_sha: str | None = None,
-        expected_hermes_home: str | None = None, autostart: bool = True) -> None:
+        expected_zeus_home: str | None = None, autostart: bool = True) -> None:
         self.registry_path = (
             Path(registry_path) if registry_path is not None
-            else get_hermes_home() / "state" / _REGISTRY_NAME)
+            else get_zeus_home() / "state" / _REGISTRY_NAME)
         self.argv = argv or [sys.executable, "-m", "tui_gateway.compute_host"]
         self.cwd = Path(cwd) if cwd is not None else _repo_root()
         self.env = env
@@ -157,8 +157,8 @@ class HostSupervisor:
         self.respawn_max = max(0, int(respawn_max))
         self.heartbeat_secs = max(1, int(heartbeat_secs))
         self.expected_build_sha = _build_sha() if expected_build_sha is None else expected_build_sha
-        self.expected_hermes_home = (
-            str(get_hermes_home()) if expected_hermes_home is None else expected_hermes_home)
+        self.expected_zeus_home = (
+            str(get_zeus_home()) if expected_zeus_home is None else expected_zeus_home)
         self._lock = threading.RLock()
         self._proc: subprocess.Popen[str] | None = None
         self._hello_event = threading.Event()
@@ -341,8 +341,8 @@ class HostSupervisor:
             raise RuntimeError("compute host respawn disabled after crash loop")
         self._hello_event.clear()
         self._hello = {}
-        env = {**hermes_subprocess_env(inherit_credentials=True), **os.environ, **(self.env or {})}
-        env["HERMES_COMPUTE_HOST_HEARTBEAT_SECS"] = str(self.heartbeat_secs)
+        env = {**zeus_subprocess_env(inherit_credentials=True), **os.environ, **(self.env or {})}
+        env["ZEUS_COMPUTE_HOST_HEARTBEAT_SECS"] = str(self.heartbeat_secs)
         root = str(_repo_root())
         env.setdefault("PYTHONPATH", root)
         if root not in env["PYTHONPATH"].split(os.pathsep):
@@ -369,10 +369,10 @@ class HostSupervisor:
         hello = self._hello
         if not hello:
             raise RuntimeError("compute host missing hello")
-        got_home = str(hello.get("hermes_home") or "")
-        if got_home and got_home != self.expected_hermes_home:
+        got_home = str(hello.get("zeus_home") or "")
+        if got_home and got_home != self.expected_zeus_home:
             raise RuntimeError(
-                f"compute host HERMES_HOME mismatch: {got_home} != {self.expected_hermes_home}")
+                f"compute host ZEUS_HOME mismatch: {got_home} != {self.expected_zeus_home}")
         got_sha = str(hello.get("build_sha") or "")
         expected = self.expected_build_sha
         if expected != "unknown" and got_sha not in {"", "unknown", expected}:

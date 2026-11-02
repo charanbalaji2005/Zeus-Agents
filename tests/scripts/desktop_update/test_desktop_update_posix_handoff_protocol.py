@@ -41,10 +41,10 @@ MARKER_SH = POSIX.with_name("marker.sh")
 
 
 def _env(tmp_path: Path, home: Path, **extra: str) -> dict:
-    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "HERMES_HOME": str(home),
-           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "HERMES_RUNTIME_DIR": str(tmp_path / "store"),
-           "HERMES_UPDATE_SHIM_GRACE_SECONDS": "0"}
-    for key in ("PYTHONPATH", "PYTHONHOME", "HERMES_UPDATE_STARTED_AT", "MARKER_LOCK_TOOL"):
+    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "ZEUS_HOME": str(home),
+           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "ZEUS_RUNTIME_DIR": str(tmp_path / "store"),
+           "ZEUS_UPDATE_SHIM_GRACE_SECONDS": "0"}
+    for key in ("PYTHONPATH", "PYTHONHOME", "ZEUS_UPDATE_STARTED_AT", "MARKER_LOCK_TOOL"):
         env.pop(key, None)
     env.update(extra)
     return env
@@ -75,7 +75,7 @@ def test_dead_marker_is_reclaimed_by_exactly_one_of_two_live_claimants(tmp_path,
     """Claimant A judges the dead marker and is slow to delete it (its real `rm` sleeps first);
     claimant B arrives meanwhile. Without the lock both reclaim and both claim (R3)."""
     home = tmp_path / "home"; home.mkdir()
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     marker.write_text(f"99999999\n{int(time.time())}\nct:1.000\n", encoding="utf-8")
     prelude = (f"log() {{ :; }}; MARKER={shlex.quote(str(marker))} INSTALL_ROOT={shlex.quote(str(home))} "
                f"DESKTOP_PID=0 HANDOFF_RUN='' STARTED_AT=$(date +%s) MARKER_CLAIMED=0; . {shlex.quote(str(MARKER_SH))}; ")
@@ -107,14 +107,14 @@ def _old_desktop_handoff(tmp_path: Path, home: Path, install: Path, procs, *, br
     starts the daemon as its child, and P (bridge="launcher") writes `X\\n<startedAt>\\n` over the
     marker right after the spawn. bridge="unrelated" leaves a v1 claim of some other live process."""
     started = int(time.time())
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     report = tmp_path / "launched.txt"
     launcher = (f'echo $$ > {shlex.quote(str(report))}; sleep 0.5; '
                 f'bash {shlex.quote(str(POSIX))} --daemonized --no-ui --self-test-marker --install-root {shlex.quote(str(install))} '
                 f'--desktop-pid $PPID; echo "rc=$?" >> {shlex.quote(str(report))}; sleep 2')
     desktop_code = (
         "import subprocess, sys, time, os\n"
-        f"x = subprocess.Popen(['bash', '-c', {launcher!r}], env=dict(os.environ, HERMES_UPDATE_STARTED_AT='{started}'))\n"
+        f"x = subprocess.Popen(['bash', '-c', {launcher!r}], env=dict(os.environ, ZEUS_UPDATE_STARTED_AT='{started}'))\n"
         f"bridge = {bridge!r}\n"
         f"if bridge == 'launcher': open({str(marker)!r}, 'w', encoding='utf-8').write(f'{{x.pid}}\\n{started}\\n')\n"  # windows-footgun: ok — a write, inside generated code
         "x.wait()\n"
@@ -137,7 +137,7 @@ def test_old_desktop_bridge_naming_its_launcher_is_adopted_by_lineage(tmp_path, 
     assert lines[-1] == "rc=0", (home / "logs" / "desktop-update-handoff.log").read_text(encoding="utf-8-sig")
     log = (home / "logs" / "desktop-update-handoff.log").read_text(encoding="utf-8-sig")
     assert re.search(rf"adopted the Desktop's update marker \(desktop pid \d+, bridge pid {lines[0]} -> \d+\)", log)
-    body = (home / ".hermes-update-in-progress").read_text(encoding="utf-8-sig").splitlines()
+    body = (home / ".zeus-update-in-progress").read_text(encoding="utf-8-sig").splitlines()
     assert body[0] != lines[0] and body[2].startswith("ct:")  # the daemon owns it now, v2
 
 
@@ -146,7 +146,7 @@ def test_old_desktop_handoff_never_adopts_an_unrelated_live_claim(tmp_path, proc
     before, report = _old_desktop_handoff(tmp_path, home, install, procs, bridge="unrelated")
 
     assert report.read_text(encoding="utf-8-sig").split()[-1] == "rc=2"
-    assert (home / ".hermes-update-in-progress").read_text(encoding="utf-8-sig") == before
+    assert (home / ".zeus-update-in-progress").read_text(encoding="utf-8-sig") == before
 
 
 def test_launcher_lineage_rule_matches_the_shared_table(tmp_path):
@@ -156,7 +156,7 @@ def test_launcher_lineage_rule_matches_the_shared_table(tmp_path):
         args = " ".join("1" if case["facts"][name] else "0" for name in LINEAGE_FACTS)
         calls.append(f"if marker_launcher_rule {args}; then echo {case['id']}=1; else echo {case['id']}=0; fi")
     for case in ENV_CASES:
-        calls.append(f"if HERMES_UPDATE_STARTED_AT={shlex.quote(case['env'])} marker_env_started_matches {shlex.quote(case['line2'])}; "
+        calls.append(f"if ZEUS_UPDATE_STARTED_AT={shlex.quote(case['env'])} marker_env_started_matches {shlex.quote(case['line2'])}; "
                      f"then echo env_{case['id']}=1; else echo env_{case['id']}=0; fi")
     out = subprocess.run(["bash", "-c", "\n".join(calls)], capture_output=True, text=True, encoding="utf-8", timeout=30, check=True).stdout
     got = dict(line.split("=") for line in out.split())
@@ -167,14 +167,14 @@ def test_launcher_lineage_rule_matches_the_shared_table(tmp_path):
 @pytest.mark.parametrize("env_matches", [True, False], ids=["env-matches", "env-differs"])
 def test_reparented_live_launcher_is_adopted_only_with_the_handoff_started_at(tmp_path, procs, env_matches):
     """The table's divergent row on real processes: the launcher X is our live parent, but no
-    longer the Desktop's child (the Desktop quit first); line 2 == HERMES_UPDATE_STARTED_AT."""
+    longer the Desktop's child (the Desktop quit first); line 2 == ZEUS_UPDATE_STARTED_AT."""
     home, install = _install(tmp_path)
     desktop = subprocess.Popen(["sleep", "60"]); procs.append(desktop)  # not X's parent
     started = int(time.time())
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     report = tmp_path / "launched.txt"
     launcher = (f'printf "%s\\n{started}\\n" $$ > {shlex.quote(str(marker))}; '
-                f'HERMES_UPDATE_STARTED_AT={started if env_matches else started - 7} bash {shlex.quote(str(POSIX))} --daemonized --no-ui '
+                f'ZEUS_UPDATE_STARTED_AT={started if env_matches else started - 7} bash {shlex.quote(str(POSIX))} --daemonized --no-ui '
                 f'--self-test-marker --install-root {shlex.quote(str(install))} --desktop-pid {desktop.pid}; echo "rc=$?" > {shlex.quote(str(report))}')
     x = subprocess.run(["bash", "-c", launcher], env=_env(tmp_path, home), timeout=60, check=False)
     assert x.returncode == 0
@@ -198,7 +198,7 @@ def test_reparented_live_launcher_is_adopted_only_with_the_handoff_started_at(tm
 def test_handoff_run_adopts_only_the_matching_live_bridge(tmp_path, procs, bridge_run, arg_run, adopted):
     home, install = _install(tmp_path)
     desktop = subprocess.Popen(["sleep", "60"]); procs.append(desktop)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     body = f"{desktop.pid}\n{int(time.time()) - 5}\nct:{_ct(desktop.pid)}\n" + (f"run:{bridge_run}\n" if bridge_run else "")
     marker.write_text(body, encoding="utf-8")
 
@@ -221,7 +221,7 @@ def test_withdraw_removes_only_this_desktops_bridge_and_reports_a_taker(tmp_path
     home, install = _install(tmp_path)
     desktop, script = subprocess.Popen(["sleep", "60"]), subprocess.Popen(["sleep", "60"])
     procs.extend([desktop, script])
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     run = "desk-9-x-0001"
     taken = f"{script.pid}\n{int(time.time())}\nct:{_ct(script.pid)}\nrun:{run}\n"
     marker.write_text(taken, encoding="utf-8")
@@ -252,7 +252,7 @@ def test_adopt_withdraw_and_taken_need_an_exact_identity(tmp_path, procs, blind_
     Test-ProcessIdentityExact (both creation times known). posix accepted an alive pid whose
     creation time it could not read: that pid may be a reuse, so it must fail closed."""
     home = tmp_path / "home"; home.mkdir()
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     desktop = subprocess.Popen(["sleep", "60"]); procs.append(desktop)
     other = subprocess.Popen(["sleep", "60"]); procs.append(other)
     now = int(time.time())
@@ -276,7 +276,7 @@ def test_reclaim_reports_busy_when_the_dead_marker_cannot_be_removed(tmp_path):
     """marker-claim.ps1 answers `busy` when Remove-MarkerLocked fails; posix printed `reclaimed`
     after an `rm -f` that could not unlink, so the Desktop went on as if the marker were gone."""
     home, install = _install(tmp_path)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     dead = f"99999999\n{int(time.time())}\nct:1.000\n"
     marker.write_text(dead, encoding="utf-8")
     Path(str(marker) + ".lock").touch()
@@ -295,9 +295,9 @@ def test_reclaim_reports_busy_when_the_dead_marker_cannot_be_removed(tmp_path):
 
 def test_marker_outlives_a_survivor_that_still_holds_the_checkout_lock(tmp_path):
     home, install = _install(tmp_path, legacy=True)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     completion = tmp_path / "release-completion"
-    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".hermes-update.lock"))
+    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".zeus-update.lock"))
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)], env=env, cwd=tmp_path,
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
     log = home / "logs" / "desktop-update-handoff.log"
@@ -329,25 +329,25 @@ def test_reclaim_without_a_marker_reports_held_while_the_checkout_lock_is_held(t
     Desktop gate opened while an update that had not yet published (or had already retired)
     its marker still held the checkout."""
     home, install = _install(tmp_path, legacy=True)
-    lock = install / ".hermes-update.lock"
+    lock = install / ".zeus-update.lock"
     lock.touch()
     with open(lock, "rb") as held:
         fcntl.flock(held.fileno(), fcntl.LOCK_EX)
         assert _helper(tmp_path, home, install, "reclaim") == "held"
-        assert not (home / ".hermes-update-in-progress").exists()
+        assert not (home / ".zeus-update-in-progress").exists()
     assert _helper(tmp_path, home, install, "reclaim") == "absent"
 
 
 @pytest.mark.skipif(os.geteuid() == 0, reason="root opens a mode-000 file")
 @pytest.mark.parametrize("tool", ["perl", "python3", "flock"])
 def test_an_unreadable_checkout_lock_counts_as_held(tmp_path, tool):
-    """kshitij P2: a lock file that exists but cannot be opened (root-owned after `sudo hermes
+    """kshitij P2: a lock file that exists but cannot be opened (root-owned after `sudo zeus
     update`) read `not held`, while the Desktop's own probe (checkout_held) reads `held` -- so the
     local reclaim deleted a dead marker the remote helper kept. Fail closed, every probe tool."""
     if shutil.which(tool) is None:
         pytest.skip(f"{tool} is not installed")
     home, install = _install(tmp_path, legacy=True)
-    lock = install / ".hermes-update.lock"
+    lock = install / ".zeus-update.lock"
     probe = (f"log() {{ :; }}; MARKER=/dev/null INSTALL_ROOT={shlex.quote(str(install))} MARKER_LOCK_TOOL={tool}; "
              f". {shlex.quote(str(MARKER_SH))}; checkout_lock_held && echo held || echo free")
     def held() -> str:
@@ -357,7 +357,7 @@ def test_an_unreadable_checkout_lock_counts_as_held(tmp_path, tool):
     try:
         assert held() == "held"
         if tool == "perl":  # end to end: the Desktop's reclaim keeps the dead marker
-            (home / ".hermes-update-in-progress").write_text(f"999999\n{int(time.time())}\nct:1.000\n", encoding="utf-8")
+            (home / ".zeus-update-in-progress").write_text(f"999999\n{int(time.time())}\nct:1.000\n", encoding="utf-8")
             assert _helper(tmp_path, home, install, "reclaim") == "held"
     finally:
         lock.chmod(0o644)
@@ -367,7 +367,7 @@ def test_an_unreadable_checkout_lock_counts_as_held(tmp_path, tool):
 def test_release_waits_for_the_survivor_then_removes_the_marker(tmp_path):
     home, install = _install(tmp_path, legacy=True)
     completion = tmp_path / "release-completion"
-    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".hermes-update.lock"))
+    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".zeus-update.lock"))
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)], env=env, cwd=tmp_path,
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     log = home / "logs" / "desktop-update-handoff.log"
@@ -376,10 +376,10 @@ def test_release_waits_for_the_survivor_then_removes_the_marker(tmp_path):
         assert time.monotonic() < deadline and script.poll() is None
         time.sleep(0.05)
     time.sleep(1.0)
-    assert script.poll() is None and (home / ".hermes-update-in-progress").exists()
+    assert script.poll() is None and (home / ".zeus-update-in-progress").exists()
     completion.touch()
     assert script.wait(timeout=30) == 0
-    assert not (home / ".hermes-update-in-progress").exists()
+    assert not (home / ".zeus-update-in-progress").exists()
 
 
 def test_result_finished_at_is_stamped_after_the_r6_release_wait(tmp_path):
@@ -388,7 +388,7 @@ def test_result_finished_at_is_stamped_after_the_r6_release_wait(tmp_path):
     went stale unread: finished_at must be the time the hand-off actually finished."""
     home, install = _install(tmp_path, legacy=True)
     completion = tmp_path / "release-completion"
-    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".hermes-update.lock"))
+    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".zeus-update.lock"))
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)], env=env, cwd=tmp_path,
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     log = home / "logs" / "desktop-update-handoff.log"
@@ -402,19 +402,19 @@ def test_result_finished_at_is_stamped_after_the_r6_release_wait(tmp_path):
     finally:
         completion.touch()
     assert script.wait(timeout=30) == 0
-    result = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    result = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert result["ok"] is True and result["finished_at"] >= released, (result, released)
-    assert not list(home.glob(".hermes-update-result.json.*.tmp"))
+    assert not list(home.glob(".zeus-update-result.json.*.tmp"))
 
 
 def test_line_two_stays_young_through_the_r6_release_wait(tmp_path):
     """An old packaged Desktop deletes a marker whose line 2 is 20 minutes old, live owner or
-    not. The release wait can last hours, so the refresher must outlive `hermes update`."""
+    not. The release wait can last hours, so the refresher must outlive `zeus update`."""
     home, install = _install(tmp_path, legacy=True)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     completion = tmp_path / "release-completion"
-    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".hermes-update.lock"),
-               HERMES_UPDATE_STARTED_AT=str(int(time.time()) - 600))
+    env = _env(tmp_path, home, HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(install / ".zeus-update.lock"),
+               ZEUS_UPDATE_STARTED_AT=str(int(time.time()) - 600))
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install),
                                "--self-test-refresh-every", "1"], env=env, cwd=tmp_path,
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
@@ -437,10 +437,10 @@ def test_line_two_stays_young_through_the_r6_release_wait(tmp_path):
 
 
 def test_checkout_lock_probe_never_makes_a_concurrent_acquire_fail(tmp_path):
-    """checkout_lock_held takes the REAL lock; a `hermes update` acquiring it non-blocking in a
+    """checkout_lock_held takes the REAL lock; a `zeus update` acquiring it non-blocking in a
     tight loop meanwhile must (practically) never see it busy. A probe that holds it across a
     process exit and a shell close refused ~7% of such attempts."""
-    lock = tmp_path / ".hermes-update.lock"
+    lock = tmp_path / ".zeus-update.lock"
     lock.touch()
     loop = (f"log() {{ :; }}; MARKER=/dev/null INSTALL_ROOT={shlex.quote(str(tmp_path))}; . {shlex.quote(str(MARKER_SH))}; "
             "end=$((SECONDS + 4)); n=0; while [ $SECONDS -lt $end ]; do checkout_lock_held && echo held; n=$((n + 1)); done; echo \"probes=$n\"")
@@ -470,7 +470,7 @@ def test_script_killed_before_the_delegate_line_appears_runs_no_update(tmp_path)
     lock, which this test holds). SIGKILL the script there: the child must never run the update,
     and the marker must read dead (reclaimable), never `dead while an update runs`."""
     home, install = _install(tmp_path)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)],
                               env=_env(tmp_path, home), cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     lock_fd = None
@@ -487,7 +487,7 @@ def test_script_killed_before_the_delegate_line_appears_runs_no_update(tmp_path)
             time.sleep(0.01)
         time.sleep(0.5)  # the update child is spawned and parked behind the go-file
         children = [int(p) for p in Path(f"/proc/{script.pid}/task/{script.pid}/children").read_text(encoding="utf-8").split()]
-        # The (sub)shell that will exec `hermes update`; the others are flock(1) waiting on us and
+        # The (sub)shell that will exec `zeus update`; the others are flock(1) waiting on us and
         # the custodian (it outlives the script by design).
         gate = [p for p in children if Path(f"/proc/{p}/comm").read_text(encoding="utf-8").strip() == "bash"
                 and str(p) != _custodian(home)]
@@ -552,7 +552,7 @@ def test_json_escape_round_trips_every_control_character(locale):
 
 def test_line_two_is_refreshed_only_while_the_claim_is_still_ours(tmp_path, procs):
     home = tmp_path / "home"; home.mkdir()
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     run = (f"log() {{ :; }}; MARKER={shlex.quote(str(marker))} INSTALL_ROOT={shlex.quote(str(home))} DESKTOP_PID=0 HANDOFF_RUN=''; "
            f". {shlex.quote(str(MARKER_SH))}; marker_now() {{ echo 1999999999; }}; ")
     ours = (run + 'MY_CT="$(proc_ct $$)"; printf "%s\\n100\\nct:%s\\ndelegate:4242 ct:5.000\\nrun:desk-1-a-0001\\n" $$ "$MY_CT" > "$MARKER"; '
@@ -570,16 +570,16 @@ def test_line_two_is_refreshed_only_while_the_claim_is_still_ours(tmp_path, proc
 
 
 def test_old_desktop_stays_parked_after_the_orchestrator_is_killed_while_the_update_holds_the_lock(tmp_path):
-    """SIGKILL the hand-off once its delegate (`hermes update`) runs and a completion survivor holds
+    """SIGKILL the hand-off once its delegate (`zeus update`) runs and a completion survivor holds
     the checkout lock. The old reader judges line 1 alone, so line 1 must name a live custodian at
     EVERY instant -- including the first read after the kill, made while this test holds the A7
     lock so nothing can take the marker over yet (review 5423056011: a takeover after the death
     left a gap in which the old reader deleted the marker) -- keep line 2 young through the
     delegate and the survivor, and release the marker only then."""
     home, install = _install(tmp_path, legacy=True)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     hold, completion = tmp_path / "update-hold", tmp_path / "release-completion"
-    lock = install / ".hermes-update.lock"
+    lock = install / ".zeus-update.lock"
     env = _env(tmp_path, home, HANDOFF_HOLD=str(hold), HANDOFF_COMPLETION=str(completion), HANDOFF_CHECKOUT_LOCK=str(lock))
     script = subprocess.Popen([bash := shutil.which("bash"), str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install),
                                "--self-test-refresh-every", "1"], env=env, cwd=tmp_path,

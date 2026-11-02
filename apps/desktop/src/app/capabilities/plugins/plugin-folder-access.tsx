@@ -24,7 +24,7 @@ const grantsKey = (pluginId: string) => [...PLUGIN_FOLDER_GRANTS_KEY, pluginId]
 export function PluginFolderAccess({ plugin, name }: PluginFolderAccessProps) {
   const { t } = useI18n()
   const copy = t.skills.plugins.folderAccess
-  const door = window.hermesDesktop?.pluginFiles
+  const door = window.zeusDesktop?.pluginFiles
   const pluginId = plugin?.id ?? ''
 
   const {

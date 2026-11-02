@@ -5,13 +5,13 @@ import { BROWSER_UPLOAD_MAX_BYTES } from '@/lib/browser-uploads'
 import { triggerHaptic } from '@/lib/haptics'
 import { notify, notifyError } from '@/store/notifications'
 
-const HERMES_PATHS_MIME = 'application/x-hermes-paths'
+const ZEUS_PATHS_MIME = 'application/x-zeus-paths'
 
 /** A host path, or an OS file with no path the browser must upload to get one. */
 type DroppedEntry = File | string
 
 function transferHasDropCandidates(t: DataTransfer): boolean {
-  if (t.types?.includes(HERMES_PATHS_MIME)) {
+  if (t.types?.includes(ZEUS_PATHS_MIME)) {
     return true
   }
 
@@ -46,7 +46,7 @@ function collectDroppedEntries(t: DataTransfer): DroppedEntry[] {
   }
 
   try {
-    const raw = t.getData(HERMES_PATHS_MIME)
+    const raw = t.getData(ZEUS_PATHS_MIME)
 
     if (raw) {
       for (const entry of JSON.parse(raw) as { path?: unknown }[]) {
@@ -57,9 +57,9 @@ function collectDroppedEntries(t: DataTransfer): DroppedEntry[] {
     // Malformed in-app drag payload — fall through to OS files.
   }
 
-  const getPath = window.hermesDesktop?.getPathForFile
+  const getPath = window.zeusDesktop?.getPathForFile
   // Only the browser-hosted Desktop stages bytes; Electron resolves an OS file to its own path.
-  const canStage = Boolean(window.hermesDesktop?.stageFileForAttach)
+  const canStage = Boolean(window.zeusDesktop?.stageFileForAttach)
   const fileCount = t.files?.length ?? 0
 
   // `items` repeats `files` with fresh File objects, so it supplies files to stage only when
@@ -102,7 +102,7 @@ function collectDroppedEntries(t: DataTransfer): DroppedEntry[] {
 // The browser uploads each dropped file to the host (the composer's staged upload) and types the
 // host path it gets back. A file over the upload limit is never sent; a warning names it.
 async function stageDroppedEntries(entries: DroppedEntry[]): Promise<string[]> {
-  const stage = window.hermesDesktop?.stageFileForAttach
+  const stage = window.zeusDesktop?.stageFileForAttach
   const tooLarge: string[] = []
 
   const paths = await Promise.all(

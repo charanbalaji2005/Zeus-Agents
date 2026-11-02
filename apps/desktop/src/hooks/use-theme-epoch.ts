@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 
 // Theme repaints (themes/context.tsx) toggle `.dark` + rewrite inline custom
-// props/data-hermes-* on <html>. Canvas/probe consumers that rasterize the
+// props/data-zeus-* on <html>. Canvas/probe consumers that rasterize the
 // *computed* color-mix()/oklch tokens must re-resolve AFTER the paint — useTheme()
 // can't, since a child's effect runs before the provider's applyTheme. A
 // MutationObserver fires post-mutation, so the next getComputedStyle is fresh.
 // One observer, fanned out to every listener.
-const ATTRS = ['class', 'style', 'data-hermes-mode', 'data-hermes-theme']
+const ATTRS = ['class', 'style', 'data-zeus-mode', 'data-zeus-theme']
 const listeners = new Set<() => void>()
 let observer: MutationObserver | null = null
 
@@ -38,7 +38,7 @@ export function onThemeRepaint(fn: () => void): () => void {
       // applyTheme also writes these attributes when only customCSS changes.
       // Even same-value attribute writes must still publish that repaint.
       // Authored CSS can derive colors/fonts from geometry variables too.
-      const customCSS = document.getElementById('hermes-desktop-custom-css')?.textContent
+      const customCSS = document.getElementById('zeus-desktop-custom-css')?.textContent
 
       const repaint =
         Boolean(customCSS) || nextStyle !== previousStyle || records.some(record => record.attributeName !== 'style')

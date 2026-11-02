@@ -15,8 +15,8 @@ from gateway.run import GatewayRunner
 from gateway.session_authority import SessionAuthority, initialize_session_authority
 from gateway.session_contract import SessionRef
 from gateway.session_ingress_context import native_callback
-from hermes_constants import get_hermes_home
-from hermes_state_runtime import list_session_admissions
+from zeus_constants import get_zeus_home
+from zeus_state_runtime import list_session_admissions
 from plugins.platforms.discord.adapter import DiscordAdapter
 
 _REAL_SCHEDULE = SessionAuthority._schedule  # the fixture parks scheduling; races restore it
@@ -47,7 +47,7 @@ async def native(monkeypatch):
 
 async def _admit(native, text, event=None):
     event = event or MessageEvent(text=text, source=native.source, message_id=text)
-    with native_callback(native.runner, event, get_hermes_home()):
+    with native_callback(native.runner, event, get_zeus_home()):
         return event, await native.authority.admit_native(event)
 
 

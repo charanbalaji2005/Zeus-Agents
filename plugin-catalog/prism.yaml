@@ -5,7 +5,7 @@ description: Prism OpenAI-compatible inference with long-context DeepSeek models
 maintainer: Prism
 tier: community
 category: models
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/prismhq/hermes-prism-provider#readme
 capabilities:
   provides_tools: []

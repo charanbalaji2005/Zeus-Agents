@@ -7,7 +7,7 @@ description: "Context window usage at a glance: a Context button in the status b
 maintainer: AsoTora
 tier: community
 category: desktop
-requires_hermes: ">=0.22.2"
+requires_zeus: ">=0.22.2"
 docs_url: https://github.com/AsoTora/hermes-context-overview#readme
 readme: true
 platforms: []

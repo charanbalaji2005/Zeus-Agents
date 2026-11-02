@@ -59,7 +59,7 @@ const OBSERVE_MS = 13_000
 // (RUN_START_SNAP_THRESHOLD_PX in thread/list.tsx).
 const OFF_BOTTOM_PX = 64
 
-const SHOTS = process.env.HERMES_E2E_SHOT_DIR
+const SHOTS = process.env.ZEUS_E2E_SHOT_DIR
 
 function viewport(page: Page) {
   return page.locator('[data-slot="aui_thread-viewport"]').filter({ visible: true }).first()
@@ -91,7 +91,7 @@ async function withApp(
 ) {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox(label)
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
   const ws = recordWebSockets(page)
 
@@ -204,7 +204,7 @@ async function observeTurn(page: Page, markers: string[], label: string): Promis
     const probe = await page.evaluate(async () => {
       const sid = decodeURIComponent(location.hash.replace(/^#\/?/, '').split('?')[0] ?? '')
 
-      const latest = await (window as any).hermesDesktop.api({
+      const latest = await (window as any).zeusDesktop.api({
         path: `/api/sessions/${sid}/messages?order=latest&limit=120&include_compacted=true`
       })
 

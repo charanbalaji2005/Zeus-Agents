@@ -11,7 +11,7 @@ const { appExecutionAliasExtensions } = msix
 test('the Store bundler rejects nonstable selectors before platform tools or staging', () => {
   for (const args of [['--commit', 'a'.repeat(40)], ['--tag', 'v0.28.0+canary.20260818T000000Z']]) {
     const result = spawnSync(process.execPath, [path.resolve(import.meta.dirname, '../../../scripts/bundle-store-msixbundle.mjs'), ...args], {
-      encoding: 'utf8', env: { ...process.env, HERMES_BUILD_COMMIT: '', HERMES_PAYLOAD_TAG: '' }
+      encoding: 'utf8', env: { ...process.env, ZEUS_BUILD_COMMIT: '', ZEUS_PAYLOAD_TAG: '' }
     })
     assert.notEqual(result.status, 0)
     assert.match(result.stderr, /Unknown option.*commit|requires a stable release tag/)
@@ -19,9 +19,9 @@ test('the Store bundler rejects nonstable selectors before platform tools or sta
 })
 
 test('nonstable MSIX CLI aliases each activate their own entrypoint, never the GUI', () => {
-  const launchers = ['hermes-canary', 'hermes-canary-acp']
+  const launchers = ['zeus-canary', 'zeus-canary-acp']
   const applications = msix.appExecutionAliasApplications(launchers, {
-    appNamePascal: 'HermesBundledCanary', displayName: 'Hermes Agent Canary'
+    appNamePascal: 'ZeusBundledCanary', displayName: 'Zeus Agents Canary'
   })
   const apps = applications.match(/<Application[\s\S]*?<\/Application>/g)
   assert.equal(apps.length, launchers.length)
@@ -36,10 +36,10 @@ test('nonstable MSIX CLI aliases each activate their own entrypoint, never the G
 test('desktop payload exposes only identity-qualified launchers while preserving canonical command keys', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'desktop-launchers-'))
   try {
-    for (const cliName of ['hermes-canary', 'hermes-abcdef1', 'hermes-1234567']) {
+    for (const cliName of ['zeus-canary', 'zeus-abcdef1', 'zeus-1234567']) {
       const payload = path.join(root, cliName)
       fs.mkdirSync(path.join(payload, 'bin'), { recursive: true })
-      const commands = { hermes: 'bin/hermes.exe', 'hermes-acp': 'bin/hermes-acp.exe' }
+      const commands = { zeus: 'bin/zeus.exe', 'zeus-acp': 'bin/zeus-acp.exe' }
       for (const [name, file] of Object.entries(commands)) fs.writeFileSync(path.join(payload, file), `PE bytes for ${name}`)
       fs.writeFileSync(path.join(payload, 'manifest.json'), JSON.stringify({
         target: 'win32-x64', launchers: Object.keys(commands), runtime: { commands }
@@ -58,7 +58,7 @@ test('desktop payload exposes only identity-qualified launchers while preserving
       assert.deepEqual(stamps.stageDesktopLaunchers(payload, { cliName }), manifest)
       const xml = appExecutionAliasExtensions(manifest.launchers)
       assert.ok(xml.includes(`Alias="${cliName}.exe"`))
-      assert.ok(!xml.includes('Alias="hermes.exe"'))
+      assert.ok(!xml.includes('Alias="zeus.exe"'))
     }
   } finally {
     fs.rmSync(root, { recursive: true, force: true })

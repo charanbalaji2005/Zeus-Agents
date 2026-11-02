@@ -4,12 +4,12 @@ import type { GatewayHostTranslations } from './types_gateway_host'
 export const jaGatewayHost: GatewayHostTranslations = {
   unavailableTitle: 'ゲートウェイ設定は利用できません',
   unavailableDesc: 'デスクトップ IPC ブリッジはゲートウェイ設定を公開していません。',
-  webappHostTitle: 'Hermes ホスト',
+  webappHostTitle: 'Zeus ホスト',
   webappHostDesc:
-    'Webapp は常に配信元の Hermes ホストを使用します。ゲートウェイの切り替え、Hermes Cloud へのサインイン、保存済み接続の管理は Hermes Desktop アプリで行ってください。',
+    'Webapp は常に配信元の Zeus ホストを使用します。ゲートウェイの切り替え、Zeus Cloud へのサインイン、保存済み接続の管理は Zeus Desktop アプリで行ってください。',
   webAccess: {
     title: 'Web アクセス',
-    intro: 'スマートフォンや別のコンピューターから、Nous アカウントでサインインしてこのコンピューターの Hermes を開きます。サインインした人はこのコンピューターでコマンドを実行できます。',
+    intro: 'スマートフォンや別のコンピューターから、Nous アカウントでサインインしてこのコンピューターの Zeus を開きます。サインインした人はこのコンピューターでコマンドを実行できます。',
     failed: 'Web アクセスを変更できませんでした',
     running: '実行中',
     stopped: '停止中',
@@ -17,7 +17,7 @@ export const jaGatewayHost: GatewayHostTranslations = {
     stopping: '停止処理中',
     restartNeeded: '再起動が必要',
     unavailable: '利用できません',
-    notRunningDetail: '起動すると、別のデバイスから Hermes を開けます。',
+    notRunningDetail: '起動すると、別のデバイスから Zeus を開けます。',
     needsNous: '先に「プロバイダー」で Nous アカウントにサインインしてください。',
     runningLan: '同じネットワーク上のデバイスでこのアドレスを開いてください。',
     runningPublic: 'あなたの URL 経由で提供中です。',

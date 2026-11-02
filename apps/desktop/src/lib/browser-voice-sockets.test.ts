@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { setApiRequestConnection, setApiRequestProfile } from '@/hermes'
+import { setApiRequestConnection, setApiRequestProfile } from '@/zeus'
 import { clearWebappSession, seedWebappSession } from '@/test/webapp-session'
 
 import { installBrowserDesktopBridge } from './browser-desktop-bridge'
@@ -13,9 +13,9 @@ import { resolveSpeakStreamUrl } from './voice-playback'
 // sent streaming voice to its whole-reply fallback every time.
 
 type MutableWindow = Window & {
-  __HERMES_AUTH_REQUIRED__?: boolean
-  __HERMES_BASE_PATH__?: string
-  hermesDesktop?: Window['hermesDesktop']
+  __ZEUS_AUTH_REQUIRED__?: boolean
+  __ZEUS_BASE_PATH__?: string
+  zeusDesktop?: Window['zeusDesktop']
 }
 
 const mutableWindow = () => window as unknown as MutableWindow
@@ -42,11 +42,11 @@ const minted = (fetchMock: ReturnType<typeof serveTickets>) =>
 
 afterEach(() => {
   const win = mutableWindow()
-  delete win.__HERMES_AUTH_REQUIRED__
-  delete win.__HERMES_BASE_PATH__
+  delete win.__ZEUS_AUTH_REQUIRED__
+  delete win.__ZEUS_BASE_PATH__
   clearWebappSession()
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   setApiRequestConnection(null)
   setApiRequestProfile(null)
   vi.unstubAllGlobals()
@@ -56,22 +56,22 @@ afterEach(() => {
 describe('browser-hosted Desktop voice streams', () => {
   it('speaks on a ticket minted for the speech stream, never the gateway ticket', async () => {
     const win = mutableWindow()
-    win.__HERMES_AUTH_REQUIRED__ = true
-    win.__HERMES_BASE_PATH__ = '/hermes'
+    win.__ZEUS_AUTH_REQUIRED__ = true
+    win.__ZEUS_BASE_PATH__ = '/zeus'
     const fetchMock = serveTickets()
     expect(installBrowserDesktopBridge()).toBe(true)
     setApiRequestProfile('worker-a')
 
     const url = new URL((await resolveSpeakStreamUrl())!)
 
-    expect(url.pathname).toBe('/hermes/api/audio/speak-stream')
+    expect(url.pathname).toBe('/zeus/api/audio/speak-stream')
     expect(url.searchParams.get('ticket')).toBe('speak-stream-ticket')
     expect(url.searchParams.get('profile')).toBe('worker-a')
     expect(url.searchParams.has('token')).toBe(false)
 
     const [mint, ...others] = minted(fetchMock)
     expect(others).toEqual([])
-    expect(mint.url.pathname).toBe('/hermes/api/webapp/socket-ticket')
+    expect(mint.url.pathname).toBe('/zeus/api/webapp/socket-ticket')
     expect(mint.url.searchParams.get('socket')).toBe('speak-stream')
     expect(mint.init?.method).toBe('POST')
     expect(mint.init?.credentials).toBe('same-origin')
@@ -93,16 +93,16 @@ describe('browser-hosted Desktop voice streams', () => {
     expect(others).toEqual([])
     expect(mint.url.pathname).toBe('/api/webapp/socket-ticket')
     expect(mint.url.searchParams.get('socket')).toBe('transcribe-stream')
-    expect(new Headers(mint.init?.headers).get('X-Hermes-Session-Token')).toBe('served-token')
+    expect(new Headers(mint.init?.headers).get('X-Zeus-Session-Token')).toBe('served-token')
   })
 
   it('leaves the gateway socket on its own ticket', async () => {
     const win = mutableWindow()
-    win.__HERMES_AUTH_REQUIRED__ = true
+    win.__ZEUS_AUTH_REQUIRED__ = true
     const fetchMock = serveTickets()
     expect(installBrowserDesktopBridge()).toBe(true)
 
-    const result = await win.hermesDesktop!.getGatewayWsUrl()
+    const result = await win.zeusDesktop!.getGatewayWsUrl()
     const url = new URL(typeof result === 'string' ? result : result.ok ? result.wsUrl : '')
 
     expect(url.pathname).toBe('/api/ws')

@@ -9,13 +9,13 @@ import pytest
 from gateway.config import GatewayConfig
 from gateway.session import SessionStore
 from gateway.session_authority import initialize_session_authority
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 from tests.gateway.test_api_unknown_resolution import _AUTH_HEADERS, _adapter, _runs_client
 
 
 @pytest.mark.asyncio
 async def test_locked_admission_write_is_503_and_exact_retry_runs(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     store = SessionStore(tmp_path / "sessions", GatewayConfig())
     db = SessionDB(tmp_path / "state.db")
     executed = []

@@ -20,7 +20,7 @@ def test_shell_exec_runs_in_the_session_cwd_behind_the_safety_gates(tmp_path):
     home.mkdir()
     user.mkdir()
     env = child_env()
-    env.update(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home),
+    env.update(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home),
                PYTHONPATH=str(root), PYTHONUNBUFFERED='1')
     result = subprocess.run([sys.executable, str(root / 'tests/gateway/fixtures/shell_exec_peer.py')],
                             cwd=root, env=env, capture_output=True, text=True, timeout=90, check=False)
@@ -46,8 +46,8 @@ async def test_shell_exec_refusal_names_a_sandboxed_terminal_backend(tmp_path, m
     from gateway import session_local, session_policy
     from gateway.session_authority import LiveSession, SessionAuthority
     from gateway.session_controls import AuthorityConnection
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch
 
     work = tmp_path / 'work'
     work.mkdir()

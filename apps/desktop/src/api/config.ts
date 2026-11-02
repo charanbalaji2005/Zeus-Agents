@@ -5,17 +5,17 @@ import type {
   CustomEndpointUpdate,
   CustomEndpointValidationResponse,
   EnvVarInfo,
-  HermesConfig,
-  HermesConfigRecord,
+  ZeusConfig,
+  ZeusConfigRecord,
   LogsResponse,
   OAuthPollResponse,
   OAuthProvidersResponse,
   OAuthStartResponse,
   OAuthSubmitResponse,
   StatusResponse
-} from '@/types/hermes'
+} from '@/types/zeus'
 
-import { capabilityScoped, hermesApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, zeusApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 type ConfigReadOrigin = { connectionId?: string; priority?: 'foreground'; profile?: string }
 
@@ -86,7 +86,7 @@ export function resolveConfigWriteScope(
 }
 
 export function getStatus(): Promise<StatusResponse> {
-  return hermesApi<StatusResponse>({
+  return zeusApi<StatusResponse>({
     ...profileScoped(),
     path: '/api/status'
   })
@@ -123,14 +123,14 @@ export function getLogs(params: {
 
   const suffix = query.toString()
 
-  return hermesApi<LogsResponse>({
+  return zeusApi<LogsResponse>({
     ...profileScoped(),
     path: suffix ? `/api/logs?${suffix}` : '/api/logs'
   })
 }
 
-export function getHermesConfig(profile?: string): Promise<HermesConfig> {
-  return hermesApi<HermesConfig>({
+export function getZeusConfig(profile?: string): Promise<ZeusConfig> {
+  return zeusApi<ZeusConfig>({
     ...profileScoped(profile),
     path: '/api/config',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
@@ -142,10 +142,10 @@ export function getHermesConfig(profile?: string): Promise<HermesConfig> {
 async function fetchBoundConfigRecord(
   profile: ProfileScope,
   request: { path: string; timeoutMs?: number }
-): Promise<HermesConfigRecord> {
+): Promise<ZeusConfigRecord> {
   const origin = capabilityScoped(profile ?? undefined)
 
-  const record = await window.hermesDesktop.api<HermesConfigRecord>({ ...origin, ...request })
+  const record = await window.zeusDesktop.api<ZeusConfigRecord>({ ...origin, ...request })
 
   if (record && typeof record === 'object') {
     bindConfigReadOrigin(record, origin)
@@ -154,35 +154,35 @@ async function fetchBoundConfigRecord(
   return record
 }
 
-export function getHermesConfigRecord(
+export function getZeusConfigRecord(
   profile?: ProfileScope,
   { includeDefaults = true }: { includeDefaults?: boolean } = {}
-): Promise<HermesConfigRecord> {
+): Promise<ZeusConfigRecord> {
   return fetchBoundConfigRecord(profile, {
     path: includeDefaults ? '/api/config' : '/api/config?include_defaults=false'
   })
 }
 
-export function getHermesConfigDefaults(): Promise<HermesConfigRecord> {
+export function getZeusConfigDefaults(): Promise<ZeusConfigRecord> {
   return fetchBoundConfigRecord(undefined, {
     path: '/api/config/defaults',
     timeoutMs: STARTUP_REQUEST_TIMEOUT_MS
   })
 }
 
-export function getHermesConfigSchema(profile?: null | string): Promise<ConfigSchemaResponse> {
-  return hermesApi<ConfigSchemaResponse>({
+export function getZeusConfigSchema(profile?: null | string): Promise<ConfigSchemaResponse> {
+  return zeusApi<ConfigSchemaResponse>({
     ...profileScoped(profile),
     path: '/api/config/schema'
   })
 }
 
-export function saveHermesConfig(
-  config: HermesConfigRecord,
+export function saveZeusConfig(
+  config: ZeusConfigRecord,
   profile?: ProfileScope,
   { preserveLanguage = false }: { preserveLanguage?: boolean } = {}
 ): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return window.zeusDesktop.api<{ ok: boolean }>({
     ...resolveConfigWriteScope(config, profile),
     path: preserveLanguage ? '/api/config?preserve_language=true' : '/api/config',
     method: 'PUT',
@@ -190,11 +190,11 @@ export function saveHermesConfig(
   })
 }
 
-/** Capability-scoped counterpart of saveHermesConfig — writes the config of
+/** Capability-scoped counterpart of saveZeusConfig — writes the config of
  *  the profile/connection the Capabilities scope selector points at (possibly
- *  on another registered gateway), mirroring getHermesConfigRecord. */
-export function saveHermesConfigRecord(config: HermesConfigRecord, profile?: ProfileScope): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+ *  on another registered gateway), mirroring getZeusConfigRecord. */
+export function saveZeusConfigRecord(config: ZeusConfigRecord, profile?: ProfileScope): Promise<{ ok: boolean }> {
+  return window.zeusDesktop.api<{ ok: boolean }>({
     ...resolveConfigWriteScope(config, profile),
     path: '/api/config',
     method: 'PUT',
@@ -203,7 +203,7 @@ export function saveHermesConfigRecord(config: HermesConfigRecord, profile?: Pro
 }
 
 export function getEnvVars(profile?: null | string): Promise<Record<string, EnvVarInfo>> {
-  return hermesApi<Record<string, EnvVarInfo>>({
+  return zeusApi<Record<string, EnvVarInfo>>({
     ...profileScoped(profile),
     path: '/api/env'
   })
@@ -217,7 +217,7 @@ export function setEnvVar(
   profile?: ProfileScope,
   { providerSetup = false }: { providerSetup?: boolean } = {}
 ): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return window.zeusDesktop.api<{ ok: boolean }>({
     ...capabilityScoped(profile),
     path: '/api/env',
     method: 'PUT',
@@ -226,7 +226,7 @@ export function setEnvVar(
 }
 
 export function deleteEnvVar(key: string, profile?: ProfileScope): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return window.zeusDesktop.api<{ ok: boolean }>({
     ...capabilityScoped(profile),
     path: '/api/env',
     method: 'DELETE',
@@ -235,7 +235,7 @@ export function deleteEnvVar(key: string, profile?: ProfileScope): Promise<{ ok:
 }
 
 export function revealEnvVar(key: string, profile?: ProfileScope): Promise<{ key: string; value: string }> {
-  return window.hermesDesktop.api<{ key: string; value: string }>({
+  return window.zeusDesktop.api<{ key: string; value: string }>({
     ...capabilityScoped(profile),
     path: '/api/env/reveal',
     method: 'POST',
@@ -249,7 +249,7 @@ export function validateProviderCredential(
   apiKey?: string,
   profile?: ProfileScope
 ): Promise<{ ok: boolean; reachable: boolean; message: string; models?: string[]; resolved_base_url?: string }> {
-  return window.hermesDesktop.api<{
+  return window.zeusDesktop.api<{
     ok: boolean
     reachable: boolean
     message: string
@@ -264,7 +264,7 @@ export function validateProviderCredential(
 }
 
 export function getCustomEndpoints(profile?: null | string): Promise<CustomEndpointsResponse> {
-  return hermesApi<CustomEndpointsResponse>({
+  return zeusApi<CustomEndpointsResponse>({
     ...profileScoped(profile),
     path: '/api/providers/custom-endpoints'
   })
@@ -274,7 +274,7 @@ export function saveCustomEndpoint(
   endpoint: CustomEndpointUpdate,
   profile?: null | string
 ): Promise<CustomEndpointsResponse> {
-  return hermesApi<CustomEndpointsResponse>({
+  return zeusApi<CustomEndpointsResponse>({
     ...profileScoped(profile),
     path: '/api/providers/custom-endpoints',
     method: 'POST',
@@ -286,7 +286,7 @@ export function validateCustomEndpoint(
   endpoint: CustomEndpointUpdate,
   profile?: null | string
 ): Promise<CustomEndpointValidationResponse> {
-  return hermesApi<CustomEndpointValidationResponse>({
+  return zeusApi<CustomEndpointValidationResponse>({
     ...profileScoped(profile),
     path: '/api/providers/custom-endpoints/validate',
     method: 'POST',
@@ -298,7 +298,7 @@ export function activateCustomEndpoint(
   id: string,
   profile?: null | string
 ): Promise<{ ok: boolean; provider: string; model: string }> {
-  return hermesApi<{ ok: boolean; provider: string; model: string }>({
+  return zeusApi<{ ok: boolean; provider: string; model: string }>({
     ...profileScoped(profile),
     path: `/api/providers/custom-endpoints/${encodeURIComponent(id)}/activate`,
     method: 'POST'
@@ -306,7 +306,7 @@ export function activateCustomEndpoint(
 }
 
 export function deleteCustomEndpoint(id: string, profile?: null | string): Promise<CustomEndpointsResponse> {
-  return hermesApi<CustomEndpointsResponse>({
+  return zeusApi<CustomEndpointsResponse>({
     ...profileScoped(profile),
     path: `/api/providers/custom-endpoints/${encodeURIComponent(id)}`,
     method: 'DELETE'
@@ -314,7 +314,7 @@ export function deleteCustomEndpoint(id: string, profile?: null | string): Promi
 }
 
 export function listOAuthProviders(profile?: ProfileScope): Promise<OAuthProvidersResponse> {
-  return window.hermesDesktop.api<OAuthProvidersResponse>({
+  return window.zeusDesktop.api<OAuthProvidersResponse>({
     ...capabilityScoped(profile),
     path: '/api/providers/oauth'
   })
@@ -324,7 +324,7 @@ export function disconnectOAuthProvider(
   providerId: string,
   profile?: null | string
 ): Promise<{ ok: boolean; provider: string }> {
-  return hermesApi<{ ok: boolean; provider: string }>({
+  return zeusApi<{ ok: boolean; provider: string }>({
     ...profileScoped(profile),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}`,
     method: 'DELETE'
@@ -332,7 +332,7 @@ export function disconnectOAuthProvider(
 }
 
 export function startOAuthLogin(providerId: string, profile?: ProfileScope): Promise<OAuthStartResponse> {
-  return window.hermesDesktop.api<OAuthStartResponse>({
+  return window.zeusDesktop.api<OAuthStartResponse>({
     ...capabilityScoped(profile),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/start`,
     method: 'POST',
@@ -346,7 +346,7 @@ export function submitOAuthCode(
   code: string,
   profile?: ProfileScope
 ): Promise<OAuthSubmitResponse> {
-  return window.hermesDesktop.api<OAuthSubmitResponse>({
+  return window.zeusDesktop.api<OAuthSubmitResponse>({
     ...capabilityScoped(profile),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/submit`,
     method: 'POST',
@@ -369,7 +369,7 @@ export function pollOAuthSession(
 ): Promise<OAuthPollResponse> {
   const query = waitSeconds > 0 ? `?wait=${waitSeconds}` : ''
 
-  return window.hermesDesktop.api<OAuthPollResponse>({
+  return window.zeusDesktop.api<OAuthPollResponse>({
     ...capabilityScoped(profile),
     path: `/api/providers/oauth/${encodeURIComponent(providerId)}/poll/${encodeURIComponent(sessionId)}${query}`,
     ...(waitSeconds > 0 ? { timeoutMs: OAUTH_LONG_POLL_TIMEOUT_MS } : {})
@@ -381,7 +381,7 @@ export function pollOAuthSession(
 export function getNousHandoffStatus(since: null | string, profile?: ProfileScope): Promise<AppHandoffStatus> {
   const query = new URLSearchParams({ wait: String(OAUTH_LONG_POLL_SECONDS), ...(since ? { since } : {}) })
 
-  return window.hermesDesktop.api<AppHandoffStatus>({
+  return window.zeusDesktop.api<AppHandoffStatus>({
     ...capabilityScoped(profile),
     path: `/api/providers/oauth/nous/handoff?${query}`,
     timeoutMs: OAUTH_LONG_POLL_TIMEOUT_MS
@@ -389,7 +389,7 @@ export function getNousHandoffStatus(since: null | string, profile?: ProfileScop
 }
 
 export function cancelOAuthSession(sessionId: string, profile?: ProfileScope): Promise<{ ok: boolean }> {
-  return window.hermesDesktop.api<{ ok: boolean }>({
+  return window.zeusDesktop.api<{ ok: boolean }>({
     ...capabilityScoped(profile),
     path: `/api/providers/oauth/sessions/${encodeURIComponent(sessionId)}`,
     method: 'DELETE'

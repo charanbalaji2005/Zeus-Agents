@@ -8,7 +8,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any
 
-from hermes_constants import get_hermes_home
+from zeus_constants import get_zeus_home
 
 
 _DISK_DEGRADED_PERCENT = 90.0
@@ -20,13 +20,13 @@ def _check(status: str, detail: str | None = None, **extra: Any) -> dict[str, An
 
 
 def _probe_state_db(home: Path) -> dict[str, Any]:
-    """Read-only schema probe plus the process-wide corruption latch (``hermes_state_health``).
+    """Read-only schema probe plus the process-wide corruption latch (``zeus_state_health``).
 
     The schema read only catches an unreadable header or schema; damage deeper in the file
     surfaces when a reader or writer touches it, and those publish into the latch. Reporting
     the latch here is what makes readiness and ``/api/status`` agree with the session list
     (#72046). ``detail="corrupt"`` is the one reason string consumers key off."""
-    from hermes_state_health import STORAGE_CORRUPT, note_storage_error, storage_state
+    from zeus_state_health import STORAGE_CORRUPT, note_storage_error, storage_state
 
     path = home / "state.db"
     if not path.exists():
@@ -49,7 +49,7 @@ def _probe_state_db(home: Path) -> dict[str, Any]:
 
 
 def _probe_config(home: Path) -> dict[str, Any]:
-    from hermes_cli.config_backend import ConfigBackendUnavailable, config_exists, read_config_doc_readonly
+    from zeus_cli.config_backend import ConfigBackendUnavailable, config_exists, read_config_doc_readonly
     path = home / "config.yaml"
     try:
         if not config_exists(path):
@@ -103,7 +103,7 @@ def collect_runtime_readiness(
 ) -> dict[str, Any]:
     """Bounded readiness diagnostics, no runtime mutation.  Even authenticated, probes
     expose status and counts only: never config values, credentials, paths, payloads."""
-    home = get_hermes_home()
+    home = get_zeus_home()
     runtime = runtime_status if isinstance(runtime_status, dict) else {}
     state_db_probe = _probe_state_db(home)
     checks = {

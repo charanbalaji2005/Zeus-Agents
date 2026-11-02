@@ -7,7 +7,7 @@ import { MessageChannel, MessagePort } from 'node:worker_threads'
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const source = readFileSync('../../hermes_cli/webapp_previews.py', 'utf8')
+const source = readFileSync('../../zeus_cli/webapp_previews.py', 'utf8')
 const html = source.match(/PREVIEW_HTML = """([\s\S]*?)"""/)![1]
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
 
@@ -44,7 +44,7 @@ function shell(direction: 'down' | 'up') {
     document: { createElement: () => frame },
     parent,
     window: {},
-    location: { href: 'https://hermes.test/assets/webapp-guest.html' },
+    location: { href: 'https://zeus.test/assets/webapp-guest.html' },
     addEventListener: (_type: string, listener: typeof receive) => {
       receive = listener
     },
@@ -68,7 +68,7 @@ function shell(direction: 'down' | 'up') {
     send: (data: unknown, transferredPorts: MessagePort[] = []) =>
       receive({
         data,
-        origin: direction === 'down' ? 'https://hermes.test' : 'null',
+        origin: direction === 'down' ? 'https://zeus.test' : 'null',
         ports: transferredPorts,
         source: direction === 'down' ? parent : guest
       })

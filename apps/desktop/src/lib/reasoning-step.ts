@@ -1,4 +1,4 @@
-import { DEFAULT_REASONING_EFFORT, isReasoningEffort } from '@hermes/shared'
+import { DEFAULT_REASONING_EFFORT, isReasoningEffort } from '@zeus/shared'
 
 import { translateNow } from '@/i18n/runtime'
 import { normalize } from '@/lib/text'

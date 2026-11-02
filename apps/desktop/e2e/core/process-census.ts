@@ -2,13 +2,13 @@
  * Process census for the core lane, per platform.
  *
  * Linux reads /proc: a process belongs to a sandbox when its environment names the sandbox
- * HERMES_HOME (orphans reparented to init included). Other platforms have no readable foreign
+ * ZEUS_HOME (orphans reparented to init included). Other platforms have no readable foreign
  * environment, so membership is the process tree rooted at every gateway pid a sandbox
  * `gateway.lock` has ever recorded (remembered per sandbox, so the census still sees a stopped
  * gateway's orphans after its lock is gone). Windows keeps a dead parent's id in
  * ParentProcessId, so the tree walk still reaches orphans there.
  *
- * `HERMES_E2E_PROC_CENSUS=ps` forces the tree census on Linux (how the non-/proc path is tested).
+ * `ZEUS_E2E_PROC_CENSUS=ps` forces the tree census on Linux (how the non-/proc path is tested).
  */
 
 import { spawnSync } from 'node:child_process'
@@ -21,7 +21,7 @@ export interface ProcInfo {
   cmdline: string
 }
 
-export const procfsCensus = process.env.HERMES_E2E_PROC_CENSUS !== 'ps' && fs.existsSync('/proc/self/environ')
+export const procfsCensus = process.env.ZEUS_E2E_PROC_CENSUS !== 'ps' && fs.existsSync('/proc/self/environ')
 
 export function readProc(pid: number): null | { environ: string; cmdline: string; ppid: number } {
   try {
@@ -74,9 +74,9 @@ export function listProcesses(): ProcInfo[] {
 const recordedRoots = new Map<string, Set<number>>()
 
 /** Gateway pids recorded in the sandbox's `gateway.lock` files (launch home + each profile home). */
-function lockedGatewayPids(hermesHome: string): number[] {
-  const profilesDir = path.join(hermesHome, 'profiles')
-  const homes = [hermesHome, ...(fs.existsSync(profilesDir) ? fs.readdirSync(profilesDir).map(name => path.join(profilesDir, name)) : [])]
+function lockedGatewayPids(zeusHome: string): number[] {
+  const profilesDir = path.join(zeusHome, 'profiles')
+  const homes = [zeusHome, ...(fs.existsSync(profilesDir) ? fs.readdirSync(profilesDir).map(name => path.join(profilesDir, name)) : [])]
 
   return homes.flatMap(home => {
     try {
@@ -89,10 +89,10 @@ function lockedGatewayPids(hermesHome: string): number[] {
   })
 }
 
-/** Every live process belonging to the sandbox whose HERMES_HOME is `hermesHome` (orphans included). */
-export function sandboxProcessesOf(hermesHome: string, exclude = process.pid): ProcInfo[] {
+/** Every live process belonging to the sandbox whose ZEUS_HOME is `zeusHome` (orphans included). */
+export function sandboxProcessesOf(zeusHome: string, exclude = process.pid): ProcInfo[] {
   if (procfsCensus) {
-    const needle = `HERMES_HOME=${hermesHome}\0`
+    const needle = `ZEUS_HOME=${zeusHome}\0`
 
     return fs.readdirSync('/proc').flatMap(entry => {
       const pid = Number(entry)
@@ -103,12 +103,12 @@ export function sandboxProcessesOf(hermesHome: string, exclude = process.pid): P
     })
   }
 
-  const roots = recordedRoots.get(hermesHome) ?? new Set<number>()
-  recordedRoots.set(hermesHome, roots)
+  const roots = recordedRoots.get(zeusHome) ?? new Set<number>()
+  recordedRoots.set(zeusHome, roots)
   const all = listProcesses()
   const live = new Set(all.map(proc => proc.pid))
 
-  for (const pid of lockedGatewayPids(hermesHome)) {
+  for (const pid of lockedGatewayPids(zeusHome)) {
     if (live.has(pid)) {
       roots.add(pid)
     }
@@ -135,7 +135,7 @@ export function sandboxProcessesOf(hermesHome: string, exclude = process.pid): P
 /**
  * Every live process whose executable lives under `dir` (Linux /proc only).
  *
- * The HERMES_HOME census cannot see Electron 44+ processes: Chromium's process-title
+ * The ZEUS_HOME census cannot see Electron 44+ processes: Chromium's process-title
  * rewrite zeroes the browser's and every child's /proc/<pid>/environ right after start
  * (Electron 40 kept it readable). A packaged app's install directory names its processes
  * just as precisely, whatever their environment shows.
@@ -159,8 +159,8 @@ export function processesRunningFrom(dir: string): ProcInfo[] {
 }
 
 /** True while `pid` is still a live member of the sandbox (a recycled pid never matches). */
-export function isSandboxProcess(pid: number, hermesHome: string): boolean {
-  return sandboxProcessesOf(hermesHome).some(proc => proc.pid === pid)
+export function isSandboxProcess(pid: number, zeusHome: string): boolean {
+  return sandboxProcessesOf(zeusHome).some(proc => proc.pid === pid)
 }
 
 /** Every live process whose command line carries `tag`. */

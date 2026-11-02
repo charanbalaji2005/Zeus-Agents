@@ -59,7 +59,7 @@ describe('approval mode statusbar item', () => {
   it('syncs once the gateway opens instead of sitting on the pre-sync default', async () => {
     // Boot order: the shell (and this chip) mount while the socket is still
     // connecting, so the sync must wait for 'open' — and then actually run.
-    // A sync attempted while connecting rejects ("Hermes gateway
+    // A sync attempted while connecting rejects ("Zeus gateway
     // unavailable") and, swallowed, would leave the chip on its optimistic
     // 'smart' default for the whole session even though the configured mode
     // is 'off'.

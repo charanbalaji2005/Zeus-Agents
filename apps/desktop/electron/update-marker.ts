@@ -1,7 +1,7 @@
 /**
- * The update marker `HERMES_HOME/.hermes-update-in-progress` (#50238), format v2.
+ * The update marker `ZEUS_HOME/.zeus-update-in-progress` (#50238), format v2.
  *
- * One file, shared by every updater (Python `hermes_cli/update_lock.py`, the Rust
+ * One file, shared by every updater (Python `zeus_cli/update_lock.py`, the Rust
  * `UpdateMarkerGuard`, `scripts/desktop-update/{windows.ps1,posix.sh}`) and this
  * Desktop. While it names a LIVE owner, a Desktop reopened mid-update must not
  * spawn a backend on the runtime being replaced, and no second update may start.
@@ -63,8 +63,8 @@ export const EMPTY_MARKER_GRACE_MS = 5_000
 /** .NET ticks (100 ns since 0001-01-01) at the unix epoch. */
 const DOTNET_UNIX_EPOCH_TICKS = 621_355_968_000_000_000
 
-export function markerPath(hermesHome: string) {
-  return path.join(hermesHome, '.hermes-update-in-progress')
+export function markerPath(zeusHome: string) {
+  return path.join(zeusHome, '.zeus-update-in-progress')
 }
 
 // True only if a host process with this pid is currently alive. Signal 0 does
@@ -434,8 +434,8 @@ export type MarkerInspection =
   | { state: 'dead'; raw: Buffer; marker: UpdateMarker | null; judgement: MarkerJudgement | null }
 
 /** Read and judge the marker. Never touches it. */
-export async function inspectUpdateMarker(hermesHome: string, deps: MarkerProbeDeps = {}): Promise<MarkerInspection> {
-  const file = markerPath(hermesHome)
+export async function inspectUpdateMarker(zeusHome: string, deps: MarkerProbeDeps = {}): Promise<MarkerInspection> {
+  const file = markerPath(zeusHome)
   const now = deps.now || Date.now
   let raw: Buffer
 
@@ -481,8 +481,8 @@ export async function inspectUpdateMarker(hermesHome: string, deps: MarkerProbeD
  * null. Read-only (A7 rule 3): a dead marker is left for the script helper /
  * the next claimant to reclaim under the lock.
  */
-export async function readLiveUpdateMarker(hermesHome: string, deps: MarkerProbeDeps = {}) {
-  const inspection = await inspectUpdateMarker(hermesHome, deps)
+export async function readLiveUpdateMarker(zeusHome: string, deps: MarkerProbeDeps = {}) {
+  const inspection = await inspectUpdateMarker(zeusHome, deps)
 
   if (inspection.state !== 'live') {
     return null
@@ -522,16 +522,16 @@ export interface ClaimResult {
 }
 
 /**
- * Pre-write for the staged Tauri updater (`hermes-setup.exe --update`): the
+ * Pre-write for the staged Tauri updater (`zeus-setup.exe --update`): the
  * child IS the updater there, so the marker names its pid AND its creation
  * time. A v2 body takes this path off the v1 20-minute ceiling, lets the
- * updater adopt it as its own claim, and lets the `hermes update` it runs add
+ * updater adopt it as its own claim, and lets the `zeus update` it runs add
  * its delegate line. Exclusive create ONLY (A7 rule 3): over any existing
  * marker — live or dead — the pre-write is skipped and the staged updater
  * claims (and reclaims) for itself.
  */
 export async function writeUpdateMarker(
-  hermesHome: string,
+  zeusHome: string,
   pid: number,
   { startedAt, ...deps }: MarkerProbeDeps & { startedAt?: number } = {}
 ): Promise<ClaimResult> {
@@ -542,7 +542,7 @@ export async function writeUpdateMarker(
 
   const ct = await (deps.createTime || processCreateTime)(pid)
 
-  return createMarkerExclusive(hermesHome, markerBody(pid, acquiredAt, ct), deps)
+  return createMarkerExclusive(zeusHome, markerBody(pid, acquiredAt, ct), deps)
 }
 
 /** Log line for a staged-updater pre-write that was skipped (exclusive create lost). */
@@ -558,20 +558,20 @@ export function describeSkippedPrewrite(result: ClaimResult): string {
   return result.error || 'unknown error'
 }
 
-const TMP_SIBLING_RE = /^\.hermes-update-in-progress\.(\d+)(?:\.\d+)?\.tmp$/
+const TMP_SIBLING_RE = /^\.zeus-update-in-progress\.(\d+)(?:\.\d+)?\.tmp$/
 let tmpSequence = 0
 
 /**
  * Drop OUR publish tmp siblings (`<marker>.<pid>.<seq>.tmp`) whose writer died
  * between write and link. Never the marker itself.
  */
-function reclaimDeadTmpSiblings(hermesHome: string) {
+function reclaimDeadTmpSiblings(zeusHome: string) {
   try {
-    for (const name of fs.readdirSync(hermesHome)) {
+    for (const name of fs.readdirSync(zeusHome)) {
       const pid = Number(TMP_SIBLING_RE.exec(name)?.[1])
 
       if (pid && !isPidAlive(pid)) {
-        fs.rmSync(path.join(hermesHome, name), { force: true })
+        fs.rmSync(path.join(zeusHome, name), { force: true })
       }
     }
   } catch {
@@ -644,10 +644,10 @@ function publishExclusive(file: string, body: string): 'published' | 'exists' {
  * read-only and reported: a live owner blocks, a dead one / our own stale
  * bridge is handed back for the caller to route through the script helper.
  */
-async function createMarkerExclusive(hermesHome: string, body: string, deps: MarkerProbeDeps): Promise<ClaimResult> {
-  const file = markerPath(hermesHome)
+async function createMarkerExclusive(zeusHome: string, body: string, deps: MarkerProbeDeps): Promise<ClaimResult> {
+  const file = markerPath(zeusHome)
 
-  reclaimDeadTmpSiblings(hermesHome)
+  reclaimDeadTmpSiblings(zeusHome)
 
   try {
     if (publishExclusive(file, body) === 'published') {
@@ -657,7 +657,7 @@ async function createMarkerExclusive(hermesHome: string, body: string, deps: Mar
     return { ok: false, owner: null, error: error?.message || String(error) }
   }
 
-  const inspection = await inspectUpdateMarker(hermesHome, deps)
+  const inspection = await inspectUpdateMarker(zeusHome, deps)
 
   if (inspection.state === 'live') {
     return { ok: false, owner: { pid: inspection.livePid, ageMs: inspection.ageMs } }
@@ -717,7 +717,7 @@ export interface BridgeClaimResult {
  * the checkout's script helper.
  */
 export async function claimBridgeMarker(
-  hermesHome: string,
+  zeusHome: string,
   {
     pid = process.pid,
     createTime,
@@ -735,8 +735,8 @@ export async function claimBridgeMarker(
 
   const body = markerBody(pid, acquiredAt, ct, runId)
 
-  fs.mkdirSync(hermesHome, { recursive: true })
-  const result = await createMarkerExclusive(hermesHome, body, { ...deps, createTime, ownPid: deps.ownPid ?? pid })
+  fs.mkdirSync(zeusHome, { recursive: true })
+  const result = await createMarkerExclusive(zeusHome, body, { ...deps, createTime, ownPid: deps.ownPid ?? pid })
 
   if (result.ok || !result.owner) {
     return { ok: result.ok, body: result.body, existing: result.existing, error: result.error }
@@ -748,7 +748,7 @@ export async function claimBridgeMarker(
 export interface HandoffClaimOptions extends MarkerProbeDeps {
   /** Protocol 2: the run id passed to the script; the claim must carry it. */
   runId?: string
-  /** Legacy scripts: the HERMES_UPDATE_STARTED_AT they echo on line 2. */
+  /** Legacy scripts: the ZEUS_UPDATE_STARTED_AT they echo on line 2. */
   startedAt?: number
   timeoutMs?: number
   pollMs?: number
@@ -791,7 +791,7 @@ export async function handoffTakenBy(
  * running update.
  */
 export async function waitForHandoffClaim(
-  hermesHome: string,
+  zeusHome: string,
   desktopPid: number,
   {
     timeoutMs = HANDOFF_CLAIM_TIMEOUT_MS,
@@ -810,7 +810,7 @@ export async function waitForHandoffClaim(
     let text: string | null = null
 
     try {
-      text = fs.readFileSync(markerPath(hermesHome), 'utf8')
+      text = fs.readFileSync(markerPath(zeusHome), 'utf8')
     } catch {
       text = null
     }
@@ -833,8 +833,8 @@ export async function waitForHandoffClaim(
  * Whether a NEW updater hand-off must be refused because a different, live
  * updater owns the marker (#75778). Null when it is safe to spawn. Read-only.
  */
-export async function updateHandoffConflict(hermesHome: string, deps: MarkerProbeDeps = {}) {
-  const owner = await readLiveUpdateMarker(hermesHome, deps)
+export async function updateHandoffConflict(zeusHome: string, deps: MarkerProbeDeps = {}) {
+  const owner = await readLiveUpdateMarker(zeusHome, deps)
 
   return owner ? { pid: owner.pid, ageMs: owner.ageMs, message: conflictMessage(owner) } : null
 }

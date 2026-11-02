@@ -7,7 +7,7 @@ import type { SubmissionDestination } from './submission-destination'
 afterEach(() => { vi.unstubAllGlobals(); localStorage.clear() })
 
 test('image recovery never offers expanded slash intent as an ordinary draft and leaves its exact journal intact', async () => {
-  vi.stubGlobal('hermesDesktop', undefined)
+  vi.stubGlobal('zeusDesktop', undefined)
   const destination = { scopeKey: 'local::default' } as SubmissionDestination
   const attachments: PreparedSubmission['attachments'] = [{ id: '/cache/a.png', occurrenceId: 'image-occurrence', kind: 'image', label: 'a.png' }]
   const ordinary = preparedSubmissionKey('stored', destination, 'caption', attachments)
@@ -25,7 +25,7 @@ test('image recovery never offers expanded slash intent as an ordinary draft and
 })
 
 test('a browser journal read lists the storage keys once, however many stores it reads', async () => {
-  vi.stubGlobal('hermesDesktop', undefined)
+  vi.stubGlobal('zeusDesktop', undefined)
   const owner = { connectionId: 'local', profile: 'default' }
 
   for (const id of ['a', 'b', 'c']) {
@@ -44,7 +44,7 @@ test('native preparation waits for acknowledgement and never downgrades a write 
   const gate = new Promise<void>(resolve => { ack = resolve })
   const entry = { id: 'a', text: 'Ω\n  exact', attachments: [], params: { session_id: 'live' } } as unknown as PreparedSubmission
   const native = { read: vi.fn(async () => JSON.stringify({ key: entry })), update: vi.fn(() => gate) }
-  vi.stubGlobal('hermesDesktop', { preparedSubmissions: native })
+  vi.stubGlobal('zeusDesktop', { preparedSubmissions: native })
   let finished = false
   const writing = writePreparedSubmission('key', entry).then(() => { finished = true })
   await Promise.resolve()
@@ -57,7 +57,7 @@ test('native preparation waits for acknowledgement and never downgrades a write 
   expect(localStorage.length).toBe(0)
   await removePreparedSubmission('key', 'a')
   expect(native.update).toHaveBeenLastCalledWith('key', null)
-  vi.stubGlobal('hermesDesktop', undefined)
+  vi.stubGlobal('zeusDesktop', undefined)
   await writePreparedSubmission('key', entry)
   expect(await readPreparedSubmission('key')).toEqual(entry)
   await removePreparedSubmission('key', 'a')
@@ -75,7 +75,7 @@ test('tabs without Web Locks never share one slash command retry record', async 
   // A plain-HTTP origin other than loopback: no Web Locks and no crypto.randomUUID.
   Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined })
   vi.stubGlobal('crypto', { getRandomValues: crypto.getRandomValues.bind(crypto) })
-  vi.stubGlobal('hermesDesktop', undefined)
+  vi.stubGlobal('zeusDesktop', undefined)
   const destination = { scopeKey: 'webapp::default' } as SubmissionDestination
   // A slash command's intent carries no submission id, so every tab builds the same one.
   const intent = preparedSubmissionKey('stored', destination, '/skill task', [], { retryText: '/skill task' })

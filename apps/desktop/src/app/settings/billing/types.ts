@@ -1,4 +1,4 @@
-import type { PlanUsage } from '@hermes/shared'
+import type { PlanUsage } from '@zeus/shared'
 import type {
   BillingAutoReload,
   BillingCardInfo,
@@ -15,7 +15,7 @@ import type {
   SubscriptionTierOption,
   UsageBarData,
   UsageModelData
-} from '@hermes/shared/billing'
+} from '@zeus/shared/billing'
 
 /**
  * The gateway's `billing.state` payload as THIS app reads it: the shared shape

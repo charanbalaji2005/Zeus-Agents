@@ -16,7 +16,7 @@ import { readSourceUpdate, type SourceUpdate } from './checkout-source'
 
 const execute: typeof execFile.__promisify__ = promisify(execFile)
 const repository: string = path.resolve(import.meta.dirname, '../../../..')
-const python: string = process.env.HERMES_PYTHON || 'python3'
+const python: string = process.env.ZEUS_PYTHON || 'python3'
 
 function buildId(channel: 'stable' | 'canary'): string {
   return (channel === 'stable' ? 'a' : 'b').repeat(32)
@@ -105,25 +105,25 @@ function canonicalJson(value: FixtureManifest): string {
   return JSON.stringify(value)
 }
 
-/** R2 channel record per hermes_cli.release_channels.validate_record. */
+/** R2 channel record per zeus_cli.release_channels.validate_record. */
 function channelRecord(channel: 'stable' | 'canary', sequence: number): FixtureRecord {
   return {
     schema: 1,
     name: channel,
-    repository: 'NousResearch/hermes-agent',
+    repository: 'charanbalaji2005/Zeus-Agents',
     policy: channel === 'stable' ? 'stable-release' : 'canary-release',
     state: 'active',
     revision: 1,
     nextSequence: sequence + 1,
     identity: {
       token: 'b'.repeat(16),
-      displayName: channel === 'stable' ? 'Hermes Stable' : 'Hermes Canary',
-      appNamePascal: 'Hermes',
-      artifactNamePascal: 'Hermes',
-      appId: 'chat.nous.hermes',
-      msixAppIdWithOrg: 'NousResearch.Hermes',
-      cliName: 'hermes',
-      windowsExecutableName: 'hermes'
+      displayName: channel === 'stable' ? 'Zeus Stable' : 'Zeus Canary',
+      appNamePascal: 'Zeus',
+      artifactNamePascal: 'Zeus',
+      appId: 'chat.nous.zeus',
+      msixAppIdWithOrg: 'NousResearch.Zeus',
+      cliName: 'zeus',
+      windowsExecutableName: 'zeus'
     },
     head: {
       buildId: 'a'.repeat(32),
@@ -134,7 +134,7 @@ function channelRecord(channel: 'stable' | 'canary', sequence: number): FixtureR
   }
 }
 
-/** Build manifest per hermes_cli.release_channels.validate_manifest. */
+/** Build manifest per zeus_cli.release_channels.validate_manifest. */
 function buildManifest(
   channel: 'stable' | 'canary',
   sha: string,
@@ -143,13 +143,13 @@ function buildManifest(
 ): FixtureManifest {
   const identity: FixtureIdentity = {
     token: 'b'.repeat(16),
-    displayName: channel === 'stable' ? 'Hermes Stable' : 'Hermes Canary',
-    appNamePascal: 'Hermes',
-    artifactNamePascal: 'Hermes',
-    appId: 'chat.nous.hermes',
-    msixAppIdWithOrg: 'NousResearch.Hermes',
-    cliName: 'hermes',
-    windowsExecutableName: 'hermes'
+    displayName: channel === 'stable' ? 'Zeus Stable' : 'Zeus Canary',
+    appNamePascal: 'Zeus',
+    artifactNamePascal: 'Zeus',
+    appId: 'chat.nous.zeus',
+    msixAppIdWithOrg: 'NousResearch.Zeus',
+    cliName: 'zeus',
+    windowsExecutableName: 'zeus'
   }
 
   const sequence: number = channel === 'stable' ? 1 : 2
@@ -160,7 +160,7 @@ function buildManifest(
       schema: 1,
       buildId: id,
       channel,
-      repository: 'NousResearch/hermes-agent',
+      repository: 'charanbalaji2005/Zeus-Agents',
       commit: sha,
       sourceVersion: tag.replace(/^v/, '').split('+')[0],
       releaseTag: tag,
@@ -176,7 +176,7 @@ function buildManifest(
         platform: 'darwin',
         arch: 'arm64',
         variant: 'bundled',
-        identity: 'chat.nous.hermes',
+        identity: 'chat.nous.zeus',
         version: tag.replace(/^v/, ''),
         teamId: 'TESTTEAM12',
         artifact: {
@@ -258,16 +258,16 @@ it('carries each install channel from Python publication checks into the source 
         })
       )
       responses.set(`/${manifestKey(channel)}`, body)
-      responses.set(`/repos/NousResearch/hermes-agent/releases/tags/${tags[channel]}`, {
+      responses.set(`/repos/charanbalaji2005/Zeus-Agents/releases/tags/${tags[channel]}`, {
         tag_name: tags[channel],
         draft: false,
         prerelease: channel === 'canary'
       })
-      responses.set(`/repos/NousResearch/hermes-agent/commits/${tags[channel]}`, { sha })
+      responses.set(`/repos/charanbalaji2005/Zeus-Agents/commits/${tags[channel]}`, { sha })
     }
 
     // Stable IS the latest published GitHub release; no R2 record is consulted for it.
-    responses.set('/repos/NousResearch/hermes-agent/releases/latest', {
+    responses.set('/repos/charanbalaji2005/Zeus-Agents/releases/latest', {
       tag_name: tags.stable,
       draft: false,
       prerelease: false
@@ -282,12 +282,12 @@ it('carries each install channel from Python publication checks into the source 
     })
     const address: AddressInfo = server.address() as AddressInfo
     // Redirect only network transport. Selection, config, tag validation and Git are real.
-    fs.cpSync(path.join(repository, 'hermes_cli'), path.join(root, 'hermes_cli'), { recursive: true })
+    fs.cpSync(path.join(repository, 'zeus_cli'), path.join(root, 'zeus_cli'), { recursive: true })
     fs.writeFileSync(
       path.join(root, 'transport.py'),
       `import sys, os
 sys.path.append(${JSON.stringify(repository)})
-assert not os.environ.get('HERMES_RUNTIME_DIR')
+assert not os.environ.get('ZEUS_RUNTIME_DIR')
 import urllib.request
 from urllib.parse import urlsplit
 # source_check.py runs this on import, and is imported twice (the CLI entry, then the module
@@ -298,7 +298,7 @@ def install():
     passthrough = original_build().open
     def local(request, *args, **kwargs):
         parsed = urlsplit(request.full_url if isinstance(request, urllib.request.Request) else request)
-        assert parsed.hostname in ('hermes-assets.nousresearch.com', 'api.github.com')
+        assert parsed.hostname in ('zeus-assets.nousresearch.com', 'api.github.com')
         url = 'http://127.0.0.1:${address.port}' + parsed.path + ('?' + parsed.query if parsed.query else '')
         # ChannelReader compares response.geturl() against the ORIGINAL request url:
         # wrap so the redirect detector still sees the un-rewritten authority.
@@ -313,24 +313,24 @@ def install():
         opener.open = local
         return opener
     urllib.request.build_opener = local_build
-if not getattr(urllib.request, '_hermes_loopback', False):
-    urllib.request._hermes_loopback = True
+if not getattr(urllib.request, '_zeus_loopback', False):
+    urllib.request._zeus_loopback = True
     install()
 `
     )
-    vi.stubEnv('HERMES_MANAGED', '')
-    vi.stubEnv('HERMES_RUNTIME_DIR', path.join(temporary, 'wrong-runtime'))
+    vi.stubEnv('ZEUS_MANAGED', '')
+    vi.stubEnv('ZEUS_RUNTIME_DIR', path.join(temporary, 'wrong-runtime'))
     vi.stubEnv('PYTHONPATH', path.join(temporary, 'wrong-checkout'))
     vi.stubEnv('PYTHONHOME', path.join(temporary, 'wrong-python'))
-    vi.stubEnv('HERMES_INSTALL_ROOT', origin)
+    vi.stubEnv('ZEUS_INSTALL_ROOT', origin)
 
     const environment: NodeJS.ProcessEnv = {
       ...process.env,
-      HERMES_HOME: home,
-      HERMES_INSTALL_ROOT: root,
+      ZEUS_HOME: home,
+      ZEUS_INSTALL_ROOT: root,
       PYTHONPATH: repository,
       PYTHONHOME: '',
-      HERMES_RUNTIME_DIR: ''
+      ZEUS_RUNTIME_DIR: ''
     }
 
     async function setChannel(channel: 'stable' | 'canary' | 'main', install: string = root): Promise<void> {
@@ -338,7 +338,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
         python,
         [
           '-c',
-          'import sys; from pathlib import Path; from hermes_cli.update_channel import set_install_channel; set_install_channel(sys.argv[1], Path(sys.argv[2]))',
+          'import sys; from pathlib import Path; from zeus_cli.update_channel import set_install_channel; set_install_channel(sys.argv[1], Path(sys.argv[2]))',
           channel,
           install
         ],
@@ -346,7 +346,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
       )
     }
 
-    const checkerPath: string = path.join(root, 'hermes_cli', 'source_check.py')
+    const checkerPath: string = path.join(root, 'zeus_cli', 'source_check.py')
     fs.writeFileSync(
       checkerPath,
       fs
@@ -358,7 +358,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
     )
 
     const deps: CheckoutStrategyDeps = {
-      hermesHome: home,
+      zeusHome: home,
       isWindows: process.platform === 'win32',
       isMac: process.platform === 'darwin',
       defaultUpdateBranch: 'main',
@@ -370,7 +370,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
           python,
           git: 'git',
           updateRoot: install,
-          hermesHome: home,
+          zeusHome: home,
           force: opts.force
         }),
       resolveUpdaterBinary: (): null => null,
@@ -378,7 +378,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
 
       emitUpdateProgress: vi.fn(),
       rememberLog: vi.fn(),
-      startHermes: async (): Promise<void> => {},
+      startZeus: async (): Promise<void> => {},
 
       stopBackendsForUpdate: vi.fn(async (): Promise<void> => {}),
       repairMacUpdaterHelper: (): void => {},
@@ -395,9 +395,9 @@ if not getattr(urllib.request, '_hermes_loopback', False):
         spawned.push({ command, args, options })
         // C2: a hand-off has started only once the script takes the Desktop's
         // bridge marker in its own (live, foreign) name — do that here. Line 2
-        // echoes HERMES_UPDATE_STARTED_AT as posix.sh does; a fresh clock read
+        // echoes ZEUS_UPDATE_STARTED_AT as posix.sh does; a fresh clock read
         // misses the Desktop's stamp whenever the spawn lands in the next second.
-        fs.writeFileSync(markerPath(home), `${process.ppid}\n${options.env?.HERMES_UPDATE_STARTED_AT}\n`)
+        fs.writeFileSync(markerPath(home), `${process.ppid}\n${options.env?.ZEUS_UPDATE_STARTED_AT}\n`)
 
         return { unref: (): void => {} }
       }
@@ -407,8 +407,8 @@ if not getattr(urllib.request, '_hermes_loopback', False):
     const script: string = path.join(scriptDirectory, process.platform === 'win32' ? 'windows.ps1' : 'posix.sh')
     fs.mkdirSync(scriptDirectory, { recursive: true })
     fs.writeFileSync(path.join(scriptDirectory, 'runtime.ps1'), '')
-    fs.mkdirSync(path.join(root, '.hermes', 'bin'), { recursive: true })
-    fs.writeFileSync(path.join(root, '.hermes', 'bin', 'hermes.exe'), '')
+    fs.mkdirSync(path.join(root, '.zeus', 'bin'), { recursive: true })
+    fs.writeFileSync(path.join(root, '.zeus', 'bin', 'zeus.exe'), '')
 
     for (const channel of ['stable', 'canary'] as const) {
       await setChannel(channel)
@@ -421,9 +421,9 @@ if not getattr(urllib.request, '_hermes_loopback', False):
         updateAvailable: true
       })
       fs.rmSync(scriptDirectory, { recursive: true, force: true })
-      expect(await strategy.apply()).toMatchObject({ manual: true, command: `hermes update --channel ${channel}` })
+      expect(await strategy.apply()).toMatchObject({ manual: true, command: `zeus update --channel ${channel}` })
       deps.resolveUpdaterBinary = (): string => path.join(temporary, 'frozen-updater')
-      expect(await strategy.apply()).toMatchObject({ manual: true, command: `hermes update --channel ${channel}` })
+      expect(await strategy.apply()).toMatchObject({ manual: true, command: `zeus update --channel ${channel}` })
       expect(spawned).toHaveLength(0)
       fs.mkdirSync(scriptDirectory, { recursive: true })
       fs.writeFileSync(script, '')
@@ -437,11 +437,11 @@ if not getattr(urllib.request, '_hermes_loopback', False):
       expect(handoff?.args).not.toContain('--branch')
       expect(handoff?.args).not.toContain('-Branch')
       expect(handoff?.command).not.toBe(deps.resolveUpdaterBinary())
-      expect(handoff?.options.env?.HERMES_HOME).toBe(home)
-      expect(handoff?.options.env?.HERMES_INSTALL_ROOT).toBe(root)
+      expect(handoff?.options.env?.ZEUS_HOME).toBe(home)
+      expect(handoff?.options.env?.ZEUS_INSTALL_ROOT).toBe(root)
       expect(handoff?.options.env?.PYTHONPATH).toBe('')
       expect(handoff?.options.env?.PYTHONHOME).toBe('')
-      expect(handoff?.options.env?.HERMES_RUNTIME_DIR).toBeUndefined()
+      expect(handoff?.options.env?.ZEUS_RUNTIME_DIR).toBeUndefined()
       deps.resolveUpdaterBinary = (): null => null
       expect(git(['rev-parse', 'HEAD'], root)).toBe(commits[3])
       git(['checkout', '--detach', sha], root)
@@ -457,7 +457,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
     expect(deps.stopBackendsForUpdate).not.toHaveBeenCalled()
     expect(spawned).toHaveLength(0)
     await setChannel('main')
-    expect(await readSourceUpdate({ python, git: 'git', updateRoot: root, hermesHome: home })).toMatchObject({
+    expect(await readSourceUpdate({ python, git: 'git', updateRoot: root, zeusHome: home })).toMatchObject({
       supported: true,
       branch: 'feature/gui',
       targetSha: commits[3],
@@ -475,7 +475,7 @@ if not getattr(urllib.request, '_hermes_loopback', False):
     )
     fs.rmSync(markerPath(home), { force: true })
     fs.rmSync(scriptDirectory, { recursive: true, force: true })
-    expect(await strategy.apply()).toMatchObject({ manual: true, command: 'hermes update --branch feature/gui' })
+    expect(await strategy.apply()).toMatchObject({ manual: true, command: 'zeus update --branch feature/gui' })
     // main IS the git branch: re-resolving it reads no channel record and makes no
     // GitHub or artifact request, so a WAF that 403s the record can't stop the update.
     expect(requests.slice(count)).toEqual([])

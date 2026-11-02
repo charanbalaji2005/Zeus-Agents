@@ -21,14 +21,14 @@ export type VersionProbeRunner = (
 ) => Promise<string>
 
 const DEFAULT_CACHE_TTL_MS = 5_000
-// Keyed by installation (root + HERMES_HOME), not launcher: the cache must answer before any
+// Keyed by installation (root + ZEUS_HOME), not launcher: the cache must answer before any
 // launcher discovery, whose historical rung spawns the launcher to prove its identity.
 let cached: { key: string; version: string; expiresAt: number } | null = null
 let inFlight: { key: string; promise: Promise<string> } | null = null
 
 /** Extract the client version printed by the exact local installation launcher. */
 export function parseLocalRuntimeVersion(output: string): string {
-  const match = output.match(/^\s*Hermes Agent\s+([^\s(]+)/m)
+  const match = output.match(/^\s*Zeus Agents\s+([^\s(]+)/m)
 
   return match?.[1]?.replace(/^v/, '') ?? ''
 }
@@ -58,7 +58,7 @@ function runVersionProbe(
  */
 export async function resolveLocalRuntimeVersion(
   root: string,
-  hermesHome: string,
+  zeusHome: string,
   options: {
     isWindows?: boolean
     launcher?: string | null
@@ -67,7 +67,7 @@ export async function resolveLocalRuntimeVersion(
   } = {}
 ): Promise<string> {
   const useCache = options.run === undefined
-  const key = `${root}\0${hermesHome}`
+  const key = `${root}\0${zeusHome}`
 
   if (useCache && cached?.key === key && cached.expiresAt > Date.now()) {
     return cached.version
@@ -77,7 +77,7 @@ export async function resolveLocalRuntimeVersion(
     return inFlight.promise
   }
 
-  const promise = probeLocalRuntimeVersion(root, hermesHome, options)
+  const promise = probeLocalRuntimeVersion(root, zeusHome, options)
 
   if (useCache) {
     inFlight = { key, promise }
@@ -95,7 +95,7 @@ export async function resolveLocalRuntimeVersion(
 
 async function probeLocalRuntimeVersion(
   root: string,
-  hermesHome: string,
+  zeusHome: string,
   options: { isWindows?: boolean; launcher?: string | null; run?: VersionProbeRunner }
 ): Promise<string> {
   const isWindows = options.isWindows ?? process.platform === 'win32'
@@ -103,7 +103,7 @@ async function probeLocalRuntimeVersion(
 
   try {
     launcher = options.launcher === undefined
-      ? await resolveInstallationLauncherAsync(root, isWindows, hermesHome)
+      ? await resolveInstallationLauncherAsync(root, isWindows, zeusHome)
       : options.launcher
   } catch {
     return ''
@@ -118,7 +118,7 @@ async function probeLocalRuntimeVersion(
 
   return (options.run ?? runVersionProbe)(command, ['--version'], {
     cwd: root,
-    env: { ...process.env, ...buildDesktopBackendEnv({ currentEnv: process.env }), HERMES_HOME: hermesHome },
+    env: { ...process.env, ...buildDesktopBackendEnv({ currentEnv: process.env }), ZEUS_HOME: zeusHome },
     timeout: PROBE_TIMEOUT_MS,
     maxBuffer: 64 * 1024,
     shell,
@@ -136,12 +136,12 @@ async function probeLocalRuntimeVersion(
 export async function resolveDesktopClientVersion(
   stamp: Readonly<InstallStamp> | null,
   root: string,
-  hermesHome: string,
+  zeusHome: string,
   packageVersion: string
 ): Promise<string> {
   if (stamp?.payload && stamp.payload !== 'bootstrap') {
     return appVersionInfo(stamp, '', packageVersion).appVersion
   }
 
-  return resolveLocalRuntimeVersion(root, hermesHome)
+  return resolveLocalRuntimeVersion(root, zeusHome)
 }

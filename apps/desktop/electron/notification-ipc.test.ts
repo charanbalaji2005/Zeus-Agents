@@ -3,7 +3,7 @@ import { EventEmitter } from 'node:events'
 import type { BrowserWindow, IpcMainInvokeEvent } from 'electron'
 import { beforeEach, expect, it, vi } from 'vitest'
 
-import type { HermesNotification } from './notification-types'
+import type { ZeusNotification } from './notification-types'
 
 const host = vi.hoisted(() => ({
   handle: vi.fn(),
@@ -55,7 +55,7 @@ it('returns native clicks and approval actions to the emitting window, not the p
 
   const notify = host.handle.mock.calls[0][1] as (
     event: IpcMainInvokeEvent,
-    payload: HermesNotification
+    payload: ZeusNotification
   ) => Promise<boolean>
 
   const payload = {
@@ -74,9 +74,9 @@ it('returns native clicks and approval actions to the emitting window, not the p
   expect(primary.webContents.send).not.toHaveBeenCalled()
   host.shown[0].emit('click')
   expect(focusWindow).toHaveBeenCalledWith(source)
-  expect(source.webContents.send).toHaveBeenCalledWith('hermes:focus-session', payload.focusSessionId)
+  expect(source.webContents.send).toHaveBeenCalledWith('zeus:focus-session', payload.focusSessionId)
   host.shown[0].emit('action', { actionIndex: 1 }, undefined)
-  expect(source.webContents.send).toHaveBeenCalledWith('hermes:notification-action', {
+  expect(source.webContents.send).toHaveBeenCalledWith('zeus:notification-action', {
     sessionId: payload.sessionId,
     actionId: 'reject'
   })
@@ -87,7 +87,7 @@ it('returns native clicks and approval actions to the emitting window, not the p
   host.shown[0].emit('action', { actionIndex: 0 }, undefined)
   expect(primary.webContents.send).not.toHaveBeenCalled()
   host.shown[0].emit('click')
-  expect(primary.webContents.send).toHaveBeenCalledWith('hermes:focus-session', payload.focusSessionId)
+  expect(primary.webContents.send).toHaveBeenCalledWith('zeus:focus-session', payload.focusSessionId)
 })
 
 it('delivers plugin callbacks to their source and falls back only for navigation after it closes', async () => {
@@ -103,7 +103,7 @@ it('delivers plugin callbacks to their source and falls back only for navigation
 
   const notify = host.handle.mock.calls[0][1] as (
     event: IpcMainInvokeEvent,
-    payload: HermesNotification
+    payload: ZeusNotification
   ) => Promise<boolean>
 
   await notify({ sender: source.webContents } as unknown as IpcMainInvokeEvent, {
@@ -114,7 +114,7 @@ it('delivers plugin callbacks to their source and falls back only for navigation
   })
   host.shown[0].emit('action', { actionIndex: 0 }, undefined)
   expect(source.webContents.send).toHaveBeenCalledWith(
-    'hermes:notification-activate',
+    'zeus:notification-activate',
     expect.objectContaining({
       actionId: 'open',
       notifyId: 'source-callback',
@@ -125,7 +125,7 @@ it('delivers plugin callbacks to their source and falls back only for navigation
   source.isDestroyed.mockReturnValue(true)
   host.shown[0].emit('click')
   expect(primary.webContents.send).toHaveBeenCalledWith(
-    'hermes:notification-activate',
+    'zeus:notification-activate',
     expect.objectContaining({
       activate: '/plugin',
       notifyId: undefined
@@ -140,19 +140,19 @@ it('flashes an unfocused source window until it regains focus, and leaves a focu
 
   const notify = host.handle.mock.calls[0][1] as (
     event: IpcMainInvokeEvent,
-    payload: HermesNotification
+    payload: ZeusNotification
   ) => Promise<boolean>
 
   const event = { sender: source.webContents } as unknown as IpcMainInvokeEvent
 
-  await notify(event, { kind: 'turnDone', sessionId: 'a', title: 'Hermes finished' })
-  await notify(event, { kind: 'turnDone', sessionId: 'b', title: 'Hermes finished' })
+  await notify(event, { kind: 'turnDone', sessionId: 'a', title: 'Zeus finished' })
+  await notify(event, { kind: 'turnDone', sessionId: 'b', title: 'Zeus finished' })
   expect(source.flashFrame.mock.calls).toEqual([[true]])
 
   source.emit('focus')
   expect(source.flashFrame.mock.calls).toEqual([[true], [false]])
 
   source.isFocused.mockReturnValue(true)
-  await notify(event, { kind: 'turnDone', sessionId: 'c', title: 'Hermes finished' })
+  await notify(event, { kind: 'turnDone', sessionId: 'c', title: 'Zeus finished' })
   expect(source.flashFrame).toHaveBeenCalledTimes(2)
 })

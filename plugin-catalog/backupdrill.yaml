@@ -7,7 +7,7 @@ description: "Back up a Supabase project to your own S3, R2 or B2 bucket with th
 maintainer: BackupDrill
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://backupdrill.com/docs/cli
 version: "1.1.3"
 image: https://raw.githubusercontent.com/backupdrill/cli/21d3b891692e6dbad11d4f2b7cefec80d4019b02/plugin/assets/icon.png

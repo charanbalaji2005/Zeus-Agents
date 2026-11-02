@@ -20,8 +20,8 @@ function summary(allowed: boolean): DesktopUninstallSummary {
     code_removal_allowed: allowed,
     native_removal_instructions: allowed
       ? null
-      : 'Quit the app and drag Hermes Agent.app from /Applications to the Trash.',
-    hermes_home: '/test/home',
+      : 'Quit the app and drag Zeus Agents.app from /Applications to the Trash.',
+    zeus_home: '/test/home',
     agent_installed: true,
     gui_installed: true,
     source_built_artifacts: [],
@@ -60,12 +60,12 @@ it.each(['missing-policy', 'probe-failed', 'loading'] as const)(
 
     const run: ReturnType<typeof vi.fn> = vi.fn()
 
-    vi.stubGlobal('hermesDesktop', { uninstall: { summary: getSummary, run } })
+    vi.stubGlobal('zeusDesktop', { uninstall: { summary: getSummary, run } })
     await act(async (): Promise<void> => {
       render(<UninstallSection />)
     })
     expect(getSummary).toHaveBeenCalledOnce()
-    expect(screen.queryByText('Uninstall Hermes')).toBeNull()
+    expect(screen.queryByText('Uninstall Zeus')).toBeNull()
     expect(screen.queryByRole('button', { name: /Uninstall/ })).toBeNull()
     expect(screen.queryByText('Danger zone')).toBeNull()
     expect(run).not.toHaveBeenCalled()
@@ -74,7 +74,7 @@ it.each(['missing-policy', 'probe-failed', 'loading'] as const)(
 
 it('keeps owned-install removal modes and confirms the selected mode', async (): Promise<void> => {
   const run: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ ok: true })
-  vi.stubGlobal('hermesDesktop', {
+  vi.stubGlobal('zeusDesktop', {
     uninstall: { summary: async (): Promise<DesktopUninstallSummary> => summary(true), run }
   })
   render(<UninstallSection />)
@@ -90,7 +90,7 @@ it.each(['gui', 'lite', 'full'] as const)(
   'localizes confirmation for %s without changing mode or running before confirmation',
   async (mode: 'gui' | 'lite' | 'full'): Promise<void> => {
     const run: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue({ ok: false })
-    vi.stubGlobal('hermesDesktop', {
+    vi.stubGlobal('zeusDesktop', {
       uninstall: { summary: async (): Promise<DesktopUninstallSummary> => summary(true), run }
     })
     render(
@@ -99,7 +99,7 @@ it.each(['gui', 'lite', 'full'] as const)(
       </I18nProvider>
     )
     const zh: (typeof TRANSLATIONS)['zh']['settings']['uninstallSection'] = TRANSLATIONS.zh.settings.uninstallSection
-    await screen.findByText(zh.uninstallHermes)
+    await screen.findByText(zh.uninstallZeus)
     fireEvent.click(screen.getByRole('button', { name: new RegExp(zh.options[mode].title) }))
     expect(screen.getByText(zh.confirmBody(zh.options[mode].consequence))).toBeTruthy()
     expect(run).not.toHaveBeenCalled()
@@ -115,7 +115,7 @@ it('shows native removal steps, data location, and Apps settings on a managed Wi
   const run: ReturnType<typeof vi.fn> = vi.fn()
   const openAppsSettings: ReturnType<typeof vi.fn> = vi.fn().mockResolvedValue(undefined)
 
-  vi.stubGlobal('hermesDesktop', {
+  vi.stubGlobal('zeusDesktop', {
     uninstall: {
       summary: async (): Promise<DesktopUninstallSummary> => ({
         ...summary(false),

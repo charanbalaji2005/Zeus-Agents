@@ -14,7 +14,7 @@ export interface ComposerDraftRetry {
 
 // One localStorage key per draft scope: every window of the origin shares this
 // storage with last-writer-wins per KEY, so one window never drops another's.
-const RETRY_PREFIX = 'hermes:composer-draft-retry:v1:'
+const RETRY_PREFIX = 'zeus:composer-draft-retry:v1:'
 
 /** The identity half of a draft's attachments (what `matchingDraftRetry` compares). */
 export const retryAttachmentIds = (attachments: readonly ComposerAttachment[]) => attachments.map(a => a.occurrenceId ?? a.id)

@@ -30,14 +30,14 @@ afterEach(() => {
   spawned.length = 0
 })
 
-// RT-10 (#138774): a HERMES_DESKTOP_HERMES=...\hermes.cmd override is a shell backend. With
+// RT-10 (#138774): a ZEUS_DESKTOP_ZEUS=...\zeus.cmd override is a shell backend. With
 // shell:true Node hands cmd.exe one unquoted line, which a profile path with a space splits at
 // `C:\Users\John` (#74064). The runtime-command probe must quote the launcher like every other
 // shell spawn (windowsShellCommand), and keep the probe flag a separate argument.
 test('a .cmd override in a path with spaces asks its launcher for the runtime as one quoted token', async () => {
   Object.defineProperty(process, 'platform', { value: 'win32' })
-  const command = 'C:\\Users\\John Doe\\AppData\\Local\\hermes\\bin\\hermes.cmd'
-  const root = 'C:\\Users\\John Doe\\AppData\\Local\\hermes\\hermes-agent'
+  const command = 'C:\\Users\\John Doe\\AppData\\Local\\zeus\\bin\\zeus.cmd'
+  const root = 'C:\\Users\\John Doe\\AppData\\Local\\zeus\\zeus-agents'
 
   await expect(ticketRuntimeFor({ command, kind: 'command', shell: true, root }))
     .resolves.toEqual({ command: process.execPath, env: { PYTHONPATH: root } })
@@ -49,7 +49,7 @@ test('a .cmd override in a path with spaces asks its launcher for the runtime as
 
 test('a launcher spawned without a shell keeps its bare path', async () => {
   Object.defineProperty(process, 'platform', { value: 'win32' })
-  const command = 'C:\\Users\\John Doe\\AppData\\Local\\hermes\\bin\\hermes.exe'
+  const command = 'C:\\Users\\John Doe\\AppData\\Local\\zeus\\bin\\zeus.exe'
 
   await ticketRuntimeFor({ command, kind: 'command', shell: false, root: 'C:\\r' })
   expect(spawned[0].command).toBe(command)

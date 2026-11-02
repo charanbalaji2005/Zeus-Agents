@@ -26,7 +26,7 @@
  * lifetime — retrying either every enumeration is a request storm the backend
  * will keep refusing.
  */
-import { getApiRequestConnection, hermesApi } from '@/api/client'
+import { getApiRequestConnection, zeusApi } from '@/api/client'
 import { isMissingRestEndpoint, isOfflineMaintenance } from '@/lib/gateway-rpc'
 import { resolveLegacyOwnerBackfillScope } from '@/lib/session-owner-stamp'
 import { $connectionsRegistry, hasRegistryTopology } from '@/store/connection-registry-state'
@@ -68,7 +68,7 @@ export function maybeBackfillLegacySessionOwners(): void {
 
   attemptedScopes.add(key)
 
-  void hermesApi<{ ok: boolean; profile: string; stamped: number }>({
+  void zeusApi<{ ok: boolean; profile: string; stamped: number }>({
     ...(scope.connectionId ? { connectionId: scope.connectionId } : {}),
     ...(scope.profile ? { profile: scope.profile } : {}),
     path: '/api/sessions/owner-backfill',

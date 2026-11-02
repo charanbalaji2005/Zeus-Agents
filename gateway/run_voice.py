@@ -118,7 +118,7 @@ class GatewayVoiceMixin:
         if not chat_sets:
             return
         try:
-            from hermes_cli.config import load_config  # lazy: no gateway -> hermes_cli module dep
+            from zeus_cli.config import load_config  # lazy: no gateway -> zeus_cli module dep
             auto_tts_default = bool((load_config().get("voice") or {}).get("auto_tts", False))
         except Exception:
             auto_tts_default = False
@@ -279,7 +279,7 @@ class GatewayVoiceMixin:
             user_name = user_name or GatewayVoiceMixin._cached_user_display_name(client, user_id)
             source.user_id, source.user_name = str(user_id), user_name or str(user_id)
             # The bound source is the `/voice join` message's; its id is not this turn's trigger
-            # (run.py exports it as HERMES_SESSION_MESSAGE_ID for reply anchoring).
+            # (run.py exports it as ZEUS_SESSION_MESSAGE_ID for reply anchoring).
             source.message_id = None
         else:
             # A programmatic join binds no source: build the one a typed message in that channel carries

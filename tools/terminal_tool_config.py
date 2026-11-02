@@ -39,16 +39,16 @@ def _parse_env_var(name: str, default: str, converter: Any = int, type_label: st
     except (ValueError, json.JSONDecodeError):
         raise ValueError(
             f"Invalid value for {name}: {raw!r} (expected {type_label}). "
-            f"Check ~/.hermes/.env or environment variables."
+            f"Check ~/.zeus/.env or environment variables."
         )
 
 
-# (current home, Hermes root) -> profile name; only homes that exist are stored (see home_profile_name).
+# (current home, Zeus root) -> profile name; only homes that exist are stored (see home_profile_name).
 _HOME_PROFILE_NAMES: dict[tuple[str, str], str] = {}
 
 
 def home_profile_name() -> str:
-    """Profile name of the current Hermes home (the process home, or a routed turn's bound home);
+    """Profile name of the current Zeus home (the process home, or a routed turn's bound home);
     ``"default"`` when it cannot be resolved. One lookup for every reader that must agree: the
     persistent-Docker container key, the container's profile label, the name the TUI stamps on its
     sessions (``get_active_profile_name``, so ``custom`` for a home inside the root that is not a
@@ -57,11 +57,11 @@ def home_profile_name() -> str:
     Memoized per (home, root) path pair: the lookup resolves three paths and runs on every
     container-key resolution, several times per tool call."""
     try:
-        from hermes_cli.profiles import get_active_profile_name
-        from hermes_constants import get_default_hermes_root, get_hermes_home
+        from zeus_cli.profiles import get_active_profile_name
+        from zeus_constants import get_default_zeus_root, get_zeus_home
 
-        home = get_hermes_home()
-        key = (str(home), str(get_default_hermes_root()))
+        home = get_zeus_home()
+        key = (str(home), str(get_default_zeus_root()))
         if (cached := _HOME_PROFILE_NAMES.get(key)) is not None:
             return cached
         name = get_active_profile_name() or "default"
@@ -188,7 +188,7 @@ def _get_plugin_env_provider(env_type: str):
 def plugin_sandbox_home(env: Any) -> str | None:
     """The home a plugin environment started in (``_build_plugin_env`` stamps it per environment, so two
     sandboxes of one backend never share it), or None."""
-    home = getattr(env, "_hermes_sandbox_home", None)
+    home = getattr(env, "_zeus_sandbox_home", None)
     return home if isinstance(home, str) and posixpath.isabs(home) and home != "/" else None
 
 
@@ -210,9 +210,9 @@ def coerce_ssh_remote_cwd(cwd: str | None, env_type: str | None) -> str | None:
     """Cwd to send to an SSH backend.
 
     ``~``-prefixed paths stay literal so the remote shell expands them to the
-    SSH user's home. The Hermes process's subprocess home (``/opt/data/home``
+    SSH user's home. The Zeus process's subprocess home (``/opt/data/home``
     in the official Docker image) is a directory on the machine running
-    Hermes: it and anything under it are rewritten onto the remote ``~``, since
+    Zeus: it and anything under it are rewritten onto the remote ``~``, since
     ``cd`` into the host path exits 126 on the target. A subprocess home that is
     the OS user's real home is left alone: a remote path may legitimately match
     it. Other backends are unchanged.
@@ -222,7 +222,7 @@ def coerce_ssh_remote_cwd(cwd: str | None, env_type: str | None) -> str | None:
     text = cwd.strip()
     if not text or text.startswith("~"):
         return text or "~"
-    from hermes_constants import get_real_home, get_subprocess_home
+    from zeus_constants import get_real_home, get_subprocess_home
 
     home = get_subprocess_home()
     if not home or not posixpath.isabs(text) or posixpath.normpath(home) == posixpath.normpath(get_real_home()):

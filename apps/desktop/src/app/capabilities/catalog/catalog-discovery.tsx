@@ -1,6 +1,6 @@
 import './catalog-discovery.css'
 
-import { featuredPicks, groupCatalogPlugins, isOfficialSkillSource, PLUGIN_CATEGORIES } from '@hermes/shared'
+import { featuredPicks, groupCatalogPlugins, isOfficialSkillSource, PLUGIN_CATEGORIES } from '@zeus/shared'
 import { type ReactNode, useState } from 'react'
 
 import { Button } from '@/components/ui/button'

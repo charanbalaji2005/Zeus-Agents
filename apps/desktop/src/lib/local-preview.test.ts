@@ -49,7 +49,7 @@ const remoteTarget = {
 describe('remote HTML previews', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    window.hermesDesktop = {
+    window.zeusDesktop = {
       normalizePreviewTarget: vi.fn(async () => remoteTarget)
     } as never
   })
@@ -127,7 +127,7 @@ describe('remote HTML previews', () => {
     const dataUrl = `data:text/html;base64,${btoa('<h1>remote</h1>')}`
     const saveImageBuffer = vi.fn(async (_data: ArrayBuffer | Uint8Array, _ext: string) => '/tmp/report #1?.html')
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    window.hermesDesktop = { openPreviewInBrowser, saveImageBuffer } as never
+    window.zeusDesktop = { openPreviewInBrowser, saveImageBuffer } as never
 
     await openPreviewTargetInBrowser({ ...remoteTarget, dataUrl })
 
@@ -140,7 +140,7 @@ describe('remote HTML previews', () => {
     const dataUrl = `data:text/html;base64,${btoa('<h1>remote</h1>')}`
     const saveImageBuffer = vi.fn(async () => 'blob:http://127.0.0.1:9119/preview')
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    window.hermesDesktop = { openPreviewInBrowser, saveImageBuffer } as never
+    window.zeusDesktop = { openPreviewInBrowser, saveImageBuffer } as never
 
     await openPreviewTargetInBrowser({ ...remoteTarget, dataUrl })
 
@@ -151,7 +151,7 @@ describe('remote HTML previews', () => {
     const dataUrl = `data:text/html;base64,${btoa('<h1>remote</h1>')}`
     const saveImageBuffer = vi.fn(async () => '\\\\server\\share\\report #1.html')
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    window.hermesDesktop = { openPreviewInBrowser, saveImageBuffer } as never
+    window.zeusDesktop = { openPreviewInBrowser, saveImageBuffer } as never
 
     await openPreviewTargetInBrowser({ ...remoteTarget, dataUrl })
 
@@ -182,7 +182,7 @@ describe('remote HTML previews', () => {
   it('opens ordinary targets without staging them', async () => {
     const openPreviewInBrowser = vi.fn(async () => undefined)
     const saveImageBuffer = vi.fn()
-    window.hermesDesktop = { openPreviewInBrowser, saveImageBuffer } as never
+    window.zeusDesktop = { openPreviewInBrowser, saveImageBuffer } as never
 
     await openPreviewTargetInBrowser(remoteTarget)
 
@@ -192,7 +192,7 @@ describe('remote HTML previews', () => {
 
   it('keeps local HTML source browser opens on their existing path', async () => {
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    window.hermesDesktop = { openPreviewInBrowser } as never
+    window.zeusDesktop = { openPreviewInBrowser } as never
 
     await openPreviewTargetInBrowser({
       ...remoteTarget,
@@ -206,7 +206,7 @@ describe('remote HTML previews', () => {
 
   it('does not send failed remote HTML paths to the local browser', async () => {
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    window.hermesDesktop = { openPreviewInBrowser } as never
+    window.zeusDesktop = { openPreviewInBrowser } as never
 
     await expect(
       openPreviewTargetInBrowser({ ...remoteTarget, renderMode: 'source', transient: true })
@@ -250,7 +250,7 @@ describe('preview path resolution', () => {
   )
 
   it('keeps absolute filesystem targets independent of the working directory', async () => {
-    window.hermesDesktop = { normalizePreviewTarget: vi.fn(async () => null) } as never
+    window.zeusDesktop = { normalizePreviewTarget: vi.fn(async () => null) } as never
     const cwd = 'C:\\work tree'
 
     const absolutePaths = [
@@ -289,7 +289,7 @@ describe('PDF previews', () => {
 
   it('does not UTF-8-enrich remote PDFs before loading their bytes', async () => {
     vi.clearAllMocks()
-    window.hermesDesktop = {
+    window.zeusDesktop = {
       normalizePreviewTarget: vi.fn(async () => null)
     } as never
 

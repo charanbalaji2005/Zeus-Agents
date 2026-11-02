@@ -33,7 +33,7 @@ def test_tui_bootstrap_starts_the_correct_supervised_owner(
             "-c",
             (
                 "from pathlib import Path; "
-                "from hermes_cli.service_manager import S6ServiceManager; "
+                "from zeus_cli.service_manager import S6ServiceManager; "
                 f"home = Path({home!r}); home.mkdir(parents=True); "
                 f"(home / 'config.yaml').write_text({config!r}); "
                 "S6ServiceManager().register_profile_gateway('worker', start_now=False)"
@@ -49,7 +49,7 @@ def test_tui_bootstrap_starts_the_correct_supervised_owner(
         "-c",
         (
             "import json, subprocess; "
-            "r = subprocess.run(['python', '/opt/hermes/ui-tui/scripts/gateway_bootstrap.py', '--start'], "
+            "r = subprocess.run(['python', '/opt/zeus/ui-tui/scripts/gateway_bootstrap.py', '--start'], "
             "capture_output=True, text=True, timeout=45); "
             "assert r.returncode == 0, r.stderr; "
             "grant = json.loads(r.stdout); "
@@ -57,7 +57,7 @@ def test_tui_bootstrap_starts_the_correct_supervised_owner(
             "print(json.dumps({'profile_id': grant['profile_id']}))"
         ),
         timeout=60,
-        extra_docker_args=("-e", f"HERMES_HOME={home}"),
+        extra_docker_args=("-e", f"ZEUS_HOME={home}"),
     )
     assert probe.returncode == 0, probe.stderr
     assert json.loads(probe.stdout)["profile_id"] == home
@@ -68,7 +68,7 @@ def test_tui_bootstrap_starts_the_correct_supervised_owner(
         "python",
         "-c",
         (
-            "from hermes_cli.service_manager import S6ServiceManager; "
+            "from zeus_cli.service_manager import S6ServiceManager; "
             "m = S6ServiceManager(); "
             f"assert m.is_running('gateway-{owner}'); "
             + (
@@ -105,7 +105,7 @@ def test_s6_discovery_refuses_another_install_root(
         "-c",
         (
             "import time; from pathlib import Path; "
-            "from hermes_cli.gateway_runtime import ensure_gateway_runtime; "
+            "from zeus_cli.gateway_runtime import ensure_gateway_runtime; "
             "receipt = ensure_gateway_runtime(Path('/tmp/foreign-home'), timeout=5); "
             "assert receipt.state == 'inaccessible', receipt.state; "
             "assert receipt.reason_code == 'profile_mismatch', receipt.reason_code"

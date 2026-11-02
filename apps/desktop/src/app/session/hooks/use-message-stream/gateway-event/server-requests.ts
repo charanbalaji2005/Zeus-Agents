@@ -1,4 +1,4 @@
-import { JSON_RPC_INTERNAL_ERROR, type SetupBeat } from '@hermes/shared'
+import { JSON_RPC_INTERNAL_ERROR, type SetupBeat } from '@zeus/shared'
 
 import {
   hasLivePreviewSurface,
@@ -624,7 +624,7 @@ const previewAct: Handler = ({ deps, isActiveSession, request, sessionId }) => {
  *  agent relays it instead of retrying a call that can never succeed. */
 const BROWSER_WINDOW_READ_REFUSAL = {
   error:
-    'read_window_below needs the Hermes desktop app: this session is in a browser tab, which cannot see the OS windows around it.',
+    'read_window_below needs the Zeus desktop app: this session is in a browser tab, which cannot see the OS windows around it.',
   platform: 'browser'
 }
 
@@ -638,7 +638,7 @@ const windowRead: Handler = ({ request }) => {
   // read_window_below tool: main owns native window enumeration. Empty =
   // unavailable (older shell without the handler, Wayland, …) — without an
   // answer the tool would stall its full 30s deadline.
-  const read = window.hermesDesktop?.readWindowBelow
+  const read = window.zeusDesktop?.readWindowBelow
 
   void Promise.resolve(read ? read() : null).then(
     result => answerValue(request, result),

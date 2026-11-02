@@ -1,9 +1,9 @@
 //! The "update in progress" marker: the Desktop launch gate and the
-//! cross-process update lock shared with `hermes_cli/update_lock.py` and the
+//! cross-process update lock shared with `zeus_cli/update_lock.py` and the
 //! Electron gate (`apps/desktop/electron/update-marker.ts`).
 //!
 //! Parse, liveness, claim and litter rules are the LP-LOCK round-2 contract
-//! that `hermes_cli/update_lock.py` implements identically; keep them in step.
+//! that `zeus_cli/update_lock.py` implements identically; keep them in step.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -19,14 +19,14 @@ use crate::update::UPDATE_EXIT_CONCURRENT;
 /// or aborted updater can never permanently strand the marker and block
 /// future desktop launches.
 ///
-/// Marker contract (C1, shared byte-for-byte with `hermes_cli/update_lock.py`
+/// Marker contract (C1, shared byte-for-byte with `zeus_cli/update_lock.py`
 /// and the Electron gate), UTF-8, `\n` line ends, trailing newline:
 ///
 /// ```text
 /// <pid>
 /// <started_at unix seconds>
 /// ct:<owner process creation time, unix seconds, 3 decimals>
-/// delegate:<pid> ct:<ct>          (optional; written by `hermes update` / the hand-off scripts)
+/// delegate:<pid> ct:<ct>          (optional; written by `zeus update` / the hand-off scripts)
 /// run:<id>                        (optional; the Desktop update run, A7 rule 6)
 /// ```
 ///
@@ -40,12 +40,12 @@ use crate::update::UPDATE_EXIT_CONCURRENT;
 /// (a live v2 owner is live however long it runs) and a recycled pid is not
 /// mistaken for the original owner.
 ///
-/// The marker is also the cross-process update lock: `hermes update` claims
+/// The marker is also the cross-process update lock: `zeus update` claims
 /// the same file so a dashboard-spawned update and this updater can't mutate
 /// one checkout at the same time. `acquire` therefore publishes its claim
 /// exclusively (a fully written tmp file hard-linked onto the path) and
 /// REFUSES when a live foreign owner holds it — the pre-fix clobber is what
-/// let a dashboard `hermes update` keep running while install-mode bootstrap
+/// let a dashboard `zeus update` keep running while install-mode bootstrap
 /// rewrote the tree underneath it.
 pub(crate) struct UpdateMarkerGuard {
     path: PathBuf,
@@ -65,7 +65,7 @@ pub(crate) enum AcquireError {
 /// (v1, no `ct:` line) markers, and v2 markers whose live pid's creation
 /// time cannot be read. Without a creation time a live pid may be a
 /// recycled one, so age is the only bound. Matches the v1 rule in
-/// apps/desktop/electron/update-marker.ts and hermes_cli/update_lock.py.
+/// apps/desktop/electron/update-marker.ts and zeus_cli/update_lock.py.
 const UPDATE_MARKER_MAX_AGE_SECS: u64 = 20 * 60;
 
 /// Creation-time tolerance when matching a recorded `ct:` against the live
@@ -512,11 +512,11 @@ fn empty_marker_age(path: &Path) -> Option<Duration> {
 
 /// Read the marker (under its mutex) and report a live holder, if any; a dead marker is
 /// removed. Test-only view of `inspect_marker_locked`; the install root is the marker's
-/// `hermes-agent` sibling, as in production (`<HERMES_HOME>/hermes-agent`).
+/// `zeus-agents` sibling, as in production (`<ZEUS_HOME>/zeus-agents`).
 #[cfg(test)]
 fn live_marker_owner(path: &Path) -> Option<MarkerOwner> {
     let _mutex = lock_marker(path).ok()?;
-    let install_root = path.with_file_name("hermes-agent");
+    let install_root = path.with_file_name("zeus-agents");
     match inspect_marker_locked(path, &install_root, &World::real()) {
         MarkerState::Live(owner) => Some(owner),
         _ => None,
@@ -527,7 +527,7 @@ fn live_marker_owner(path: &Path) -> Option<MarkerOwner> {
 /// our creation time, never just a pid a previous process also had.
 ///
 /// Liveness of anything else is deliberately NOT consulted: the exit-2 self-heal below needs
-/// exactly one fact — is this our claim — because a `hermes update` child that refuses over
+/// exactly one fact — is this our claim — because a `zeus update` child that refuses over
 /// OUR claim is a handoff-recognition failure in a stale checkout, not a concurrent update.
 fn marker_owned_by_self(path: &Path) -> bool {
     let Some(record) = std::fs::read(path).ok().and_then(|raw| parse_marker(&raw)) else {
@@ -558,9 +558,9 @@ pub(crate) fn should_heal_self_marker_refusal(
         && !checkout_lock_held(install_root)
 }
 
-/// `hermes_cli/update_lock.py::CHECKOUT_LOCK_NAME` (no checkout) / `GIT_CHECKOUT_LOCK_NAME`.
-const CHECKOUT_LOCK_NAME: &str = ".hermes-update.lock";
-const GIT_CHECKOUT_LOCK_NAME: &str = "hermes-update.lock";
+/// `zeus_cli/update_lock.py::CHECKOUT_LOCK_NAME` (no checkout) / `GIT_CHECKOUT_LOCK_NAME`.
+const CHECKOUT_LOCK_NAME: &str = ".zeus-update.lock";
+const GIT_CHECKOUT_LOCK_NAME: &str = "zeus-update.lock";
 
 /// `update_lock.py::_WINDOWS_LOCK_OFFSET`: the byte msvcrt locks, far past the holder record.
 #[cfg(windows)]
@@ -689,7 +689,7 @@ fn checkout_lock_held(_install_root: &Path) -> bool {
 }
 
 /// Process creation time as unix seconds, comparable with the `ct:` values
-/// `hermes_cli/update_lock.py` records. `None` when it cannot be probed.
+/// `zeus_cli/update_lock.py` records. `None` when it cannot be probed.
 #[cfg(target_os = "linux")]
 fn process_creation_time(pid: u32) -> Option<f64> {
     let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
@@ -775,7 +775,7 @@ const WIN32_ERROR_ACCESS_DENIED: u32 = 5;
 /// Liveness verdict when `OpenProcess` on a pid fails with `GetLastError() == err`.
 ///
 /// Access denied means the process EXISTS but belongs to another user or runs elevated: alive,
-/// as `hermes_cli/_early_recovery._pid_is_running` decides — racing an elevated updater is worse
+/// as `zeus_cli/_early_recovery._pid_is_running` decides — racing an elevated updater is worse
 /// than postponing. Its creation time is then unreadable too (`process_creation_time` is
 /// `None`), so `identity_live` bounds it by the v1 age ceiling, never forever. Any other failure
 /// (`ERROR_INVALID_PARAMETER` for a pid that does not exist, ...) is dead.
@@ -800,7 +800,7 @@ fn pid_is_alive(pid: u32) -> bool {
         // A process object is signalled once it exits. Never `GetExitCodeProcess ==
         // STILL_ACTIVE`: a process that exited with code 259 reads "running" for as long as
         // any handle keeps its object, and its creation time still matches the v2 marker.
-        // Same probe as `hermes_cli/_early_recovery._pid_is_running`.
+        // Same probe as `zeus_cli/_early_recovery._pid_is_running`.
         let handle = OpenProcess(PROCESS_SYNCHRONIZE, 0, pid);
         if handle.is_null() {
             return liveness_from_open_error(GetLastError());
@@ -1074,7 +1074,7 @@ impl UpdateMarkerGuard {
     /// already-removed (or handed-over) marker.
     ///
     /// A7 rule 5 under the marker mutex (`release_decision`): our claim is removed regardless of
-    /// delegate lines, except that a LIVE `hermes update` delegate inherits it (the marker is
+    /// delegate lines, except that a LIVE `zeus update` delegate inherits it (the marker is
     /// rewritten with that delegate as owner) instead of losing it.
     pub(crate) fn complete(&self) {
         if !self.claimed {

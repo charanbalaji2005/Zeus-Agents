@@ -31,9 +31,9 @@ def fixture_repo(tmp_path):
     git(repo, 'remote', 'set-url', 'origin', 'https://github.com/fixture-owner/fixture-repo.git')
     shutil.copytree(ROOT / 'scripts/releases', repo / 'scripts/releases')
     for relative in ('scripts/release.py', 'scripts/release-content-types.json',
-                     'hermes_cli/__init__.py', 'hermes_cli/update_channel.py',
-                     'hermes_cli/release_channels.py',
-                     'pm/paths.py', 'pm/environments.py', 'hermes_constants.py'):
+                     'zeus_cli/__init__.py', 'zeus_cli/update_channel.py',
+                     'zeus_cli/release_channels.py',
+                     'pm/paths.py', 'pm/environments.py', 'zeus_constants.py'):
         dest = repo / relative
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ROOT / relative, dest)
@@ -80,7 +80,7 @@ else:
     calls = tmp_path / 'gh.jsonl'
     env = {k: v for k, v in os.environ.items() if not k.startswith(('GITHUB_', 'GH_'))}
     env.update({'PROBE_CALLS': str(calls), 'PROBE_REMOTE': upstream.as_uri(), 'GIT_ALLOW_PROTOCOL': 'file',
-                'GIT_TERMINAL_PROMPT': '0', 'HERMES_HOME': str(tmp_path / 'home')})
+                'GIT_TERMINAL_PROMPT': '0', 'ZEUS_HOME': str(tmp_path / 'home')})
 
     def invoke(*args, extra=None):
         calls.unlink(missing_ok=True)
@@ -128,13 +128,13 @@ def test_commit_build_dispatch_is_repository_independent(fixture_repo):
     assert dispatches == [expected]
     assert 'disposable' not in result.stdout.lower()
     # The upstream URL used to select a different command shape; it no longer does.
-    git(repo, 'remote', 'set-url', 'origin', 'https://github.com/NousResearch/hermes-agent.git')
+    git(repo, 'remote', 'set-url', 'origin', 'https://github.com/charanbalaji2005/Zeus-Agents.git')
     result, calls = invoke('--build-commit', tip, '--publish',
-                           extra={'PROBE_UPSTREAM_URL': 'https://github.com/NousResearch/hermes-agent.git'})
+                           extra={'PROBE_UPSTREAM_URL': 'https://github.com/charanbalaji2005/Zeus-Agents.git'})
     assert result.returncode == 0, result.stderr
     dispatches = [call for call in calls if call[1:3] == ['workflow', 'run']]
     assert dispatches == [['gh', 'workflow', 'run', 'desktop-bundled-release.yml',
-                           '--ref', 'main', '--repo', 'NousResearch/hermes-agent',
+                           '--ref', 'main', '--repo', 'charanbalaji2005/Zeus-Agents',
                            '-f', f'build_commit={tip}', '-f', 'tag=', '-f', 'upload_release=false',
                            '-f', 'termux_upgrade_from_tag=']]
 
@@ -147,34 +147,34 @@ def test_commit_build_dispatch_is_repository_independent(fixture_repo):
 def test_commit_bundle_environment_is_literal_and_validated(fixture_repo):
     repo, _, invoke = fixture_repo
     tip = git(repo, 'rev-parse', 'HEAD')
-    values = {'HERMES_PREVIEW_FULL_CONNECTORS': '1', 'HERMES_DATA_DIR_SUFFIX': 'magic-test',
-              'HERMES_DESKTOP_USER_DATA_DIR': '', 'HERMES_SHARED_AUTH_DIR': 'a=b "quote"\n$(not-a-command)'}
+    values = {'ZEUS_PREVIEW_FULL_CONNECTORS': '1', 'ZEUS_DATA_DIR_SUFFIX': 'magic-test',
+              'ZEUS_DESKTOP_USER_DATA_DIR': '', 'ZEUS_SHARED_AUTH_DIR': 'a=b "quote"\n$(not-a-command)'}
     flags = [part for key, value in values.items() for part in ('--bundle-env', f'{key}={value}')]
     result, calls = invoke('--build-commit', tip, '--publish', *flags)
     assert result.returncode == 0, result.stderr
     dispatch = next(call for call in calls if call[1:3] == ['workflow', 'run'])
     assert json.loads(next(field.split('=', 1)[1] for field in dispatch if field.startswith('bundle_env='))) == values
     for invalid in (['--bundle-env', 'MISSING'], ['--bundle-env', 'BAD-NAME=x'],
-                    ['--bundle-env', 'NODE_OPTIONS=--require=evil'], ['--bundle-env', 'HERMES_SKIP_INTRO=1'],
-                    ['--bundle-env', 'HERMES_GUEST_ONBOARDING=1'], ['--bundle-unset', 'PATH'],
-                    ['--bundle-env', 'HERMES_HOME=x', '--bundle-env', 'HERMES_HOME=y']):
+                    ['--bundle-env', 'NODE_OPTIONS=--require=evil'], ['--bundle-env', 'ZEUS_SKIP_INTRO=1'],
+                    ['--bundle-env', 'ZEUS_GUEST_ONBOARDING=1'], ['--bundle-unset', 'PATH'],
+                    ['--bundle-env', 'ZEUS_HOME=x', '--bundle-env', 'ZEUS_HOME=y']):
         result, calls = invoke('--build-commit', tip, '--publish', *invalid)
         assert result.returncode != 0 and not calls
     result, calls = invoke('--bundle-env', 'NAME=value')
     assert result.returncode == 2 and not calls
 
     result, calls = invoke('--build-commit', tip, '--publish', *flags,
-                           '--bundle-unset', 'HERMES_HOME')
+                           '--bundle-unset', 'ZEUS_HOME')
     assert result.returncode == 0, result.stderr
     dispatch = next(call for call in calls if call[1:3] == ['workflow', 'run'])
     assert json.loads(next(field.split('=', 1)[1] for field in dispatch if field.startswith('bundle_env='))) == {
-        **values, 'HERMES_HOME': None}
+        **values, 'ZEUS_HOME': None}
     for invalid in (['--bundle-unset', 'BAD-NAME'],
-                    ['--bundle-env', 'HERMES_HOME=x', '--bundle-unset', 'HERMES_HOME'],
-                    ['--bundle-unset', 'HERMES_HOME', '--bundle-unset', 'HERMES_HOME']):
+                    ['--bundle-env', 'ZEUS_HOME=x', '--bundle-unset', 'ZEUS_HOME'],
+                    ['--bundle-unset', 'ZEUS_HOME', '--bundle-unset', 'ZEUS_HOME']):
         result, calls = invoke('--build-commit', tip, '--publish', *invalid)
         assert result.returncode != 0 and not calls
-    result, calls = invoke('--bundle-unset', 'HERMES_HOME')
+    result, calls = invoke('--bundle-unset', 'ZEUS_HOME')
     assert result.returncode == 2 and not calls
 
 def test_commit_build_requires_pushed_refs_and_github_origin(tmp_path, fixture_repo):
@@ -228,7 +228,7 @@ def test_workflow_admission_checks_trust_before_publishing_outputs(tmp_path, fix
            'GITHUB_WORKFLOW_REF': 'fixture-owner/fixture-repo/.github/workflows/desktop-bundled-release.yml@refs/heads/main',
            'GITHUB_ACTOR': 'maintainer', 'GITHUB_TRIGGERING_ACTOR': 'maintainer',
            'GITHUB_OUTPUT': str(output), 'UPLOAD_RELEASE': 'false',
-           'BUNDLE_ENV_JSON': '{"HERMES_PREVIEW_FULL_CONNECTORS":"1","HERMES_HOME":null}'}
+           'BUNDLE_ENV_JSON': '{"ZEUS_PREVIEW_FULL_CONNECTORS":"1","ZEUS_HOME":null}'}
     result, calls = invoke('admit', extra=env)
     assert result.returncode == 0, result.stderr
     assert dict(line.split('=', 1) for line in output.read_text(encoding='utf-8').splitlines()) == {

@@ -5,9 +5,9 @@ import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 import { isMain } from './frontend-common.mjs'
 
-const receiptName = 'hermes-build.json'
-// What `hermes update` leaves in a product it could not rebuild (STALE_MARKER in hermes_cli/webapp.py).
-const staleMarker = '.hermes-stale'
+const receiptName = 'zeus-build.json'
+// What `zeus update` leaves in a product it could not rebuild (STALE_MARKER in zeus_cli/webapp.py).
+const staleMarker = '.zeus-stale'
 const workspaces = { tui: 'ui-tui', web: 'web', desktop: 'apps/desktop' }
 // Another product's output under a workspace is never this product's input.
 const generated = new Set(['node_modules', 'dist', 'dist-webapp', 'build', 'release', '.cache', '.git', 'coverage', 'test-results', 'playwright-report'])
@@ -16,7 +16,7 @@ const generated = new Set(['node_modules', 'dist', 'dist-webapp', 'build', 'rele
 // tree (source, output or a prepared dir) the moment the checkout is opened in
 // Finder or Explorer mid-build — .DS_Store, AppleDouble ._* sidecars and
 // .localized on macOS, Thumbs.db and Desktop.ini on Windows. Skip it everywhere
-// so it can't flip a freshness hash and abort `hermes update` (#122632, #122803).
+// so it can't flip a freshness hash and abort `zeus update` (#122632, #122803).
 const osMetadata = name => {
   const base = name.split('/').pop()
   return base === '.DS_Store' || base === '.localized'
@@ -26,7 +26,7 @@ const osMetadata = name => {
 // buildTui bundles these source roots (including the Ink source alias), not
 // the workspaces' documentation, test runners or other product recipes.
 const tuiInputs = [
-  ...['ui-tui', 'ui-tui/packages/hermes-ink', 'apps/shared'].flatMap(root => [
+  ...['ui-tui', 'ui-tui/packages/zeus-ink', 'apps/shared'].flatMap(root => [
     `${root}/src`, `${root}/package.json`, `${root}/tsconfig.json`,
   ]),
   'tsconfig.json', 'package.json', 'package-lock.json', '.npmrc', 'pm/lock.json',
@@ -107,7 +107,7 @@ export function sourceEntries(source, product) {
 function outputHash(out, ignored = []) {
   // Native binaries can be signed after compilation. Their ABI validation is
   // owned by native preparation; renderer/main/preload bytes must stay intact.
-  return treeHash(out, readdirSync(out).sort(), name => name === receiptName || name === '.hermes-product' || ignored.includes(name),
+  return treeHash(out, readdirSync(out).sort(), name => name === receiptName || name === '.zeus-product' || ignored.includes(name),
     name => !name.split('/').includes('node_modules') && !name.startsWith('native/'))
 }
 
@@ -204,7 +204,7 @@ export function recordProduct({ source, product, out, inputs, stampClock }) {
 }
 
 /** Validate output bytes against their receipt, independently of current inputs or host, and of
- *  the marker ``hermes update`` leaves in a product it could not rebuild (hermes_cli/webapp.py),
+ *  the marker ``zeus update`` leaves in a product it could not rebuild (zeus_cli/webapp.py),
  *  which still fails productCurrent. */
 export function outputIntact(out, product) {
   try {

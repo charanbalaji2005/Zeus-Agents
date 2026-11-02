@@ -1,14 +1,14 @@
-import type { SharedMetricsConsentResult } from '@hermes/shared'
+import type { SharedMetricsConsentResult } from '@zeus/shared'
 import { atom } from 'nanostores'
 
 import { recordOnboarding, setDesktopMetricsGate } from './desktop-metrics'
 
 /** Public page describing exactly what shared metrics contain and how consent windows work. */
-export const SHARED_METRICS_DOCS_URL = 'https://hermes-agent.nousresearch.com/docs/developer-guide/relay-shared-metrics'
+export const SHARED_METRICS_DOCS_URL = 'https://charanbalaji2005.github.io/Zeus-Agents/docs/developer-guide/relay-shared-metrics'
 
 export type SharedMetricsConsent = SharedMetricsConsentResult
 
-/** The first-run answers, as the two config opt-ins `hermes setup` writes: each sets both. */
+/** The first-run answers, as the two config opt-ins `zeus setup` writes: each sets both. */
 export type SharedMetricsChoice = 'off' | 'share'
 
 export const SHARED_METRICS_CHOICES: Record<SharedMetricsChoice, { enabled: boolean; send: boolean }> = {
@@ -22,7 +22,7 @@ export type SharedMetricsRequester = <T = unknown>(method: string, params?: Reco
  * Name the profile on every consent RPC: an unscoped one resolves to the
  * backend's launch home, so on a shared backend the answer landed in another
  * profile's config.yaml and the focused profile's offer never retired (#130714).
- * `custom` is a HERMES_HOME outside profiles/ the backend cannot resolve by
+ * `custom` is a ZEUS_HOME outside profiles/ the backend cannot resolve by
  * name; there the ambient route already is that home.
  */
 export function sharedMetricsProfileRequester(
@@ -39,7 +39,7 @@ function isConsent(value: unknown): value is SharedMetricsConsent {
 /**
  * The profile's opt-ins, straight from its config.yaml (the backend is the
  * only authority; nothing is latched in the renderer, so an answer given in
- * `hermes setup` and one given here are the same answer). `null` when the
+ * `zeus setup` and one given here are the same answer). `null` when the
  * backend could not say — an older backend without the method, or a flap —
  * which every caller treats as "don't ask".
  */
@@ -106,7 +106,7 @@ export async function answerSharedMetricsOffer(
  * makes concurrent callers a no-op. Fire-and-forget: errors are swallowed.
  */
 export async function reportPendingUpdateRun(request: SharedMetricsRequester): Promise<void> {
-  const updates = window.hermesDesktop?.updates
+  const updates = window.zeusDesktop?.updates
 
   try {
     const run = await updates?.takePendingRun?.()

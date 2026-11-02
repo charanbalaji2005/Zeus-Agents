@@ -64,7 +64,7 @@ export const canonicalEn = {
     launch: {
       noTuiPolicy: 'gateway does not support tui session policy; update/restart the gateway',
       unsupportedOptions: (options: string) => `gateway does not support TUI launch options: ${options}`,
-      invalidToolProgress: (value: string) => `invalid HERMES_TUI_TOOL_PROGRESS: ${value}`
+      invalidToolProgress: (value: string) => `invalid ZEUS_TUI_TOOL_PROGRESS: ${value}`
     }
   }
 }

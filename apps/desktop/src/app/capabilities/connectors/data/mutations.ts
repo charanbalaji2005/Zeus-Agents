@@ -1,7 +1,7 @@
-import type { ConnectionAnswer, ConnectorAccountsResult, ConnectorPolicyGetResult } from '@hermes/shared'
+import type { ConnectionAnswer, ConnectorAccountsResult, ConnectorPolicyGetResult } from '@zeus/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 import { translateNow } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
 import { notifyError } from '@/store/notifications'

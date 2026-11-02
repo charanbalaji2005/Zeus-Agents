@@ -1,11 +1,11 @@
 import { openGatewaySocket } from '@/api/canonical-protocol'
-import type { ResolvedOwner } from '@/hermes'
+import type { ResolvedOwner } from '@/zeus'
 import { resolveSiblingWsUrl } from '@/lib/sibling-ws-url'
 
 /**
  * Live dictation STT: mic PCM streams to the host's `/api/audio/transcribe-stream` WebSocket
  * WHILE the user speaks; partial text arrives as it is recognized and the transcript lands right
- * at end of recording (server contract: `hermes_cli/web_routers/audio.py`). Provider keys never
+ * at end of recording (server contract: `zeus_cli/web_routers/audio.py`). Provider keys never
  * leave the host, and the host resamples, so the client sends the AudioContext's own rate.
  *
  *   client → {"sample_rate": N}, then binary s16le mono PCM frames, {"eos": true}

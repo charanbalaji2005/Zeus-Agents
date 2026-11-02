@@ -56,10 +56,10 @@ describe('ugitGitBinaries (#61494)', () => {
 })
 
 describe('managedGitBinaries', () => {
-  test('finds the newest PM-managed Git under Hermes tools', () => {
-    const managed = path.join(LAD, 'hermes', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
+  test('finds the newest PM-managed Git under Zeus tools', () => {
+    const managed = path.join(LAD, 'zeus', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
     const fs = fakeFs(
-      { [path.join(LAD, 'hermes', 'tools')]: ['git-2.52.0+2-win32-x64', 'git-2.53.0+3-win32-x64'] },
+      { [path.join(LAD, 'zeus', 'tools')]: ['git-2.52.0+2-win32-x64', 'git-2.53.0+3-win32-x64'] },
       [managed]
     )
 
@@ -75,7 +75,7 @@ describe('windowsGitCandidates (#61494)', () => {
   }
 
   test('includes the UGit candidate and the resolver selection finds it when nothing earlier exists', () => {
-    // The reported machine (#61494): no hermes portable git, no Program Files
+    // The reported machine (#61494): no zeus portable git, no Program Files
     // Git, nothing on PATH — only the UGit-bundled copy exists. An Electron
     // process launched from Explorer inherits the login-time environment
     // block, which lacks the PATH entry the UGit installer added later, so
@@ -86,10 +86,10 @@ describe('windowsGitCandidates (#61494)', () => {
     const candidates = windowsGitCandidates(env, fs)
 
     assert.ok(candidates.includes(ugitGit))
-    // Ordered after the hermes-bundled portable git (preferred), before the
+    // Ordered after the zeus-bundled portable git (preferred), before the
     // system-wide defaults.
     assert.ok(
-      candidates.indexOf(ugitGit) > candidates.indexOf(path.join(env.localAppData, 'hermes', 'git', 'cmd', 'git.exe'))
+      candidates.indexOf(ugitGit) > candidates.indexOf(path.join(env.localAppData, 'zeus', 'git', 'cmd', 'git.exe'))
     )
     assert.ok(candidates.indexOf(ugitGit) < candidates.indexOf(path.join(env.programFiles, 'Git', 'cmd', 'git.exe')))
 
@@ -97,11 +97,11 @@ describe('windowsGitCandidates (#61494)', () => {
     assert.equal(candidates.find(fs.existsSync), ugitGit)
   })
 
-  test('selects PM-managed Git before the hermes-bundled portable git', () => {
-    const managed = path.join(LAD, 'hermes', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
-    const portable = path.join(env.localAppData, 'hermes', 'git', 'cmd', 'git.exe')
+  test('selects PM-managed Git before the zeus-bundled portable git', () => {
+    const managed = path.join(LAD, 'zeus', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
+    const portable = path.join(env.localAppData, 'zeus', 'git', 'cmd', 'git.exe')
     const fs = fakeFs(
-      { [path.join(LAD, 'hermes', 'tools')]: ['git-2.53.0+3-win32-x64'] },
+      { [path.join(LAD, 'zeus', 'tools')]: ['git-2.53.0+3-win32-x64'] },
       [managed, portable]
     )
 
@@ -110,9 +110,9 @@ describe('windowsGitCandidates (#61494)', () => {
     assert.equal(candidates.find(fs.existsSync), managed)
   })
 
-  test('still prefers the hermes-bundled portable git over UGit', () => {
+  test('still prefers the zeus-bundled portable git over UGit', () => {
     const ugitGit = ugitGitExe('5.50.1')
-    const portable = path.join(env.localAppData, 'hermes', 'git', 'cmd', 'git.exe')
+    const portable = path.join(env.localAppData, 'zeus', 'git', 'cmd', 'git.exe')
     const fs = fakeFs({ [path.join(LAD, 'UGit')]: ['app-5.50.1'] }, [portable, ugitGit])
 
     const candidates = windowsGitCandidates(env, fs)
@@ -124,8 +124,8 @@ describe('windowsGitCandidates (#61494)', () => {
     const candidates = windowsGitCandidates(env, fakeFs({}, []))
 
     assert.deepEqual(candidates, [
-      path.join(env.localAppData, 'hermes', 'git', 'cmd', 'git.exe'),
-      path.join(env.localAppData, 'hermes', 'git', 'bin', 'git.exe'),
+      path.join(env.localAppData, 'zeus', 'git', 'cmd', 'git.exe'),
+      path.join(env.localAppData, 'zeus', 'git', 'bin', 'git.exe'),
       path.join(env.programFiles, 'Git', 'cmd', 'git.exe'),
       path.join(env.programFilesX86, 'Git', 'cmd', 'git.exe'),
       path.join(env.localAppData, 'Programs', 'Git', 'cmd', 'git.exe')

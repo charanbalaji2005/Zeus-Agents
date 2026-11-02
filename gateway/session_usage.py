@@ -1,6 +1,6 @@
 """Session-cumulative usage for a local viewer (wave A2 / CALLMAP W3).
 
-Main's HermesCLI read its status bar (context, ``◷`` latency, ``t/s``, the spinner's ``↓ N tok``),
+Main's ZeusCLI read its status bar (context, ``◷`` latency, ``t/s``, the spinner's ``↓ N tok``),
 ``/usage`` and the exit summary straight off the in-process agent's ``session_*`` counters,
 ``context_compressor`` and ``get_rate_limit_state()``. On the session authority the agent lives in
 the gateway, so the same numbers are projected here: published as ``session.usage`` after every API
@@ -165,7 +165,7 @@ def usage_frame(stats: dict) -> dict:
     ``SessionUsagePayload`` (``tui_gateway/contracts/events.py``) allows either view — the TUI
     ``usage`` object (``server._start_usage_ticker``) or the session-cumulative counters at the top
     level — and the readers on the far end want different halves. The classic CLI
-    (``hermes_cli.gateway_connection.SessionState.apply_event``) keeps the top-level counters
+    (``zeus_cli.gateway_connection.SessionState.apply_event``) keeps the top-level counters
     whenever they are present and ignores the nested view; ACP (``acp_adapter.gateway_server``)
     reads only the top level; a Desktop bundle older than ``usageFromTick`` reads only
     ``payload.usage``, so its context / cache-hit / tokens-per-second meters render their empty
@@ -173,7 +173,7 @@ def usage_frame(stats: dict) -> dict:
     viewer from one frame, and leaves the counters untouched for every existing consumer.
 
     ``usage`` is the standard status-bar projection of the embedded ticker's ``server._get_usage``
-    view, with two exceptions: ``dev_credits_spent_micros`` (``HERMES_DEV_CREDITS`` only) is not
+    view, with two exceptions: ``dev_credits_spent_micros`` (``ZEUS_DEV_CREDITS`` only) is not
     carried, and ``avg_latency_s`` / ``avg_tps`` are rounded from the counters' two decimals rather
     than the raw values, so they can differ by 0.1 at a rounding boundary. A Desktop bundle that
     reads only ``payload.usage`` fills its meters here too. The
@@ -204,7 +204,7 @@ def publish_usage(turn, agent, *, record: bool = False) -> None:
 
 async def stats(connection, ref, params):
     """``session.stats {session_id}``: the same dict ``session.usage`` carries."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     if set(params) - {"session_id", "profile"}:
         raise RuntimeStoreError("invalid_params")
     await connection.authority.resolve(connection.actor, ref)

@@ -57,9 +57,9 @@ class ApiServerMemorySessions:
     def _owner_home() -> tuple[str, Optional[Path]]:
         """(registry key, profile home to re-enter on eviction) for the CURRENT scope. Callers run
         inside ``_profile_scope`` (or a single-profile gateway), so the ambient home is the owner's."""
-        from hermes_constants import get_hermes_home, hermes_home_key
-        home = Path(get_hermes_home())
-        return hermes_home_key(home), home
+        from zeus_constants import get_zeus_home, zeus_home_key
+        home = Path(get_zeus_home())
+        return zeus_home_key(home), home
 
     # -- check-out / check-in ----------------------------------------------------------------
 
@@ -75,7 +75,7 @@ class ApiServerMemorySessions:
             entry = self._entries.pop((home_key, session_id), None)
         if entry is None:
             return None
-        from hermes_state_mutation_retirement import RETRY_HORIZON_S
+        from zeus_state_mutation_retirement import RETRY_HORIZON_S
         if time.time() - entry[3] > RETRY_HORIZON_S:
             self._shutdown_async(entry[0], entry[1])
             return None

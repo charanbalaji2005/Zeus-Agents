@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { describe, expect, it, vi } from 'vitest'
 
 import { type ChatMessage, finalizeInterruptedMessages, textPart } from '@/lib/chat-messages'

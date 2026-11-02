@@ -272,32 +272,32 @@ test('the script log report keeps only this attempt, reads a bounded suffix, and
 
   try {
     // Older attempt's lines, then enough filler to push them past the bounded read.
-    const filler: string = `t [hermes-relaunch-old] pid=1 ${'x'.repeat(200)}\n`.repeat(
+    const filler: string = `t [zeus-relaunch-old] pid=1 ${'x'.repeat(200)}\n`.repeat(
       Math.ceil(RELAUNCH_WAITER_LOG_TAIL_BYTES / 200) + 5
     )
 
     fs.writeFileSync(
       file,
-      `t [hermes-relaunch-gone] pid=2 stale line\n${filler}t [hermes-relaunch-me] pid=3 pfad C:\\Benutzer\\Jörg fehlgeschlagen\nt [hermes-relaunch-other] pid=4 not mine\n`,
+      `t [zeus-relaunch-gone] pid=2 stale line\n${filler}t [zeus-relaunch-me] pid=3 pfad C:\\Benutzer\\Jörg fehlgeschlagen\nt [zeus-relaunch-other] pid=4 not mine\n`,
       'utf8'
     )
 
-    const report: string = waiterLogTail(file, 'hermes-relaunch-me')
+    const report: string = waiterLogTail(file, 'zeus-relaunch-me')
     assert.match(report, /Jörg fehlgeschlagen/)
-    assert.doesNotMatch(report, /not mine|stale line|\[hermes-relaunch-old\]/)
-    assert.equal(waiterLogTail(file, 'hermes-relaunch-gone'), `${file}:\nno lines from this attempt`)
+    assert.doesNotMatch(report, /not mine|stale line|\[zeus-relaunch-old\]/)
+    assert.equal(waiterLogTail(file, 'zeus-relaunch-gone'), `${file}:\nno lines from this attempt`)
     // Every physical line of a multi-line script error carries the tag, so none is dropped.
     fs.writeFileSync(
       file,
       [
-        't [hermes-relaunch-me] pid=3 failed: Exception: run.ps1:1',
-        't [hermes-relaunch-me] pid=3 Line |',
-        't [hermes-relaunch-me] pid=3  | first line second line third line',
-        't [hermes-relaunch-other] pid=4 not mine'
+        't [zeus-relaunch-me] pid=3 failed: Exception: run.ps1:1',
+        't [zeus-relaunch-me] pid=3 Line |',
+        't [zeus-relaunch-me] pid=3  | first line second line third line',
+        't [zeus-relaunch-other] pid=4 not mine'
       ].join('\n'),
       'utf8'
     )
-    const multi: string = waiterLogTail(file, 'hermes-relaunch-me')
+    const multi: string = waiterLogTail(file, 'zeus-relaunch-me')
     assert.match(multi, /Line \|/)
     assert.match(multi, /third line/)
     assert.doesNotMatch(multi, /not mine/)

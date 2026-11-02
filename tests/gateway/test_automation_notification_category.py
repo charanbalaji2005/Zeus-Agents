@@ -8,15 +8,15 @@ from gateway.platforms.event import MessageEvent
 from gateway.run import GatewayRunner
 from gateway.session_authority import SessionAuthority, initialize_session_authority
 from gateway.session_contract import Principal
-from hermes_state_runtime import RuntimeStoreError, get_session_admission, list_session_admissions
+from zeus_state_runtime import RuntimeStoreError, get_session_admission, list_session_admissions
 
 
 async def _authority(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(SessionAuthority, '_schedule', lambda self, ref: None)
     monkeypatch.setattr('gateway.session_bot._watch_reply', lambda *args: None)
     runner = GatewayRunner(GatewayConfig(sessions_dir=tmp_path / 'sessions'))
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB(tmp_path / 'state.db')
     runner.session_store._db = db
     runner._session_db = db

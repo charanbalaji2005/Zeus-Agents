@@ -13,7 +13,7 @@ route, so it applies to the compression tip the next turn writes.
 """
 import asyncio
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 CHAT_PICKS = frozenset({'model', 'reasoning'})
 
@@ -38,10 +38,10 @@ async def _pick_model(authority, owner, live, payload, row):
     as its session override. Returns the receipt fields, or the guard's confirmation request."""
     from gateway.session_mutation_model import _Route, _selection_guard_refusal, is_model_reset
     from gateway.slash_commands_model import _ModelSwitchContext
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     runner = authority.runner
     ctx = _ModelSwitchContext(session_key=live.route, source=live.source,
-                              config_path=get_hermes_home() / 'config.yaml', persist_global=False)
+                              config_path=get_zeus_home() / 'config.yaml', persist_global=False)
     ctx.read_config()
     if is_model_reset(payload):  # the chat's own `/model reset`: its override goes, its reply is the note
         note = await runner._handle_model_reset(None, ctx)
@@ -75,8 +75,8 @@ async def apply_chat_pick(authority, ref, owner, live, params, *, principal_id):
     pick on a compressed chat with ``stale_generation``. The receipt is keyed on that mount too: an
     exact retry answers its stored receipt without re-applying the override, and the commit bumps the
     mount's revision, so a retry of an older pick refuses ``revision_conflict``."""
-    from hermes_state_mutation_chat_pick import chat_pick_key, commit_chat_pick, prepare_chat_pick
-    from hermes_state_mutations import validate_action
+    from zeus_state_mutation_chat_pick import chat_pick_key, commit_chat_pick, prepare_chat_pick
+    from zeus_state_mutations import validate_action
     operation, payload = params['operation'], params['payload']
     validate_action(operation, payload)
     key, digest = chat_pick_key(principal_id, owner.session_id, params)

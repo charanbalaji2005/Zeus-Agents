@@ -30,7 +30,7 @@ function fixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mac-sign-cache-test-'))
   const entitlements = path.join(root, 'inherit.plist')
   fs.writeFileSync(entitlements, '<plist/>')
-  const app = path.join(root, 'Hermes.app')
+  const app = path.join(root, 'Zeus.app')
   /** @param {string} relative @param {Buffer | string} bytes @returns {string} */
   const put = (relative, bytes) => {
     const file = path.join(app, 'Contents', relative)
@@ -69,7 +69,7 @@ test('loose payload binaries are found; nested bundles, the main executable and 
   try {
     const loose = f.put('Resources/agent-payload/venv/lib/_core.so', machO('a'))
     f.put('Resources/agent-payload/README.txt', 'text')
-    f.put('MacOS/Hermes', machO('main'))
+    f.put('MacOS/Zeus', machO('main'))
     f.put('Frameworks/Electron Framework.framework/Versions/A/Electron Framework', machO('fw'))
     f.put('Resources/agent-payload/tools/chromium-1/Chromium.app/Contents/MacOS/Chromium', machO('c'))
     expect(looseMachOFiles(f.app, () => false)).toEqual([loose])
@@ -197,7 +197,7 @@ test('the signer hands cache-signed binaries to osx-sign as ignored and still se
     const signer = createMacSigner(
       { entitlements: 'app.plist', entitlementsInherit: f.opts.entitlements, hardenedRuntime: true,
         ignore: file => file === policyIgnored },
-      { env: { HERMES_MAC_SIGNATURE_CACHE: f.opts.root }, sign,
+      { env: { ZEUS_MAC_SIGNATURE_CACHE: f.opts.root }, sign,
         team: async () => 'TEAMID1234',
         makeCache: options => createMacSignCache({ ...options, codesign: f.codesign, verify: f.verify }) })
     const packager = { helper: { getOptionsForFile: async () => () => ({}) } }
@@ -225,7 +225,7 @@ test('the signer does not seal an app when cache signing fails verification', as
     const sign = vi.fn(async (/** @type {import('@electron/osx-sign').SignOptions} */ _opts) => {})
     const signer = createMacSigner(
       { entitlementsInherit: f.opts.entitlements, hardenedRuntime: true, ignore: () => false },
-      { env: { HERMES_MAC_SIGNATURE_CACHE: f.opts.root }, sign,
+      { env: { ZEUS_MAC_SIGNATURE_CACHE: f.opts.root }, sign,
         team: async () => 'TEAMID1234',
         makeCache: options => createMacSignCache({ ...options, codesign: f.codesign, verify: async () => new Set() }) })
     const packager = { helper: { getOptionsForFile: async () => () => ({}) } }

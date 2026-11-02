@@ -6,7 +6,7 @@ maintainer: tomekdot
 tier: community
 category: desktop
 version: "1.2.5"
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/tomekdot/hermes-my-github-plugin
 platforms: []
 capabilities:

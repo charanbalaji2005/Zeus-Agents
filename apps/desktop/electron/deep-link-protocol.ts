@@ -1,7 +1,7 @@
 /**
- * `hermes://` deep-link registration. Every launch rewrites the OS handler (on Windows,
+ * `zeus://` deep-link registration. Every launch rewrites the OS handler (on Windows,
  * HKCU\Software\Classes\<protocol>), so a test or dev run of an unpackaged checkout would
- * repoint the user's installed handler at that checkout. `HERMES_DESKTOP_SKIP_PROTOCOL_REGISTRATION=1`
+ * repoint the user's installed handler at that checkout. `ZEUS_DESKTOP_SKIP_PROTOCOL_REGISTRATION=1`
  * (set by the E2E harnesses) leaves the OS registration untouched; deep links that arrive
  * through argv / second-instance still route normally.
  */
@@ -25,8 +25,8 @@ export interface DeepLinkProtocolOptions {
 export function registerDeepLinkProtocol(options: DeepLinkProtocolOptions): void {
   const { app, protocol, env, defaultApp, argv, execPath, resolve, log } = options
 
-  if (env.HERMES_DESKTOP_SKIP_PROTOCOL_REGISTRATION === '1') {
-    log(`[deeplink] ${protocol}:// registration skipped (HERMES_DESKTOP_SKIP_PROTOCOL_REGISTRATION)`)
+  if (env.ZEUS_DESKTOP_SKIP_PROTOCOL_REGISTRATION === '1') {
+    log(`[deeplink] ${protocol}:// registration skipped (ZEUS_DESKTOP_SKIP_PROTOCOL_REGISTRATION)`)
 
     return
   }

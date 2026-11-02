@@ -20,18 +20,18 @@ def test_bootstrap_environment_isolates_owned_paths_without_mutating_caller(tmp_
         "HOME": str(original_home), "USERPROFILE": str(original_home),
         "LOCALAPPDATA": str(original_home / "AppData/Local"),
         "APPDATA": str(original_home / "AppData/Roaming"),
-        "HERMES_HOME": str(original_home / "profile"),
-        "HERMES_RUNTIME_DIR": str(original_home / "tools"),
-        "HERMES_INSTALL_ROOT": str(original_home / "installed"),
-        "HERMES_PAYLOAD_ROOT": str(original_home / "payload"),
-        "HERMES_PAYLOAD_TAG": "v1.2.3", "HERMES_BUILD_COMMIT": "a" * 40,
-        "HERMES_SITE": str(original_home / "site"),
-        "HERMES_PYTHON_SRC_ROOT": str(original_home / "repo"),
-        "HERMES_PYTHON": str(original_home / "python"),
-        "HERMES_NODE": str(original_home / "node"),
-        "HERMES_PROFILE": "live", "HERMES_REAL_HOME": str(original_home),
-        "HERMES_BUNDLED_SKILLS": str(original_home / "skills"),
-        "HERMES_OPTIONAL_MCPS": str(original_home / "mcps"),
+        "ZEUS_HOME": str(original_home / "profile"),
+        "ZEUS_RUNTIME_DIR": str(original_home / "tools"),
+        "ZEUS_INSTALL_ROOT": str(original_home / "installed"),
+        "ZEUS_PAYLOAD_ROOT": str(original_home / "payload"),
+        "ZEUS_PAYLOAD_TAG": "v1.2.3", "ZEUS_BUILD_COMMIT": "a" * 40,
+        "ZEUS_SITE": str(original_home / "site"),
+        "ZEUS_PYTHON_SRC_ROOT": str(original_home / "repo"),
+        "ZEUS_PYTHON": str(original_home / "python"),
+        "ZEUS_NODE": str(original_home / "node"),
+        "ZEUS_PROFILE": "live", "ZEUS_REAL_HOME": str(original_home),
+        "ZEUS_BUNDLED_SKILLS": str(original_home / "skills"),
+        "ZEUS_OPTIONAL_MCPS": str(original_home / "mcps"),
         "VIRTUAL_ENV": str(original_home / "venv"),
         "PYTHONHOME": str(original_home / "python-home"),
         "PYTHONPATH": str(original_home / "site"),
@@ -50,20 +50,20 @@ def test_bootstrap_environment_isolates_owned_paths_without_mutating_caller(tmp_
     assert dict(os.environ) == process_before
     assert environment["CARGO_HOME"] == inherited["CARGO_HOME"]
     assert environment["RUSTUP_HOME"] == inherited["RUSTUP_HOME"]
-    for key in ("HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "HERMES_HOME",
+    for key in ("HOME", "USERPROFILE", "LOCALAPPDATA", "APPDATA", "ZEUS_HOME",
                 "XDG_CONFIG_HOME", "XDG_CACHE_HOME"):
         assert Path(environment[key]).is_relative_to(work)
-    assert Path(environment["HERMES_RUNTIME_DIR"]) == cache / "tools"
+    assert Path(environment["ZEUS_RUNTIME_DIR"]) == cache / "tools"
     assert Path(environment["UV_CACHE_DIR"]) == cache / "python/runtime"
     assert Path(environment["npm_config_cache"]) == cache / "npm"
     assert "npm_execpath" not in environment
     assert "NPM_CONFIG_USERCONFIG" not in environment
     assert environment["npm_config_userconfig"] == os.devnull
     assert "npm_config_globalconfig" not in environment
-    assert environment["HERMES_PYTHON_SRC_ROOT"] == str(source)
-    for key in ("HERMES_INSTALL_ROOT", "HERMES_PAYLOAD_ROOT", "HERMES_PAYLOAD_TAG",
-                "HERMES_BUILD_COMMIT", "HERMES_SITE", "HERMES_PROFILE", "HERMES_REAL_HOME",
-                "HERMES_PYTHON", "HERMES_NODE", "HERMES_BUNDLED_SKILLS", "HERMES_OPTIONAL_MCPS",
+    assert environment["ZEUS_PYTHON_SRC_ROOT"] == str(source)
+    for key in ("ZEUS_INSTALL_ROOT", "ZEUS_PAYLOAD_ROOT", "ZEUS_PAYLOAD_TAG",
+                "ZEUS_BUILD_COMMIT", "ZEUS_SITE", "ZEUS_PROFILE", "ZEUS_REAL_HOME",
+                "ZEUS_PYTHON", "ZEUS_NODE", "ZEUS_BUNDLED_SKILLS", "ZEUS_OPTIONAL_MCPS",
                 "VIRTUAL_ENV", "PYTHONHOME", "PYTHONPATH"):
         assert key not in environment
     assert environment["SIGNING_TOKEN"] == inherited["SIGNING_TOKEN"]
@@ -77,12 +77,12 @@ def test_bootstrap_environment_isolates_owned_paths_without_mutating_caller(tmp_
 
     mixed = toolchain.bootstrap_environment(source, work, cache, {
         "Home": str(original_home), "UserProfile": str(original_home), "LocalAppData": "live-local",
-        "Hermes_Home": "live-profile", "Hermes_Runtime_Dir": "live-store", "Cargo_Home": "custom-cargo",
+        "Zeus_Home": "live-profile", "Zeus_Runtime_Dir": "live-store", "Cargo_Home": "custom-cargo",
         "Rustup_Home": "custom-rustup", "NPM_CONFIG_CACHE": "live-npm", "Path": os.defpath,
     })
     assert mixed["CARGO_HOME"] == "custom-cargo" and mixed["RUSTUP_HOME"] == "custom-rustup"
     assert len([key for key in mixed if key.upper() == "HOME"]) == 1
-    assert len([key for key in mixed if key.upper() == "HERMES_RUNTIME_DIR"]) == 1
+    assert len([key for key in mixed if key.upper() == "ZEUS_RUNTIME_DIR"]) == 1
 
 
 def test_rust_sdists_build_outside_the_nested_uv_cache(tmp_path):
@@ -130,7 +130,7 @@ def test_run_preparation_bootstraps_before_worker_in_isolated_child(tmp_path, mo
         "import os, sys\n"
         "from pathlib import Path\n"
         "assert Path(os.environ['HOME']).name == 'home'\n"
-        "assert 'HERMES_INSTALL_ROOT' not in os.environ\n"
+        "assert 'ZEUS_INSTALL_ROOT' not in os.environ\n"
         "assert sys.flags.isolated and sys.flags.no_site\n"
         "def runtime_command(script, args, *, cache):\n"
         "    assert cache == Path(os.environ['UV_CACHE_DIR'])\n"
@@ -146,7 +146,7 @@ def test_run_preparation_bootstraps_before_worker_in_isolated_child(tmp_path, mo
         "import ssl\n"
         "assert ssl.SSLContext.__module__.startswith('truststore')\n"
         "request = json.loads(Path(sys.argv[2]).read_text())\n"
-        "assert os.environ['HERMES_RUNTIME_DIR'] == request['tools']\n"
+        "assert os.environ['ZEUS_RUNTIME_DIR'] == request['tools']\n"
         "Path(request['receipt']).write_text(str(Path.cwd()))\n"
         "sys.exit(request['exit_code'])\n", encoding="utf-8",
     )
@@ -154,7 +154,7 @@ def test_run_preparation_bootstraps_before_worker_in_isolated_child(tmp_path, mo
     receipt = tmp_path / "worker-ran"
     request_file.write_text(json.dumps({"receipt": str(receipt), "tools": str(cache / "tools"),
                                         "exit_code": exit_code}), encoding="utf-8")
-    monkeypatch.setenv("HERMES_INSTALL_ROOT", str(tmp_path / "live-install"))
+    monkeypatch.setenv("ZEUS_INSTALL_ROOT", str(tmp_path / "live-install"))
     before = dict(os.environ)
     assert desktop_toolchain.run_preparation(source, work, cache, request_file) == exit_code
     assert dict(os.environ) == before
@@ -192,9 +192,9 @@ def test_packaging_preserves_keychain_home_without_retargeting_build_state(tmp_p
     isolated = bootstrap_environment(source, work, cache, inherited)
     before = isolated.copy()
     for caller in (inherited, {**inherited, "HOME": str(work / "launcher-home"),
-                               "HERMES_REAL_HOME": login_home}, {}):
+                               "ZEUS_REAL_HOME": login_home}, {}):
         packaged = packaging_environment(isolated, caller, target)
-        expected_home = (caller.get("HERMES_REAL_HOME") or caller.get("HOME") or str(Path.home())
+        expected_home = (caller.get("ZEUS_REAL_HOME") or caller.get("HOME") or str(Path.home())
                          if target.startswith("darwin-") else isolated["HOME"])
         assert packaged == {**isolated, "HOME": expected_home}
     assert isolated == before
@@ -208,7 +208,7 @@ def test_prepare_tools_uses_pm_native_pins_and_separate_cache(tmp_path, monkeypa
 
     source, work, cache = (tmp_path / name for name in ("source", "work", "cache"))
     env = desktop_toolchain.bootstrap_environment(source, work, cache, os.environ)
-    monkeypatch.setenv("HERMES_RUNTIME_DIR", env["HERMES_RUNTIME_DIR"])
+    monkeypatch.setenv("ZEUS_RUNTIME_DIR", env["ZEUS_RUNTIME_DIR"])
     acquired, native_calls = [], []
     bins = {name: cache / "tools" / name / "bin" / name for name in ("python", "node")}
     for binary in bins.values():
@@ -233,8 +233,8 @@ def test_prepare_tools_uses_pm_native_pins_and_separate_cache(tmp_path, monkeypa
     python, node, prepared = desktop_toolchain.prepare_tools(source, work, cache, env)
     assert acquired == ["uv", "npm"]
     assert python == bins["python"] and node == bins["node"]
-    assert prepared["HERMES_PYTHON"] == str(python)
-    assert prepared["HERMES_NODE"] == str(node)
+    assert prepared["ZEUS_PYTHON"] == str(python)
+    assert prepared["ZEUS_NODE"] == str(node)
     assert prepared["PATH"] == "pm-tools"
     uv_cache = Path(prepared["UV_CACHE_DIR"])
     assert uv_cache.resolve() == (cache / "python/runtime/native-identity").resolve()
@@ -322,7 +322,7 @@ def test_native_cache_leaves_room_for_sdist_compiler_outputs(tmp_path, monkeypat
         "WindowsSDKVersion": "10.0.1", "VCToolsVersion": "14.1", "OPENSSL_DIR": str(openssl),
     })
     assert selected.is_relative_to(cache / "python/runtime")
-    runner_cache = PureWindowsPath("D:/a/hermes-agent/hermes-agent/.cache/desktop-inputs")
+    runner_cache = PureWindowsPath("D:/a/zeus-agents/zeus-agents/.cache/desktop-inputs")
     sdist = PureWindowsPath("sdists-v9/pypi/pilk/0.2.4/5b4cbVXt0GPuGQrp/src")
     for architecture in ("win-amd64", "win-arm64"):
         output = (runner_cache.joinpath(*selected.relative_to(cache).parts) / sdist
@@ -342,7 +342,7 @@ def test_native_cache_is_stable_without_a_developer_environment(tmp_path, monkey
     version_file.parent.mkdir(parents=True)
     version_file.write_text("\ufeff14.44.35207\n", encoding="utf-8")  # Visual Studio writes a BOM
     vswhere = json.dumps([{"installationPath": str(install), "installationVersion": "17.14.1"}])
-    # vswhere is never on PATH; hermes_platform finds it in the installer directory.
+    # vswhere is never on PATH; zeus_platform finds it in the installer directory.
     installer = tmp_path / "Program Files (x86)/Microsoft Visual Studio/Installer"
     installer.mkdir(parents=True)
     (installer / "vswhere.exe").write_bytes(b"")

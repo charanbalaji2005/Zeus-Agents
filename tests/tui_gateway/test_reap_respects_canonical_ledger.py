@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from hermes_state import SessionDB
-from hermes_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input
+from zeus_state import SessionDB
+from zeus_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input
 from tui_gateway.server import _teardown_session
 
 
@@ -18,7 +18,7 @@ def _session(tmp_path, monkeypatch, source, session_id):
     from run_agent import AIAgent
     home = tmp_path / 'home'
     home.mkdir()
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     db = SessionDB(db_path=home / 'state.db')
     db.create_session(session_id, source=source)
     agent = AIAgent.__new__(AIAgent)
@@ -89,7 +89,7 @@ async def test_reap_of_a_segment_of_an_adopted_conversation_respects_the_owner_l
     from gateway.session_local_recovery import reopen_local_session
     from gateway.session_local_title import resolve_titled_session
     from tui_gateway import server
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'cli': []}})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     db = store._db

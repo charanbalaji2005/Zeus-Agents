@@ -10,7 +10,7 @@ export interface PluginProfileRoute {
   primary?: true
   /** Desktop profile used to select the connection route. */
   profile: string
-  /** Backend Hermes profile served by that route. */
+  /** Backend Zeus profile served by that route. */
   targetProfile: string
 }
 
@@ -57,7 +57,7 @@ export async function requestPluginProfile<T>(
       : requestGatewayForAgent<T>(route.connectionId, route.profile, method, params, timeoutMs)
   }
 
-  const getAgentRoster = window.hermesDesktop?.getAgentRoster
+  const getAgentRoster = window.zeusDesktop?.getAgentRoster
 
   if (!getAgentRoster) {
     return dialProfile(route)
@@ -85,7 +85,7 @@ export async function requestPluginProfile<T>(
  *  no longer authority to touch that backend, even when its labels still look
  *  identical. */
 export async function pluginRouteStillRegistered(route: PluginProfileRoute): Promise<boolean> {
-  const getProfileRoutes = window.hermesDesktop?.getProfileRoutes
+  const getProfileRoutes = window.zeusDesktop?.getProfileRoutes
 
   if (!getProfileRoutes) {
     return false

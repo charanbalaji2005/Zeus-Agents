@@ -2,7 +2,7 @@ name: go-whatsapp
 repo: https://github.com/anpicasso/hermes-go-whatsapp
 sha: a48546353fe79456bc193402905b17b3e1cd1be6
 version: "0.4.1"
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 title: Go WhatsApp
 description: >-
   Outbound WhatsApp tools through GOWA: registers GOWA's native MCP server and

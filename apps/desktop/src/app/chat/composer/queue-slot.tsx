@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import type { HermesGateway } from '@/hermes'
+import type { ZeusGateway } from '@/zeus'
 import type { Translations } from '@/i18n'
 import { useStoresSelector } from '@/lib/use-session-slice'
 import { type QueuedPromptEntry, removeQueuedPrompt, unparkQueuedPrompts } from '@/store/composer-queue'
@@ -18,7 +18,7 @@ export interface ComposerQueueSlotInputs {
   busy: boolean
   drainNextQueued: () => Promise<unknown>
   exitQueuedEdit: (action: 'cancel' | 'save') => unknown
-  gateway: HermesGateway | null | undefined
+  gateway: ZeusGateway | null | undefined
   queueEdit: QueueEditState | null
   queueParked: boolean
   queuedPrompts: QueuedPromptEntry[]

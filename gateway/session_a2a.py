@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 from gateway.session_contract import SessionRef, Submission
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 _forward_identity = ContextVar('a2a_forward_identity', default=None)
@@ -54,11 +54,11 @@ def storage_source(db, source, session_id, fallback):
         return fallback
     if not str(source.chat_id).startswith('local-'):
         # An adopted pre-authority row keeps its historical id as the route (session_local_migration).
-        from hermes_state_local_migration import LEGACY_PREFIX
+        from zeus_state_local_migration import LEGACY_PREFIX
         with db._read_ctx() as conn:
             if conn.execute('SELECT 1 FROM state_meta WHERE key=?', (LEGACY_PREFIX + str(source.chat_id),)).fetchone() is None:
                 return fallback
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     receipt = local_receipt(db, source.chat_id)
     if session_id not in receipt.get('lineage', [receipt['session_id']]):
         raise RuntimeStoreError('admission_conflict')
@@ -94,9 +94,9 @@ async def forward(connection, params):
     from gateway.session_local_recovery import local_identity, restore_local_session
     from gateway.session_local import stage_local_session
     from gateway.session_runtime_workers import tracked_write
-    from hermes_state_local import commit_local_session, local_receipt
-    from hermes_state_mutation_retirement import first_generation
-    from hermes_state_terminal import identity_key
+    from zeus_state_local import commit_local_session, local_receipt
+    from zeus_state_mutation_retirement import first_generation
+    from zeus_state_terminal import identity_key
     # A context whose session the user deleted continues on its next generation (the deleted id
     # stays retired). An exact retry of an input the deleted session took stays on it and is
     # refused there, never run again.
@@ -115,7 +115,7 @@ async def forward(connection, params):
         ref = restore_local_session(authority, sid)
     else:
         # Historical `a2a-{agent}-{slug}` titles discarded peer/tenant identity and collapsed
-        # context characters, and those `hermes chat --source a2a` rows stored no origin, so a
+        # context characters, and those `zeus chat --source a2a` rows stored no origin, so a
         # titled row never proves it belongs to this exact conversation. Never adopt or retitle
         # it (that would hand one peer another's history), and never refuse every peer whose
         # slug collides: start this identity's own canonical session and leave the old row be.
@@ -144,9 +144,9 @@ async def forward(connection, params):
 
 async def forward_to_owner(home, *, agent, tenant, peer, context_id, input_id, text, timeout):
     """Transport-only caller; a timeout never cancels or re-identifies accepted work."""
-    from hermes_cli.gateway_client import (GATEWAY_WS_PROTOCOL, GatewayClient, GatewayClientError,
+    from zeus_cli.gateway_client import (GATEWAY_WS_PROTOCOL, GatewayClient, GatewayClientError,
         _session_ticket, gateway_ws_target)
-    from hermes_cli.gateway_runtime import ensure_gateway_runtime
+    from zeus_cli.gateway_runtime import ensure_gateway_runtime
     from websockets.asyncio.client import connect
     home = await asyncio.to_thread(Path(home).resolve)
     async with asyncio.timeout(timeout):

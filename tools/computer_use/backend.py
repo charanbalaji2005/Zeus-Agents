@@ -66,7 +66,7 @@ class ActionResult:
     ``structuredContent`` leaves them ``None``, behavior unchanged.
 
     Beyond the transport-level ``ok`` flag, this carries cua-driver's structured action verdict so the model
-    can follow the documented verify → escalate ladder (NousResearch/hermes-agent#67052).
+    can follow the documented verify → escalate ladder (charanbalaji2005/Zeus-Agents#67052).
     """
 
     ok: bool
@@ -155,7 +155,7 @@ class ComputerUseProvider(ProviderBase):
 
     @abstractmethod
     def create_backend(self, *, permission_mode: str) -> ComputerUseBackend:
-        """A fresh, unstarted backend for one Hermes session (the tool calls ``start()``/``stop()``).
+        """A fresh, unstarted backend for one Zeus session (the tool calls ``start()``/``stop()``).
         ``permission_mode`` is ``standard`` | ``bounded`` | ``unrestricted`` (approval bypass active)."""
 
     def is_available(self) -> bool:
@@ -163,6 +163,6 @@ class ComputerUseProvider(ProviderBase):
         return True
 
     def doctor(self) -> Optional[int]:
-        """``hermes computer-use doctor`` for this backend: print findings, return the exit code.
+        """``zeus computer-use doctor`` for this backend: print findings, return the exit code.
         ``None`` (default) means the backend ships no doctor."""
         return None

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/store/session-control', () => ({ refreshSupportedSessionControlAfterTurn: vi.fn(async () => undefined) }))
 
-import type { GatewayEventName } from '@hermes/shared'
+import type { GatewayEventName } from '@zeus/shared'
 
 import { liveTurnSettledDuringResume } from '@/app/session/hooks/use-session-actions/resume-reconcile'
 
@@ -28,7 +28,7 @@ function complete(sessionId: string): GatewayEventContext {
       lastCwdInfoSessionRef: { current: null },
       nativeSubagentSessionsRef: { current: new Set() },
       queryClient: {} as GatewayEventContext['deps']['queryClient'],
-      refreshHermesConfig: vi.fn(async () => undefined),
+      refreshZeusConfig: vi.fn(async () => undefined),
       scheduleSessionsRefresh: vi.fn(),
       sessionInterrupted: vi.fn(() => false),
       sessionStateByRuntimeIdRef: { current: new Map() },

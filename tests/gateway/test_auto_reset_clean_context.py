@@ -28,7 +28,7 @@ from __future__ import annotations
 
 from gateway.config import GatewayConfig, Platform
 from gateway.session import SessionSource, SessionStore
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 
 # ---------------------------------------------------------------------------

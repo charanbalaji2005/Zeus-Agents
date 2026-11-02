@@ -144,7 +144,7 @@ afterEach(() => {
 // Storage.key(i), not Object.keys: the test environment's localStorage enumerates no stored keys.
 const outboxKeys = () =>
   Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index) ?? '').filter(key =>
-    key.startsWith('hermes:composer-outbox:')
+    key.startsWith('zeus:composer-outbox:')
   )
 
 // The notice that a restored send came back without its attachments (this page's notification store).
@@ -155,8 +155,8 @@ const attachmentsNotice = async () =>
 
 // Seeds the draft as a first launch reads it: the v3 list counts only before any page wrote the v4 stash.
 const saveDraft = (text: string) => {
-  window.localStorage.removeItem('hermes:composer-drafts:v4')
-  window.localStorage.setItem('hermes:composer-drafts:v3', JSON.stringify({ 'stored-B': text }))
+  window.localStorage.removeItem('zeus:composer-drafts:v4')
+  window.localStorage.setItem('zeus:composer-drafts:v3', JSON.stringify({ 'stored-B': text }))
 }
 
 // Enter on `text` (with a url attachment), then the window closes before prompt.submit: the id it sent.
@@ -367,7 +367,7 @@ it('equal words typed again after an interrupted send are a new message, never t
 
   // The draft holding those words was saved after the send: the user typed them again.
   window.localStorage.setItem(
-    'hermes:composer-drafts:v4',
+    'zeus:composer-drafts:v4',
     JSON.stringify({ drafts: { 'stored-B': { at: at + 1000, text: 'same words' } } })
   )
   const reopened = vi.fn<ChatBarProps['onSubmit']>(async () => true)

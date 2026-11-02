@@ -4,8 +4,8 @@ Failure class: the durable pause record changes hands — a recovering launch cl
 folds an orphaned set into its own record — and a crash or a rival at the transfer boundary must
 neither lose nor double a paused gateway. Each cell plants the exact schedule with the INSTALLED
 code: a driver (the install's venv python) runs the real pause-record module and stops itself on
-the named source line; every recovery is a real ``hermes gateway status`` launch through the
-published ``hermes.exe`` that really restarts the real gateway.
+the named source line; every recovery is a real ``zeus gateway status`` launch through the
+published ``zeus.exe`` that really restarts the real gateway.
 
 * claim race: a launch is paused inside its claim, between taking the set and naming itself in it
   ("after rename, before identity write" on the old design); a second launch runs meanwhile. The
@@ -39,19 +39,19 @@ from tests.fakes.fake_llm_provider import FakeLLMServer
 pytestmark = [pytest.mark.platforms("windows"), pytest.mark.integration,
               pytest.mark.live_system_guard_bypass, REQUIRES_OPT_IN]
 
-_STEM = ".hermes-update-paused-gateways"
+_STEM = ".zeus-update-paused-gateways"
 _RESTARTING = "Restarting gateway(s) paused by an interrupted"
-_MISSING_SERVICE = "hermes-e2e-no-such-gateway-service"
+_MISSING_SERVICE = "zeus-e2e-no-such-gateway-service"
 
 # Every driver: the installed module behind the same bootstrap a launch runs (a resume imports
-# hermes_cli.main, whose bootstrap would otherwise re-enter this script mid-resume), and a hook that
+# zeus_cli.main, whose bootstrap would otherwise re-enter this script mid-resume), and a hook that
 # stops on one line of it (kill or park).
 _DRIVER = """
 import inspect, json, os, sys, time
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
-import hermes_bootstrap  # as every launch does: re-enters the managed interpreter with its dependencies
-from hermes_cli import update_pause_record as r
+import zeus_bootstrap  # as every launch does: re-enters the managed interpreter with its dependencies
+from zeus_cli import update_pause_record as r
 
 def stop_at(fn, texts, action, flag=None):
     lines, start = inspect.getsourcelines(fn)
@@ -78,7 +78,7 @@ _CLAIM_BOUNDARY = '("src.unlink()", \'body["claimer"] = identity()\')'
 
 
 def _python(machine) -> Path:
-    found = sorted(machine.hermes_home.glob("installs/*/environments/*/venv/Scripts/python.exe"))
+    found = sorted(machine.zeus_home.glob("installs/*/environments/*/venv/Scripts/python.exe"))
     assert found, fail_with(machine, "harness: the install has no venv python")
     return found[0]
 
@@ -121,7 +121,7 @@ def _run_driver(machine, name: str, body: str, *args: str, timeout: float = 300)
 
 
 def _records(machine) -> list[Path]:
-    return sorted(p for p in machine.hermes_home.glob(_STEM + "*") if p.suffix in (".json", ".claim"))
+    return sorted(p for p in machine.zeus_home.glob(_STEM + "*") if p.suffix in (".json", ".claim"))
 
 
 def _owed(machine) -> list[dict]:
@@ -143,7 +143,7 @@ def _clear(machine) -> None:
         path.unlink(missing_ok=True)
     # A hard-killed gateway leaves its last ``running`` state behind: the next cell's gateway must
     # be the one it reads, never a dying pid from this one.
-    (machine.hermes_home / "gateway_state.json").unlink(missing_ok=True)
+    (machine.zeus_home / "gateway_state.json").unlink(missing_ok=True)
 
 
 def _running(machine, not_pid: int, timeout: float) -> int | None:
@@ -154,8 +154,8 @@ def _running(machine, not_pid: int, timeout: float) -> int | None:
 
 
 def _fresh_gateway(machine) -> int:
-    """A real gateway started now (``hermes gateway run``); its pid once it reports running."""
-    (machine.hermes_home / "gateway_state.json").unlink(missing_ok=True)
+    """A real gateway started now (``zeus gateway run``); its pid once it reports running."""
+    (machine.zeus_home / "gateway_state.json").unlink(missing_ok=True)
     proc = machine.spawn_gateway()
     pid = int(machine.wait_gateway_running().get("pid") or 0)
     assert pid and psutil.pid_exists(pid) and proc.poll() is None, fail_with(machine, f"harness: gateway {pid} not up")
@@ -163,10 +163,10 @@ def _fresh_gateway(machine) -> int:
 
 
 def _paused_gateway(machine) -> int:
-    """A real gateway, stopped the way a pause stops it (a clean ``hermes gateway stop``, not a
+    """A real gateway, stopped the way a pause stops it (a clean ``zeus gateway stop``, not a
     hard kill whose stale lock state slows the next ``--replace``). Its (now dead) pid."""
     pid = _fresh_gateway(machine)
-    machine.hermes("gateway", "stop", label="pause-stop", timeout=180)
+    machine.zeus("gateway", "stop", label="pause-stop", timeout=180)
     deadline = time.monotonic() + 60
     while psutil.pid_exists(pid) and time.monotonic() < deadline:
         time.sleep(0.2)
@@ -175,7 +175,7 @@ def _paused_gateway(machine) -> int:
 
 
 def _launch(machine, label: str):
-    return machine.hermes("gateway", "status", label=label, timeout=600)
+    return machine.zeus("gateway", "status", label=label, timeout=600)
 
 
 def _claim_race(machine, out: dict) -> None:
@@ -279,7 +279,7 @@ def _gone(pid: int, timeout: float) -> bool:
 # The real pause, killed on one line of the installed update_cmd_windows (texts present before and
 # after round 6, so the same cell runs on the red branch).
 _PAUSE = """
-from hermes_cli import update_cmd_windows as w
+from zeus_cli import update_cmd_windows as w
 stop_at(getattr(w, sys.argv[2]), (sys.argv[3],), "kill")
 w._pause_windows_gateways_for_update()
 """
@@ -295,7 +295,7 @@ def _never_asked(machine, out: dict) -> None:
     out["never_live_after_launch"] = psutil.pid_exists(live)
     out["never_owed_while"] = _owed(machine)
     # The user's deliberate stop, after the update's obligation was retired.
-    out["never_user_stop"] = machine.hermes("gateway", "stop", label="never-asked-user-stop", timeout=180)
+    out["never_user_stop"] = machine.zeus("gateway", "stop", label="never-asked-user-stop", timeout=180)
     out["never_gone"] = _gone(live, 60)
     out["never_launch_after"] = _launch(machine, "never-asked-after-user-stop")
     out["never_running_after"] = _running(machine, live, 30)
@@ -328,7 +328,7 @@ def journey(tmp_path_factory):
             # The cells start and stop the gateway ~10 times in a few minutes on purpose; the respawn-storm
             # breaker (5 starts / 120 s, then a 40 s sleep before boot) would otherwise outlast a resume's
             # 30 s readiness window and make "not verified" a property of the harness, not the code.
-            off = machine.hermes("config", "set", "gateway.respawn_storm.max_starts", "0", label="storm-breaker-off")
+            off = machine.zeus("config", "set", "gateway.respawn_storm.max_starts", "0", label="storm-breaker-off")
             assert off.returncode == 0, fail_with(machine, "harness: could not disable the respawn-storm breaker", off)
             with machine.gateway_phase():
                 for cell in (_claim_race, _publish_crash, _draining, _readiness, _never_asked, _asked):
@@ -418,7 +418,7 @@ def test_a_gateway_the_update_never_asked_is_left_serving_and_a_user_stop_is_fin
     assert journey["never_owed_while"] == [], fail_with(
         m, f"a gateway never asked to stop is held as draining (owed while it serves: {journey['never_owed_while']})",
         during)
-    assert journey["never_gone"], fail_with(m, "premise: the user's `hermes gateway stop` did not stop it",
+    assert journey["never_gone"], fail_with(m, "premise: the user's `zeus gateway stop` did not stop it",
                                             journey["never_user_stop"])
     assert _restarts(after.stdout) == 0 and journey["never_running_after"] is None, fail_with(
         m, "a gateway the user stopped was restarted for an update that never stopped it", after)

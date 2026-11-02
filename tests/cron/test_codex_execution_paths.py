@@ -15,7 +15,7 @@ def _run_owned_job(job, tmp_path):
     """Exercise the production owner bridge with an isolated canonical store."""
     from gateway.session_contract import SessionRef
     from gateway.session_cron import current_execution, execute
-    from hermes_state_registry import acquire, release
+    from zeus_state_registry import acquire, release
 
     ref = SessionRef("test-profile", "cron-owner-session")
     admission_id = "cron-owner-admission"
@@ -132,7 +132,7 @@ def test_cron_run_job_codex_path_handles_internal_401_refresh(monkeypatch, tmp_p
     monkeypatch.setattr("agent.process_bootstrap.OpenAI", _FakeOpenAI)
     monkeypatch.setattr(run_agent, "AIAgent", _Codex401ThenSuccessAgent)
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **kwargs: {
             "provider": "openai-codex",
             "api_mode": "codex_responses",
@@ -140,7 +140,7 @@ def test_cron_run_job_codex_path_handles_internal_401_refresh(monkeypatch, tmp_p
             "api_key": "codex-token",
         },
     )
-    monkeypatch.setattr("hermes_cli.runtime_provider.format_runtime_provider_error", lambda exc: str(exc))
+    monkeypatch.setattr("zeus_cli.runtime_provider.format_runtime_provider_error", lambda exc: str(exc))
 
     _Codex401ThenSuccessAgent.refresh_attempts = 0
     _Codex401ThenSuccessAgent.last_init = {}

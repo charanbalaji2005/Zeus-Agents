@@ -1,6 +1,6 @@
 """Messaging ``/discard`` reaches every lost turn it promises to (review #141357, GW-10).
 
-Slack has no native ``/discard`` (its slash cap), so the pause notice must name ``/hermes discard``;
+Slack has no native ``/discard`` (its slash cap), so the pause notice must name ``/zeus discard``;
 a conversation brought back by ``/resume`` after a restart is not in the owner's live map, and
 ``/discard`` must still find its lost turn. Real runner dispatch and SQLite; transport stubbed."""
 import asyncio
@@ -14,10 +14,10 @@ def test_slack_pause_notice_names_the_registered_umbrella_command():
     from gateway.session import SessionSource
     from gateway.session_contract import SessionRef
     from gateway.session_ingress import pause_notice
-    from hermes_cli.commands_platforms import slack_native_slashes, slack_subcommand_map
+    from zeus_cli.commands_platforms import slack_native_slashes, slack_subcommand_map
     assert 'discard' not in [row[0].lstrip('/') for row in slack_native_slashes()]
     assert slack_subcommand_map().get('discard')
-    for platform, expected in ((Platform.SLACK, '/hermes discard'), (Platform.TELEGRAM, 'Send /discard')):
+    for platform, expected in ((Platform.SLACK, '/zeus discard'), (Platform.TELEGRAM, 'Send /discard')):
         live = SimpleNamespace(source=SessionSource(platform=platform, chat_id='D42'), pause_notified=False)
         notice = pause_notice(SimpleNamespace(sessions={'s': live}), SessionRef('p', 's'), 'unknown_execution')
         assert expected in notice, notice
@@ -35,14 +35,14 @@ async def test_discard_after_resume_into_a_cold_conversation_resolves_its_lost_t
     from gateway.run_runtime import recover_profile_native_sessions
     from gateway.session_authority import initialize_session_authority
     from gateway.session_ingress_context import native_callback, register_transport_home
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import claim_session_input, get_session_admission
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import claim_session_input, get_session_admission
     from tests.gateway.test_command_bypass_active_session import _StubAdapter
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setenv('TELEGRAM_ALLOWED_USERS', '42')
-    monkeypatch.setattr('gateway.run._hermes_home', tmp_path)
-    monkeypatch.setattr('hermes_state.DEFAULT_DB_PATH', tmp_path / 'state.db')  # conftest repoints it per test
+    monkeypatch.setattr('gateway.run._zeus_home', tmp_path)
+    monkeypatch.setattr('zeus_state.DEFAULT_DB_PATH', tmp_path / 'state.db')  # conftest repoints it per test
     runner = GatewayRunner(GatewayConfig(multiplex_profiles=False, sessions_dir=tmp_path / 'sessions'))
     adapter = _StubAdapter(PlatformConfig(enabled=True, token='fixture', typing_indicator=False), Platform.TELEGRAM)
     sent = []
@@ -62,7 +62,7 @@ async def test_discard_after_resume_into_a_cold_conversation_resolves_its_lost_t
     first.db.append_message(previous, 'user', 'older conversation')
     runner.session_store.get_or_create_session(source, force_new=True)
     head = MessageEvent(text='lost human input', source=source, message_id='head')
-    with native_callback(runner, head, get_hermes_home()):
+    with native_callback(runner, head, get_zeus_home()):
         receipt = await first.admit_native(head)
     sid = receipt.ref.session_id
     claimed = claim_session_input(first.db, epoch=first.epoch, session_id=sid)

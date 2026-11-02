@@ -30,7 +30,7 @@ describe('saveTextFileAs (Electron-side /save write)', () => {
     const result = await saveTextFileAs(
       {
         content: '# hello',
-        defaultPath: '../../etc/hermes_session_x.md',
+        defaultPath: '../../etc/zeus_session_x.md',
         filters: [{ name: 'Markdown', extensions: ['md'] }]
       },
       {
@@ -46,7 +46,7 @@ describe('saveTextFileAs (Electron-side /save write)', () => {
     expect(result).toEqual({ saved: true, path: target })
     expect(fs.readFileSync(target, 'utf8')).toBe('# hello')
     // The renderer's suggestion never picks the directory.
-    expect(seen!.defaultPath).toBe(path.join(dir, 'hermes_session_x.md'))
+    expect(seen!.defaultPath).toBe(path.join(dir, 'zeus_session_x.md'))
     expect(seen!.filters).toEqual([{ name: 'Markdown', extensions: ['md'] }])
   })
 
@@ -114,9 +114,9 @@ describe('registerSaveDialogIpc', () => {
       { defaultDir: () => dir, showSaveDialog: async () => ({ canceled: false, filePath: target }) }
     )
 
-    expect([...handlers.keys()].sort()).toEqual(['hermes:saveTextFileAs', 'hermes:selectSavePath'])
-    expect(await handlers.get('hermes:selectSavePath')!(null, { title: 'Export' })).toBe(target)
-    expect(await handlers.get('hermes:saveTextFileAs')!(null, { content: '{}' })).toEqual({ saved: true, path: target })
+    expect([...handlers.keys()].sort()).toEqual(['zeus:saveTextFileAs', 'zeus:selectSavePath'])
+    expect(await handlers.get('zeus:selectSavePath')!(null, { title: 'Export' })).toBe(target)
+    expect(await handlers.get('zeus:saveTextFileAs')!(null, { content: '{}' })).toEqual({ saved: true, path: target })
     expect(fs.readFileSync(target, 'utf8')).toBe('{}')
   })
 })

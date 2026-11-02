@@ -13,7 +13,7 @@ function reportFor(home: string, park: (run: ReturnType<typeof parkedRunReport>)
   const run = parkedRunReport()
   park(run)
   run.report({
-    hermesHome: home,
+    zeusHome: home,
     log: line => lines.push(line),
     dialog: { showMessageBox: async () => ({ response: 2, checkboxChecked: false }) },
     shell: { showItemInFolder: () => undefined },
@@ -74,7 +74,7 @@ function failedReport(home: string, runId: string, stopClass: string | null): { 
     JSON.stringify({
       ok: false,
       exit_code: 1,
-      message: 'Update failed (exit 1). Run hermes debug share in a terminal to send a report.',
+      message: 'Update failed (exit 1). Run zeus debug share in a terminal to send a report.',
       branch: 'main',
       run_id: runId,
       started_at: finished_at - 60,
@@ -105,7 +105,7 @@ function failedReport(home: string, runId: string, stopClass: string | null): { 
 
   run.park({ startedAt: finished_at - 60, runId })
   run.report({
-    hermesHome: home,
+    zeusHome: home,
     log: line => lines.push(line),
     dialog: {
       showMessageBox: async (options: any) => {
@@ -141,7 +141,7 @@ test('a failed run with no receipt keeps the generic retry dialog', () => {
   const { lines, dialogs } = failedReport(home, 'run-plain', null)
 
   assert.equal(dialogs.length, 1)
-  assert.equal(dialogs[0].message, "Hermes couldn't finish updating")
+  assert.equal(dialogs[0].message, "Zeus couldn't finish updating")
   assert.deepEqual(dialogs[0].buttons, ['Try again', 'Open log', 'Close'])
   assert.ok(
     lines.some(line => line.includes('detached update FAILED (exit 1)') && !line.includes('stop_class')),

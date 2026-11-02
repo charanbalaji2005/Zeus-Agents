@@ -23,7 +23,7 @@ async def test_context_breakdown_without_a_resident_agent_estimates_the_stored_f
     sid = (await owner.call('session.create', request_id='idle', source='tui', cwd=str(owner.workdir)))['session_id']
     db = owner.authority.db
     stored = _stored_id(owner.authority, SimpleNamespace(session_id=sid))
-    prompt = 'You are Hermes. ' * 50 + '\n<available_skills>\n  - plan: write plans\n</available_skills>'
+    prompt = 'You are Zeus. ' * 50 + '\n<available_skills>\n  - plan: write plans\n</available_skills>'
     tools = [{'type': 'function', 'function': {'name': 'terminal', 'parameters': {'type': 'object'}}},
              {'type': 'function', 'function': {'name': 'mcp_docs_search', 'description': 'search ' * 20}}]
     db.update_system_prompt(stored, prompt)
@@ -52,7 +52,7 @@ async def test_agentless_breakdown_refreshes_when_the_stored_prompt_or_tools_cha
     stored = _stored_id(owner.authority, SimpleNamespace(session_id=sid))
     db.append_message(stored, 'user', 'hello')
     before = await owner.call('session.context_breakdown', session_id=sid)
-    db.update_system_prompt(stored, 'You are Hermes. ' * 50)
+    db.update_system_prompt(stored, 'You are Zeus. ' * 50)
     prompted = await owner.call('session.context_breakdown', session_id=sid)
     assert prompted['estimated_total'] > before['estimated_total'], prompted
     db.update_session_tool_names(stored, {'version': 'v', 'tools': [
@@ -66,7 +66,7 @@ async def _agentless_session(owner, request_id, pin):
 
     sid = (await owner.call('session.create', request_id=request_id, source='tui', cwd=str(owner.workdir)))['session_id']
     stored = _stored_id(owner.authority, SimpleNamespace(session_id=sid))
-    owner.authority.db.update_system_prompt(stored, 'You are Hermes. ' * 50)
+    owner.authority.db.update_system_prompt(stored, 'You are Zeus. ' * 50)
     owner.authority.db.update_session_tool_names(stored, pin)
     owner.authority.db.append_message(stored, 'user', 'hello')
     return sid, stored

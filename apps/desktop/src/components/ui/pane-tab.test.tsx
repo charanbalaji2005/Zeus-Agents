@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { ContextMenu, ContextMenuTrigger, HERMES_CONTEXT_MENU_TRIGGER_ATTR } from './context-menu'
+import { ContextMenu, ContextMenuTrigger, ZEUS_CONTEXT_MENU_TRIGGER_ATTR } from './context-menu'
 import { PaneTab, PaneTabLabel } from './pane-tab'
 
 afterEach(cleanup)
@@ -154,6 +154,6 @@ describe('PaneTab under a context-menu trigger', () => {
     const tab = screen.getByText('tab').closest('[data-closeable]')
 
     expect(tab?.getAttribute('data-slot')).toBe('pane-tab')
-    expect(tab?.hasAttribute(HERMES_CONTEXT_MENU_TRIGGER_ATTR)).toBe(true)
+    expect(tab?.hasAttribute(ZEUS_CONTEXT_MENU_TRIGGER_ATTR)).toBe(true)
   })
 })

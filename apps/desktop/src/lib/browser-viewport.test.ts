@@ -25,7 +25,7 @@ beforeEach(() => {
   root = document.createElement('div')
   root.id = 'root'
   document.body.append(root)
-  document.documentElement.dataset.hermesDesktopHost = 'browser'
+  document.documentElement.dataset.zeusDesktopHost = 'browser'
   viewport = Object.assign(new EventTarget(), { height: 800, offsetTop: 0, scale: 1 })
   frames = new Map()
   nextFrame = 0
@@ -44,7 +44,7 @@ afterEach(() => {
   dispose?.()
   dispose = undefined
   root.remove()
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   document.documentElement.style.removeProperty('zoom')
   vi.unstubAllGlobals()
 })
@@ -114,13 +114,13 @@ describe('browser visible viewport', () => {
   })
 
   it('leaves native/missing-API hosts alone and releases coalesced listeners and layout on teardown', () => {
-    document.documentElement.removeAttribute('data-hermes-desktop-host')
+    document.documentElement.removeAttribute('data-zeus-desktop-host')
     installBrowserViewport()()
     resize(400)
     expect(root.hasAttribute('data-browser-viewport')).toBe(false)
     expect(frames.size).toBe(0)
 
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
     vi.stubGlobal('visualViewport', null)
     installBrowserViewport()()
     expect(root.hasAttribute('data-browser-viewport')).toBe(false)

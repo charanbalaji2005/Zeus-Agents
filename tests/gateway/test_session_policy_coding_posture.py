@@ -60,7 +60,7 @@ def test_a_project_file_written_mid_session_does_not_switch_toolsets(tmp_path):
 
 
 def test_plugin_mcp_servers_stay_in_the_posture(project, monkeypatch):
-    monkeypatch.setattr('hermes_cli.plugins.get_portable_mcp_server_names_nowait', lambda: {'plug'})
+    monkeypatch.setattr('zeus_cli.plugins.get_portable_mcp_server_names_nowait', lambda: {'plug'})
     assert {'coding', 'plug'} <= set(create({'source': 'gui', 'cwd': str(project)}, FOCUS).toolsets)
 
 
@@ -102,8 +102,8 @@ async def test_session_create_selects_the_posture_for_its_named_folder(project, 
     from gateway.session_authority import initialize_session_authority
     from gateway.session_contract import Principal
     from gateway.session_local import create_local_session
-    from hermes_state_local import local_receipt
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    from zeus_state_local import local_receipt
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {**FOCUS, 'model': {'default': 'm'}})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     runner = SimpleNamespace(session_store=store, _session_db=store._db, adapters={}, _draining=False)
@@ -121,7 +121,7 @@ def test_a_following_session_takes_a_profile_coding_context_change(project, tmp_
     """Replay through the real follow merge (``policy.config(authority)``), not a hand-built dict."""
     home = tmp_path / 'home'
     home.mkdir()
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     config = {**FOCUS, 'model': {'default': 'm'}}
     (home / 'config.yaml').write_text(json.dumps(config))
     policy = create({'source': 'cli', 'cwd': str(project), 'follow_profile_config': True}, config)

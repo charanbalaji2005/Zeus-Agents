@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { type BackendLocaleRequest, syncBackendLocalePacks } from './backend-packs'
@@ -39,7 +39,7 @@ describe('syncBackendLocalePacks', () => {
       {
         languages: [
           { id: 'en', endonym: 'English', rtl: false, source: 'bundled' },
-          { id: 'pl', endonym: 'Polski', rtl: false, source: 'plugin:hermes-lang-pl' }
+          { id: 'pl', endonym: 'Polski', rtl: false, source: 'plugin:zeus-lang-pl' }
         ]
       },
       { pl: { 'common.save': 'Zapisz', 'connectorsPage.searchPlaceholder': '{0} wyników' } },
@@ -70,7 +70,7 @@ describe('syncBackendLocalePacks', () => {
       {
         languages: [
           { id: 'ko', endonym: '한국어', rtl: false, source: 'bundled', surfaces: ['core', 'tui'] },
-          { id: 'it', endonym: 'Italiano', rtl: false, source: 'plugin:hermes-lang-it', surfaces: ['core', 'desktop'] },
+          { id: 'it', endonym: 'Italiano', rtl: false, source: 'plugin:zeus-lang-it', surfaces: ['core', 'desktop'] },
           { id: 'ja', endonym: '日本語', rtl: false, source: 'bundled', surfaces: ['core', 'tui'] },
           { id: 'uk', endonym: 'Українська' }
         ]
@@ -98,7 +98,7 @@ describe('syncBackendLocalePacks', () => {
             id: 'ko',
             endonym: '한국어',
             rtl: false,
-            source: 'plugin:hermes-lang-ko',
+            source: 'plugin:zeus-lang-ko',
             surfaces: ['core', 'tui', 'desktop']
           }
         ]

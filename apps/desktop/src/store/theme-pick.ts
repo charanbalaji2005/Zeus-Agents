@@ -7,7 +7,7 @@
  * cancel never erases a newer card the same session raised.
  */
 
-import type { ThemePicker, ThemePickResult } from '@hermes/shared'
+import type { ThemePicker, ThemePickResult } from '@zeus/shared'
 import { atom } from 'nanostores'
 
 import { type AppearanceValues, applyAppearance } from './appearance-apply'

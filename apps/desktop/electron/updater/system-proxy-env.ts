@@ -14,7 +14,7 @@ import { configuredUpdateHosts } from './update-hosts'
  * always wins: it is returned untouched.
  *
  * The env is for the update's children only. The hand-off script, the staged
- * updater and `hermes update` start the relaunched Desktop and gateways, which
+ * updater and `zeus update` start the relaunched Desktop and gateways, which
  * would otherwise inherit it as if the user had set it: every LAN host the PAC
  * sends direct would be proxied, and the next update would read the stale value
  * as an explicit setting. So every variable the Desktop adds is named in
@@ -28,9 +28,9 @@ const PROXY_SET_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy'
 const NO_PROXY_KEYS = ['NO_PROXY', 'no_proxy']
 
 /** Comma list of the variables the Desktop added to an update child's env. */
-export const UPDATE_PROXY_MARKER = 'HERMES_UPDATE_SYSTEM_PROXY'
+export const UPDATE_PROXY_MARKER = 'ZEUS_UPDATE_SYSTEM_PROXY'
 /** `${SAVED_PREFIX}NO_PROXY` holds the user's own NO_PROXY that the Desktop extended. */
-export const SAVED_PREFIX = 'HERMES_UPDATE_USER_'
+export const SAVED_PREFIX = 'ZEUS_UPDATE_USER_'
 
 // git + the GitHub API and assets, the release pointer, npm, PyPI + uv, Electron downloads.
 export const UPDATE_HOSTS = [
@@ -39,7 +39,7 @@ export const UPDATE_HOSTS = [
   'codeload.github.com',
   'objects.githubusercontent.com',
   'release-assets.githubusercontent.com',
-  'hermes-assets.nousresearch.com',
+  'zeus-assets.nousresearch.com',
   'registry.npmjs.org',
   'pypi.org',
   'files.pythonhosted.org',

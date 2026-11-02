@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger("gateway.relay.adapter")
 
@@ -16,7 +16,7 @@ async def admit_relay_delivery(adapter, runner, event):
     another inbound message: the admission then runs in a task off the reader, after any earlier
     admission of the same chat, so one chat's deliveries still commit in arrival order."""
     from gateway.run_inbound_consumer import POST_ADMISSION_HOOK
-    from hermes_cli.lifecycle import has_hook
+    from zeus_cli.lifecycle import has_hook
     if not (has_hook('pre_gateway_dispatch') or has_hook(POST_ADMISSION_HOOK)):
         await _admit(adapter, runner, event)
         return None

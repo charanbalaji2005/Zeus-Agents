@@ -29,7 +29,7 @@ def _profile_scoped_rpc(
     ``scoped=False`` ignores ``profile``.
 
     The scope is the same home + secret + terminal composition a turn binds
-    (``_session_profile_runtime_scope``), not HERMES_HOME alone: these bodies read config.yaml,
+    (``_session_profile_runtime_scope``), not ZEUS_HOME alone: these bodies read config.yaml,
     whose ``${VAR}`` refs (``config._env_ref_lookup``) and the MCP probe's own header/env
     interpolation resolve through ``get_secret`` — with only the home bound they read plain
     ``os.environ``, i.e. the launch profile's values, so ``mcp.servers.test`` for a secondary
@@ -87,7 +87,7 @@ def _rpc(name: str, fail_code: int, prefix: str = "", *, live_session: bool = Fa
 
 
 def _scoped_rpc(name: str, fail_code: int = 5024, **kw):
-    """``@method(name)`` + ``_profile_scoped_rpc`` (optional ``profile`` HERMES_HOME scope)."""
+    """``@method(name)`` + ``_profile_scoped_rpc`` (optional ``profile`` ZEUS_HOME scope)."""
     return lambda body: method(name)(_profile_scoped_rpc(fail_code, **kw)(body))
 
 
@@ -114,7 +114,7 @@ def _mcp_rpc(name: str, required=_NAME):
 
 
 def _mcp_server_rows():
-    config_servers = _tools_mod("hermes_cli.mcp_config")._get_mcp_servers()
+    config_servers = _tools_mod("zeus_cli.mcp_config")._get_mcp_servers()
     return _tools_mod("tui_gateway.mcp_rpc_helpers").server_configs_with_sources(config_servers)
 
 
@@ -195,7 +195,7 @@ def _capture_run_kwargs(timeout: int) -> dict:
     not crash the gateway thread on Windows), no stdin, no console flash under the desktop parent."""
     return dict(
         capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout,
-        stdin=subprocess.DEVNULL, creationflags=_tools_mod("hermes_cli._subprocess_compat").windows_hide_flags())
+        stdin=subprocess.DEVNULL, creationflags=_tools_mod("zeus_cli._subprocess_compat").windows_hide_flags())
 
 
 def _captured_exec(rid, cmd, timeout: int, *, on_result, timeout_err: tuple, fail_code: int,
@@ -263,11 +263,11 @@ def _(rid, params: dict) -> dict:
 _SIMPLE_RPCS = {
     # Session-scoped view of the background process registry (desktop status stack).
     "process.stop": (5010, lambda params: {"killed": _tools_mod("tools.process_registry").process_registry.kill_all(source="process.stop")}),
-    # Re-read ``~/.hermes/.env`` (CLI ``/reload`` parity); built agents keep their pool, ``/new`` resolves fresh.
-    "reload.env": (5015, lambda params: {"updated": int(_tools_mod("hermes_cli.config").reload_env())}),
+    # Re-read ``~/.zeus/.env`` (CLI ``/reload`` parity); built agents keep their pool, ``/new`` resolves fresh.
+    "reload.env": (5015, lambda params: {"updated": int(_tools_mod("zeus_cli.config").reload_env())}),
     "plugins.list": (5032, lambda params: {"plugins": [
         {"name": n, "version": getattr(i, "version", "?"), "enabled": getattr(i, "enabled", True)}
-        for n, i in _tools_mod("hermes_cli.plugins").get_plugin_manager()._plugins.items()]}),
+        for n, i in _tools_mod("zeus_cli.plugins").get_plugin_manager()._plugins.items()]}),
     "tools.list": (5031, lambda params: {"toolsets": _toolset_rows(params, with_tools=True)}),
     "toolsets.list": (5032, lambda params: {"toolsets": _toolset_rows(params, with_tools=False)}),
     "agents.list": (5033, lambda params: {"processes": [
@@ -298,7 +298,7 @@ def _(rid, params: dict, session) -> dict:
 def _mcp_reload_confirm_required() -> bool:
     """``approvals.mcp_reload_confirm`` from disk config; True (safe) on any failure."""
     try:
-        cfg = _tools_mod("hermes_cli.config").load_config()
+        cfg = _tools_mod("zeus_cli.config").load_config()
         approvals = cfg.get("approvals") if isinstance(cfg, dict) else None
         return bool(approvals.get("mcp_reload_confirm", True)) if isinstance(approvals, dict) else True
     except Exception:
@@ -319,11 +319,11 @@ def _refresh_live_sessions(home=None, *, preserve_prefix: bool = False,
     ``(plugin_key, text)`` queued once per session for its next tool result or turn
     (``agent/plugin_live_notes.py``)."""
     from agent.onboarding_session import carry_onboarding_toolset
-    from hermes_constants import hermes_home_key
-    want = hermes_home_key(home) if home is not None else None
+    from zeus_constants import zeus_home_key
+    want = zeus_home_key(home) if home is not None else None
     with _sessions_lock:
         live = [(sid, sess) for sid, sess in _sessions.items() if sess.get("agent") is not None and (
-            want is None or hermes_home_key(sess.get("profile_home") or get_process_hermes_home()) == want)]
+            want is None or zeus_home_key(sess.get("profile_home") or get_process_zeus_home()) == want)]
     refresh = _tools_mod("tools.mcp_tool_agent").refresh_agent_mcp_tools
     for sid, sess in live:
         agent = sess["agent"]
@@ -344,7 +344,7 @@ def refresh_plugin_sessions(home, plugin_key: str, note: str) -> None:
     """A plugin just went live in ``home``: append its MCP tools to that profile's open chats (deferred
     behind tool_search, so the model-facing tool array is unchanged) and queue ``note``, replacing an
     older one for ``plugin_key``, for their next tool result or turn. Called by
-    ``hermes_cli.plugins_activation.load_and_go_live``."""
+    ``zeus_cli.plugins_activation.load_and_go_live``."""
     _refresh_live_sessions(home, preserve_prefix=True, plugin_note=(plugin_key, note) if note else None)
 
 
@@ -444,7 +444,7 @@ def _(rid, params: dict) -> dict:
 
 @method("cli.exec")
 def _(rid, params: dict) -> dict:
-    """Run `python -m hermes_cli.main` with argv; capture stdout/stderr (non-interactive only)."""
+    """Run `python -m zeus_cli.main` with argv; capture stdout/stderr (non-interactive only)."""
     argv = params.get("argv", [])
     if not isinstance(argv, list) or not all(isinstance(x, str) for x in argv):
         return _err(rid, 4003, "argv must be list[str]")
@@ -452,19 +452,19 @@ def _(rid, params: dict) -> dict:
     if hint:
         return _ok(rid, {"blocked": True, "hint": hint, "code": -1, "output": ""})
     # Same-interpreter re-exec: ambient PYTHONPATH must survive the env factory's
-    # Hermes-owned strip (no-boot-through-venv).
-    _compat = _tools_mod("hermes_cli._subprocess_compat")
+    # Zeus-owned strip (no-boot-through-venv).
+    _compat = _tools_mod("zeus_cli._subprocess_compat")
     return _captured_exec(
-        rid, [sys.executable, "-P", "-m", "hermes_cli.main", *argv], min(int(params.get("timeout", 240)), 600),
+        rid, [sys.executable, "-P", "-m", "zeus_cli.main", *argv], min(int(params.get("timeout", 240)), 600),
         on_result=lambda r: _ok(rid, {
             "blocked": False, "code": r.returncode, "output": (_joined_output(r) or "(no output)")[:48_000]}),
         timeout_err=(5016, "cli.exec: timeout"), fail_code=5017,
-        env=_compat.restore_ambient_pythonpath(hermes_subprocess_env(inherit_credentials=True)))
+        env=_compat.restore_ambient_pythonpath(zeus_subprocess_env(inherit_credentials=True)))
 
 
 @_rpc("command.resolve", 5012)
 def _(rid, params: dict) -> dict:
-    r = _tools_mod("hermes_cli.commands").resolve_command(params.get("name", ""))
+    r = _tools_mod("zeus_cli.commands").resolve_command(params.get("name", ""))
     if r:
         return _ok(rid, {"canonical": r.name, "description": r.describe(), "category": r.category})
     return _err(rid, 4011, f"unknown command: {params.get('name')}")
@@ -492,26 +492,26 @@ def _dispatch_quick(rid, params, session, name, arg):
 
 def _plugin_command_handler(name: str):
     try:
-        return _tools_mod("hermes_cli.plugins").get_plugin_command_handler(name)
+        return _tools_mod("zeus_cli.plugins").get_plugin_command_handler(name)
     except Exception:
         return None
 
 
 def _run_plugin_command(handler, arg: str, session=None, sid: str = "") -> str:
-    """Run a plugin slash-command handler under the session's ``HERMES_SESSION_*`` binding.
+    """Run a plugin slash-command handler under the session's ``ZEUS_SESSION_*`` binding.
 
     Plugin handlers read ``get_session_env()`` for the chat/session they serve; these RPCs run on
     the socket/worker thread where nothing upstream binds it (only the turn path does), so a handler
     saw ``""`` or the launch process's inherited values. Same class as the messaging gateway's
     #108698; ``_set_session_context`` is the turn path's own seam."""
-    plugins = _tools_mod("hermes_cli.plugins")
-    invoke = _tools_mod("hermes_cli.plugin_command_dispatch").invoke_plugin_command
+    plugins = _tools_mod("zeus_cli.plugins")
+    invoke = _tools_mod("zeus_cli.plugin_command_dispatch").invoke_plugin_command
     key = str(session.get("session_key") or "") if session else ""
     tokens = _set_session_context(key, cwd=str(session.get("cwd") or "")) if session else []
     context = {"source": None, "session_key": key, "platform": _session_source(session),
                "session_id": getattr(session.get("agent"), "session_id", None) or key if session else ""}
     # ctx.ask_choice: the ``clarify`` server request this backend's clarify tool sends.
-    choices = _tools_mod("hermes_cli.plugin_choices")
+    choices = _tools_mod("zeus_cli.plugin_choices")
     try:
         with choices.bind_asker(choices.clarify_asker(lambda questions: _clarify_block(sid, questions))):
             return str(plugins.resolve_plugin_command_result(invoke(handler, arg, **context)) or "")
@@ -521,7 +521,7 @@ def _run_plugin_command(handler, arg: str, session=None, sid: str = "") -> str:
 
 @contextlib.contextmanager
 def _session_home_scope(session, cwd: str | None = None, profile: str | None = None):
-    """Bind HERMES_HOME and the logical cwd to the session for the block.
+    """Bind ZEUS_HOME and the logical cwd to the session for the block.
 
     Skill/bundle/quick-command resolution is home-keyed (``skills.external_dirs``, ``skill-bundles/``,
     ``quick_commands`` all live in the profile's config/home); nothing upstream of these RPC handlers
@@ -531,13 +531,13 @@ def _session_home_scope(session, cwd: str | None = None, profile: str | None = N
     ``$HOME`` and no project skill ever registers or dispatches (#114359). ``cwd`` overrides the session
     record (a session-less catalog request binds the workspace a new session would be seeded with).
     ``profile`` scopes a session-less call (a Desktop draft names its rail-selected profile) (#124651)."""
-    hc = _tools_mod("hermes_constants")
+    hc = _tools_mod("zeus_constants")
     rc = _tools_mod("agent.runtime_cwd")
     profile_home = session.get("profile_home") if session else None
     if not session and profile:
         profile_home = str(_profile_home(profile) or "") or None
     cwd = cwd or (str(session.get("cwd") or "") if session else "")
-    token = hc.set_hermes_home_override(profile_home) if profile_home else None
+    token = hc.set_zeus_home_override(profile_home) if profile_home else None
     cwd_token = rc.set_session_cwd(cwd) if cwd else None
     try:
         yield
@@ -545,7 +545,7 @@ def _session_home_scope(session, cwd: str | None = None, profile: str | None = N
         if cwd_token is not None:
             rc.reset_session_cwd(cwd_token)
         if token is not None:
-            hc.reset_hermes_home_override(token)
+            hc.reset_zeus_home_override(token)
 
 
 def _profile_skill_command(session: dict, base: str) -> bool | None:
@@ -584,7 +584,7 @@ def _is_registry_command(base: str) -> bool:
     built-in cannot be the skill whose prompt the worker would drop.
     """
     try:
-        return _tools_mod("hermes_cli.commands").resolve_command(base) is not None
+        return _tools_mod("zeus_cli.commands").resolve_command(base) is not None
     except Exception:
         return False
 
@@ -600,7 +600,7 @@ def _dispatch_plugin(rid, params, session, name, arg):
 def _bundle_key_for(name: str):
     """Skill-bundle key for ``name`` when it is NOT a registry command; None otherwise / on failure."""
     try:
-        if _tools_mod("hermes_cli.commands").resolve_command(name) is None:
+        if _tools_mod("zeus_cli.commands").resolve_command(name) is None:
             return _tools_mod("agent.skill_bundles").resolve_bundle_command_key(name)
         return None
     except Exception:
@@ -685,7 +685,7 @@ def _cmd_init(rid, params, session, name, arg):
     as a normal turn (the live agent does the scan and the write). The desktop app launches the
     backend from the home directory, so a process-cwd fallback scans and updates the HOME's
     AGENTS.md instead of the workspace attached to the session."""
-    from hermes_cli.init_command import build_init_prompt_for_cwd
+    from zeus_cli.init_command import build_init_prompt_for_cwd
     from tools.terminal_tool import get_session_cwd
 
     skey = session.get("session_key") if session else None
@@ -702,7 +702,7 @@ def _cmd_moa(rid, params, session, name, arg):
     # One prompt through the default MoA preset, then restore the prior model (whole-session
     # switching goes through the model picker).
     try:
-        moa = _tools_mod("hermes_cli.moa_config")
+        moa = _tools_mod("zeus_cli.moa_config")
         if not arg:
             return _err(rid, 4004, moa.moa_usage())
         if not session:
@@ -736,7 +736,7 @@ def _cmd_moa(rid, params, session, name, arg):
 
 def _cmd_focus(rid, params, session, name, arg):
     # Display-only; routed through the config.set branch Ink uses so both surfaces share one state machine.
-    fv = _tools_mod("hermes_cli.focus_view")
+    fv = _tools_mod("zeus_cli.focus_view")
     display = _load_cfg().get("display")
     display = display if isinstance(display, dict) else {}
     action, target = fv.resolve_focus_arg(arg, cur := bool(display.get("focus_view", False)))
@@ -799,7 +799,7 @@ def _cmd_steer(rid, params, session, name, arg):
 
 def _cmd_goal(rid, params, session, name, arg):
     with _session_profile_runtime_scope(session or {}):
-        sid_key, goals, err = _session_key_or_err(rid, session, "hermes_cli.goals", "goals")
+        sid_key, goals, err = _session_key_or_err(rid, session, "zeus_cli.goals", "goals")
         if err:
             return err
         try:
@@ -807,7 +807,7 @@ def _cmd_goal(rid, params, session, name, arg):
         except Exception:
             max_turns = 20
         mgr = goals.GoalManager(session_id=sid_key, default_max_turns=max_turns)
-        from hermes_cli.goal_command import dispatch_goal_command
+        from zeus_cli.goal_command import dispatch_goal_command
         result = dispatch_goal_command(
             mgr, arg, authorize_gate=lambda: None,
             last_user_message=goals.last_user_message_from_db(sid_key),
@@ -824,7 +824,7 @@ def _cmd_goal(rid, params, session, name, arg):
 
 
 def _cmd_loop(rid, params, session, name, arg):
-    sid_key, loops, err = _session_key_or_err(rid, session, "hermes_cli.loops", "loops")
+    sid_key, loops, err = _session_key_or_err(rid, session, "zeus_cli.loops", "loops")
     if err:
         return err
     result = loops.dispatch_loop_command(loops.LoopManager(session_id=sid_key), arg)
@@ -921,9 +921,9 @@ def _cmd_compress(rid, params, session, name, arg):
 
 # ─── /memory + /skills write-approval review ─────────────────────────────────
 # The review surface (pending / approve / reject / diff / approval) is owned by the shared handler
-# hermes_cli/write_approval_commands.handle_pending_subcommand, which the classic CLI and the
+# zeus_cli/write_approval_commands.handle_pending_subcommand, which the classic CLI and the
 # messaging gateway already reach. Desktop/TUI clients normally get it through slash.exec ->
-# _SlashWorker (a private HermesCLI), but command.dispatch is their FALLBACK stage — with no
+# _SlashWorker (a private ZeusCLI), but command.dispatch is their FALLBACK stage — with no
 # route here, a failed worker turned every /memory into the routing refusal "not a quick/
 # plugin/bundle/skill command: memory", so staged writes had no review path at all.
 #
@@ -960,7 +960,7 @@ def _write_approval_mode_setter(subsystem: str):
 
 
 def _run_pending_review(rid, subsystem: str, arg: str, session, *, unknown: str):
-    from hermes_cli.write_approval_commands import handle_pending_subcommand
+    from zeus_cli.write_approval_commands import handle_pending_subcommand
     from tools import write_approval as wa
     out = handle_pending_subcommand(
         subsystem, (arg or "").split(),
@@ -980,9 +980,9 @@ def _cmd_skills(rid, params, session, name, arg):
     Returns None (falls through to the routing refusal, unchanged behaviour) for anything outside
     the review surface — ``search``/``install``/``browse``/``inspect`` are the CLI skills hub's,
     never a staged-write review. The allowlist mirrors the registry-declared review slice
-    (``CommandDef("skills", desktop_subcommands=...)`` in hermes_cli/commands.py)."""
+    (``CommandDef("skills", desktop_subcommands=...)`` in zeus_cli/commands.py)."""
     sub = (arg or "").split()
-    commands = _tools_mod("hermes_cli.commands")
+    commands = _tools_mod("zeus_cli.commands")
     allowed = getattr(commands.resolve_command("skills"), "desktop_subcommands", None) or ()
     if not sub or sub[0].lower() not in allowed:
         return None
@@ -1217,9 +1217,9 @@ def _(rid, params: dict) -> dict:
 def _(rid, params: dict) -> dict:
     cfg = _load_cfg()
     get_secret = _tools_mod("agent.secret_scope").get_secret
-    api_key = get_secret("HERMES_API_KEY", "") or cfg.get("api_key", "")
+    api_key = get_secret("ZEUS_API_KEY", "") or cfg.get("api_key", "")
     masked = f"****{api_key[-4:]}" if len(api_key) > 4 else "(not set)"
-    base_url = get_secret("HERMES_BASE_URL", "") or cfg.get("base_url", "")
+    base_url = get_secret("ZEUS_BASE_URL", "") or cfg.get("base_url", "")
     sections = [
         {"title": "Model", "rows": [
             ["Model", _resolve_model()], ["Base URL", base_url or "(default)"], ["API Key", masked]]},
@@ -1276,7 +1276,7 @@ def _configure_session_tools(rid, params: dict, sid: str, session) -> dict:
         return _err(rid, 4017, f"unknown tools action: {action}")
     if not targets:
         return _err(rid, 4018, "names required")
-    hc, tc = _tools_mod("hermes_cli.config"), _tools_mod("hermes_cli.tools_config")
+    hc, tc = _tools_mod("zeus_cli.config"), _tools_mod("zeus_cli.tools_config")
     cfg = hc.load_config()
     valid_toolsets = {ts_key for ts_key, _, _ in tc.CONFIGURABLE_TOOLSETS} | tc._get_plugin_toolset_keys()
     mcp_targets = [name for name in targets if ":" in name]
@@ -1304,7 +1304,7 @@ def _configure_session_tools(rid, params: dict, sid: str, session) -> dict:
 # ─── Cron / learning / skills ────────────────────────────────────────────────
 @_scoped_rpc("cron.manage", 5023)
 def _(rid, params: dict) -> dict:
-    """cronjob() keys off HERMES_HOME, so ``profile`` reaches a per-profile cron store."""
+    """cronjob() keys off ZEUS_HOME, so ``profile`` reaches a per-profile cron store."""
     cronjob = _tools_mod("tools.cronjob_tools").cronjob
     action, jid = params.get("action", "list"), params.get("name", "")
     if action == "list":
@@ -1381,7 +1381,7 @@ def _skills_install(rid, params, query):
             self.lines.append(" ".join(str(a) for a in args))
 
     captured = _Capture()
-    verdict = _tools_mod("hermes_cli.skills_hub").do_install(query, skip_confirm=True, console=captured)
+    verdict = _tools_mod("zeus_cli.skills_hub").do_install(query, skip_confirm=True, console=captured)
     bundled = _tools_mod("tools.skills_sync_bundled_ops").bundled_skill_for_install
     installed = verdict is True or (verdict is None and bool(bundled(query)))  # an active built-in is no failure
     if not installed:
@@ -1395,15 +1395,15 @@ def _skills_install(rid, params, query):
 
 def _skills_browse(rid, params, query):
     pg = int(params.get("page", 0) or 0) or (int(query) if query.isdigit() else 1)
-    browse = _tools_mod("hermes_cli.skills_hub").browse_skills
+    browse = _tools_mod("zeus_cli.skills_hub").browse_skills
     return _ok(rid, browse(page=pg, page_size=int(params.get("page_size", 20))))
 
 
 _SKILLS_ACTIONS = {
-    "list": lambda rid, params, query: _ok(rid, {"skills": _tools_mod("hermes_cli.banner").get_available_skills()}),
+    "list": lambda rid, params, query: _ok(rid, {"skills": _tools_mod("zeus_cli.banner").get_available_skills()}),
     "search": _skills_search, "install": _skills_install, "browse": _skills_browse,
     "inspect": lambda rid, params, query: _ok(
-        rid, {"info": _tools_mod("hermes_cli.skills_hub").inspect_skill(query) or {}})}
+        rid, {"info": _tools_mod("zeus_cli.skills_hub").inspect_skill(query) or {}})}
 
 
 def _run_action(rid, params: dict, table: dict, label: str, *extra) -> dict:
@@ -1439,12 +1439,12 @@ def _(rid, params: dict) -> dict:
 
 
 # ─── MCP catalog + per-profile server lifecycle (mcp.servers.*) ─────────────
-# Gateway mirrors of the dashboard REST surface (hermes_cli/web_routers/mcp.py) so a
-# desktop plugin can manage MCP servers for ANY profile. Persistence: hermes_cli/mcp_config.py.
+# Gateway mirrors of the dashboard REST surface (zeus_cli/web_routers/mcp.py) so a
+# desktop plugin can manage MCP servers for ANY profile. Persistence: zeus_cli/mcp_config.py.
 @_scoped_rpc("mcp.catalog")
 def _(rid, params: dict) -> dict:
     """``{servers: [{name, description, installed, enabled, requires: [env keys], transport}]}`` per profile."""
-    mcp_catalog = _tools_mod("hermes_cli.mcp_catalog")
+    mcp_catalog = _tools_mod("zeus_cli.mcp_catalog")
     out = []
     for entry in mcp_catalog.list_catalog():
         try:
@@ -1477,10 +1477,10 @@ def _(rid, params: dict) -> dict:
     runtime state; never connects, probes, or starts auth. Under a multiplexer the runtime view is the
     scoped profile's; otherwise it is shown only when ``profile`` is the launch profile."""
     import time
-    hc = _tools_mod("hermes_constants")
+    hc = _tools_mod("zeus_constants")
     configured, plugins = _mcp_server_rows()
     include_runtime = (_tools_mod("agent.secret_scope").is_multiplex_active()
-                       or hc.hermes_home_key() == hc.hermes_home_key(hc.get_process_hermes_home()))
+                       or hc.zeus_home_key() == hc.zeus_home_key(hc.get_process_zeus_home()))
     safe = ("name", "transport", "tools", "connected", "disabled", "status")
     servers = _tools_mod("tools.mcp_tool_discovery").get_mcp_status(configured, include_runtime=include_runtime)
     return _ok(rid, {"servers": [
@@ -1493,7 +1493,7 @@ def _(rid, params: dict) -> dict:
 def _(rid, params: dict) -> dict:
     """Add ``name`` from ``preset`` (catalog id) and/or ``config`` (url/command/args/env/headers/auth/
     tools); ``bearer_token`` goes to the profile's .env (only the header template persists). Dup → 4090."""
-    mc = _tools_mod("hermes_cli.mcp_config")
+    mc = _tools_mod("zeus_cli.mcp_config")
     name, preset = _str_arg(params, "name"), _str_arg(params, "preset")
     servers, plugins = _mcp_server_rows()
     if err := _mcp_plugin_write_error(rid, name, plugins):
@@ -1505,7 +1505,7 @@ def _(rid, params: dict) -> dict:
     # Explicit url/command wins. Otherwise a desktop catalog id is resolved
     # before the CLI preset registry — that registry raises, and the wrapper
     # turns the raise into 5024 before the 4063 check below can run.
-    catalog = _tools_mod("hermes_cli.mcp_catalog")
+    catalog = _tools_mod("zeus_cli.mcp_catalog")
     entry = None
     if preset and not (server_config.get("url") or server_config.get("command")):
         entry = catalog.get_entry(preset)
@@ -1536,7 +1536,7 @@ def _(rid, params: dict) -> dict:
 def _(rid, params: dict) -> dict:
     """Secret → profile .env under ``env_var`` (default ``MCP_<NAME>_API_KEY``); config.yaml gets only
     a ``${ENV}`` reference (Bearer header for http, ``env`` entry for stdio)."""
-    hc, mc = _tools_mod("hermes_cli.config"), _tools_mod("hermes_cli.mcp_config")
+    hc, mc = _tools_mod("zeus_cli.config"), _tools_mod("zeus_cli.mcp_config")
     name, servers, err = _mcp_config_server_or_error(rid, params)
     if err:
         return err
@@ -1568,7 +1568,7 @@ def _(rid, params: dict) -> dict:
 def _(rid, params: dict) -> dict:
     """Connect, list tools, disconnect → ``{ok, tools, prompts, resources, oauth_needed,
     oauth_tokens_present}`` (``{ok: false, error, tools: []...}`` on failure). RPC pool: cold npx blocks."""
-    mc = _tools_mod("hermes_cli.mcp_config")
+    mc = _tools_mod("zeus_cli.mcp_config")
     name, servers, err = _mcp_named_server(rid, params)
     if err:
         return err
@@ -1600,7 +1600,7 @@ def _(rid, params: dict) -> dict:
     name = _str_arg(params, "name")
     if err := _mcp_plugin_write_error(rid, name, _mcp_server_rows()[1]):
         return err
-    if not _tools_mod("hermes_cli.mcp_config")._remove_mcp_server(name):
+    if not _tools_mod("zeus_cli.mcp_config")._remove_mcp_server(name):
         return _err(rid, 4064, f"server '{name}' not found")
     return _ok(rid, {"ok": True, "removed": True})
 
@@ -1622,9 +1622,9 @@ def _(rid, params: dict) -> dict:
         if cfg.get("headers") and cfg.get("auth") != "oauth":
             return _err(rid, 4001, "this server uses header/API-key auth, not OAuth")
         cfg["auth"] = "oauth"
-        hermes_home = str(_tools_mod("hermes_constants").get_hermes_home().expanduser().resolve(strict=False))
+        zeus_home = str(_tools_mod("zeus_constants").get_zeus_home().expanduser().resolve(strict=False))
         result = _tools_mod("tui_gateway.mcp_oauth_sessions").start_flow(
-            hermes_home, name, cfg, client_redirect_uri=client_redirect_uri)
+            zeus_home, name, cfg, client_redirect_uri=client_redirect_uri)
     except ValueError as e:
         return _err(rid, 4001, str(e))
     return _ok(rid, {"ok": True, **{k: result[k] for k in ("session_id", "auth_url", "flow")}})
@@ -1640,7 +1640,7 @@ def _(rid, params: dict) -> dict:
 @_mcp_rpc("oauth.cancel", _NAME_SESSION)
 def _(rid, params: dict) -> dict:
     """Cancel a flow owned by the resolved profile, waking its callback worker."""
-    home = str(_tools_mod("hermes_constants").get_hermes_home().expanduser().resolve(strict=False))
+    home = str(_tools_mod("zeus_constants").get_zeus_home().expanduser().resolve(strict=False))
     cancel = _tools_mod("tui_gateway.mcp_oauth_sessions").cancel_flow
     return _ok(rid, cancel(_str_arg(params, "session_id"), _str_arg(params, "name"), home))
 
@@ -1657,8 +1657,8 @@ def _(rid, params: dict) -> dict:
 
 # ─── Plugins ─────────────────────────────────────────────────────────────────
 def _plugin_rows() -> list[dict]:
-    pc = _tools_mod("hermes_cli.plugins_cmd")
-    cat = _tools_mod("hermes_cli.plugins_cmd_catalog")
+    pc = _tools_mod("zeus_cli.plugins_cmd")
+    cat = _tools_mod("zeus_cli.plugins_cmd_catalog")
     enabled, disabled = pc._get_enabled_set(), pc._get_disabled_set()
     # pins power the desktop's "Update to <pin>" affordance; titles are the server-sentence display
     # names. One live-catalog resolution for the whole listing (see ``catalog_rows_maps``).
@@ -1666,7 +1666,7 @@ def _plugin_rows() -> list[dict]:
     ref_pins = pc._read_install_metadata()  # ``--ref`` installs: pinned_sha so the desktop can show the pin
     # git installs the last update check found behind (the gateway's daily check or `check-updates`); no
     # network here — the listing must stay fast.
-    git_updates = _tools_mod("hermes_cli.plugins_cadence").cached_git_updates(ref_pins)
+    git_updates = _tools_mod("zeus_cli.plugins_cadence").cached_git_updates(ref_pins)
     out = []
     active = pc._category_active_names()
     owned_tools = _plugin_tool_ownership()
@@ -1683,9 +1683,9 @@ def _plugin_rows() -> list[dict]:
             "name": name, "key": key, "version": str(version or ""), "description": desc or "",
             "source": source, "status": status, "portable": portable,
             "install_dir": str(_dir_path) if _dir_path else "",
-            "has_desktop_half": bool(_dir_path and _tools_mod("hermes_cli.desktop_plugin_halves").desktop_source(_dir_path)),
+            "has_desktop_half": bool(_dir_path and _tools_mod("zeus_cli.desktop_plugin_halves").desktop_source(_dir_path)),
             # Manifest ``config_schema`` + current values: the Plugins hub renders these as a form.
-            "settings_schema": _tools_mod("hermes_cli.plugins_settings").plugin_settings_fields(key, _dir_path),
+            "settings_schema": _tools_mod("zeus_cli.plugins_settings").plugin_settings_fields(key, _dir_path),
             "servers": _plugin_server_rows(_dir_path, key, portable=portable, catalog_titles=titles),
             # Tools this package's own code registered: Desktop's tool-media renderer ownership check.
             "tools": owned_tools.get(key, []),
@@ -1703,7 +1703,7 @@ _plugin_activation_subscribed: set = set()
 
 
 def _ensure_plugin_activation_listener() -> None:
-    from hermes_cli.plugins import get_plugin_manager
+    from zeus_cli.plugins import get_plugin_manager
     manager = get_plugin_manager()
     if manager.scope_key in _plugin_activation_subscribed:
         return
@@ -1740,7 +1740,7 @@ def _plugins_toggle(rid, params):
     if not ident:
         return _err(rid, 4019, "plugins.toggle requires a 'key' or 'name'")
     _ensure_plugin_activation_listener()
-    toggle = _tools_mod("hermes_cli.plugins_cmd").dashboard_set_agent_plugin_enabled
+    toggle = _tools_mod("zeus_cli.plugins_cmd").dashboard_set_agent_plugin_enabled
     result = toggle(ident, enabled=bool(params.get("enable")))
     if not result.get("ok"):
         return _err(rid, 5026, result.get("error") or "toggle failed")
@@ -1768,7 +1768,7 @@ def _plugins_install(rid, params):
     if not ident and not catalog_name:
         return _err(rid, 4019, "plugins.install requires 'identifier', 'repo', or 'catalog_name'")
     _ensure_plugin_activation_listener()
-    result = _tools_mod("hermes_cli.plugins_cmd").dashboard_install_plugin(
+    result = _tools_mod("zeus_cli.plugins_cmd").dashboard_install_plugin(
         ident, force=bool(params.get("force")), enable=params.get("enable", True), catalog_name=catalog_name or None,
         ref=str(params.get("ref") or "").strip() or None,
         inspected_sha=str(params.get("inspected_sha") or "").strip() or None)
@@ -1784,7 +1784,7 @@ def _plugins_inspect(rid, params):
     catalog_name = str(params.get("catalog_name") or "").strip()
     if not ident and not catalog_name:
         return _err(rid, 4019, "plugins.inspect requires 'identifier', 'repo', or 'catalog_name'")
-    inspect = _tools_mod("hermes_cli.plugins_cmd_inspect").inspect_plugin_source
+    inspect = _tools_mod("zeus_cli.plugins_cmd_inspect").inspect_plugin_source
     return _ok(rid, inspect(ident, catalog_name=catalog_name or None))
 
 
@@ -1796,7 +1796,7 @@ def _plugins_install_desktop(rid, params):
     catalog_name = str(params.get("catalog_name") or "").strip()
     if not ident and not catalog_name:
         return _err(rid, 4019, "plugins.manage install_desktop requires 'identifier', 'repo', or 'catalog_name'")
-    result = _tools_mod("hermes_cli.desktop_plugin_install").install_desktop_plugin(
+    result = _tools_mod("zeus_cli.desktop_plugin_install").install_desktop_plugin(
         ident, ref=params.get("ref"), catalog_name=catalog_name or None, force=bool(params.get("force")))
     if not result.get("ok"):
         return _err(rid, 5026, result.get("error") or "desktop install failed", data=_source_moved_data(result))
@@ -1809,13 +1809,13 @@ def _plugins_remove_desktop(rid, params):
     name = (params.get("name") or params.get("key") or "").strip()
     if not name:
         return _err(rid, 4019, "plugins.manage remove_desktop requires a 'name'")
-    result = _tools_mod("hermes_cli.desktop_plugin_install").remove_desktop_plugin(
+    result = _tools_mod("zeus_cli.desktop_plugin_install").remove_desktop_plugin(
         name, force=bool(params.get("force")))
     return _ok(rid, result) if result.get("ok") else _err(rid, 5026, result.get("error") or "desktop remove failed")
 
 
 def _plugins_update(rid, params):
-    """The same update as the dashboard and ``hermes plugins update``: a catalog install re-pins to the
+    """The same update as the dashboard and ``zeus plugins update``: a catalog install re-pins to the
     current catalog SHA, a git install pulls. Every update is scanned. A refusal changes nothing and
     answers ``ok: false`` with what the client must show before retrying: ``consent_required`` +
     ``delta``/``delta_lines`` for a re-pin that widens the plugin (retry with ``accept_capabilities``), or
@@ -1825,7 +1825,7 @@ def _plugins_update(rid, params):
     if not name:
         return _err(rid, 4019, "plugins.update requires a 'name'")
     _ensure_plugin_activation_listener()
-    result = _tools_mod("hermes_cli.plugins_cmd").dashboard_update_user_plugin(
+    result = _tools_mod("zeus_cli.plugins_cmd").dashboard_update_user_plugin(
         name, accept_capabilities=bool(params.get("accept_capabilities")), force=bool(params.get("force")))
     if result.get("consent_required") or result.get("scan_blocked"):
         keys = ("ok", "name", "sha", "error", "consent_required", "delta", "delta_lines",
@@ -1842,12 +1842,12 @@ def _plugins_update(rid, params):
 
 
 def _plugins_remove(rid, params):
-    """Uninstall a user install (``<HERMES_HOME>/plugins/<name>``) — the same core as ``hermes plugins
+    """Uninstall a user install (``<ZEUS_HOME>/plugins/<name>``) — the same core as ``zeus plugins
     remove`` and the dashboard; bundled plugins and paths outside the plugins dir are refused there."""
     name = (params.get("name") or "").strip()
     if not name:
         return _err(rid, 4019, "plugins.remove requires a 'name'")
-    result = _tools_mod("hermes_cli.plugins_cmd").dashboard_remove_user_plugin(name)
+    result = _tools_mod("zeus_cli.plugins_cmd").dashboard_remove_user_plugin(name)
     return _ok(rid, result) if result.get("ok") else _err(rid, 5026, result.get("error") or "remove failed")
 
 
@@ -1858,19 +1858,19 @@ def _plugins_settings(rid, params):
     values = params.get("values")
     if not key or not isinstance(values, dict):
         return _err(rid, 4019, "plugins.settings requires a 'key' and a 'values' mapping")
-    pc = _tools_mod("hermes_cli.plugins_cmd")
+    pc = _tools_mod("zeus_cli.plugins_cmd")
     found = pc._find_plugin_entry(key)
     if found is None:
         return _err(rid, 4020, f"plugin '{key}' not found")
     _name, _version, _desc, _source, plugin_dir, canonical = found
     try:
-        written = _tools_mod("hermes_cli.plugins_settings").save_plugin_settings(
+        written = _tools_mod("zeus_cli.plugins_settings").save_plugin_settings(
             canonical, Path(str(plugin_dir)) if plugin_dir else None, values)
     except (ValueError, PermissionError) as e:
         return _err(rid, 4021, str(e))
     row = next((r for r in _plugin_rows() if r["key"] == canonical), None)
     # A Desktop half applies its own preferences (a status-bar chip on/off) without polling.
-    events = _tools_mod("hermes_cli.plugin_events")
+    events = _tools_mod("zeus_cli.plugin_events")
     if events._PLUGIN_ID_RE.match(canonical):  # category keys (``image_gen/fal``) form no event name
         events.broadcast_plugin_event(canonical, "settings.changed", {"written": written})
     # A secret the form just stored may feed the plugin's MCP server env (``${MESHY_API_KEY}``): bounce
@@ -1886,19 +1886,19 @@ def _plugins_settings(rid, params):
 
 
 def _portable_server_names(plugin_dir: Path, key: str) -> set[str]:
-    package = _tools_mod("hermes_cli.agent_plugins").load_agent_plugin(plugin_dir, plugin_dir)
-    name_for = _tools_mod("hermes_cli.plugins_manifest").portable_mcp_server_name
+    package = _tools_mod("zeus_cli.agent_plugins").load_agent_plugin(plugin_dir, plugin_dir)
+    name_for = _tools_mod("zeus_cli.plugins_manifest").portable_mcp_server_name
     return {name_for(key, server) for server in package.mcp_servers}
 
 
 def _plugins_onboarding(rid, params):
     """Catalog plugins curated for the onboarding card that this OS runs, each with its app state."""
-    return _ok(rid, {"onboarding": _tools_mod("hermes_cli.plugin_catalog_presence").onboarding_entries()})
+    return _ok(rid, {"onboarding": _tools_mod("zeus_cli.plugin_catalog_presence").onboarding_entries()})
 
 
 def _plugins_presence(rid, params):
     """Named catalog plugins this OS runs, in the order asked, each with its app state and disclosure."""
-    return _ok(rid, {"presence": _tools_mod("hermes_cli.plugin_catalog_presence").presence_for(params.get("names") or [])})
+    return _ok(rid, {"presence": _tools_mod("zeus_cli.plugin_catalog_presence").presence_for(params.get("names") or [])})
 
 
 _PLUGINS_ACTIONS = {"list": _plugins_list, "onboarding": _plugins_onboarding, "presence": _plugins_presence,
@@ -1909,7 +1909,7 @@ _PLUGINS_ACTIONS = {"list": _plugins_list, "onboarding": _plugins_onboarding, "p
 
 @_scoped_rpc("plugins.manage", 5026, catch_resolve=False)
 def _(rid, params: dict) -> dict:
-    """TUI Plugins Hub backend (shares primitives with ``hermes plugins`` / the dashboard):
+    """TUI Plugins Hub backend (shares primitives with ``zeus plugins`` / the dashboard):
     ``list`` → {plugins, user_count, bundled_count}; ``toggle`` flips ``key``/``name`` per ``enable``;
     ``install`` git-clones ``identifier``/``repo`` or a curated ``catalog_name`` (``force``, ``enable``
     default True); ``inspect`` reports which halves that source ships, installing nothing; ``update`` re-pins a catalog install or pulls a git install (``force`` accepts a caution scan); ``remove`` deletes

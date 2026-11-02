@@ -5,10 +5,10 @@ import type {
   ConnectorErrorReason,
   RpcMethods,
   ToolsChange
-} from '@hermes/shared'
-import { JsonRpcGatewayError } from '@hermes/shared'
+} from '@zeus/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 import { requestGatewayForAgent } from '@/store/gateway'
 
 export type { ConnectorErrorReason }

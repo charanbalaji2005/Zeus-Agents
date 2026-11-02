@@ -1,4 +1,4 @@
-"""``hermes update --gateway`` progress/completion notifications for GatewayRunner.
+"""``zeus update --gateway`` progress/completion notifications for GatewayRunner.
 
 Split out of ``gateway/run_notifications.py``; ``GatewayNotificationsMixin`` inherits it, so
 these stay bound onto ``GatewayRunner`` via the MRO. ``gateway.run`` internals are imported
@@ -24,7 +24,7 @@ from gateway.run_shutdown import _log_suppressed
 logger = logging.getLogger("gateway.run")
 
 # A failed /update leaves the previous version running; the full pip/git log stays on the host
-# (`hermes update` re-runs it in the terminal) and only a short tail is quoted in chat.
+# (`zeus update` re-runs it in the terminal) and only a short tail is quoted in chat.
 def _update_failed_notice() -> str:
     return t("gateway.update.failed_notice")
 
@@ -41,11 +41,11 @@ def _update_output_tail(output: str, limit: int) -> str:
 
 
 class GatewayUpdateNotificationsMixin:
-    """Update watcher: streams ``hermes update --gateway`` output, forwards prompts, sends the final notice."""
+    """Update watcher: streams ``zeus update --gateway`` output, forwards prompts, sends the final notice."""
 
     @dataclasses.dataclass
     class _UpdatePaths:
-        """Marker files ``hermes update --gateway`` and its watcher exchange under HERMES_HOME."""
+        """Marker files ``zeus update --gateway`` and its watcher exchange under ZEUS_HOME."""
 
         pending: Path
         claimed: Path
@@ -90,12 +90,12 @@ class GatewayUpdateNotificationsMixin:
 
     @classmethod
     def _update_paths(cls) -> GatewayUpdateNotificationsMixin._UpdatePaths:
-        from gateway.run import _hermes_home
+        from gateway.run import _zeus_home
         return cls._UpdatePaths(
-            pending=_hermes_home / ".update_pending.json",
-            claimed=_hermes_home / ".update_pending.claimed.json", output=_hermes_home / ".update_output.txt",
-            exit_code=_hermes_home / ".update_exit_code",
-            prompt=_hermes_home / ".update_prompt.json", response=_hermes_home / ".update_response",
+            pending=_zeus_home / ".update_pending.json",
+            claimed=_zeus_home / ".update_pending.claimed.json", output=_zeus_home / ".update_output.txt",
+            exit_code=_zeus_home / ".update_exit_code",
+            prompt=_zeus_home / ".update_prompt.json", response=_zeus_home / ".update_response",
         )
 
     @staticmethod
@@ -229,7 +229,7 @@ class GatewayUpdateNotificationsMixin:
     async def _watch_update_progress(
         self, poll_interval: float = 2.0, stream_interval: float = 4.0, timeout: float = 1800.0
     ) -> None:
-        """Watch ``hermes update --gateway``, streaming output + forwarding prompts.
+        """Watch ``zeus update --gateway``, streaming output + forwarding prompts.
 
         Polls ``.update_output.txt`` for new content and sends chunks to the user periodically;
         detects ``.update_prompt.json`` (written when the update process needs input) and forwards it.

@@ -6,7 +6,7 @@ from typing import Any, Callable
 
 from . import r2 as r2_module
 from .semver import compare, is_release_version
-from hermes_cli.update_channel import canary_timestamp, is_canary_tag
+from zeus_cli.update_channel import canary_timestamp, is_canary_tag
 
 ARCHES = ("arm64", "x64")
 _HASH_PATTERN = re.compile(r"^[A-Za-z0-9+/]{86}==$")
@@ -25,7 +25,7 @@ def _darwin_feed(channel: str, light: bool = False) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def parse_mac_feed(text: str) -> dict[str, Any]:
-    import hermes_yaml as yaml  # lazy: YAML support loads only on the feed path
+    import zeus_yaml as yaml  # lazy: YAML support loads only on the feed path
 
     feed = yaml.safe_load(text)
     if (
@@ -88,7 +88,7 @@ def merge_mac_feeds(legs: dict[str, str], tag: str, light: bool = False,
     if "arm64" not in arches or not set(arches) <= set(ARCHES) or len(set(arches)) != len(arches):
         raise ValueError("macOS feeds need the arm64 leg and only known architectures")
     arches = tuple(arch for arch in ARCHES if arch in arches)
-    import hermes_yaml as yaml  # lazy
+    import zeus_yaml as yaml  # lazy
 
     version = tag[1:] if isinstance(tag, str) and tag.startswith("v") else ""
     if not is_release_version(version):
@@ -104,7 +104,7 @@ def merge_mac_feeds(legs: dict[str, str], tag: str, light: bool = False,
         leg = parse_mac_feed(legs[name])
         if str(leg.get("version")) != version:
             raise ValueError(f"Feed version does not match {tag}")
-        prefix = f"{'HermesLight' if light else 'HermesBundled'}-{version}-mac-{arches[index]}"
+        prefix = f"{'ZeusLight' if light else 'ZeusBundled'}-{version}-mac-{arches[index]}"
         if not any(f.get("url") == f"{prefix}.zip" for f in leg["files"]):
             raise ValueError(f"Missing native ZIP for {arches[index]}")
         for file_entry in leg["files"]:

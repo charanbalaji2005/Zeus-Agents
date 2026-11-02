@@ -18,8 +18,8 @@ async def test_automation_after_compression_and_released_media_uses_logical_owne
     from gateway.session_ingress_context import native_callback
     from gateway.session_ingress_media import release_admission_media
     from gateway.session_automation import check_automation_route
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import claim_session_input, settle_session_input, list_session_admissions
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import claim_session_input, settle_session_input, list_session_admissions
     from plugins.platforms.discord.adapter import DiscordAdapter
     monkeypatch.setattr(SessionAuthority, '_schedule', lambda self, ref: None)
     monkeypatch.setenv('DISCORD_ALLOWED_USERS', '42')
@@ -33,7 +33,7 @@ async def test_automation_after_compression_and_released_media_uses_logical_owne
     photo.write_bytes(b'photo')
     human = MessageEvent(text='human', source=source, message_id='human',
                          media_urls=[str(photo)], media_types=['image/png'])
-    with native_callback(runner, human, get_hermes_home()):
+    with native_callback(runner, human, get_zeus_home()):
         receipt = await authority.admit_native(human)
     sid = receipt.ref.session_id
     claim = claim_session_input(authority.db, epoch=authority.epoch, session_id=sid)
@@ -63,8 +63,8 @@ async def test_automation_for_an_unserved_scope_never_dereferences_a_missing_aut
     from gateway.session_authority import initialize_session_authority, SessionAuthority
     from gateway.session_ingress_context import native_callback
     from gateway.session_automation import check_automation_route
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import (RuntimeStoreError, claim_session_input, list_session_admissions,
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import (RuntimeStoreError, claim_session_input, list_session_admissions,
                                       settle_session_input)
     from plugins.platforms.discord.adapter import DiscordAdapter
     monkeypatch.setattr(SessionAuthority, '_schedule', lambda self, ref: None)
@@ -76,7 +76,7 @@ async def test_automation_for_an_unserved_scope_never_dereferences_a_missing_aut
     runner._wire_adapter_handlers(adapter)
     source = adapter.build_source(chat_id='42', chat_type='dm', user_id='42')
     human = MessageEvent(text='hi', source=source, message_id='h')
-    with native_callback(runner, human, get_hermes_home()):
+    with native_callback(runner, human, get_zeus_home()):
         receipt = await authority.admit_native(human)
     sid = receipt.ref.session_id
     claim = claim_session_input(authority.db, epoch=authority.epoch, session_id=sid)

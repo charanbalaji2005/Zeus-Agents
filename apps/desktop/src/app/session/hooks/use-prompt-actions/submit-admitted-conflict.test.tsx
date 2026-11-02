@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
@@ -63,7 +63,7 @@ it('a retry refused because its id is already admitted settles as delivered; oth
   expect(state.messages.filter(message => message.role === 'user')).toHaveLength(0)
   expect(state.messages.some(message => message.error)).toBe(false)
   expect(state.busy).toBe(false)
-  expect(window.localStorage.getItem('hermes.desktop.preparedSubmissions.v1') ?? '').not.toContain('restored-1')
+  expect(window.localStorage.getItem('zeus.desktop.preparedSubmissions.v1') ?? '').not.toContain('restored-1')
 
   refusal = { reason: 'admission_conflict' }
   await act(async () => {

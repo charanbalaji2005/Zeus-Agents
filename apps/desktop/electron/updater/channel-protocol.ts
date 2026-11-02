@@ -96,7 +96,7 @@ const VERSION =
 const ARCHIVE_REF = /^rc\.(?:[1-9]\d*)-v(?:0|[1-9]\d{0,2})\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)$/
 
 // Published channel builds may still carry these retired bundle environment keys.
-const RETIRED_BUNDLE_ENV_KEYS = new Set(['HERMES_SKIP_INTRO', 'HERMES_GUEST_ONBOARDING'])
+const RETIRED_BUNDLE_ENV_KEYS = new Set(['ZEUS_SKIP_INTRO', 'ZEUS_GUEST_ONBOARDING'])
 
 function parseChannelJson(body: string): unknown {
   const parsed: unknown = JSON.parse(body)
@@ -369,11 +369,11 @@ function request(fields: Fields): ChannelRequest {
 
   // Match the build-time allowlist: a channel request cannot inject process flags.
   const allowed = new Set([
-    'HERMES_HOME',
-    'HERMES_DATA_DIR_SUFFIX',
-    'HERMES_DESKTOP_USER_DATA_DIR',
-    'HERMES_SHARED_AUTH_DIR',
-    'HERMES_PREVIEW_FULL_CONNECTORS'
+    'ZEUS_HOME',
+    'ZEUS_DATA_DIR_SUFFIX',
+    'ZEUS_DESKTOP_USER_DATA_DIR',
+    'ZEUS_SHARED_AUTH_DIR',
+    'ZEUS_PREVIEW_FULL_CONNECTORS'
   ])
 
   for (const key of environment.keys()) {

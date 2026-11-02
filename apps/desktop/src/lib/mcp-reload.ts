@@ -1,4 +1,4 @@
-import type { ReloadMcpResult } from '@hermes/shared'
+import type { ReloadMcpResult } from '@zeus/shared'
 
 import { translateNow } from '@/i18n'
 import { notify } from '@/store/notifications'

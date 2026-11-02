@@ -113,7 +113,7 @@ describe('legacy acknowledgment: new Desktop + script without protocol 2 (R4, SP
     })
   })
 
-  test('a live pid that echoed our started_at IS taken (old scripts write `$$\\n$HERMES_UPDATE_STARTED_AT`)', async () => {
+  test('a live pid that echoed our started_at IS taken (old scripts write `$$\\n$ZEUS_UPDATE_STARTED_AT`)', async () => {
     const home = tmpHome('legacy-live')
     const startedAt = nowSeconds()
     const { child } = await claimantChild(markerPath(home), { startedAt, withCt: false })

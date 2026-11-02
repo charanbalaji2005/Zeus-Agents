@@ -2,18 +2,18 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { setSessionArchived } from '@/hermes'
+import { setSessionArchived } from '@/zeus'
 import { en } from '@/i18n/en'
 import { $messagingSessions, $sessions, setMessagingSessions, setSessions } from '@/store/session'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { SessionsSettings } from './sessions-settings'
 
 vi.mock('@/i18n', () => ({ useI18n: () => ({ t: en }) }))
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
-  getHermesConfigRecord: vi.fn().mockResolvedValue({ config: {} }),
+  getZeusConfigRecord: vi.fn().mockResolvedValue({ config: {} }),
   setSessionArchived: vi.fn().mockResolvedValue(undefined)
 }))
 
@@ -76,12 +76,12 @@ describe('SessionsSettings unarchive', () => {
 
 describe('SessionsSettings default directory in a browser tab', () => {
   afterEach(() => {
-    delete document.documentElement.dataset.hermesDesktopHost
-    Reflect.deleteProperty(window, 'hermesDesktop')
+    delete document.documentElement.dataset.zeusDesktopHost
+    Reflect.deleteProperty(window, 'zeusDesktop')
   })
 
   it('picks through the server folder browser instead of the native dialog', async () => {
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     const settings = {
       getDefaultProjectDir: vi.fn().mockResolvedValue({ defaultLabel: 'Server workspace', dir: null, resolvedCwd: '' }),
@@ -89,7 +89,7 @@ describe('SessionsSettings default directory in a browser tab', () => {
       setDefaultProjectDir: vi.fn(async (dir: null | string) => ({ dir }))
     }
 
-    Object.assign(window, { hermesDesktop: { settings } })
+    Object.assign(window, { zeusDesktop: { settings } })
     selectDesktopPaths.mockReset().mockResolvedValue(['/srv/work'])
 
     render(<SessionsSettings subpage="default-directory" />)

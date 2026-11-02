@@ -19,13 +19,13 @@ const watchdog = setTimeout(() => { console.error('Native probe deadline'); app.
 app.setPath('userData', input.userData)
 app.disableHardwareAcceleration()
 
-const backend = (profile: string) => ({ command: input.python, args: ['-m', 'hermes_cli.main', '--profile', profile, 'gateway', 'ensure', '--json', '--timeout', '30'], env: { PYTHONPATH: input.repo, HOME: input.home, USERPROFILE: input.home }, shell: false })
+const backend = (profile: string) => ({ command: input.python, args: ['-m', 'zeus_cli.main', '--profile', profile, 'gateway', 'ensure', '--json', '--timeout', '30'], env: { PYTHONPATH: input.repo, HOME: input.home, USERPROFILE: input.home }, shell: false })
 
 async function attach(connection: any) {
   const ticket = await mintLocalGatewayTicket(connection.gatewayEndpoint)
 
   return new Promise<{ ws: WebSocket; call: (method: string, params: any) => Promise<any> }>((resolve, reject) => {
-    const ws = new WebSocket(connection.baseUrl.replace(/^http/, 'ws') + '/api/ws', ['hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket], { handshakeTimeout: 10_000 })
+    const ws = new WebSocket(connection.baseUrl.replace(/^http/, 'ws') + '/api/ws', ['zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket], { handshakeTimeout: 10_000 })
     let next = 1
     const pending = new Map<number, (frame: any) => void>()
     ws.on('unexpected-response', (_r, response) => reject(new Error(`WS ${response.statusCode} for ${connection.profile}`)))

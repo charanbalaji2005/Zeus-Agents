@@ -194,7 +194,7 @@ describe('TitlebarControls fixed clusters', () => {
 
 describe('titlebar app-action cluster', () => {
   beforeEach(() => {
-    vi.stubGlobal('hermesDesktop', { ...window.hermesDesktop, hud: { open: vi.fn() } })
+    vi.stubGlobal('zeusDesktop', { ...window.zeusDesktop, hud: { open: vi.fn() } })
   })
 
   afterEach(() => {
@@ -203,7 +203,7 @@ describe('titlebar app-action cluster', () => {
     setTitlebarAppActionsSide('right')
     cleanup()
     vi.unstubAllGlobals()
-    delete window.document.documentElement.dataset.hermesDesktopHost
+    delete window.document.documentElement.dataset.zeusDesktopHost
   })
 
   // A narrow native window keeps main's titlebar: the side buttons read the
@@ -242,7 +242,7 @@ describe('titlebar app-action cluster', () => {
   })
 
   it('names the narrow sidebar action from its visible overlay, not docked state', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     $narrowViewport.set(true)
     renderControls('/')
     const left = screen.getByLabelText('Window controls')
@@ -254,7 +254,7 @@ describe('titlebar app-action cluster', () => {
   })
 
   it('explicitly closes a visible overlay rather than pinning a hover reveal', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     vi.stubGlobal(
       'matchMedia',
       vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })
@@ -275,7 +275,7 @@ describe('titlebar app-action cluster', () => {
   })
 
   it('hides a review-only right sidebar instead of opening files', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     $narrowViewport.set(true)
     $narrowOverlayPaneIds.set(new Set([REVIEW_PANE_ID]))
     const intents: unknown[] = []
@@ -305,7 +305,7 @@ describe('titlebar app-action cluster', () => {
   })
 
   it('keeps HUD hidden in the browser on either app-action side', () => {
-    vi.stubGlobal('hermesDesktop', { ...window.hermesDesktop, hud: undefined })
+    vi.stubGlobal('zeusDesktop', { ...window.zeusDesktop, hud: undefined })
     renderControls('/')
 
     expect(screen.queryByLabelText('HUD mode')).toBeNull()

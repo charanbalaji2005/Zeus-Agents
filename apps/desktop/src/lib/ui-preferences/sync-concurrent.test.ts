@@ -17,8 +17,8 @@ import type { UiPreferencesBridge } from './sync'
 // (#145536 re-review round 3), against the real native writer on a real file:
 // a removal elsewhere, an edit carried over a reload or a takeover, a tab
 // whose unsent edit another tab already took over.
-const MODE = 'hermes-desktop-mode-v1'
-const FAVORITES = 'hermes.desktop.favorite-models'
+const MODE = 'zeus-desktop-mode-v1'
+const FAVORITES = 'zeus.desktop.favorite-models'
 
 const dirs: string[] = []
 const stops: (() => void)[] = []
@@ -26,7 +26,7 @@ const listeners = new Set<(snapshot: UiPreferencesSnapshot) => void>()
 const tick = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms))
 
 function storeFile(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-ui-concurrent-'))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-ui-concurrent-'))
   dirs.push(dir)
 
   return path.join(dir, 'ui-preferences.json')

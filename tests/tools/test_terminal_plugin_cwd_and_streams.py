@@ -86,7 +86,7 @@ def test_home_default_stays_per_sandbox_and_is_never_expanded_on_the_host():
     alice, bob = _create("homebox", "alice"), _create("homebox", "bob")
     # A second sandbox still gets "~" and resolves its OWN home, not the first one's.
     assert terminal_tool._resolve_config_cwd("homebox", False) == ("~", None)
-    assert (alice._hermes_sandbox_home, bob._hermes_sandbox_home) == ("/home/alice", "/home/bob")
+    assert (alice._zeus_sandbox_home, bob._zeus_sandbox_home) == ("/home/alice", "/home/bob")
 
 
 def test_a_cd_inside_the_sandbox_home_survives_while_host_workspaces_are_still_dropped(monkeypatch):
@@ -136,7 +136,7 @@ def test_streams_spawn_through_the_plugin_environments_exec_prefix(monkeypatch):
 
 def test_a_declared_home_is_kept_when_terminal_cwd_starts_the_sandbox_elsewhere(monkeypatch):
     env = _create("spacebox", "t1", cwd="/workspace")  # terminal.cwd picked another in-sandbox directory
-    assert env._hermes_sandbox_home == "/home/space"
+    assert env._zeus_sandbox_home == "/home/space"
     monkeypatch.setattr(terminal_tool, "get_session_cwd", lambda _key: "/home/space/project")
     assert terminal_tool._resolve_command_cwd(
         workdir=None, default_cwd="/workspace", session_key="t1", env_type="spacebox", env=env) == "/home/space/project"
@@ -171,7 +171,7 @@ def test_desktop_scratch_dir_works_for_an_environment_without_get_temp_dir():
     from tools.bot_desktop import sandbox_host
 
     assert not hasattr(_SpaceEnv(), "get_temp_dir")
-    assert sandbox_host._remote_dir(_SpaceEnv(), "p1") == "/tmp/hermes-bot-desktop/p1"
+    assert sandbox_host._remote_dir(_SpaceEnv(), "p1") == "/tmp/zeus-bot-desktop/p1"
 
 
 def test_missing_desktop_stack_hint_names_no_config_key_for_a_plugin_backend(monkeypatch):

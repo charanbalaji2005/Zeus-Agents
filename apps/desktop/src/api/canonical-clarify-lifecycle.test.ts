@@ -1,4 +1,4 @@
-import { JsonRpcGatewayClient, type ServerRequest } from '@hermes/shared'
+import { JsonRpcGatewayClient, type ServerRequest } from '@zeus/shared'
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 
 import { handleServerRequest } from '@/app/session/hooks/use-message-stream/gateway-event/server-requests'
@@ -7,10 +7,10 @@ import { $clarifyRequests } from '@/store/clarify'
 import { $gateway } from '@/store/gateway'
 import { answerParkedCard } from '@/store/parked-card-answers'
 import { resetServerRequestsForTests } from '@/store/server-requests'
-import type { SessionResumeResult } from '@/types/hermes'
+import type { SessionResumeResult } from '@/types/zeus'
 
 import { CanonicalDesktopProtocol } from './canonical-protocol'
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 beforeEach(() => {
   $clarifyRequests.set({})
@@ -36,7 +36,7 @@ test.each([
     return { status: 'resolved' } as never
   })
 
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const previousGateway = $gateway.get()
   $gateway.set(client)
 

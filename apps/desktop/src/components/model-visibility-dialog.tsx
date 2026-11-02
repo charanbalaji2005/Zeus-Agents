@@ -1,4 +1,4 @@
-import type { ModelOptionProvider, ModelOptionsResult } from '@hermes/shared'
+import type { ModelOptionProvider, ModelOptionsResult } from '@zeus/shared'
 import { useStore } from '@nanostores/react'
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
@@ -11,7 +11,7 @@ import { GlyphSpinner } from '@/components/ui/glyph-spinner'
 import { HighlightMatches } from '@/components/ui/highlight-matches'
 import { RowButton } from '@/components/ui/row-button'
 import { Switch } from '@/components/ui/switch'
-import type { HermesGateway } from '@/hermes'
+import type { ZeusGateway } from '@/zeus'
 import { useI18n } from '@/i18n'
 import { Plus, Search, X } from '@/lib/icons'
 import { modelOptionsQueryKey, requestModelOptions } from '@/lib/model-options'
@@ -46,7 +46,7 @@ import { knownOwnerForSession, requestForOwnedSession } from '@/store/session-st
  *  socket refuses a secondary profile's session_id and the dialog fell back to
  *  the launch profile's REST catalog. An owner nothing names yet keeps the
  *  ambient path (and its REST recovery) — this is a settings view, not a write. */
-function ownerModelOptionsRequest(gw: HermesGateway | undefined, sessionId: null | string | undefined) {
+function ownerModelOptionsRequest(gw: ZeusGateway | undefined, sessionId: null | string | undefined) {
   if (!gw || !sessionId || !sessionOwnerIsKnown(knownOwnerForSession(sessionId))) {
     return undefined
   }
@@ -58,7 +58,7 @@ function ownerModelOptionsRequest(gw: HermesGateway | undefined, sessionId: null
 }
 
 interface ModelVisibilityDialogProps {
-  gw?: HermesGateway
+  gw?: ZeusGateway
   onOpenChange: (open: boolean) => void
   onOpenProviders: () => void
   open: boolean

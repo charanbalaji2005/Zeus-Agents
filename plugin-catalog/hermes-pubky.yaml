@@ -6,7 +6,7 @@ description: Setup helper for managed Pubky agents. The launcher syncs agent sta
 maintainer: MCarlomagno
 tier: community
 category: memory
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/MCarlomagno/hermes-pubky#readme
 version: "0.2.3"
 platforms:

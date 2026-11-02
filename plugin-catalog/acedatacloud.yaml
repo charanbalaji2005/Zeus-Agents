@@ -7,7 +7,7 @@ description: Ace Data Cloud GPT models with streaming and tool calling.
 maintainer: AceDataCloud
 tier: community
 category: models
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 version: "1.0.2"
 docs_url: https://github.com/AceDataCloud/AceDataCloudModelProviderHermes/blob/568763ee21fe081562bb9bcd91e7323f8f81d6ff/README.md
 known_issues:

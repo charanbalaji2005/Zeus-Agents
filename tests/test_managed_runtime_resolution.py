@@ -1,18 +1,18 @@
-"""Guard: Hermes-owned subprocesses must not resolve managed runtimes by bare PATH.
+"""Guard: Zeus-owned subprocesses must not resolve managed runtimes by bare PATH.
 
-Hermes installs runtimes for itself — ``uv`` at ``$HERMES_HOME/bin/uv``, Node at
-``$HERMES_HOME/node``. Neither directory is on the ambient PATH of an arbitrary
-process, so ``shutil.which("uv")`` / ``shutil.which("node")`` in Hermes's own
+Zeus installs runtimes for itself — ``uv`` at ``$ZEUS_HOME/bin/uv``, Node at
+``$ZEUS_HOME/node``. Neither directory is on the ambient PATH of an arbitrary
+process, so ``shutil.which("uv")`` / ``shutil.which("node")`` in Zeus's own
 code has two failure modes:
 
 * the managed runtime is invisible, so the caller reports "not installed" or
   degrades to a slower tier on a machine that has exactly what it needed; and
-* when a system copy also exists, the one Hermes does not own wins — which is
+* when a system copy also exists, the one Zeus does not own wins — which is
   how a generated systemd unit or launchd plist can bake a system Node in and
   keep resolving it across reboots.
 
 The fix per call site is one of ``find_node_executable()``,
-``iter_hermes_node_dirs()``, ``resolve_uv()``, or ``ensure_uv()``. This test is
+``iter_zeus_node_dirs()``, ``resolve_uv()``, or ``ensure_uv()``. This test is
 the ratchet that stops a new bare lookup from being added back.
 
 Reading source is normally banned (see AGENTS.md). It is the right tool here and
@@ -45,11 +45,11 @@ _KNOWN_PATH_FRAGMENTS = (
     "WinGet",
 )
 
-# Runtimes Hermes provisions into HERMES_HOME and must therefore resolve
+# Runtimes Zeus provisions into ZEUS_HOME and must therefore resolve
 # through a managed-aware helper rather than PATH.
 _MANAGED_COMMANDS = frozenset({"uv", "node", "npm", "npx"})
 
-# Directories that are not Hermes-owned subprocess code: plugins ship their own
+# Directories that are not Zeus-owned subprocess code: plugins ship their own
 # resolution policy, tests assert against PATH deliberately, and skills/scripts/
 # evals run as standalone user-invoked programs.
 _EXEMPT_DIRS = (
@@ -78,21 +78,21 @@ _ALLOWED: dict[tuple[str, str], str] = {
         "can only run what is on that subshell's PATH, which local.py populates "
         "with the managed dirs — so PATH is the correct question to ask here."
     ),
-    ("hermes_cli/main_tui_launch.py", "node"): (
+    ("zeus_cli/main_tui_launch.py", "node"): (
         "PM-composed launch context: `which(node)` runs against the PATH "
         "pm.ensure('node'|'npm') just composed (store dirs first), not the ambient one."
     ),
-    ("hermes_cli/main_tui_launch.py", "npm"): (
+    ("zeus_cli/main_tui_launch.py", "npm"): (
         "Same PM-composed launch context as the node lookup above."
     ),
-    ("hermes_cli/source_build.py", "node"): (
+    ("zeus_cli/source_build.py", "node"): (
         "PM-composed build context: `which(node)` runs against the PATH pm's "
         "ensure('npm')/env_for('node') just composed, not the ambient one."
     ),
-    ("hermes_cli/source_build.py", "npm"): (
+    ("zeus_cli/source_build.py", "npm"): (
         "Same PM-composed build context as the node lookup above."
     ),
-    ("hermes_cli/main_desktop.py", "npm"): (
+    ("zeus_cli/main_desktop.py", "npm"): (
         "Desktop build resolves npm inside the PM-prepared build_env PATH."
     ),
     ("pm/workspace.py", "npm"): (
@@ -105,7 +105,7 @@ _ALLOWED: dict[tuple[str, str], str] = {
     ),
     ("apps/desktop/electron/fixtures/source-backend.py", "uv"): (
         "Test fixture drives the real uv deliberately placed on the test "
-        "runner's PATH; it is not Hermes-owned subprocess resolution."
+        "runner's PATH; it is not Zeus-owned subprocess resolution."
     ),
 }
 
@@ -213,7 +213,7 @@ def _source_files() -> list[Path]:
     files: list[Path] = []
     # os.walk instead of Path.rglob: rglob raises FileNotFoundError when a
     # directory vanishes mid-scan — a sibling CI job's sdist extraction
-    # (hermes_agent-<version>/) gets created and deleted concurrently, and
+    # (zeus_agents-<version>/) gets created and deleted concurrently, and
     # that TOCTOU failed this guard on runs 33531869442/33455779041-era
     # workspaces. os.walk tolerates vanishing dirs (onerror=None), and
     # pruning exempt/packaging dirs at the top level also skips their
@@ -267,7 +267,7 @@ def _resolution_sites() -> set[tuple[str, str, str]]:
     sites: set[tuple[str, str, str]] = set()
     for path in _source_files():
         rel = path.relative_to(REPO_ROOT).as_posix()
-        if rel == "hermes_platform" or rel.startswith("hermes_platform/"):
+        if rel == "zeus_platform" or rel.startswith("zeus_platform/"):
             continue
         try:
             source = path.read_text(encoding="utf-8")
@@ -300,12 +300,12 @@ def test_bare_which_and_known_path_tables_are_allowlisted():
     assert not unlisted, (
         "Unreviewed command resolution sites:\n"
         + _format_resolution_sites(unlisted)
-        + "\nuse a hermes_platform resolver or add a justified allowlist row"
+        + "\nuse a zeus_platform resolver or add a justified allowlist row"
     )
 
 
 def test_resolution_allowlist_has_no_stale_rows():
-    """Remove bootstrap rows as their call sites move to hermes_platform."""
+    """Remove bootstrap rows as their call sites move to zeus_platform."""
     stale = _resolution_allowlist() - _resolution_sites()
 
     assert not stale, (
@@ -323,15 +323,15 @@ def test_no_unreviewed_bare_managed_runtime_lookups():
     ]
 
     assert not unexpected, (
-        "Bare PATH lookup for a Hermes-managed runtime.\n\n"
+        "Bare PATH lookup for a Zeus-managed runtime.\n\n"
         + "\n".join(f"  {rel}:{lineno}  which({cmd!r})" for rel, cmd, lineno in unexpected)
-        + "\n\n$HERMES_HOME/bin (uv) and $HERMES_HOME/node are not on an "
+        + "\n\n$ZEUS_HOME/bin (uv) and $ZEUS_HOME/node are not on an "
         "arbitrary process's PATH, so this resolves a system copy — or nothing "
         "— on an install that has a managed one.\n"
         "Use instead:\n"
         "  uv       -> managed_uv.resolve_uv() (lookup) or ensure_uv() (may install)\n"
-        "  node/npm -> hermes_constants.find_node_executable()\n"
-        "  PATH env -> hermes_constants.iter_hermes_node_dirs()\n"
+        "  node/npm -> zeus_constants.find_node_executable()\n"
+        "  PATH env -> zeus_constants.iter_zeus_node_dirs()\n"
         "If PATH really is the right question, add the site to _ALLOWED with a "
         "reason."
     )
@@ -353,15 +353,15 @@ def test_allowlist_has_no_stale_entries():
     "helper",
     [
         "find_node_executable",
-        "iter_hermes_node_dirs",
-        "with_hermes_node_path",
+        "iter_zeus_node_dirs",
+        "with_zeus_node_path",
     ],
 )
 def test_managed_node_helpers_exist(helper):
     """The alternatives this guard points contributors at must be importable."""
-    import hermes_constants
+    import zeus_constants
 
-    assert callable(getattr(hermes_constants, helper))
+    assert callable(getattr(zeus_constants, helper))
 
 
 def test_managed_uv_helpers_exist():
@@ -369,7 +369,7 @@ def test_managed_uv_helpers_exist():
     exists only so the frozen historical updater fixture can import it, and
     its entry points route to relaunch instead of doing venv work. PM owns
     real uv resolution now; the module itself must keep the names live."""
-    from hermes_cli import managed_uv
+    from zeus_cli import managed_uv
 
     assert callable(managed_uv.resolve_uv)
     assert callable(managed_uv.ensure_uv)

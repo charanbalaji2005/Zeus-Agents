@@ -30,7 +30,7 @@ def test_register_shape_and_core_wiring_removed():
     assert callable(kw["setup_fn"]) and callable(kw["is_connected"])
 
     from gateway.run import _BUILTIN_ADAPTERS
-    from hermes_cli.gateway_setup_wizard import _PLATFORMS
+    from zeus_cli.gateway_setup_wizard import _PLATFORMS
     from tools import send_message_tool as smt
     assert Platform.YUANBAO not in _BUILTIN_ADAPTERS
     assert all(p["key"] != "yuanbao" for p in _PLATFORMS)

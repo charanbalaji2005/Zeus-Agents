@@ -71,7 +71,7 @@ def _manual_compression_reply_lines(summary: dict, compressor, focus_topic) -> l
 def _compress_preview_reply(history, partial: bool, keep_last, focus_topic, agg_note: str) -> str:
     """``/compress --preview``: report what WOULD be compressed — no agent, no writes."""
     from agent.model_metadata import estimate_request_tokens_rough
-    from hermes_cli.partial_compress import summarize_compress_preview
+    from zeus_cli.partial_compress import summarize_compress_preview
 
     pv_msgs = [{"role": m.get("role"), "content": m.get("content")} for m in history
                if m.get("role") in {"user", "assistant"} and m.get("content")]
@@ -115,10 +115,10 @@ def _strip_resume_name(parts: list[str]) -> str:
 async def discard_lost_turns(authority, session_id) -> str:
     """Messaging ``/discard`` (#134889 GW-10): acknowledge every ``unknown`` (lost-in-restart) turn
     of this chat's FIFO through the owner's fenced ``resolve_unknown``, the path Desktop's Discard,
-    the TUI queue and ``hermes sessions discard`` use. Never replays the input; the saved
+    the TUI queue and ``zeus sessions discard`` use. Never replays the input; the saved
     followers run once it commits."""
     from gateway.session_contract import SessionRef
-    from hermes_state_runtime import RuntimeStoreError, list_session_admissions
+    from zeus_state_runtime import RuntimeStoreError, list_session_admissions
     rows = await asyncio.to_thread(list_session_admissions, authority.db, session_id=session_id)
     lost = [row for row in rows if row['status'] == 'unknown']
     if not lost:
@@ -254,14 +254,14 @@ class GatewaySessionCommandsMixin:
         _new_sid = new_entry.session_id if new_entry else None
         # Plugin on_session_reset hook (new session guaranteed to exist); best-effort.
         try:
-            from hermes_cli.lifecycle import invoke_hook as _invoke_hook
+            from zeus_cli.lifecycle import invoke_hook as _invoke_hook
             _invoke_hook("on_session_reset", session_id=_new_sid, reason="new_session",
                          platform=source.platform.value if source.platform else "",
                          old_session_id=_old_sid, new_session_id=_new_sid)
         except Exception:
             pass
         try:
-            from hermes_cli.tips import get_random_tip
+            from zeus_cli.tips import get_random_tip
             _tip_line = t("gateway.reset.tip", tip=get_random_tip())
         except Exception:
             _tip_line = ""
@@ -270,7 +270,7 @@ class GatewaySessionCommandsMixin:
 
     async def _reset_titled_header(self, header: str, session_id: str, title_arg: str) -> str:
         """``/new <title>``: titled header on success, else the header plus a rejection note."""
-        from hermes_state import SessionDB
+        from zeus_state import SessionDB
         note = ""
         try:
             sanitized = SessionDB.sanitize_title(title_arg)
@@ -513,8 +513,8 @@ class GatewaySessionCommandsMixin:
         transcript changed since the read refuses both."""
         from gateway import session_retry_admission as retry_admission
         from gateway.session_ingress_context import carry_callback
-        from hermes_state_rewind import RewindTargetUnavailableError
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_rewind import RewindTargetUnavailableError
+        from zeus_state_runtime import RuntimeStoreError
         session_id = session_entry.session_id
         if composite:
             # The carrier-aware rewind, planned on the same snapshot: archive the carrier, keep its scaffold.
@@ -533,7 +533,7 @@ class GatewaySessionCommandsMixin:
             resend_text = plan.live_text
 
             def write(conn):
-                from hermes_state_mutation_transcript import rewind_in_transaction
+                from zeus_state_mutation_transcript import rewind_in_transaction
                 rewind_in_transaction(db, conn, session_id, plan.target_row_id, preserve_compaction_handoff=True,
                                       expected_active_ids=plan.expected_active_ids,
                                       expected_target_content=plan.expected_target_content)
@@ -593,8 +593,8 @@ class GatewaySessionCommandsMixin:
         authority = active_authority(self)
         if authority is None:
             return None
-        import hermes_state_runtime
-        from hermes_state_runtime import RuntimeStoreError
+        import zeus_state_runtime
+        from zeus_state_runtime import RuntimeStoreError
         try:
             authority._require_admission_open()
         except RuntimeStoreError:
@@ -602,9 +602,9 @@ class GatewaySessionCommandsMixin:
         entry = self.session_store.lookup_by_session_key(self._session_key_for_source(source))
         if entry is None:
             return None
-        rows = hermes_state_runtime.list_session_admissions(
+        rows = zeus_state_runtime.list_session_admissions(
             authority.db, session_id=authority.logical_owner(entry.session_id))
-        if sum(row["status"] == "queued" for row in rows) >= hermes_state_runtime.ADMISSION_QUEUE_MAX:
+        if sum(row["status"] == "queued" for row in rows) >= zeus_state_runtime.ADMISSION_QUEUE_MAX:
             from gateway.session_ingress import QUEUE_FULL_REPLY
             return QUEUE_FULL_REPLY
         return None
@@ -612,12 +612,12 @@ class GatewaySessionCommandsMixin:
     def _record_model_friction(self, signal: str, source, session_id: str, turns: int = 1) -> None:
         """Slash dispatch does not install the routed profile's scope, so a multiplexed runner
         names the owning home explicitly."""
-        from hermes_cli.observability.shared_metrics_model import record_model_friction
+        from zeus_cli.observability.shared_metrics_model import record_model_friction
         home = None
         if getattr(getattr(self, "config", None), "multiplex_profiles", False):
             with contextlib.suppress(Exception):
                 home = self._resolve_profile_home_for_source(source)
-        record_model_friction(signal, session_id=session_id, hermes_home=home, turns=turns)
+        record_model_friction(signal, session_id=session_id, zeus_home=home, turns=turns)
 
     async def _handle_undo_command(self, event: MessageEvent) -> str:
         """Handle /undo [N] — back up N user turns (default 1), soft-deleting the truncated rows and
@@ -763,7 +763,7 @@ class GatewaySessionCommandsMixin:
         """Build the throwaway AIAgent that performs a manual /compress rewrite of *session_id*."""
         from run_agent import AIAgent
         from gateway.run import _GATEWAY_HYGIENE_PLATFORM, _seed_hygiene_system_prompt
-        from hermes_cli.config import load_config as _load_cfg
+        from zeus_cli.config import load_config as _load_cfg
         from utils import is_truthy_value as _is_truthy
 
         # _compress_context may persist its cached system prompt, and this agent runs outside the
@@ -895,7 +895,7 @@ class GatewaySessionCommandsMixin:
     async def _handle_save_command(self, event: MessageEvent) -> str:
         """Handle /save — export the current session and send it as a document."""
         import tempfile
-        from hermes_cli.session_export import (
+        from zeus_cli.session_export import (
             SAVE_USAGE, default_save_filename, load_save_snapshot, normalize_save_format, render_session_for_save)
 
         parts = event.get_command_args().split()
@@ -917,7 +917,7 @@ class GatewaySessionCommandsMixin:
         # Never trust path separators from chat input; the filename is only echoed to the platform.
         filename = parts[1] if len(parts) > 1 else default_save_filename(session_id, fmt)
         filename = os.path.basename(filename) or default_save_filename(session_id, fmt)
-        from hermes_state import SessionExportTooLargeError
+        from zeus_state import SessionExportTooLargeError
         try:
             # One off-loop hop for the cap check + read; the helper is shared with the CLI and TUI /save.
             export_data = await asyncio.to_thread(load_save_snapshot, self._session_db._db, session_id, fmt)
@@ -926,9 +926,9 @@ class GatewaySessionCommandsMixin:
         if not export_data:
             return t("gateway.save.no_messages", session_id=session_id)
         if redact:
-            from hermes_cli.session_export_md import redact_session_data
+            from zeus_cli.session_export_md import redact_session_data
             export_data = redact_session_data(export_data)
-        temp_dir = tempfile.mkdtemp(prefix="hermes_save_")
+        temp_dir = tempfile.mkdtemp(prefix="zeus_save_")
         temp_path = os.path.join(temp_dir, filename)
         try:
             # Off-loop: render + write scale with transcript size (multi-MB) and would stall the loop.
@@ -978,7 +978,7 @@ class GatewaySessionCommandsMixin:
                 return t("gateway.title.current_with_title", session_id=session_id, title=title)
             return t("gateway.title.current_no_title", session_id=session_id)
         try:
-            from hermes_state import SessionDB
+            from zeus_state import SessionDB
             sanitized = SessionDB.sanitize_title(title_arg)
         except ValueError as e:
             return t("gateway.shared.warn_passthrough", error=e)
@@ -1156,7 +1156,7 @@ class GatewaySessionCommandsMixin:
         """Handle /sessions — list previous sessions for gateway chats."""
         if not self._session_db:
             return self._session_db_unavailable_reply()
-        from hermes_cli.session_listing import (
+        from zeus_cli.session_listing import (
             format_gateway_session_listing, parse_session_listing_args, query_session_listing)
         try:
             include_all, include_unnamed, target, search_query = parse_session_listing_args(

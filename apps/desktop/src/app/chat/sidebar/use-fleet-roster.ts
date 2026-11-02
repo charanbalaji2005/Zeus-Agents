@@ -34,7 +34,7 @@ export function useFleetRoster(enabled: boolean): void {
 
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onVisibility)
-    const offRegistry = window.hermesDesktop?.connections?.onChanged?.(() => void refreshFleetRoster({ force: true }))
+    const offRegistry = window.zeusDesktop?.connections?.onChanged?.(() => void refreshFleetRoster({ force: true }))
     let wasOpen = $gatewayState.get() === 'open'
 
     const offGateway = $gatewayState.listen(state => {

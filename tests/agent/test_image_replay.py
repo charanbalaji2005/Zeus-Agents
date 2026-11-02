@@ -9,7 +9,7 @@ from agent.image_routing import build_native_content_parts
 from agent.session_persistence import _durable_content
 from agent.turn_context import build_api_messages
 from gateway.session_ingress_media import capture_native_media
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 _PNG = bytes.fromhex(
     "89504e470d0a1a0a0000000d49484452000000010000000108020000009077"
@@ -33,9 +33,9 @@ class _Agent:
 
 
 def _config(**vision):
-    from hermes_constants import get_hermes_home  # sandboxed per test by conftest
+    from zeus_constants import get_zeus_home  # sandboxed per test by conftest
     cfg = {"agent": {"image_input_mode": vision.pop("mode", "native")}, "vision": vision}
-    (get_hermes_home() / "config.yaml").write_text(json.dumps(cfg), encoding="utf-8")  # JSON is valid YAML
+    (get_zeus_home() / "config.yaml").write_text(json.dumps(cfg), encoding="utf-8")  # JSON is valid YAML
 
 
 def _live_turn(tmp_path, name, text, data=_PNG):

@@ -97,15 +97,15 @@ def test_main_markets_json_prints_normalized_payload(capsys):
 
 
 
-def test_env_lookup_reads_hermes_dotenv(tmp_path, monkeypatch):
+def test_env_lookup_reads_zeus_dotenv(tmp_path, monkeypatch):
     mod = load_module()
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir(parents=True)
-    (hermes_home / ".env").write_text(
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir(parents=True)
+    (zeus_home / ".env").write_text(
         "HYPERLIQUID_USER_ADDRESS=0xdotenv123\nHYPERLIQUID_API_URL=https://api.hyperliquid-testnet.xyz\n",
         encoding="utf-8",
     )
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
     monkeypatch.delenv("HYPERLIQUID_USER_ADDRESS", raising=False)
     monkeypatch.delenv("HYPERLIQUID_API_URL", raising=False)
 
@@ -120,12 +120,12 @@ def test_user_dotenv_overrides_project_dotenv(tmp_path, monkeypatch):
     project_dir.mkdir()
     (project_dir / ".env").write_text("HYPERLIQUID_USER_ADDRESS=0xproject\n", encoding="utf-8")
 
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    (hermes_home / ".env").write_text("HYPERLIQUID_USER_ADDRESS=0xuserhome\n", encoding="utf-8")
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
+    (zeus_home / ".env").write_text("HYPERLIQUID_USER_ADDRESS=0xuserhome\n", encoding="utf-8")
 
     monkeypatch.chdir(project_dir)
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
     monkeypatch.delenv("HYPERLIQUID_USER_ADDRESS", raising=False)
 
     assert mod._env_lookup("HYPERLIQUID_USER_ADDRESS") == "0xuserhome"

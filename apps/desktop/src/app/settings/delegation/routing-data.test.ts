@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { DelegationModelMap, DelegationRouting } from '@/api/delegation'
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { queryClient } from '@/lib/query-client'
 
 import { routingQueryKey, saveModelRoutes } from './routing-data'
@@ -25,9 +25,9 @@ beforeEach(() => {
     profiles: []
   })
   // Each PUT waits until the test settles it, so the test picks the order answers come back in.
-  window.hermesDesktop = {
-    ...window.hermesDesktop,
-    api: (request: HermesApiRequest) => {
+  window.zeusDesktop = {
+    ...window.zeusDesktop,
+    api: (request: ZeusApiRequest) => {
       if (request.path === '/api/delegation/routing') {
         return Promise.resolve({ ...queryClient.getQueryData(routingQueryKey(undefined)), model_map: server })
       }
@@ -48,7 +48,7 @@ beforeEach(() => {
         })
       )
     }
-  } as typeof window.hermesDesktop
+  } as typeof window.zeusDesktop
 })
 
 afterEach(() => queryClient.clear())

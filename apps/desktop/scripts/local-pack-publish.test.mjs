@@ -21,7 +21,7 @@ test.each([['repository', true, true], ['missing repository', false, true], ['no
     try {
       /** @type {import('app-builder-lib').Metadata} */
       const metadata = { name: 'fixture', version: '1.0.0', description: 'fixture', author: 'Fixture' }
-      if (repository) metadata.repository = 'https://github.com/NousResearch/hermes-agent'
+      if (repository) metadata.repository = 'https://github.com/charanbalaji2005/Zeus-Agents'
       fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify(metadata))
       const info = new Packager({ projectDir: root, config: {} })
       await info.validateConfig()
@@ -33,8 +33,8 @@ test.each([['repository', true, true], ['missing repository', false, true], ['no
       } else {
         const repositoryInfo = await packager.repositoryInfo
         assert.equal(repositoryInfo.user, 'NousResearch')
-        assert.equal(repositoryInfo.project, 'hermes-agent')
-        assert.deepEqual(await getPublishConfigs(packager, null, null, true), [{ owner: 'NousResearch', repo: 'hermes-agent', provider: 'github' }])
+        assert.equal(repositoryInfo.project, 'zeus-agents')
+        assert.deepEqual(await getPublishConfigs(packager, null, null, true), [{ owner: 'NousResearch', repo: 'zeus-agents', provider: 'github' }])
       }
     } finally { fs.rmSync(root, { recursive: true, force: true }) }
   }

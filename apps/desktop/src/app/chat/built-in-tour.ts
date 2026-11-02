@@ -8,7 +8,7 @@
  * mode without that nav row, a collapsed pane) is dropped, never guessed at.
  */
 
-import type { TourPreset } from '@hermes/shared'
+import type { TourPreset } from '@zeus/shared'
 
 import { runtimeTranslations } from '@/i18n'
 import { startTour, type TourResult } from '@/lib/tour'
@@ -32,7 +32,7 @@ type StopId = keyof typeof SELECTORS
 const ESSENTIALS: StopId[] = ['sessions', 'composer', 'newSession', 'model']
 
 /** Full adds what the interface mode puts on screen:
- *  Simple is for talking to Hermes, Advanced has the working pane. */
+ *  Simple is for talking to Zeus, Advanced has the working pane. */
 const SIMPLE_EXTRAS: StopId[] = ['capabilities', 'messaging']
 const ADVANCED_EXTRAS: StopId[] = ['rightPane', 'capabilities']
 

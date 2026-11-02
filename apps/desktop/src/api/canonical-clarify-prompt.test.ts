@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 test('a reopened sibling chat delivers retained questions before returning and replies on its route', async () => {
   const wsPackage = 'ws'
@@ -22,7 +22,7 @@ test('a reopened sibling chat delivers retained questions before returning and r
     socket.send(JSON.stringify({ jsonrpc: '2.0', id: frame.id,
       result: frame.method === 'session.resume' ? snapshot : { status: 'resolved' } }))
   }))
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const delivered: any[] = []
   client.onRequest(request => { delivered.push(request) })
 
@@ -66,7 +66,7 @@ test('a canonical clarify prompt drives the question card and its lock answers o
       kind: 'clarify', prompt_id: 'c1', execution_generation: 7, question: 'Which target?', choices: ['staging', 'prod'], multi_select: false
     } } }))
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   let delivered: any
   let received!: () => void
   const ready = new Promise<void>(resolve => { received = resolve })

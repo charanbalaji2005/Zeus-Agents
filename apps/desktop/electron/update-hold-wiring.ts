@@ -30,7 +30,7 @@ export interface MarkerGateCallbacks {
 }
 
 export interface MarkerGateHost {
-  hermesHome: string
+  zeusHome: string
   isWindows: boolean
   log: (line: string) => void
   updateRoot: () => string
@@ -48,7 +48,7 @@ export function markerGateProbe(host: MarkerGateHost, { onLiveMarker, onHeld, on
   // helper decides under its lock whether a completion still holds the
   // checkout (R6) — see update-marker-gate.ts.
   return liveMarkerProbe({
-    hermesHome: host.hermesHome,
+    zeusHome: host.zeusHome,
     createTime,
     onLiveMarker,
     onHeld,
@@ -60,14 +60,14 @@ export function markerGateProbe(host: MarkerGateHost, { onLiveMarker, onHeld, on
     reclaim: () =>
       runMarkerHelper('reclaim', {
         updateRoot: host.updateRoot(),
-        hermesHome: host.hermesHome,
+        zeusHome: host.zeusHome,
         isWindows: host.isWindows
       })
   })
 }
 
 export interface UpdateHoldScreenHost {
-  hermesHome: string
+  zeusHome: string
   log: (line: string) => void
   /** The hold the boot progress currently carries. */
   bootHold: () => UpdateHoldWire | null
@@ -90,7 +90,7 @@ export function createUpdateHoldScreen(host: UpdateHoldScreenHost) {
     ownerPid: state.ownerPid,
     since: state.since,
     checkedAt: state.checkedAt,
-    logPath: path.join(host.hermesHome, 'logs', 'update.log')
+    logPath: path.join(host.zeusHome, 'logs', 'update.log')
   })
 
   function render(state: HeldState, bootPhase: boolean) {
@@ -159,7 +159,7 @@ export function createUpdateHoldScreen(host: UpdateHoldScreenHost) {
 export interface UpdateHoldIpcHost {
   /** Only the primary window's boot surface may drive the hold. */
   isPrimaryBootSender: (event: IpcMainInvokeEvent) => boolean
-  /** main.ts's boot progress snapshot (`hermes:boot-progress:get`). */
+  /** main.ts's boot progress snapshot (`zeus:boot-progress:get`). */
   bootProgress: () => { updateHold?: UpdateHoldWire | null }
   currentHold: () => HeldState | null
   log: (line: string) => void
@@ -174,13 +174,13 @@ export function registerUpdateHoldIpc(ipc: IpcMain, host: UpdateHoldIpcHost) {
   // gets the hold: boot-progress pushes (the hold clearing included) reach the
   // main window alone and the ways out refuse every other sender, so a HUD or
   // session window that mounted the blocked screen would keep it forever.
-  ipc.handle('hermes:boot-progress:get', async event => {
+  ipc.handle('zeus:boot-progress:get', async event => {
     const state = host.bootProgress()
 
     return host.isPrimaryBootSender(event) ? state : { ...state, updateHold: null }
   })
 
-  ipc.handle('hermes:update-hold:recheck', async event => {
+  ipc.handle('zeus:update-hold:recheck', async event => {
     const hold = host.currentHold()
 
     if (!host.isPrimaryBootSender(event) || !hold) {
@@ -193,19 +193,19 @@ export function registerUpdateHoldIpc(ipc: IpcMain, host: UpdateHoldIpcHost) {
     return { ok: true }
   })
 
-  ipc.handle('hermes:update-hold:quit', async event => {
+  ipc.handle('zeus:update-hold:quit', async event => {
     if (!host.isPrimaryBootSender(event)) {
       return { ok: false }
     }
 
     const hold = host.currentHold()
-    host.log(`[updates] user quit Hermes from the update-hold screen${hold ? ` (hold ${hold.holdId})` : ''}`)
+    host.log(`[updates] user quit Zeus from the update-hold screen${hold ? ` (hold ${hold.holdId})` : ''}`)
     host.quit()
 
     return { ok: true }
   })
 
-  ipc.handle('hermes:update-hold:start-anyway', async (event, request: { holdId?: unknown; confirmed?: unknown }) => {
+  ipc.handle('zeus:update-hold:start-anyway', async (event, request: { holdId?: unknown; confirmed?: unknown }) => {
     const hold = host.currentHold()
 
     if (!host.isPrimaryBootSender(event) || !hold || request?.confirmed !== true || request.holdId !== hold.holdId) {

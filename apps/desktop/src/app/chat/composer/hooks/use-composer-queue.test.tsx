@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { clearComposerTerminalSelections, setComposerTerminalSelection } from '@/store/composer'
 import {
   $parkedQueueSessions,
@@ -115,7 +115,7 @@ describe('useComposerQueue park integration', () => {
   })
 
   it('admits native Queue through submit and retains an uncertain draft without a local replay', async () => {
-    $connection.set({ mode: 'local', wsUrl: 'ws://localhost/api/ws?native_dial=unminted' } as HermesConnection)
+    $connection.set({ mode: 'local', wsUrl: 'ws://localhost/api/ws?native_dial=unminted' } as ZeusConnection)
     const draftRef = { current: 'durable queue' }
     const clearDraft = vi.fn(() => { draftRef.current = '' })
     const onSubmit = vi.fn<ChatBarProps['onSubmit']>().mockResolvedValue(false)
@@ -141,7 +141,7 @@ describe('useComposerQueue park integration', () => {
   })
 
   it('does not clear the next session draft when a queue ACK arrives after navigation', async () => {
-    $connection.set({ mode: 'local', wsUrl: 'ws://localhost/api/ws?native_dial=unminted' } as HermesConnection)
+    $connection.set({ mode: 'local', wsUrl: 'ws://localhost/api/ws?native_dial=unminted' } as ZeusConnection)
     let accept!: (value: boolean) => void
     const clearDraft = vi.fn()
     const draftRef = { current: 'same text' }
@@ -644,7 +644,7 @@ describe('useComposerQueue scope', () => {
     act(() => {
       hook.result.current.exitQueuedEdit('save')
     })
-    await act(async () => replies[0]!.reject(new Error('Hermes gateway is not connected')))
+    await act(async () => replies[0]!.reject(new Error('Zeus gateway is not connected')))
 
     expect(hook.result.current.queueEdit?.entryId).toBe('adm-1')
     expect(draftRef.current).toBe('new words')

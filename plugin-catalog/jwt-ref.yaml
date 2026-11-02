@@ -6,7 +6,7 @@ description: "@jwt: context references that decode a JSON Web Token for the mode
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/jwt-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/9c842d6da34cce6bce21a43af097629217828634/docs/jwt-ref-card.png

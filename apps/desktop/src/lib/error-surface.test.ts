@@ -174,13 +174,13 @@ describe('free-tier refusals', () => {
   const surface = parseErrorSurface({
     code: 'free_tier_disabled',
     layer: 'provider',
-    message: '  Using Hermes without signing in is switched off right now. To sign in: /login. ',
+    message: '  Using Zeus without signing in is switched off right now. To sign in: /login. ',
     provider: 'nous',
     retryable: false
   })!
 
   it('carries the backend sentence and offers the free sign-in, never an OAuth re-login', () => {
-    expect(surface.message).toBe('Using Hermes without signing in is switched off right now. To sign in: /login.')
+    expect(surface.message).toBe('Using Zeus without signing in is switched off right now. To sign in: /login.')
     expect(errorCardActions(surface)).toEqual({ primary: 'sign_in_free_tier' })
   })
 
@@ -231,11 +231,11 @@ describe('managed local model server down', () => {
 
     expect(card(true).body).toMatch(/retry/i)
     expect(card(false).body).not.toMatch(/retry/i)
-    expect(card(false).body).toContain('hermes model')
+    expect(card(false).body).toContain('zeus model')
 
     for (const copy of Object.values(TRANSLATIONS)) {
       expect(card(false, copy.assistant.thread).body).not.toBe(card(true, copy.assistant.thread).body)
-      expect(card(false, copy.assistant.thread).body).toContain('hermes model')
+      expect(card(false, copy.assistant.thread).body).toContain('zeus model')
     }
   })
 })

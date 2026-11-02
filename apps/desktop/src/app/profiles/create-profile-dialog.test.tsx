@@ -8,7 +8,7 @@ import { browserStartupProfileKey } from '@/lib/browser-startup-profile'
 import { CreateProfileDialog } from './create-profile-dialog'
 
 const api = vi.hoisted(() => ({ createProfile: vi.fn(async () => ({})), updateProfileSoul: vi.fn(async () => ({})) }))
-vi.mock('@/hermes', () => api)
+vi.mock('@/zeus', () => api)
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
@@ -39,14 +39,14 @@ it.each([true, false])(
 )
 
 it('does not let a new browser profile inherit the prefs a deleted one left under its name', async () => {
-  const win = window as Window & { __HERMES_BASE_PATH__?: string }
-  const folderKey = browserDefaultProjectDirKey('/hermes', 'work')
-  const startupKey = browserStartupProfileKey('/hermes')
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
-  win.__HERMES_BASE_PATH__ = '/hermes'
+  const win = window as Window & { __ZEUS_BASE_PATH__?: string }
+  const folderKey = browserDefaultProjectDirKey('/zeus', 'work')
+  const startupKey = browserStartupProfileKey('/zeus')
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
+  win.__ZEUS_BASE_PATH__ = '/zeus'
   localStorage.setItem(folderKey, '/srv/deleted-work')
   localStorage.setItem(startupKey, JSON.stringify({ connectionId: null, profile: 'work' }))
-  localStorage.setItem(browserDefaultProjectDirKey('/hermes', 'alpha'), '/srv/alpha')
+  localStorage.setItem(browserDefaultProjectDirKey('/zeus', 'alpha'), '/srv/alpha')
 
   try {
     const created = vi.fn()
@@ -57,10 +57,10 @@ it('does not let a new browser profile inherit the prefs a deleted one left unde
 
     expect(localStorage.getItem(folderKey)).toBeNull()
     expect(localStorage.getItem(startupKey)).toBeNull()
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBe('/srv/alpha')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBe('/srv/alpha')
   } finally {
     localStorage.clear()
-    delete window.document.documentElement.dataset.hermesDesktopHost
-    delete win.__HERMES_BASE_PATH__
+    delete window.document.documentElement.dataset.zeusDesktopHost
+    delete win.__ZEUS_BASE_PATH__
   }
 })

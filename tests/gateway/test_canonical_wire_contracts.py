@@ -5,8 +5,8 @@ import pytest
 
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_controls import AuthorityConnection
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 from tui_gateway.contracts.registry import CANONICAL_METHODS, METHODS, ContractViolation, validate_params
 
 
@@ -32,7 +32,7 @@ async def test_canonical_resume_rejects_unknown_keys_and_validates_real_snapshot
         snapshot = CANONICAL_METHODS['session.resume'].result.model_validate(result['result'])
         assert snapshot.subscription_id == viewer.subscriptions['s']
         assert snapshot.revision == 0 and snapshot.pending == []
-        assert snapshot.info.desktop_protocol == 'hermes-gateway-v1'
+        assert snapshot.info.desktop_protocol == 'zeus-gateway-v1'
     finally:
         if viewer is not None:
             await viewer.close()

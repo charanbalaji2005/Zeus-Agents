@@ -52,7 +52,7 @@ beforeEach(() => {
   apiMocks.updateKeepGoingOnCredits.mockReset()
   gatewayMock.reset()
   $stepUpInFlight.set(false)
-  Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { openExternal: vi.fn() } })
+  Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { openExternal: vi.fn() } })
 })
 
 describe('KeepGoingOnCreditsRow', () => {
@@ -79,7 +79,7 @@ describe('KeepGoingOnCreditsRow', () => {
     })
 
     // The browser opens on its own (no second "Verify" click).
-    expect(window.hermesDesktop?.openExternal).toHaveBeenCalledWith('https://portal.nousresearch.com/device')
+    expect(window.zeusDesktop?.openExternal).toHaveBeenCalledWith('https://portal.nousresearch.com/device')
     expect(screen.getByText('ABCD-1234')).toBeTruthy()
 
     await act(async () => resolveStepUp({ data: { granted: true, ok: true }, ok: true }))

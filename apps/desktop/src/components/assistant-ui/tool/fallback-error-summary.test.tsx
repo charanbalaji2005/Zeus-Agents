@@ -18,8 +18,8 @@ const ERROR_TEXT = 'MCP call failed: MCPError: create file error: repository fil
 const WINDOWS_PATH_ERROR = 'Failed to write file: C:\\Users\\test-user\\Documents\\CODEX_PROGRESS.md is locked'
 const WWW_PATH_ERROR = 'Failed to read /tmp/www.config and C:\\Users\\test-user\\Documents\\www.config'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-const initialHermesDesktop = desktopWindow.hermesDesktop
+const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+const initialZeusDesktop = desktopWindow.zeusDesktop
 let fetchLinkTitle: ReturnType<typeof vi.fn>
 
 function renderErrorToolRow(result: unknown) {
@@ -39,16 +39,16 @@ function renderErrorToolRow(result: unknown) {
 
 beforeEach(() => {
   fetchLinkTitle = vi.fn().mockResolvedValue('AI Tools Directory - dealsbe.com')
-  desktopWindow.hermesDesktop = {
+  desktopWindow.zeusDesktop = {
     fetchLinkTitle,
     openExternal: vi.fn().mockResolvedValue(undefined)
-  } as unknown as Window['hermesDesktop']
+  } as unknown as Window['zeusDesktop']
 })
 
 afterEach(() => {
   cleanup()
   $toolDisclosureStates.set({})
-  desktopWindow.hermesDesktop = initialHermesDesktop
+  desktopWindow.zeusDesktop = initialZeusDesktop
 })
 
 describe('tool error summary linkification', () => {

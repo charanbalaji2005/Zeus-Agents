@@ -25,8 +25,8 @@ import {
   type UpdateTarget
 } from '@/store/updates'
 
-const RELEASE_NOTES_URL = 'https://github.com/NousResearch/hermes-agent/releases'
-const INSTALLER_URL = 'https://hermes-agent.nousresearch.com/'
+const RELEASE_NOTES_URL = 'https://github.com/charanbalaji2005/Zeus-Agents/releases'
+const INSTALLER_URL = 'https://charanbalaji2005.github.io/Zeus-Agents/'
 
 export type UpdateStatusTone = 'idle' | 'available' | 'error' | 'unsupported'
 
@@ -217,7 +217,7 @@ function relativeTime(ms: number | undefined, u: Translations['updates']): strin
 }
 
 /**
- * The "Hermes Desktop / version / brand mark" hero shared by the About page
+ * The "Zeus Desktop / version / brand mark" hero shared by the About page
  * and the updates overlay, including the bundle-out-of-sync warning. The
  * heading render is injectable so a dialog surface can emit a DialogTitle
  * for its accessible name while About keeps a plain h2.
@@ -260,7 +260,7 @@ export function VersionHero({
               {version.bundleSwapPending ? (
                 <Button
                   className="mt-2"
-                  onClick={() => void window.hermesDesktop?.relaunchApp?.()}
+                  onClick={() => void window.zeusDesktop?.relaunchApp?.()}
                   size="sm"
                   variant="textStrong"
                 >
@@ -273,7 +273,7 @@ export function VersionHero({
                     href={INSTALLER_URL}
                     onClick={event => {
                       event.preventDefault()
-                      void window.hermesDesktop?.openExternal?.(INSTALLER_URL)
+                      void window.zeusDesktop?.openExternal?.(INSTALLER_URL)
                     }}
                     rel="noreferrer"
                     target="_blank"
@@ -422,7 +422,7 @@ function UpdateStatusCardBody({
                 href={RELEASE_NOTES_URL}
                 onClick={event => {
                   event.preventDefault()
-                  void window.hermesDesktop?.openExternal?.(RELEASE_NOTES_URL)
+                  void window.zeusDesktop?.openExternal?.(RELEASE_NOTES_URL)
                 }}
                 rel="noreferrer"
                 target="_blank"

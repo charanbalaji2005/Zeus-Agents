@@ -17,7 +17,7 @@ def _compressed(api, owner):
 
 def _chat(client):
     return client.post('/v1/chat/completions', json={'messages': [{'role': 'user', 'content': 'next'}]},
-                       headers={'Authorization': 'Bearer ' + KEY, 'X-Hermes-Session-Id': 'tip'})
+                       headers={'Authorization': 'Bearer ' + KEY, 'X-Zeus-Session-Id': 'tip'})
 
 
 def _runs(client):
@@ -34,7 +34,7 @@ def _session_chat(client):
 @pytest.mark.parametrize('door,expected', [(_chat, 200), (_runs, 202), (_session_chat, 200)])
 async def test_api_doors_admit_a_continuation_on_its_root(api, owner, monkeypatch, door, expected):
     from gateway.platforms import api_server_runs
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
 
     async def handle(event):
         from gateway.session_results import execution_result

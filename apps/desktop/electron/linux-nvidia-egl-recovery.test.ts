@@ -152,7 +152,7 @@ describe('NVIDIA persisted recovery lifecycle', () => {
     expect(launch().decision.enable).toBe(false)
   })
 
-  it.each(['HERMES_DESKTOP_NVIDIA_SWIFTSHADER', 'HERMES_DESKTOP_DISABLE_GPU'])(
+  it.each(['ZEUS_DESKTOP_NVIDIA_SWIFTSHADER', 'ZEUS_DESKTOP_DISABLE_GPU'])(
     'honors %s=0 throughout GPU-death handling',
     key => {
       const first = launch({ env: { [key]: '0' } })
@@ -164,7 +164,7 @@ describe('NVIDIA persisted recovery lifecycle', () => {
   )
 
   it('keeps an explicitly forced SwiftShader launch in software after successful startup and exit', () => {
-    const first = launch({ env: { HERMES_DESKTOP_NVIDIA_SWIFTSHADER: '1' } })
+    const first = launch({ env: { ZEUS_DESKTOP_NVIDIA_SWIFTSHADER: '1' } })
     expect(first.decision.enable).toBe(true)
     first.healthy()
     first.cleanExit()

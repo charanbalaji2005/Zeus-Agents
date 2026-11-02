@@ -58,7 +58,7 @@ afterEach(() => {
   container = null
   disposePane = null
   globalThis.document.querySelectorAll('[data-titlebar-cluster]').forEach(element => element.remove())
-  delete globalThis.document.documentElement.dataset.hermesDesktopHost
+  delete globalThis.document.documentElement.dataset.zeusDesktopHost
   vi.useRealTimers()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -139,11 +139,11 @@ describe('TreeGroup', () => {
           act(() => setTabStripDefault('never'))
         }
 
-        const savedDefault = localStorage.getItem('hermes.desktop.tabStripDefault')
+        const savedDefault = localStorage.getItem('zeus.desktop.tabStripDefault')
         render(<TreeGroup leftEdge node={node} rightEdge topEdge />)
         expect(container!.querySelector('[data-zone-tabstrip]')).toBeNull()
         expect(node.tabStrip).toBe(source === 'zone' ? 'never' : undefined)
-        expect(localStorage.getItem('hermes.desktop.tabStripDefault')).toBe(savedDefault)
+        expect(localStorage.getItem('zeus.desktop.tabStripDefault')).toBe(savedDefault)
       } finally {
         act(() => setTabStripDefault(originalDefault))
       }
@@ -334,7 +334,7 @@ describe('TreeGroup', () => {
         data: {},
         id: 'workspace',
         render: () => <div>Chat</div>,
-        title: 'Hermes'
+        title: 'Zeus'
       })
       vi.stubGlobal('CSS', { escape: (value: string) => value })
 
@@ -412,7 +412,7 @@ describe('TreeGroup', () => {
       vi.fn().mockReturnValue({ addEventListener: vi.fn(), matches: true, removeEventListener: vi.fn() })
     )
     stubMenuDomApis()
-    globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     render(<TreeGroup node={terminalGroup(false)} parentAxis="column" />)
 

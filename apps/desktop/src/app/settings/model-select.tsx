@@ -1,4 +1,4 @@
-import type { ModelOptionProvider } from '@hermes/shared'
+import type { ModelOptionProvider } from '@zeus/shared'
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'

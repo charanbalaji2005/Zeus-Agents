@@ -1,4 +1,4 @@
-import type { GatewayEvent } from '@hermes/shared'
+import type { GatewayEvent } from '@zeus/shared'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import { $toolProgress, $toolProgressFor, clearSessionToolProgress, formatToolProgress } from '@/store/tool-progress'

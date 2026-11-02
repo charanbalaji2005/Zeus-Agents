@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Hermes Agent CLI — interactive terminal interface (``python cli.py --help`` for usage)."""
+"""Zeus Agents CLI — interactive terminal interface (``python cli.py --help`` for usage)."""
 
-# Must be the very first import (UTF-8 stdio on Windows). Missing only mid-``hermes update``.
+# Must be the very first import (UTF-8 stdio on Windows). Missing only mid-``zeus update``.
 try:
-    import hermes_bootstrap
+    import zeus_bootstrap
 except ModuleNotFoundError as exc:
-    if exc.name != "hermes_bootstrap":
+    if exc.name != "zeus_bootstrap":
         raise  # the bootstrap exists but cannot load: skipping it would skip PM activation
 
 import logging
@@ -28,27 +28,27 @@ from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger(__name__)
 
-os.environ["HERMES_QUIET"] = "1"  # suppress our modules' startup chatter
+os.environ["ZEUS_QUIET"] = "1"  # suppress our modules' startup chatter
 
 
-from hermes_cli.cli_agent_setup_mixin import CLIAgentSetupMixin
-from hermes_cli.cli_commands_mixin import CLICommandsMixin
-from hermes_cli.cli_billing_mixin import CLIBillingMixin
-from hermes_cli.cli_loops_mixin import CLILoopsMixin
-from hermes_cli.cli_info_mixin import CLIInfoMixin
-from hermes_cli.cli_terminal_mixin import CLITerminalMixin
-from hermes_cli.cli_modal_mixin import CLIModalMixin
-from hermes_cli.cli_stream_mixin import CLIStreamMixin
-from hermes_cli.cli_session_mixin import CLISessionMixin
-from hermes_cli.cli_model_switch_mixin import CLIModelSwitchMixin
-from hermes_cli.cli_voice_mixin import CLIVoiceMixin
-from hermes_cli.cli_status_bar_mixin import CLIStatusBarMixin
-from hermes_cli.cli_tui_mixin import CLITuiMixin
-from hermes_cli.cli_process_notifications import CLIProcessNotificationsMixin
-from hermes_cli.cli_init_mixin import CLIInitMixin
-from hermes_cli.cli_tui_runtime_mixin import CLITuiRuntimeMixin
+from zeus_cli.cli_agent_setup_mixin import CLIAgentSetupMixin
+from zeus_cli.cli_commands_mixin import CLICommandsMixin
+from zeus_cli.cli_billing_mixin import CLIBillingMixin
+from zeus_cli.cli_loops_mixin import CLILoopsMixin
+from zeus_cli.cli_info_mixin import CLIInfoMixin
+from zeus_cli.cli_terminal_mixin import CLITerminalMixin
+from zeus_cli.cli_modal_mixin import CLIModalMixin
+from zeus_cli.cli_stream_mixin import CLIStreamMixin
+from zeus_cli.cli_session_mixin import CLISessionMixin
+from zeus_cli.cli_model_switch_mixin import CLIModelSwitchMixin
+from zeus_cli.cli_voice_mixin import CLIVoiceMixin
+from zeus_cli.cli_status_bar_mixin import CLIStatusBarMixin
+from zeus_cli.cli_tui_mixin import CLITuiMixin
+from zeus_cli.cli_process_notifications import CLIProcessNotificationsMixin
+from zeus_cli.cli_init_mixin import CLIInitMixin
+from zeus_cli.cli_tui_runtime_mixin import CLITuiRuntimeMixin
 # Extracted clusters (mechanical split, #116911); re-exported here so `cli.<name>` stays the seam.
-from hermes_cli.cli_shutdown import (
+from zeus_cli.cli_shutdown import (
     _CLEANUP_STEPS,
     _arm_exit_watchdog,
     _emit_interrupted_session_end,
@@ -70,11 +70,11 @@ from hermes_cli.cli_shutdown import (
     _sync_process_session_id,
     _wait_for_oneshot_background_completions,
 )
-from hermes_cli.cli_auto_maintenance import (
+from zeus_cli.cli_auto_maintenance import (
     _run_checkpoint_auto_maintenance,
     _run_state_db_auto_maintenance,
 )
-from hermes_cli.cli_render import (
+from zeus_cli.cli_render import (
     ChatConsole,
     _ACCENT,
     _ACCENT_ANSI_DEFAULT,
@@ -141,7 +141,7 @@ from hermes_cli.cli_render import (
     _wrap_panel_text,
     _wrap_panel_text_keep_ws,
 )
-from hermes_cli.cli_config_load import (
+from zeus_cli.cli_config_load import (
     _AUXILIARY_TASK_ENV,
     _CWD_PLACEHOLDERS,
     _TERMINAL_ENV_MAPPINGS,
@@ -155,7 +155,7 @@ from hermes_cli.cli_config_load import (
     _resolve_prefill_messages_file,
     load_cli_config,
 )
-from hermes_cli.cli_terminal_input import (
+from zeus_cli.cli_terminal_input import (
     _BACKSLASH_LINE_CONTINUATION_RE,
     _DSR_CPR_ESC_RE,
     _DSR_CPR_VISIBLE_RE,
@@ -179,7 +179,7 @@ from hermes_cli.cli_terminal_input import (
     _estimate_tui_input_height,
     _file_drop_result,
     _format_image_attachment_badges,
-    _hermes_call_output_screen_diff,
+    _zeus_call_output_screen_diff,
     _is_backslash_line_continuation,
     _is_ghostty_terminal,
     _preserve_ctrl_enter_newline,
@@ -193,7 +193,7 @@ from hermes_cli.cli_terminal_input import (
     _terminal_supports_extended_enter_keys,
     _termux_example_image_path,
 )
-from hermes_cli.cli_single_query import (
+from zeus_cli.cli_single_query import (
     _TERMINAL_PROVIDER_REASONS,
     _TRANSIENT_PROVIDER_REASONS,
     _collect_kanban_task_images,
@@ -227,7 +227,7 @@ except (ImportError, AttributeError):
     _STEADY_CURSOR = None
 
 try:
-    from hermes_cli import pt_input_extras as _pt_extras
+    from zeus_cli import pt_input_extras as _pt_extras
 
     _pt_extras.install_shift_enter_alias()
     _pt_extras.install_ctrl_enter_alias()
@@ -285,7 +285,7 @@ def _reverse_alias_for_display(model_name: str) -> str:
                 rmap[m] = alias
 
         try:
-            from hermes_cli.config import load_config
+            from zeus_cli.config import load_config
             cfg = load_config() or {}
             ma = cfg.get("model_aliases")
             if isinstance(ma, dict):
@@ -330,14 +330,14 @@ realign_markdown_tables = _lazy_shim("agent.markdown_tables", "realign_markdown_
 _COMMAND_SPINNER_FRAMES = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
 
-# ~/.hermes/.env first, project .env as dev fallback; user env files override stale shell exports.
-from hermes_constants import get_hermes_home
-from hermes_cli.env_loader import load_hermes_dotenv
+# ~/.zeus/.env first, project .env as dev fallback; user env files override stale shell exports.
+from zeus_constants import get_zeus_home
+from zeus_cli.env_loader import load_zeus_dotenv
 from agent.i18n import t as _t
 
-_hermes_home = get_hermes_home()
+_zeus_home = get_zeus_home()
 _project_env = Path(__file__).parent / '.env'
-load_hermes_dotenv(hermes_home=_hermes_home, project_env=_project_env)
+load_zeus_dotenv(zeus_home=_zeus_home, project_env=_project_env)
 
 
 CLI_CONFIG = load_cli_config()
@@ -393,7 +393,7 @@ except Exception:
 
 # Agent/tool systems load lazily: bare startup only needs the prompt.
 def get_tool_definitions(*args, **kwargs):
-    from hermes_cli.mcp_startup import wait_for_mcp_discovery
+    from zeus_cli.mcp_startup import wait_for_mcp_discovery
     from model_tools import get_tool_definitions as _get_tool_definitions
 
     wait_for_mcp_discovery()
@@ -455,7 +455,7 @@ def _arm_exit_watchdog_on_shutdown_signal() -> None:
     several wedge points BEFORE ``_run_cleanup`` arms the normal watchdog: a main thread parked in a syscall
     that never observes the unwind, a prompt_toolkit teardown that never returns, or an agent worker
     blocking the ``finally``. When that happens the process has NO backstop and a "dead" CLI lingers
-    (observed: ``hermes --tui`` alive ~47 min at 4% CPU after terminal close — the #65998 class).
+    (observed: ``zeus --tui`` alive ~47 min at 4% CPU after terminal close — the #65998 class).
     """
     global _signal_watchdog_armed
     if _signal_watchdog_armed:
@@ -530,7 +530,7 @@ def _reset_terminal_input_modes_on_exit() -> None:
         tty.flush()
 
 
-from hermes_cli.worktree_ops import (
+from zeus_cli.worktree_ops import (
     _git_quiet,
     _git_repo_root,
     _maintain_pack_health,
@@ -558,7 +558,7 @@ def _cleanup_worktree(info: dict[str, str] | None = None) -> None:
     if not Path(wt_path).exists():
         return
     _active_worktree = None
-    from hermes_cli.worktree_exit import apply_exit_choice
+    from zeus_cli.worktree_exit import apply_exit_choice
     if apply_exit_choice(info, _cprint):  # an exit-question answer not applied yet (normally none)
         return
 
@@ -577,7 +577,7 @@ def _cleanup_worktree(info: dict[str, str] | None = None) -> None:
             print(f"  {_t('cli.worktree.clean_up_manually', path=wt_path)}")
         return
 
-    from hermes_cli.worktree_ops import removal_blocked
+    from zeus_cli.worktree_ops import removal_blocked
     blocked = removal_blocked(wt_path)  # an embedded repo or private ref dies with it
     if blocked:
         _cprint(f"\n\033[33m{_t('cli.worktree.kept_reason', path=wt_path, reason=blocked[1])}\033[0m")
@@ -593,7 +593,7 @@ def _cleanup_worktree(info: dict[str, str] | None = None) -> None:
 
 
 # Light/dark terminal detection (mirrors ui-tui/src/theme.ts detectLightMode()). Priority:
-# HERMES_LIGHT/HERMES_TUI_LIGHT env, HERMES_TUI_THEME, HERMES_TUI_BACKGROUND, COLORFGBG
+# ZEUS_LIGHT/ZEUS_TUI_LIGHT env, ZEUS_TUI_THEME, ZEUS_TUI_BACKGROUND, COLORFGBG
 # (bg slot 7/15 = light), OSC 11 query, default dark. Cached so the terminal is queried once.
 _LIGHT_MODE_CACHE: bool | None = None
 
@@ -690,7 +690,7 @@ def _replay_output_history(fit=None, output=None) -> None:
 
 
 _strip_leaked_bracketed_paste_wrappers = _lazy_shim(
-    "hermes_cli.input_sanitize", "strip_leaked_bracketed_paste_wrappers", "_strip_leaked_bracketed_paste_wrappers"
+    "zeus_cli.input_sanitize", "strip_leaked_bracketed_paste_wrappers", "_strip_leaked_bracketed_paste_wrappers"
 )
 
 
@@ -729,7 +729,7 @@ def get_skill_commands() -> dict:
 def _session_skill_commands(cli) -> dict:
     """Skill commands for ``cli``: on its gateway session the gateway's (its plugin skills included), so
     this process scans no plugin to list them; otherwise this process's own."""
-    from hermes_cli import gateway_plugin_commands
+    from zeus_cli import gateway_plugin_commands
     found = gateway_plugin_commands.skills(cli)
     return _ensure_skill_commands() if found is None else found
 
@@ -753,7 +753,7 @@ build_bundle_invocation_message = _lazy_shim("agent.skill_bundles", "build_bundl
 def _get_plugin_cmd_handler_names() -> set:
     """Return plugin command names (without slash prefix) for dispatch matching."""
     try:
-        from hermes_cli.plugins import get_plugin_commands
+        from zeus_cli.plugins import get_plugin_commands
         return set(get_plugin_commands().keys())
     except Exception:
         return set()
@@ -769,16 +769,16 @@ def _parse_skills_argument(skills: str | list[str] | tuple[str, ...] | None) -> 
 
 
 def save_config_value(key_path: str, value: any) -> bool:
-    """Persist dot-separated ``key_path`` = value into HERMES_HOME/config.yaml; True on success.
+    """Persist dot-separated ``key_path`` = value into ZEUS_HOME/config.yaml; True on success.
 
     Never the repo's cli-config.yaml: no config reader loads it, so the value would vanish.
     """
-    config_path = get_hermes_home() / 'config.yaml'
+    config_path = get_zeus_home() / 'config.yaml'
 
     try:
-        from hermes_constants import mkdir_under_hermes_home
-        mkdir_under_hermes_home(config_path.parent)
-        from hermes_cli.config_backend import write_config_key
+        from zeus_constants import mkdir_under_zeus_home
+        mkdir_under_zeus_home(config_path.parent)
+        from zeus_cli.config_backend import write_config_key
         write_config_key(config_path, key_path, value)
         try:  # owner-only: config files contain API keys
             os.chmod(config_path, 0o600)
@@ -794,7 +794,7 @@ def _normalize_moa_model(model: Optional[str]) -> tuple[Optional[str], Optional[
     """``moa:<preset>`` -> ``("moa", preset)`` (same routing as ``/moa``); anything else -> ``(None, model)``.
 
     Returns ``("moa", "<preset>")`` when *model* selects the MoA virtual provider, otherwise ``(None,
-    model)`` unchanged. This gives non-interactive ``hermes chat -Q -m moa:<preset>`` the same routing the
+    model)`` unchanged. This gives non-interactive ``zeus chat -Q -m moa:<preset>`` the same routing the
     interactive ``/moa`` command and the model picker already use: ``resolve_runtime_provider`` handles
     ``requested_provider == "moa"`` and ``agent_init`` builds the MoAClient off ``provider == "moa"``.
     Without this the raw ``moa:<preset>`` string is sent to the real provider and rejected with a 401/400
@@ -806,7 +806,7 @@ def _normalize_moa_model(model: Optional[str]) -> tuple[Optional[str], Optional[
             return "moa", preset
     return None, model
 
-_split_model_config_default = _lazy_shim("hermes_cli.config", "split_model_config_default", "_split_model_config_default")
+_split_model_config_default = _lazy_shim("zeus_cli.config", "split_model_config_default", "_split_model_config_default")
 
 
 class _VoiceInputMessage:
@@ -871,14 +871,14 @@ class _ChatTurn:
     stop_event: Optional[threading.Event] = None
     tts_normal_exit: bool = False
     voice_prefix: str = ""
-from hermes_cli.cli_chat_turn_mixin import CLIChatTurnMixin
+from zeus_cli.cli_chat_turn_mixin import CLIChatTurnMixin
 
 
 _PASTE_REF_RE = re.compile(r'\[Pasted text #\d+: \d+ lines \u2192 (.+?)\]')
 
 
-class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin, CLITuiMixin, CLIStatusBarMixin, CLIVoiceMixin, CLIModelSwitchMixin, CLISessionMixin, CLIStreamMixin, CLIModalMixin, CLITerminalMixin, CLIInfoMixin, CLILoopsMixin, CLIChatTurnMixin):
-    """Interactive REPL for the Hermes Agent."""
+class ZeusCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin, CLITuiMixin, CLIStatusBarMixin, CLIVoiceMixin, CLIModelSwitchMixin, CLISessionMixin, CLIStreamMixin, CLIModalMixin, CLITerminalMixin, CLIInfoMixin, CLILoopsMixin, CLIChatTurnMixin):
+    """Interactive REPL for the Zeus Agents."""
 
     # Seeded -q first message (see _should_seed_interactive); run() re-creates
     # _pending_input, so it is enqueued only after the fresh queue exists.
@@ -915,7 +915,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         if self._active_session_lease is not None:
             return True
         try:
-            from hermes_cli.active_sessions import format_refusal_stderr, try_acquire_active_session
+            from zeus_cli.active_sessions import format_refusal_stderr, try_acquire_active_session
 
             lease, message = try_acquire_active_session(
                 session_id=self.session_id,
@@ -966,7 +966,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
     def _show_security_advisories(self):
         """Startup banner for unacked security advisories, on stderr (piped stdout stays clean); 24h rate-limited."""
         try:
-            from hermes_cli.security_advisories import detect_compromised, startup_banner
+            from zeus_cli.security_advisories import detect_compromised, startup_banner
 
             banner = startup_banner(detect_compromised())
             if banner:
@@ -1004,7 +1004,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             # A typo'd name must not crash a kanban worker; only a fully-missing set fails loudly.
             if not loaded_skills:
                 raise ValueError(format_missing_skills(missing_skills))
-            logger.warning("Skipping %s. Continuing with: %s. List available skills with `hermes skills list`.",
+            logger.warning("Skipping %s. Continuing with: %s. List available skills with `zeus skills list`.",
                            format_missing_skills(missing_skills), ", ".join(loaded_skills))
         if skills_prompt:
             self.system_prompt = "\n\n".join(p for p in (self.system_prompt, skills_prompt) if p).strip()
@@ -1017,7 +1017,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             # registry walk already loaded plus the pure notices module (a heavy import here races
             # importlib's module locks against the main thread).
             from model_tools import check_tool_availability
-            from hermes_cli.tool_availability_notices import (
+            from zeus_cli.tool_availability_notices import (
                 current_terminal_backend, filter_to_enabled_toolsets, tool_availability_warning_lines,
             )
             from tools.terminal_tool import terminal_backend_unavailable_reason
@@ -1025,7 +1025,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
 
             _, unavailable = check_tool_availability()
             # Only toolsets this CLI session actually has. The selection is usually a composite bundle
-            # (``hermes-cli``), so expand it to tool names before matching — a raw name comparison
+            # (``zeus-cli``), so expand it to tool names before matching — a raw name comparison
             # matched nothing on a default install and silently dropped the terminal notice.
             unavailable = filter_to_enabled_toolsets(unavailable, self.enabled_toolsets or [], resolve_toolset)
             lines = tool_availability_warning_lines(
@@ -1040,18 +1040,18 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
 
     def show_config(self):
         """Display current configuration with kawaii ASCII art."""
-        from hermes_cli.config_backend import config_exists
+        from zeus_cli.config_backend import config_exists
         terminal_env = os.getenv("TERMINAL_ENV", "local")
         terminal_cwd = os.getenv("TERMINAL_CWD", os.getcwd())
         terminal_timeout = os.getenv("TERMINAL_TIMEOUT", "60")
 
-        config_path = _hermes_home / 'config.yaml'
+        config_path = _zeus_home / 'config.yaml'
         if not config_exists(config_path):
             config_path = Path(__file__).parent / 'cli-config.yaml'
         config_status = _t("cli.config.loaded") if config_exists(config_path) else _t("cli.config.not_found")
-        from hermes_cli.config_backend import get_config_backend
+        from zeus_cli.config_backend import get_config_backend
         if not get_config_backend().supports_file_tooling():  # no local file: name where config comes from
-            config_path, config_status = get_config_backend().describe(_hermes_home), ""
+            config_path, config_status = get_config_backend().describe(_zeus_home), ""
 
         # ``api_key`` may be a callable bearer provider (Entra ID, Vertex OAuth, key_cmd, ...):
         # label it by its tagged source and never invoke it (that would mint a token just to mask
@@ -1156,13 +1156,13 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         cmd_lower = command.lower().strip()  # lowercase only for matching; args keep their case
         cmd_original = command.strip()
 
-        # Aliases resolve via the central registry (hermes_cli/commands.py).
-        from hermes_cli.commands import resolve_command as _resolve_cmd
+        # Aliases resolve via the central registry (zeus_cli/commands.py).
+        from zeus_cli.commands import resolve_command as _resolve_cmd
         _base_word = cmd_lower.split()[0].lstrip("/")
         _cmd_def = _resolve_cmd(_base_word)
         canonical = _cmd_def.name if _cmd_def else _base_word
         if not redispatch and self._slash_metrics_surface:
-            from hermes_cli.observability.shared_metrics_events import record_slash_command
+            from zeus_cli.observability.shared_metrics_events import record_slash_command
             record_slash_command(command=canonical, surface=self._slash_metrics_surface)
 
         # A bare `/resume` prompt is one-shot: any other command disarms it so a later
@@ -1176,23 +1176,23 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             self._pending_resume_sessions = None
 
         entry = self._slash_handler(canonical)
-        from hermes_cli.gateway_setting_commands import run as run_gateway_setting
+        from zeus_cli.gateway_setting_commands import run as run_gateway_setting
         if entry is not None and run_gateway_setting(self, canonical, cmd_original):
             return True  # a per-session setting the gateway's handler applied (pre_command fired there)
         # Observer-only pre_command plugin hook (return values ignored; never raises), fired by the gateway
         # for a command this process runs (not a named refusal, not a command with no handler here).
-        from hermes_cli.gateway_cli_commands import REFUSED
-        from hermes_cli.gateway_plugin_commands import observe
+        from zeus_cli.gateway_cli_commands import REFUSED
+        from zeus_cli.gateway_plugin_commands import observe
         runs = entry is not None and canonical not in REFUSED
         if _cmd_def is not None and not observe(self, _base_word, _slash_args(cmd_original), runs=runs):
-            from hermes_cli.plugins import fire_pre_command_hook
+            from zeus_cli.plugins import fire_pre_command_hook
             fire_pre_command_hook(
                 surface="cli", command=canonical, alias_used=_base_word, args_raw=_slash_args(cmd_original),
                 session_key=getattr(self, "session_id", None), platform="cli",
             )
         if entry is None:
             return self._process_unregistered_slash(cmd_original, cmd_lower)
-        from hermes_cli.gateway_cli_commands import run as run_gateway_command
+        from zeus_cli.gateway_cli_commands import run as run_gateway_command
         if run_gateway_command(self, canonical, cmd_original):
             return True  # state the gateway session owns (checkpoints, .env, handoff)
         method_name, pass_arg = entry
@@ -1209,7 +1209,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         user_args = cmd_original[len(base_cmd):].strip()
         if bare in quick_commands:
             return self._run_quick_command(base_cmd, quick_commands[bare], user_args)
-        from hermes_cli import gateway_plugin_commands
+        from zeus_cli import gateway_plugin_commands
         try:
             plugin = gateway_plugin_commands.lookup(self, bare)  # the gateway's; None off the gateway
         except gateway_plugin_commands.CatalogUnavailable:
@@ -1251,7 +1251,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             # shell=True is intentional (user-authored config snippets, never LLM controlled);
             # the env is sanitized because this process holds every API key.
             from tools.environments.local import build_subprocess_env
-            from hermes_cli._subprocess_compat import windows_hide_flags
+            from zeus_cli._subprocess_compat import windows_hide_flags
             result = subprocess.run(
                 exec_cmd, shell=True, capture_output=True, text=True, encoding="utf-8", errors="replace",
                 timeout=30, env=build_subprocess_env(),
@@ -1272,17 +1272,17 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         return True
 
     def _run_plugin_slash_command(self, base_cmd: str, user_args: str):
-        from hermes_cli import gateway_plugin_commands
+        from zeus_cli import gateway_plugin_commands
         answered = gateway_plugin_commands.run(self, base_cmd.lstrip("/"), user_args)
         if answered:
             return answered  # ran beside the plugin's hooks, tools and MCP servers in the gateway, or GONE
-        from hermes_cli.plugin_command_dispatch import invoke_plugin_command
-        from hermes_cli.plugins import get_plugin_command_handler, resolve_plugin_command_result
+        from zeus_cli.plugin_command_dispatch import invoke_plugin_command
+        from zeus_cli.plugins import get_plugin_command_handler, resolve_plugin_command_result
         plugin_handler = get_plugin_command_handler(base_cmd.lstrip("/"))
         if not plugin_handler:
             return
         session_id = getattr(self, "session_id", None) or ""
-        from hermes_cli.plugin_choices import bind_asker, clarify_asker
+        from zeus_cli.plugin_choices import bind_asker, clarify_asker
         try:
             with bind_asker(clarify_asker(self._clarify_callback)):  # ctx.ask_choice: the clarify panel
                 result = resolve_plugin_command_result(invoke_plugin_command(
@@ -1315,7 +1315,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
 
     def _run_skill_slash_command(self, base_cmd: str, skill_info: dict, rest: str) -> None:
         """``/<skill> ...``; stacked ``/skill-a /skill-b do XYZ`` loads every leading skill (up to 5)."""
-        from hermes_cli import gateway_plugin_commands
+        from zeus_cli import gateway_plugin_commands
         if gateway_plugin_commands.run_skill(self, base_cmd, rest):
             return  # the gateway session's skill, loaded there
         from agent.skill_commands import build_stacked_skill_invocation_message, split_stacked_skill_commands
@@ -1344,7 +1344,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
 
     def _expand_slash_prefix(self, cmd_original: str, cmd_lower: str, skill_commands, skill_bundles) -> bool:
         """Unique-prefix expansion against built-in COMMANDS + skill commands/bundles (agrees with tab-completion)."""
-        from hermes_cli.commands import COMMANDS
+        from zeus_cli.commands import COMMANDS
         typed_base = cmd_lower.split()[0]
         all_known = set(COMMANDS) | set(skill_commands) | set(skill_bundles)
         matches = [c for c in all_known if c.startswith(typed_base)]
@@ -1365,7 +1365,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             _cprint(f"{_DIM}{_t('cli.command.did_you_mean_many', candidates=', '.join(sorted(matches)))}{_RST}")
         else:
             # Exact token with no handler (never re-dispatch the same token: recursion), or no match.
-            from hermes_cli.cli_unknown_command import unknown_command_lines
+            from zeus_cli.cli_unknown_command import unknown_command_lines
             lead, pointer = unknown_command_lines(cmd_lower, all_known)
             _cprint(f"\033[1;31m{lead}{_RST}")
             _cprint(f"{_DIM}{_ACCENT}{pointer}{_RST}")
@@ -1418,7 +1418,7 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         app = self._tui_build_application(layout, kb, style)
         _disable_prompt_toolkit_cpr_warning(app)
         app.after_render += self._pet_flush_kitty_frame
-        from hermes_cli.observability.shared_metrics_startup import cli_prompt_ready_handler
+        from zeus_cli.observability.shared_metrics_startup import cli_prompt_ready_handler
         app.after_render += cli_prompt_ready_handler()
         self._app = app
 
@@ -1439,11 +1439,11 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
             import prompt_toolkit.renderer as _pt_renderer
             from prompt_toolkit.renderer import _output_screen_diff as _orig_osd
 
-            if not getattr(_pt_renderer, "_hermes_osd_patched", False):
+            if not getattr(_pt_renderer, "_zeus_osd_patched", False):
                 _pt_renderer._output_screen_diff = functools.partial(
-                    _hermes_call_output_screen_diff, _orig_osd
+                    _zeus_call_output_screen_diff, _orig_osd
                 )
-                _pt_renderer._hermes_osd_patched = True
+                _pt_renderer._zeus_osd_patched = True
         except Exception:
             pass
 
@@ -1511,12 +1511,12 @@ class HermesCLI(CLIInitMixin, CLITuiRuntimeMixin, CLIProcessNotificationsMixin, 
         # /update relaunch happens here, after prompt_toolkit restored terminal modes, on the
         # main thread (the process_loop thread would skip cleanup / only exit itself on Windows).
         if self._pending_relaunch:
-            from hermes_cli.relaunch import relaunch
+            from zeus_cli.relaunch import relaunch
             relaunch(self._pending_relaunch, preserve_inherited=False)
 
 
 def _build_cli_from_args(model, toolsets, provider, reasoning, api_key, base_url, max_turns, run_budget, verbose, compact, resume, checkpoints, pass_session_id, ignore_rules, skills):
-    """Resolve the toolset list (explicit / coding posture / platform default), construct HermesCLI, and start the background skills preload."""
+    """Resolve the toolset list (explicit / coding posture / platform default), construct ZeusCLI, and start the background skills preload."""
     toolsets_list = None
     if isinstance(toolsets, str) and toolsets:
         toolsets_list = [t.strip() for t in toolsets.split(",")]
@@ -1538,7 +1538,7 @@ def _build_cli_from_args(model, toolsets, provider, reasoning, api_key, base_url
     parsed_skills = _parse_skills_argument(skills)
 
     try:
-        cli = HermesCLI(
+        cli = ZeusCLI(
             model=model,
             toolsets=toolsets_list,
             provider=provider,
@@ -1556,7 +1556,7 @@ def _build_cli_from_args(model, toolsets, provider, reasoning, api_key, base_url
         )
     except ImportError as e:
         # Direct `python cli.py` bypasses cmd_chat's partial-update ImportError handler.
-        from hermes_constants import emit_partial_update_hint
+        from zeus_constants import emit_partial_update_hint
 
         if emit_partial_update_hint(e):
             sys.exit(1)
@@ -1568,14 +1568,14 @@ def _build_cli_from_args(model, toolsets, provider, reasoning, api_key, base_url
 
     # skills.auto_load rides the same background preload as -s; --ignore-rules skips it with
     # the rest of the auto-injected context. Resolved here (not lazily in the agent) so the
-    # session id is real for ${HERMES_SESSION_ID} and -s can dedupe against it.
+    # session id is real for ${ZEUS_SESSION_ID} and -s can dedupe against it.
     from agent.skill_commands import build_auto_load_prompt, resolve_auto_load_skills
     auto_load_names = [] if getattr(cli, "ignore_rules", ignore_rules) else resolve_auto_load_skills(CLI_CONFIG)
     if not auto_load_names:
         cli._auto_load_skills_result = ("", [], [])
     if parsed_skills or auto_load_names:
         cli._preload_skills_requested = [*auto_load_names, *(s for s in parsed_skills if s not in auto_load_names)]
-        from hermes_cli.gateway_session_store import GatewaySessionStore
+        from zeus_cli.gateway_session_store import GatewaySessionStore
         if isinstance(getattr(cli, "_session_db", None), GatewaySessionStore):
             # The gateway session renders -s at creation and its agent loads skills.auto_load (plugin
             # skills included); this process's prompt never reaches it, so nothing is loaded here.
@@ -1603,7 +1603,7 @@ def _run_legacy_gateway():
     """Legacy `cli.py --gateway` entry: arm the startup watchdog (before importing the gateway graph), then run it."""
     import asyncio
     with suppress(Exception):
-        from hermes_startup_watchdog import arm_startup_watchdog
+        from zeus_startup_watchdog import arm_startup_watchdog
         arm_startup_watchdog()
     from gateway.run import start_gateway
     print(_t("cli.gateway.starting"))
@@ -1619,7 +1619,7 @@ def _start_worktree_setup(list_tools, list_toolsets, worktree, w):
     if list_tools or list_toolsets or not (worktree or w or CLI_CONFIG.get("worktree", False)):
         return None
     # Overlap tool discovery with the I/O-bound worktree setup so show_banner() hits a warm
-    # cache (~0.4s). Only on the -w path: plain `hermes` has no I/O wait to hide.
+    # cache (~0.4s). Only on the -w path: plain `zeus` has no I/O wait to hide.
     def _prewarm_tools() -> None:
         try:
             import model_tools as _mt
@@ -1634,7 +1634,7 @@ def _start_worktree_setup(list_tools, list_toolsets, worktree, w):
     def _create_worktree() -> None:
         try:
             # The session freezes this cwd: recorded so a resume recreates the tree quit removed (N8).
-            _wt_result["info"] = _setup_worktree(sync_base=_sync_base, retain_db=get_hermes_home() / "state.db")
+            _wt_result["info"] = _setup_worktree(sync_base=_sync_base, retain_db=get_zeus_home() / "state.db")
         except Exception:
             logger.debug("worktree setup failed", exc_info=True)
             _wt_result["info"] = None
@@ -1696,7 +1696,7 @@ def main(
     ignore_rules: bool = False,
 ):
     """
-    Hermes Agent CLI - Interactive AI Assistant
+    Zeus Agents CLI - Interactive AI Assistant
     
     Args:
         query: Query to run. On a real TTY this seeds an interactive session
@@ -1725,7 +1725,7 @@ def main(
     Examples:
         python cli.py                            # Start interactive mode
         python cli.py --toolsets web,terminal    # Use specific toolsets
-        python cli.py --skills hermes-agent-dev,github-auth
+        python cli.py --skills zeus-agents-dev,github-auth
         python cli.py -q "What is Python?"       # Single query mode
         python cli.py -q "Describe this" --image ~/storage/shared/Pictures/cat.png
         python cli.py --list-tools               # List tools and exit
@@ -1735,18 +1735,18 @@ def main(
     """
     # UTF-8 stdio on Windows before any print (Rich box-drawing would UnicodeEncodeError on cp1252).
     with suppress(Exception):
-        from hermes_cli.stdio import configure_windows_stdio
+        from zeus_cli.stdio import configure_windows_stdio
         configure_windows_stdio()
 
-    os.environ["HERMES_INTERACTIVE"] = "1"  # terminal_tool: interactive sudo prompts with timeout
+    os.environ["ZEUS_INTERACTIVE"] = "1"  # terminal_tool: interactive sudo prompts with timeout
 
     if gateway:
         _run_legacy_gateway()
         return
 
     if not (list_tools or list_toolsets):
-        from hermes_cli.process_identity import register_self
-        from hermes_cli.shared_profile_warning import shared_profile_warning
+        from zeus_cli.process_identity import register_self
+        from zeus_cli.shared_profile_warning import shared_profile_warning
 
         register_self("cli")
         warning = shared_profile_warning()
@@ -1755,7 +1755,7 @@ def main(
 
     _join_worktree = _start_worktree_setup(list_tools, list_toolsets, worktree, w)
     query = query or q
-    # ``hermes chat`` already validated this; the direct Fire entry point gets the same contract.
+    # ``zeus chat`` already validated this; the direct Fire entry point gets the same contract.
     if output_format == "stream-json":
         if not query:
             raise ValueError("--format stream-json requires -q/--query")

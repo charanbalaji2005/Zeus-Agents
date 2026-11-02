@@ -71,8 +71,8 @@ def describe_cache(source: Path, cache: Path, producer: str, *, work: Path | Non
     source, cache = source.resolve(), cache.resolve()
     if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}", producer):
         raise ValueError("producer must be a nonempty cache namespace")
-    if os.environ.get("HERMES_HOME") and cache.is_relative_to(Path(os.environ["HERMES_HOME"]).resolve()):
-        raise ValueError("cache must be separate from HERMES_HOME")
+    if os.environ.get("ZEUS_HOME") and cache.is_relative_to(Path(os.environ["ZEUS_HOME"]).resolve()):
+        raise ValueError("cache must be separate from ZEUS_HOME")
     payload_only = producer == "payload-test"
     lock = {"packages": {}} if payload_only else json.loads(
         (source / "package-lock.json").read_text(encoding="utf-8-sig"))
@@ -81,7 +81,7 @@ def describe_cache(source: Path, cache: Path, producer: str, *, work: Path | Non
     domains = ("tools", "python/runtime", "native") if payload_only else CACHE_DOMAINS
     paths = [_cache_path(cache / domain) for domain in domains]
     private_roots = {"source": source, "work": work,
-                     "HERMES_HOME": Path(os.environ["HERMES_HOME"]) if os.environ.get("HERMES_HOME") else None}
+                     "ZEUS_HOME": Path(os.environ["ZEUS_HOME"]) if os.environ.get("ZEUS_HOME") else None}
     for name, private in private_roots.items():
         if private is not None and any(private.resolve().is_relative_to(Path(path)) for path in paths):
             raise ValueError(f"{name} must be outside every reusable cache path")

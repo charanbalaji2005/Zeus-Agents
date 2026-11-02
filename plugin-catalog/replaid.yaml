@@ -5,7 +5,7 @@ description: Connect Replaid with OAuth to read, triage, and draft replies in yo
 maintainer: replaid-pro
 tier: community
 category: tools
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/replaid-pro/replaid-hermes#readme
 version: "0.2.1"
 capabilities:

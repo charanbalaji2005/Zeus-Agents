@@ -2,7 +2,7 @@ import type { Unstable_TriggerItem } from '@assistant-ui/core'
 import { act, cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { HermesGateway } from '@/hermes'
+import type { ZeusGateway } from '@/zeus'
 import { queryClient } from '@/lib/query-client'
 import type * as GatewayStore from '@/store/gateway'
 import { _resetSessionOwnerHintsForTests, setSessionOwnerHint } from '@/store/session'
@@ -35,7 +35,7 @@ function ambientGateway() {
     request: vi.fn(async () => {
       throw new Error('not_found')
     })
-  } as unknown as HermesGateway & { request: ReturnType<typeof vi.fn> }
+  } as unknown as ZeusGateway & { request: ReturnType<typeof vi.fn> }
 }
 
 function ownerAnswers(method: string, params: Record<string, unknown>) {
@@ -123,7 +123,7 @@ describe('composer completions route to the session owner', () => {
         categories: [{ name: 'Session', pairs: [['/launch-only', 'Launch profile command']] }],
         pairs: [['/launch-only', 'Launch profile command']]
       }))
-    } as unknown as HermesGateway & { request: ReturnType<typeof vi.fn> }
+    } as unknown as ZeusGateway & { request: ReturnType<typeof vi.fn> }
 
     const api: { search?: Search } = {}
 

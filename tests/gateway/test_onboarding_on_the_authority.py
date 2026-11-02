@@ -34,11 +34,11 @@ async def _desktop(tmp_path, monkeypatch, turns):
     from gateway.session_controls import AuthorityConnection
     from tui_gateway import server
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr(server, "_hermes_home", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    monkeypatch.setattr(server, "_zeus_home", str(home))
     monkeypatch.setattr(server, "_db", None)
     monkeypatch.setattr("agent.onboarding_facts.read_facts", lambda **kw: FACTS)
     (home / ".env").write_text("OPENROUTER_API_KEY=sk-or-test\n", encoding="utf-8")
@@ -130,8 +130,8 @@ async def test_a_rerun_with_no_model_opens_no_chat(tmp_path, monkeypatch):
     """Nothing can run the chat: error 5080 and no row, never a session whose launch policy cannot be
     restored (every later resume of it would answer storage_unavailable)."""
     desktop = await _desktop(tmp_path, monkeypatch, [])
-    (tmp_path / ".hermes" / "config.yaml").write_text("{}\n", encoding="utf-8")
-    (tmp_path / ".hermes" / ".env").write_text("", encoding="utf-8")
+    (tmp_path / ".zeus" / "config.yaml").write_text("{}\n", encoding="utf-8")
+    (tmp_path / ".zeus" / ".env").write_text("", encoding="utf-8")
     monkeypatch.setattr("gateway.run._resolve_gateway_model", lambda config=None: None)
     try:
         before = {row["id"] for row in desktop.db.search_sessions(limit=100)}
@@ -148,7 +148,7 @@ def test_an_onboarding_chat_folds_in_setup_beat_for_its_whole_life(tmp_path):
     from agent import onboarding_record
     from agent.onboarding_flow import End
     from agent.onboarding_session import onboarding_chat_toolsets
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB(db_path=tmp_path / "state.db")
     try:
         db.create_session("onb", source="local")
@@ -168,7 +168,7 @@ def test_the_authority_turn_plays_the_opening_and_skips_the_note_while_a_card_wa
     from agent.onboarding_text import GREETING
     from gateway.session_onboarding import arm_onboarding_turn
     from gateway.session_server_requests import _Pending, _lock, _open
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB(db_path=tmp_path / "state.db")
     try:
         db.create_session("onb", source="local")
@@ -207,18 +207,18 @@ async def test_start_from_a_secondary_profile_claims_in_the_default_home(tmp_pat
     from gateway.session_authorities import SessionAuthorities
     from gateway.session_authority import initialize_session_authority
     from gateway.session_controls import AuthorityConnection
-    from hermes_constants import get_hermes_home
-    from hermes_state import SessionDB
+    from zeus_constants import get_zeus_home
+    from zeus_state import SessionDB
     desktop = await _desktop(tmp_path, monkeypatch, [])
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     work = home / "profiles" / "work"
     work.mkdir(parents=True)
     (work / "config.yaml").write_text("{}\n", encoding="utf-8")  # nothing to run on in the asking profile
     claims = []
 
     def claim(*, assume_fresh):
-        claims.append(Path(get_hermes_home()))
-    monkeypatch.setattr("hermes_cli.welcome_trial.claim_desktop_free_tier", claim)
+        claims.append(Path(get_zeus_home()))
+    monkeypatch.setattr("zeus_cli.welcome_trial.claim_desktop_free_tier", claim)
     runner = desktop.authority.runner
     runner.config = SimpleNamespace(multiplex_profiles=True)
     work_db = SessionDB(db_path=work / "state.db")
@@ -231,7 +231,7 @@ async def test_start_from_a_secondary_profile_claims_in_the_default_home(tmp_pat
         "user_id": "uid:1", "provider": "local", "profile_id": str(work), "instance_id": "owner",
         "profile_scope": "host"})
     try:
-        from hermes_cli.process_identity import serving_local_desktop
+        from zeus_cli.process_identity import serving_local_desktop
         with serving_local_desktop(True):  # what ws._dispatch_request binds for the declared Desktop socket
             started = await connection.dispatch({"jsonrpc": "2.0", "id": 1, "method": "onboarding.start", "params": {}})
         assert "result" in started, started
@@ -257,8 +257,8 @@ async def test_skip_accepts_the_profile_the_desktop_names(tmp_path, monkeypatch)
 @pytest.mark.asyncio
 async def test_deleting_the_onboarding_chat_from_the_sidebar_ends_the_run(tmp_path, monkeypatch):
     from agent import onboarding_record
-    from hermes_cli.onboarding_run import _root_config
-    from hermes_cli.config import read_user_config_raw
+    from zeus_cli.onboarding_run import _root_config
+    from zeus_cli.config import read_user_config_raw
     turns, ended = [], []
     desktop = await _desktop(tmp_path, monkeypatch, turns)
     onboarding_record.on_ended(ended.append)
@@ -318,7 +318,7 @@ async def test_a_fresh_launch_deletes_the_chat_the_last_launch_left_with_no_view
 async def test_onboarding_start_from_a_client_that_is_not_the_local_desktop_changes_nothing(tmp_path, monkeypatch):
     """A CLI or TUI holds a native ticket too. Its ``onboarding.start`` is refused before the install
     flag is written, so it never schedules first-run onboarding for the Desktop."""
-    from hermes_cli.onboarding_run import _explicit_run
+    from zeus_cli.onboarding_run import _explicit_run
     desktop = await _desktop(tmp_path, monkeypatch, [])
     desktop.transport.desktop_local = False
     try:

@@ -35,13 +35,13 @@ _PNG = base64.b64decode(
 
 def _assert_not_available(error: dict, method: str) -> None:
     assert error["code"] == -32601, error
-    assert error["message"] == f"unknown method: {method} — not available on this Hermes backend"
+    assert error["message"] == f"unknown method: {method} — not available on this Zeus backend"
     assert "out of sync" not in error["message"]
 
 
 def test_unknown_method_is_named_unavailable_on_both_routes(tmp_path, monkeypatch):
     from gateway.session_controls import AuthorityConnection
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     _assert_not_available(srv.handle_request(
         {"jsonrpc": "2.0", "id": 1, "method": "groups.no_such_verb", "params": {}})["error"],
@@ -49,7 +49,7 @@ def test_unknown_method_is_named_unavailable_on_both_routes(tmp_path, monkeypatc
 
     home = tmp_path / "state"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     with SessionDB(home / "state.db") as db:
         authority = SimpleNamespace(profile_id=str(home), instance_id="owner", db=db, events={}, sessions={})
         connection = AuthorityConnection(authority, object(), {"user_id": "reader"})
@@ -62,11 +62,11 @@ def home(tmp_path, monkeypatch):
     class DurableRunStore:
         durable = True
 
-    path = tmp_path / ".hermes"
+    path = tmp_path / ".zeus"
     path.mkdir()
     (path / "profiles" / "ops").mkdir(parents=True)
     (path / "profiles" / "ops" / "config.yaml").write_text("{}\n")
-    monkeypatch.setenv("HERMES_HOME", str(path))
+    monkeypatch.setenv("ZEUS_HOME", str(path))
     monkeypatch.setattr(srv, "_run_idempotency_store", DurableRunStore(), raising=False)
     methods_groups.stop_hosted_room_service(timeout=1.0)
     methods_groups.start_hosted_room_service()
@@ -84,7 +84,7 @@ def test_tui_route_uploads_sends_and_downloads_a_group_file(home):
     assert {"groups.attachment.upload", "groups.attachment.download"} <= set(capabilities["methods"])
     _result(srv._methods["groups.create"](2, {
         "room_id": "room-1", "name": "Release room",
-        "members": [{"member_id": "default", "profile": "default", "handle": "hermes"},
+        "members": [{"member_id": "default", "profile": "default", "handle": "zeus"},
                     {"member_id": "ops", "profile": "ops", "handle": "ops"}]}))
 
     data = b"exact composer bytes"
@@ -104,7 +104,7 @@ def test_tui_route_uploads_sends_and_downloads_a_group_file(home):
 
 @pytest.fixture
 def db(tmp_path: Path, monkeypatch) -> Path:
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "member-home"))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "member-home"))
     path = tmp_path / "rooms.db"
     hosted_rooms.create_room(
         path, room_id=ROOM_ID, name="Release room", members=[{"profile": PROFILE, "handle": PROFILE}],

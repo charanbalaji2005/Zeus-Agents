@@ -9,7 +9,7 @@
 //   realpath, and an existing target that is a symlink is followed only when
 //   its realpath stays inside (a dangling link is refused, so a write can
 //   never create the link's outside target);
-// - nothing may resolve into a protected root (the Hermes homes, which hold
+// - nothing may resolve into a protected root (the Zeus homes, which hold
 //   config.yaml, .env, auth and every profile; the app's own data folder,
 //   which holds every plugin's data folder and the grants record), and a
 //   folder overlapping one in either direction (by path, by filesystem
@@ -25,7 +25,7 @@
 // folder picker the user answers (plugin-files-ipc.ts).
 //
 // This bounds what the DOOR can reach. It is not a sandbox for plugin code:
-// a renderer-realm plugin can still call the raw `window.hermesDesktop` file
+// a renderer-realm plugin can still call the raw `window.zeusDesktop` file
 // bridge, which is why catalog admission requires the door instead.
 
 import { randomBytes } from 'node:crypto'
@@ -106,7 +106,7 @@ export type PluginFilesRequest =
 export interface PluginFilesDeps {
   /** Electron's userData dir, read lazily (main sets it before `ready`). */
   userDataDir: () => string
-  /** Hermes homes (the resolved HERMES_HOME and the platform defaults). */
+  /** Zeus homes (the resolved ZEUS_HOME and the platform defaults). */
   protectedRoots: () => string[]
   trashItem: (target: string) => Promise<void>
   platform?: NodeJS.Platform
@@ -244,7 +244,7 @@ export function createPluginFiles(deps: PluginFilesDeps): PluginFiles {
     const avoid = await protectedRoots()
 
     if (overlapsProtected(real, avoid)) {
-      return refuse('protected', 'That folder overlaps Hermes data and cannot be used by a plugin.')
+      return refuse('protected', 'That folder overlaps Zeus data and cannot be used by a plugin.')
     }
 
     await refusePseudo(real)
@@ -262,15 +262,15 @@ export function createPluginFiles(deps: PluginFilesDeps): PluginFiles {
       }
 
       if (avoid.some(protectedRoot => insideLoose(real, protectedRoot)) || secondPath(real)) {
-        refuse('protected', 'That path is Hermes data and cannot be used by a plugin.')
+        refuse('protected', 'That path is Zeus data and cannot be used by a plugin.')
       }
     }
 
-    // Hermes data mounted inside the folder keeps an inside path; its
+    // Zeus data mounted inside the folder keeps an inside path; its
     // filesystem identity gives it away.
     const refuseMounted = async (real: string) => {
       if (await protectedIdentityWithin(real, root, avoid)) {
-        refuse('protected', 'That path is Hermes data mounted inside the folder and cannot be used by a plugin.')
+        refuse('protected', 'That path is Zeus data mounted inside the folder and cannot be used by a plugin.')
       }
     }
 
@@ -361,7 +361,7 @@ export function createPluginFiles(deps: PluginFilesDeps): PluginFiles {
         const roots = await protectedRoots()
 
         if (overlapsProtected(real, roots) || (await overlapsByIdentity(real, roots))) {
-          return fail('protected', 'That folder holds Hermes data and cannot be shared with a plugin.')
+          return fail('protected', 'That folder holds Zeus data and cannot be shared with a plugin.')
         }
 
         await refusePseudo(real)

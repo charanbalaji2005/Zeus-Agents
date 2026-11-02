@@ -60,15 +60,15 @@ def _save_blocked_payload(command: str) -> str | None:
     and nothing runs here. Returns the path, or None on any failure (hint falls
     back to write_file)."""
     try:
-        from hermes_constants import get_hermes_home
-        script_dir = get_hermes_home() / "cache" / "blocked-scripts"
+        from zeus_constants import get_zeus_home
+        script_dir = get_zeus_home() / "cache" / "blocked-scripts"
         script_dir.mkdir(parents=True, exist_ok=True)
         # Opportunistic cleanup: blocked payloads older than 7 days.
         unlink_files_older_than(script_dir, "blocked-*.sh", 7 * 86400)
         path = script_dir / f"blocked-{int(time.time())}-{uuid.uuid4().hex[:8]}.sh"
         path.write_text(
             "#!/usr/bin/env bash\n"
-            "# Auto-saved by Hermes: this command exceeded the inline command\n"
+            "# Auto-saved by Zeus: this command exceeded the inline command\n"
             "# parser limit and was blocked from direct execution. Review it,\n"
             f"# then run it via: bash {path}\n" + command + ("" if command.endswith("\n") else "\n"),
             # Force UTF-8 + lossy decode so non-UTF-8 child output can't crash the gateway thread on

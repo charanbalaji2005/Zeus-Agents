@@ -55,7 +55,7 @@ describe('media protocol helpers', () => {
       expect(isStreamableMediaPath(url)).toBe(false)
       expect(() => remoteMediaEndpoint('https://gateway.test', url)).toThrow('Invalid media file URL')
       expect(
-        (await createMediaProtocolHandler(deps)(request(`hermes-media://remote/${encodeURIComponent(url)}`))).status
+        (await createMediaProtocolHandler(deps)(request(`zeus-media://remote/${encodeURIComponent(url)}`))).status
       ).toBe(415)
       expect(deps.fetchRemote).not.toHaveBeenCalled()
     }
@@ -73,7 +73,7 @@ describe('media protocol helpers', () => {
 
     expect(isStreamableMediaPath(url)).toBe(true)
 
-    const response = await createMediaProtocolHandler(deps)(request(`hermes-media://remote/${encodeURIComponent(url)}`))
+    const response = await createMediaProtocolHandler(deps)(request(`zeus-media://remote/${encodeURIComponent(url)}`))
 
     expect(response.status).toBe(206)
     expect(deps.fetchRemote).toHaveBeenCalledOnce()
@@ -94,7 +94,7 @@ describe('media protocol helpers', () => {
 
     expect(isStreamableMediaPath(url)).toBe(false)
     expect(
-      (await createMediaProtocolHandler(deps)(request(`hermes-media://remote/${encodeURIComponent(url)}`))).status
+      (await createMediaProtocolHandler(deps)(request(`zeus-media://remote/${encodeURIComponent(url)}`))).status
     ).toBe(415)
     expect(deps.fetchRemote).not.toHaveBeenCalled()
   })
@@ -114,15 +114,15 @@ describe('media protocol helpers', () => {
   })
 
   it('preserves a configured gateway path prefix', () => {
-    const endpoint = new URL(remoteMediaEndpoint('https://gateway.test/hermes/', '/tmp/a b.mp4'))
+    const endpoint = new URL(remoteMediaEndpoint('https://gateway.test/zeus/', '/tmp/a b.mp4'))
 
-    expect(endpoint.pathname).toBe('/hermes/api/files/stream')
+    expect(endpoint.pathname).toBe('/zeus/api/files/stream')
     expect(endpoint.searchParams.get('path')).toBe('/tmp/a b.mp4')
   })
 
   it('names a native media save after the file, not the flattened path', () => {
-    const local = `hermes-media://stream/${encodeURIComponent('C:\\Users\\me\\Videos\\clip (cut).mp4')}`
-    const remote = `hermes-media://remote/${encodeURIComponent('/home/me/out/render.webm')}?profile=work`
+    const local = `zeus-media://stream/${encodeURIComponent('C:\\Users\\me\\Videos\\clip (cut).mp4')}`
+    const remote = `zeus-media://remote/${encodeURIComponent('/home/me/out/render.webm')}?profile=work`
 
     expect(mediaProtocolDownloadName(local)).toBe('clip (cut).mp4')
     expect(mediaProtocolDownloadName(remote)).toBe('render.webm')
@@ -142,7 +142,7 @@ describe('createMediaProtocolHandler', () => {
         fetchRemoteWithCookies: async () => new Response('cookie', { status: cookieStatus })
       })
 
-      const response = await createMediaProtocolHandler(deps)(request('hermes-media://remote/%2Ftmp%2Fclip.mp4'))
+      const response = await createMediaProtocolHandler(deps)(request('zeus-media://remote/%2Ftmp%2Fclip.mp4'))
       expect(response.status).toBe(cookieStatus === 401 || cookieStatus === 403 ? 502 : cookieStatus)
     }
   })
@@ -160,7 +160,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request(`hermes-media://stream/${encodeURIComponent(file)}`, { Range: 'bytes=10-19' })
+      request(`zeus-media://stream/${encodeURIComponent(file)}`, { Range: 'bytes=10-19' })
     )
 
     expect(response.status).toBe(206)
@@ -173,7 +173,7 @@ describe('createMediaProtocolHandler', () => {
     const deps = dependencies()
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://stream/%2Ftmp%2Fclip.mp4', {
+      request('zeus-media://stream/%2Ftmp%2Fclip.mp4', {
         Authorization: 'Bearer renderer-secret',
         Range: 'bytes=1-3'
       })
@@ -195,7 +195,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://stream/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
+      request('zeus-media://stream/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
     )
 
     expect(response.status).toBe(200)
@@ -217,14 +217,14 @@ describe('createMediaProtocolHandler', () => {
     const deps = dependencies({
       resolveRemoteConnection: vi.fn(async () => ({
         authMode: 'token' as const,
-        baseUrl: 'https://gateway.test/hermes',
+        baseUrl: 'https://gateway.test/zeus',
         mode: 'remote' as const,
         token: 's e/cret'
       }))
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request(`hermes-media://remote/${encodeURIComponent(file)}?connectionId=work-ssh&profile=reviewer`, {
+      request(`zeus-media://remote/${encodeURIComponent(file)}?connectionId=work-ssh&profile=reviewer`, {
         Range: 'bytes=0-1023'
       })
     )
@@ -234,10 +234,10 @@ describe('createMediaProtocolHandler', () => {
     expect(deps.fetchRemote).toHaveBeenCalledOnce()
     const [rawUrl, headers] = vi.mocked(deps.fetchRemote).mock.calls[0]
     const url = new URL(rawUrl)
-    expect(url.pathname).toBe('/hermes/api/files/stream')
+    expect(url.pathname).toBe('/zeus/api/files/stream')
     expect(url.searchParams.get('path')).toBe(expectedPath)
     expect(url.searchParams.has('token')).toBe(false)
-    expect(headers.get('x-hermes-session-token')).toBe('s e/cret')
+    expect(headers.get('x-zeus-session-token')).toBe('s e/cret')
     expect(headers.get('range')).toBe('bytes=0-1023')
   })
 
@@ -253,13 +253,13 @@ describe('createMediaProtocolHandler', () => {
     })
 
     await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Ftmp%2Fclip.mp4', { Range: 'bytes=0-1023' })
+      request('zeus-media://remote/%2Ftmp%2Fclip.mp4', { Range: 'bytes=0-1023' })
     )
 
     const [, headers] = vi.mocked(deps.fetchRemote).mock.calls[0]
     expect(headers.get('cf-access-client-id')).toBe('client-id')
     expect(headers.get('range')).toBe('bytes=0-1023')
-    expect(headers.get('x-hermes-session-token')).toBe('secret')
+    expect(headers.get('x-zeus-session-token')).toBe('secret')
   })
 
   it('sends the connection extra gateway headers on OAuth cookie-session remote media', async () => {
@@ -273,7 +273,7 @@ describe('createMediaProtocolHandler', () => {
       }))
     })
 
-    await createMediaProtocolHandler(deps)(request('hermes-media://remote/%2Ftmp%2Fclip.mp4'))
+    await createMediaProtocolHandler(deps)(request('zeus-media://remote/%2Ftmp%2Fclip.mp4'))
 
     const [, headers] = vi.mocked(deps.fetchRemoteWithCookies).mock.calls[0]
     expect(headers.get('cf-access-client-id')).toBe('client-id')
@@ -291,7 +291,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Froot%2Foutputs%2Frender.mp4?connectionId=cloud&profile=research')
+      request('zeus-media://remote/%2Froot%2Foutputs%2Frender.mp4?connectionId=cloud&profile=research')
     )
 
     const [rawUrl] = vi.mocked(deps.fetchRemote).mock.calls[0]
@@ -309,7 +309,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Froot%2Foutputs%2Frender.mp4', {}, 'HEAD')
+      request('zeus-media://remote/%2Froot%2Foutputs%2Frender.mp4', {}, 'HEAD')
     )
 
     expect(response.status).toBe(200)
@@ -321,7 +321,7 @@ describe('createMediaProtocolHandler', () => {
     const deps = dependencies()
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Froot%2Foutputs%2Frender.mp4', {}, 'POST')
+      request('zeus-media://remote/%2Froot%2Foutputs%2Frender.mp4', {}, 'POST')
     )
 
     expect(response.status).toBe(405)
@@ -341,7 +341,7 @@ describe('createMediaProtocolHandler', () => {
       }))
     })
 
-    const response = await createMediaProtocolHandler(deps)(request('hermes-media://remote/%2Ftmp%2Fclip.mp4'))
+    const response = await createMediaProtocolHandler(deps)(request('zeus-media://remote/%2Ftmp%2Fclip.mp4'))
 
     expect(response.status).toBe(206)
     expect(deps.fetchRemote).toHaveBeenCalledOnce()
@@ -365,7 +365,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
+      request('zeus-media://remote/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
     )
 
     expect(response.status).toBe(200)
@@ -385,7 +385,7 @@ describe('createMediaProtocolHandler', () => {
       }))
     })
 
-    const response = await createMediaProtocolHandler(deps)(request('hermes-media://remote/%2Ftmp%2Fclip.mp4'))
+    const response = await createMediaProtocolHandler(deps)(request('zeus-media://remote/%2Ftmp%2Fclip.mp4'))
 
     expect(response.status).toBe(206)
     expect(deps.fetchRemote).not.toHaveBeenCalled()
@@ -408,7 +408,7 @@ describe('createMediaProtocolHandler', () => {
     })
 
     const response = await createMediaProtocolHandler(deps)(
-      request('hermes-media://remote/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
+      request('zeus-media://remote/%2Ftmp%2Fclip.mp4', {}, 'HEAD')
     )
 
     expect(response.status).toBe(200)
@@ -430,8 +430,8 @@ describe('createMediaProtocolHandler', () => {
 
     const handler = createMediaProtocolHandler(deps)
 
-    expect((await handler(request('hermes-media://remote/%2Ftmp%2Fsecret.txt'))).status).toBe(415)
-    expect((await handler(request('hermes-media://remote/%2Ftmp%2Fclip.mp4'))).status).toBe(401)
+    expect((await handler(request('zeus-media://remote/%2Ftmp%2Fsecret.txt'))).status).toBe(415)
+    expect((await handler(request('zeus-media://remote/%2Ftmp%2Fclip.mp4'))).status).toBe(401)
     expect(deps.fetchRemote).not.toHaveBeenCalled()
   })
 })

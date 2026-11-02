@@ -102,10 +102,10 @@ describe('submission intent destinations', () => {
 
   it('stages canonical images on the captured owner without a legacy image RPC', async () => {
     const { uploadComposerAttachment } = await import('.')
-    const original = window.hermesDesktop
+    const original = window.zeusDesktop
     const gate = deferred<string>()
     const api = vi.fn(async () => ({ path: '/owner/cache/images/exact.png', mime_type: 'image/png' }))
-    window.hermesDesktop = { ...original, readFileDataUrl: () => gate.promise, api } as never
+    window.zeusDesktop = { ...original, readFileDataUrl: () => gate.promise, api } as never
     $connection.set({ connectionId: 'local', wsUrl: 'ws://localhost/ws?native_dial=1' } as never)
     $activeGatewayProfile.set('alice')
     const request = vi.fn() as GatewayRequest
@@ -120,7 +120,7 @@ describe('submission intent destinations', () => {
       expect(staged).toMatchObject({ path: '/owner/cache/images/exact.png', mime: 'image/png', attachedSessionId: 'runtime-a' })
       expect(api).toHaveBeenCalledWith(expect.objectContaining({ method: 'POST', path: '/api/chat/image-upload', connectionId: 'local', profile: 'alice', body: { data_url: 'data:image/png;base64,aGVsbG8=', filename: 'exact.png' } }))
       expect(request).not.toHaveBeenCalled()
-    } finally { window.hermesDesktop = original }
+    } finally { window.zeusDesktop = original }
   })
 
   it('retains exact canonical image parameters and identity through ambiguous submit and remount', async () => {
@@ -459,8 +459,8 @@ describe('submission intent destinations', () => {
   it('captures an attachment upload owner before native byte reading yields', async () => {
     const { uploadComposerAttachment } = await import('.')
     const gate = deferred<string>()
-    const original = window.hermesDesktop
-    window.hermesDesktop = { ...original, readFileDataUrl: vi.fn(() => gate.promise) } as never
+    const original = window.zeusDesktop
+    window.zeusDesktop = { ...original, readFileDataUrl: vi.fn(() => gate.promise) } as never
     $sessions.set([{ id: 'stored-a', connection_id: 'owner-a', profile: 'alice' }] as never)
     wire.request.mockResolvedValue({ attached: true, ref_text: '@file:staged.txt' })
     const ambient = vi.fn(async () => ({ attached: true, ref_text: '@file:wrong.txt' })) as GatewayRequest
@@ -493,7 +493,7 @@ describe('submission intent destinations', () => {
       )
       expect(ambient).not.toHaveBeenCalled()
     } finally {
-      window.hermesDesktop = original
+      window.zeusDesktop = original
     }
   })
 

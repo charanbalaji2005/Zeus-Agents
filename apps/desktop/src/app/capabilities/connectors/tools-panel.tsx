@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 import { isToolEnabled } from '@/lib/mcp-tool-filter'
 
 import { okProbe } from '../mcp/mcp-status'

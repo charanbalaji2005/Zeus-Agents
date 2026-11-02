@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // Review (#141492, RT-40): on a named launch profile the owner names itself in the snapshot's
 // `info.profile_name`, and a redial forgets that route. A repeated /undo or /retry after a lost
@@ -38,7 +38,7 @@ test('a named-profile owner re-presents a lost rewind after a redial', async () 
     })
   })
 
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const url = `ws://127.0.0.1:${(server.address() as { port: number }).port}/api/ws?native_dial=fixture&ticket=one-use`
 
   try {

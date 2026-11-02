@@ -23,13 +23,13 @@ import { useDesktopIntegrations } from './use-desktop-integrations'
 
 vi.mock('@/store/windows', async importOriginal => ({ ...(await importOriginal<object>()), isHudWindow: () => false }))
 
-const desktopWindow = window as unknown as { hermesDesktop: unknown }
-const originalBridge = desktopWindow.hermesDesktop
+const desktopWindow = window as unknown as { zeusDesktop: unknown }
+const originalBridge = desktopWindow.zeusDesktop
 
 beforeEach(() => {
   window.localStorage.clear()
   _resetLegacyDiscardForTests()
-  desktopWindow.hermesDesktop = {
+  desktopWindow.zeusDesktop = {
     setPreviewShortcutActive: vi.fn(),
     onOpenUpdatesRequested: vi.fn(),
     onFocusSession: vi.fn(),
@@ -44,7 +44,7 @@ beforeEach(() => {
 
 afterEach(() => {
   $diskPluginsScanPending.set(false)
-  desktopWindow.hermesDesktop = originalBridge
+  desktopWindow.zeusDesktop = originalBridge
 })
 
 function mountRestore() {

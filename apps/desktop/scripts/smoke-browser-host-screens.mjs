@@ -5,7 +5,7 @@ import { enBoot } from '../src/i18n/en_boot.ts'
 const { failure } = enBoot.boot
 
 const STARTUP_FAILURE_SCREENS = [
-  // A gateway that is down also ends here, so HERMES_BROWSER_ALLOW_GATEWAY_FAILURE tolerates it.
+  // A gateway that is down also ends here, so ZEUS_BROWSER_ALLOW_GATEWAY_FAILURE tolerates it.
   {
     allowedWithGatewayFailure: true,
     name: 'boot-failure screen',

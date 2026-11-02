@@ -31,14 +31,14 @@ function handoffFixture(remote: boolean, scriptText: string = ''): { root: strin
   fs.mkdirSync(scriptDirectory, { recursive: true })
   fs.writeFileSync(path.join(scriptDirectory, IS_WINDOWS ? 'windows.ps1' : 'posix.sh'), scriptText)
   fs.writeFileSync(path.join(scriptDirectory, 'runtime.ps1'), '')
-  fs.mkdirSync(path.join(root, '.hermes', 'bin'), { recursive: true })
-  fs.writeFileSync(path.join(root, '.hermes', 'bin', 'hermes.exe'), '')
+  fs.mkdirSync(path.join(root, '.zeus', 'bin'), { recursive: true })
+  fs.writeFileSync(path.join(root, '.zeus', 'bin', 'zeus.exe'), '')
 
   const status: SourceUpdate = { supported: true, branch: 'main', targetSha: 'a'.repeat(40), updateAvailable: true }
 
   const deps: CheckoutStrategyDeps = {
     readSourceUpdate: async (): Promise<SourceUpdate> => status,
-    hermesHome: home,
+    zeusHome: home,
     isWindows: IS_WINDOWS,
     isMac: process.platform === 'darwin',
     defaultUpdateBranch: 'main',
@@ -49,7 +49,7 @@ function handoffFixture(remote: boolean, scriptText: string = ''): { root: strin
     remoteGatewayActive: (): boolean => remote,
     emitUpdateProgress: vi.fn(),
     rememberLog: vi.fn(),
-    startHermes: vi.fn(async (): Promise<void> => {}),
+    startZeus: vi.fn(async (): Promise<void> => {}),
     stopBackendsForUpdate: async (): Promise<void> => {},
     repairMacUpdaterHelper: (): void => {},
     preflightStateDb: (): void => {},
@@ -63,11 +63,11 @@ function handoffFixture(remote: boolean, scriptText: string = ''): { root: strin
 
 /**
  * A legacy (pre-protocol-2) script's first act: it claims the marker in its
- * own name, echoing HERMES_UPDATE_STARTED_AT on line 2 (origin/main shape).
+ * own name, echoing ZEUS_UPDATE_STARTED_AT on line 2 (origin/main shape).
  * The vitest parent stands in for the live script process.
  */
 function scriptTakesMarker(home: string, options: Parameters<typeof updaterProcess.spawnUpdaterProcess>[2]): void {
-  fs.writeFileSync(markerPath(home), `${process.ppid}\n${options.env?.HERMES_UPDATE_STARTED_AT}\n`)
+  fs.writeFileSync(markerPath(home), `${process.ppid}\n${options.env?.ZEUS_UPDATE_STARTED_AT}\n`)
 }
 
 // One gateway per host (#117529): a Desktop served by a remote gateway must
@@ -87,7 +87,7 @@ it.each([true, false])(
       ): updaterProcess.UpdaterChild => {
         spawned.push(args)
         spawnOptions.push(options)
-        scriptTakesMarker(deps.hermesHome, options)
+        scriptTakesMarker(deps.zeusHome, options)
 
         return { unref: (): void => {} }
       }
@@ -131,7 +131,7 @@ it('the Windows hand-off wrapper is spawned non-detached so the script shares it
       options: Parameters<typeof updaterProcess.spawnUpdaterProcess>[2]
     ): updaterProcess.UpdaterChild => {
       spawned.push({ command, args, detached: options.detached })
-      scriptTakesMarker(deps.hermesHome, options)
+      scriptTakesMarker(deps.zeusHome, options)
 
       return { unref: (): void => {} }
     }
@@ -169,7 +169,7 @@ it('a failed hand-off spawn keeps the app alive and reports the failure in plain
       await createCheckoutStrategy(deps).apply()
 
     expect(result).toMatchObject({ ok: false, error: 'updater-spawn-failed' })
-    expect(result.message).toMatch(/Hermes keeps running/)
+    expect(result.message).toMatch(/Zeus keeps running/)
     expect(result.message).toMatch(/Details: .*ENOENT/)
     expect(result.message?.indexOf('Details:')).toBeGreaterThan(0)
     expect(deps.quit).not.toHaveBeenCalled()
@@ -196,8 +196,8 @@ it('a hand-off whose legacy script never takes the marker keeps the app alive an
     expect(deps.quit).not.toHaveBeenCalled()
     expect(deps.markQuittingForHandoff).not.toHaveBeenCalled()
     // Windows stopped its backends before spawning; POSIX never did.
-    expect(vi.mocked(deps.startHermes).mock.calls.length > 0).toBe(IS_WINDOWS)
-    expect(fs.existsSync(markerPath(deps.hermesHome))).toBe(false)
+    expect(vi.mocked(deps.startZeus).mock.calls.length > 0).toBe(IS_WINDOWS)
+    expect(fs.existsSync(markerPath(deps.zeusHome))).toBe(false)
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -242,7 +242,7 @@ it.skipIf(IS_WINDOWS)('a timed-out hand-off kills the real script tree it spawne
     const result = await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 600 }).apply()
 
     expect(result).toMatchObject({ ok: false, error: 'updater-spawn-failed' })
-    expect(fs.existsSync(markerPath(deps.hermesHome))).toBe(false)
+    expect(fs.existsSync(markerPath(deps.zeusHome))).toBe(false)
     const latePid: number = Number(fs.readFileSync(grandchildPidFile, 'utf8').trim())
     const deadline: number = Date.now() + 3000
 
@@ -311,7 +311,7 @@ function mockProtocol2Spawn(home: string, script: 'adopts' | 'adopts-then-dies' 
 
       runs.push({ args, bridgeAtSpawn })
       const run = argAfter(args, '--handoff-run')
-      const startedAt = Number(options.env?.HERMES_UPDATE_STARTED_AT)
+      const startedAt = Number(options.env?.ZEUS_UPDATE_STARTED_AT)
 
       if (script !== 'never') {
         void claimantChild(markerPath(home), { startedAt, run }).then(async ({ child }) => {
@@ -331,7 +331,7 @@ function mockProtocol2Spawn(home: string, script: 'adopts' | 'adopts-then-dies' 
 describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
   it('bridges with a run id, passes --handoff-run, and acknowledges the live adopting script', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
-    const runs = mockProtocol2Spawn(deps.hermesHome, 'adopts')
+    const runs = mockProtocol2Spawn(deps.zeusHome, 'adopts')
 
     try {
       expect(await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 10_000 }).apply()).toMatchObject({
@@ -345,7 +345,7 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
       expect(bridge).toMatchObject({ pid: process.pid, run: runId })
       expect(bridge?.ct).not.toBeNull()
       expect(argAfter(runs[0]!.args, '--desktop-pid')).toBe(String(process.pid))
-      expect(helperCalls(deps.hermesHome)).toEqual([])
+      expect(helperCalls(deps.zeusHome)).toEqual([])
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }
@@ -353,8 +353,8 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
   it('R5: a script that adopted the run and died before the ack is a failed hand-off', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'withdrawn')
-    const runs = mockProtocol2Spawn(deps.hermesHome, 'adopts-then-dies')
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'withdrawn')
+    const runs = mockProtocol2Spawn(deps.zeusHome, 'adopts-then-dies')
 
     try {
       const result = await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 1_500 }).apply()
@@ -362,7 +362,7 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
       expect(result).toMatchObject({ ok: false, error: 'updater-spawn-failed' })
       expect(deps.quit).not.toHaveBeenCalled()
       const runId = argAfter(runs[0]!.args, '--handoff-run')!
-      expect(helperCalls(deps.hermesHome)).toEqual([
+      expect(helperCalls(deps.zeusHome)).toEqual([
         `--marker-op withdraw --install-root ${root} --desktop-pid ${process.pid} --handoff-run ${runId}`
       ])
     } finally {
@@ -372,26 +372,26 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
   // Review 5411223284 regression 1: a bridge the helper could not withdraw
   // stays adoptable by a late (setsid, unkillable) daemon. Reporting "did not
-  // start" and restarting the backend would run `hermes update` beside it.
+  // start" and restarting the backend would run `zeus update` beside it.
   it.each(['busy', 'error'])(
     'a withdraw that stays `%s` keeps the bridge and quits instead of restarting the backend',
     async (answer: string): Promise<void> => {
       const { root, deps } = handoffFixture(false, fakeHelperScript())
-      fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), answer === 'error' ? 'garbage' : answer)
-      const runs = mockProtocol2Spawn(deps.hermesHome, 'never')
+      fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), answer === 'error' ? 'garbage' : answer)
+      const runs = mockProtocol2Spawn(deps.zeusHome, 'never')
       const kill = vi.spyOn(updaterProcess, 'killHandoffTree')
 
       try {
         const result = await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 400 }).apply()
 
         expect(result).toMatchObject({ ok: true, handedOff: true })
-        expect(deps.startHermes).not.toHaveBeenCalled()
+        expect(deps.startZeus).not.toHaveBeenCalled()
         expect(kill).not.toHaveBeenCalled()
         expect(deps.markQuittingForHandoff).toHaveBeenCalled()
         // Re-asked only while the lock is busy (an error re-asked could cost
         // 3 x 20 s, review K132354 P3), and Electron left the bytes alone.
-        expect(helperCalls(deps.hermesHome)).toHaveLength(answer === 'busy' ? 3 : 1)
-        expect(fs.readFileSync(markerPath(deps.hermesHome), 'utf8')).toBe(runs[0]!.bridgeAtSpawn)
+        expect(helperCalls(deps.zeusHome)).toHaveLength(answer === 'busy' ? 3 : 1)
+        expect(fs.readFileSync(markerPath(deps.zeusHome), 'utf8')).toBe(runs[0]!.bridgeAtSpawn)
       } finally {
         fs.rmSync(root, { recursive: true, force: true })
       }
@@ -400,8 +400,8 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
   it('a definitive `withdrawn` reports the failure and kills the spawned tree', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'withdrawn')
-    mockProtocol2Spawn(deps.hermesHome, 'never')
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'withdrawn')
+    mockProtocol2Spawn(deps.zeusHome, 'never')
     const kill = vi.spyOn(updaterProcess, 'killHandoffTree').mockImplementation(() => {})
 
     try {
@@ -409,7 +409,7 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
       expect(result).toMatchObject({ ok: false, error: 'updater-spawn-failed' })
       expect(kill).toHaveBeenCalledTimes(1)
-      expect(helperCalls(deps.hermesHome)).toHaveLength(1)
+      expect(helperCalls(deps.zeusHome)).toHaveLength(1)
       expect(deps.quit).not.toHaveBeenCalled()
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
@@ -418,8 +418,8 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
   it('`taken <pid>` from the withdraw helper is a late success', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'taken 31337')
-    mockProtocol2Spawn(deps.hermesHome, 'never')
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'taken 31337')
+    mockProtocol2Spawn(deps.zeusHome, 'never')
 
     try {
       expect(await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 300 }).apply()).toMatchObject({
@@ -433,15 +433,15 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 
   it('a dead marker is reclaimed by the script helper, then the bridge is created once', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
-    fs.writeFileSync(markerPath(deps.hermesHome), `${await deadPid()}\n${Math.floor(Date.now() / 1000)}\nct:1.000\n`)
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'reclaimed')
-    const runs = mockProtocol2Spawn(deps.hermesHome, 'adopts')
+    fs.writeFileSync(markerPath(deps.zeusHome), `${await deadPid()}\n${Math.floor(Date.now() / 1000)}\nct:1.000\n`)
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'reclaimed')
+    const runs = mockProtocol2Spawn(deps.zeusHome, 'adopts')
 
     try {
       expect(await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 10_000 }).apply()).toMatchObject({
         ok: true
       })
-      expect(helperCalls(deps.hermesHome)).toEqual([
+      expect(helperCalls(deps.zeusHome)).toEqual([
         `--marker-op reclaim --install-root ${root} --desktop-pid ${process.pid}`
       ])
       expect(parseUpdateMarker(runs[0]!.bridgeAtSpawn ?? '')?.pid).toBe(process.pid)
@@ -453,14 +453,14 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
   it('R6: a dead marker whose checkout lock is still `held` refuses the hand-off and is left in place', async (): Promise<void> => {
     const { root, deps } = handoffFixture(false, fakeHelperScript())
     const body = `${await deadPid()}\n${Math.floor(Date.now() / 1000)}\nct:1.000\n`
-    fs.writeFileSync(markerPath(deps.hermesHome), body)
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'held')
-    const runs = mockProtocol2Spawn(deps.hermesHome, 'adopts')
+    fs.writeFileSync(markerPath(deps.zeusHome), body)
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'held')
+    const runs = mockProtocol2Spawn(deps.zeusHome, 'adopts')
 
     try {
       expect(await createCheckoutStrategy(deps).apply()).toMatchObject({ ok: false, error: 'update-already-running' })
       expect(runs).toHaveLength(0)
-      expect(fs.readFileSync(markerPath(deps.hermesHome), 'utf8')).toBe(body)
+      expect(fs.readFileSync(markerPath(deps.zeusHome), 'utf8')).toBe(body)
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
     }
@@ -471,17 +471,17 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
     const ct = (await import('../update-marker')).processCreateTime
     const own = await ct(process.pid)
     fs.writeFileSync(
-      markerPath(deps.hermesHome),
+      markerPath(deps.zeusHome),
       `${process.pid}\n${Math.floor(Date.now() / 1000)}\nct:${own!.toFixed(3)}\nrun:desk-old-run\n`
     )
-    fs.writeFileSync(path.join(deps.hermesHome, 'helper-verdict'), 'withdrawn')
-    const runs = mockProtocol2Spawn(deps.hermesHome, 'adopts')
+    fs.writeFileSync(path.join(deps.zeusHome, 'helper-verdict'), 'withdrawn')
+    const runs = mockProtocol2Spawn(deps.zeusHome, 'adopts')
 
     try {
       expect(await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 10_000 }).apply()).toMatchObject({
         ok: true
       })
-      expect(helperCalls(deps.hermesHome)).toEqual([
+      expect(helperCalls(deps.zeusHome)).toEqual([
         `--marker-op withdraw --install-root ${root} --desktop-pid ${process.pid} --handoff-run desk-old-run`
       ])
       expect(parseUpdateMarker(runs[0]!.bridgeAtSpawn ?? '')?.run).toBe(argAfter(runs[0]!.args, '--handoff-run'))
@@ -496,14 +496,14 @@ describe.skipIf(IS_WINDOWS)('protocol 2 hand-off', () => {
 // passes no run argument.
 it.skipIf(IS_WINDOWS)('a legacy script gets no bridge and no --handoff-run', async (): Promise<void> => {
   const { root, deps } = handoffFixture(false, '#!/usr/bin/env bash\necho legacy\n')
-  const runs = mockProtocol2Spawn(deps.hermesHome, 'never')
+  const runs = mockProtocol2Spawn(deps.zeusHome, 'never')
 
   try {
     await createCheckoutStrategy({ ...deps, handoffClaimTimeoutMs: 200 }).apply()
     expect(runs).toHaveLength(1)
     expect(runs[0]!.bridgeAtSpawn).toBeNull()
     expect(runs[0]!.args).not.toContain('--handoff-run')
-    expect(helperCalls(deps.hermesHome)).toEqual([])
+    expect(helperCalls(deps.zeusHome)).toEqual([])
   } finally {
     fs.rmSync(root, { recursive: true, force: true })
   }
@@ -512,7 +512,7 @@ it.skipIf(IS_WINDOWS)('a legacy script gets no bridge and no --handoff-run', asy
 // Windows protocol 2: the run id rides the wrapped PowerShell argv.
 it('the Windows protocol-2 hand-off passes -HandoffRun with the bridged run id', async (): Promise<void> => {
   const { root, deps } = handoffFixture(false)
-  fs.writeFileSync(path.join(root, 'scripts', 'desktop-update', 'windows.ps1'), '# hermes-handoff-protocol: 2\r\n')
+  fs.writeFileSync(path.join(root, 'scripts', 'desktop-update', 'windows.ps1'), '# zeus-handoff-protocol: 2\r\n')
   const resolveHandoff: typeof updaterProcess.resolveUpdateScriptHandoff = updaterProcess.resolveUpdateScriptHandoff
   vi.spyOn(updaterProcess, 'resolveUpdateScriptHandoff').mockImplementation(
     (updateRoot: string): updaterProcess.UpdateScriptHandoff | null => resolveHandoff(updateRoot, { isWindows: true })
@@ -525,13 +525,13 @@ it('the Windows protocol-2 hand-off passes -HandoffRun with the bridged run id',
     (_command: string, args: string[], options: { env?: NodeJS.ProcessEnv }) => {
       runs.push(args)
       envs.push(options.env ?? {})
-      bridge = fs.readFileSync(markerPath(deps.hermesHome), 'utf8')
+      bridge = fs.readFileSync(markerPath(deps.zeusHome), 'utf8')
 
       return { unref: (): void => {} }
     }
   )
   // This Desktop was relaunched by the previous hand-off and inherited its run id.
-  vi.stubEnv('HERMES_UPDATE_CORRELATION_ID', 'desk-1-previous-run')
+  vi.stubEnv('ZEUS_UPDATE_CORRELATION_ID', 'desk-1-previous-run')
 
   try {
     await createCheckoutStrategy({ ...deps, isWindows: true, markerHelper: helper, handoffClaimTimeoutMs: 200 }).apply()
@@ -539,7 +539,7 @@ it('the Windows protocol-2 hand-off passes -HandoffRun with the bridged run id',
     expect(runId).toMatch(/^desk-\d+-[0-9a-z]+-[0-9a-f]{4}$/)
     expect(parseUpdateMarker(bridge ?? '')?.run).toBe(runId)
     // The update runs under THIS run's id, the one its close-holder consent is bound to.
-    expect(envs[0]!.HERMES_UPDATE_CORRELATION_ID).toBe(runId)
+    expect(envs[0]!.ZEUS_UPDATE_CORRELATION_ID).toBe(runId)
     expect(argAfter(runs[0]!, '-DesktopPid')).toBe(String(process.pid))
     // Nothing adopted it: the bridge is withdrawn through the helper, with the run.
     expect(helper).toHaveBeenCalledWith(

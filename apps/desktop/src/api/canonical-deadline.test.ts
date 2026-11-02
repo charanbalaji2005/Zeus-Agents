@@ -1,7 +1,7 @@
-import { JsonRpcGatewayClient } from '@hermes/shared'
+import { JsonRpcGatewayClient } from '@zeus/shared'
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -22,7 +22,7 @@ test.each([60, 120])('compress follow-up spends only the remaining caller budget
 
     return snapshot as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=fixture')
   await client.request('session.resume', { session_id: 's', profile: 'sibling' })
   calls.length = 0
@@ -59,7 +59,7 @@ test('the prerequisite attachment shares the caller deadline and cancellation', 
 
     return { ref: { session_id: 's' }, admission_id: 'a', status: 'queued' } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=fixture')
   const controller = new AbortController()
 
@@ -85,7 +85,7 @@ test('a prerequisite attachment resolves the launch profile alias before prepari
 
     return { session_id: 's', revision: 4, operation: 'branch', branched_session_id: 'child', copied_messages: 0 } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=fixture')
 
   try {
@@ -107,7 +107,7 @@ test('a zero timeout is no deadline on the canonical socket: the request is sent
 
     return new Promise(resolve => { answer = resolve }) as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=fixture')
 
   try {

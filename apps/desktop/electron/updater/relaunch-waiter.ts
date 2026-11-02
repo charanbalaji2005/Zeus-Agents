@@ -37,7 +37,7 @@ export interface RelaunchWaiterOptions {
   processId: number
   /** Wall-clock ms the parent process started (PID-reuse guard). */
   processStartTimeMs: number
-  /** The MSIX identity name of this install (e.g. NousResearch.HermesBundled). */
+  /** The MSIX identity name of this install (e.g. NousResearch.ZeusBundled). */
   identityName: string
   /** Absolute path to the waiter script shipped in the app's resources. */
   scriptPath: string
@@ -70,7 +70,7 @@ export interface RelaunchWaiterDeps {
 }
 
 /** Written by the waiter script itself, outside the stage dir that it deletes on exit. */
-export const RELAUNCH_WAITER_LOG_FILENAME = 'hermes-relaunch-waiter.log'
+export const RELAUNCH_WAITER_LOG_FILENAME = 'zeus-relaunch-waiter.log'
 
 function errorText(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : String(error)
@@ -141,7 +141,7 @@ async function stageRelaunchWaiter(
   let stageDir: string
 
   try {
-    stageDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'hermes-relaunch-'))
+    stageDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'zeus-relaunch-'))
   } catch (error) {
     log(`[updates] relaunch waiter: cannot create a staging dir under ${os.tmpdir()}: ${errorText(error)}`)
 

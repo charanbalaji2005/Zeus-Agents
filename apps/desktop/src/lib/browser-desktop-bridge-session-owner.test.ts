@@ -5,7 +5,7 @@ import { clearWebappSession, seedWebappSession } from '@/test/webapp-session'
 
 import { installBrowserDesktopBridge } from './browser-desktop-bridge'
 
-type ServedWindow = Window & { __HERMES_DASHBOARD_PROFILE__?: string; hermesDesktop?: Window['hermesDesktop'] }
+type ServedWindow = Window & { __ZEUS_DASHBOARD_PROFILE__?: string; zeusDesktop?: Window['zeusDesktop'] }
 
 const win = window as unknown as ServedWindow
 
@@ -30,10 +30,10 @@ function stubGateway() {
 }
 
 afterEach(() => {
-  delete win.__HERMES_DASHBOARD_PROFILE__
+  delete win.__ZEUS_DASHBOARD_PROFILE__
   clearWebappSession()
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   $connection.set(null)
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -42,10 +42,10 @@ afterEach(() => {
 describe('session rows a Webapp tab lists', () => {
   it('name the serving gateway as their owner, as the tab sockets and new chats do', async () => {
     stubGateway()
-    win.__HERMES_DASHBOARD_PROFILE__ = 'default'
+    win.__ZEUS_DASHBOARD_PROFILE__ = 'default'
     seedWebappSession('served-token')
     expect(installBrowserDesktopBridge()).toBe(true)
-    const api = win.hermesDesktop!.api
+    const api = win.zeusDesktop!.api
 
     const all = await api<{ sessions: { connection_id?: string }[] }>({ path: '/api/profiles/sessions?limit=40' })
     expect(all.sessions.map(session => session.connection_id)).toEqual(['local', 'local'])

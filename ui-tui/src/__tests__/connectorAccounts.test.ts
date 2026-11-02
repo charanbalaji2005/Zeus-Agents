@@ -1,4 +1,4 @@
-import type { ConnectionUpdatePayload, ConnectorAccountRow } from '@hermes/shared/gateway-events'
+import type { ConnectionUpdatePayload, ConnectorAccountRow } from '@zeus/shared/gateway-events'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import {
@@ -98,7 +98,7 @@ describe('settled connection lines', () => {
       targets: [{ ...target, state: 'connected' }]
     } as unknown as ConnectionUpdatePayload)
 
-    expect(lines).toEqual(['gmail (work): connected', 'Hermes named this gmail account work. Rename it anytime.'])
+    expect(lines).toEqual(['gmail (work): connected', 'Zeus named this gmail account work. Rename it anytime.'])
   })
 })
 

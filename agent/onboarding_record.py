@@ -1,6 +1,6 @@
 """Where a first-run onboarding run lives: one ``onboarding_run`` key in the session's
 ``sessions.model_config`` (no schema change; a compression rotation carries it, see
-``hermes_state_compression._CONVERSATION_MODEL_CONFIG_KEYS``).
+``zeus_state_compression._CONVERSATION_MODEL_CONFIG_KEYS``).
 
 ``advance`` is the one writer after ``start``: load, ``onboarding_flow.apply``, save, and when the
 run ends write the install-level flag in the root config so the next launch does not reopen it.
@@ -71,13 +71,13 @@ def _transition(db, session_id: str, event: Event) -> Step | None:
 
 
 def _close_install_flag() -> None:
-    from hermes_cli import config as config_mod
-    from hermes_cli.onboarding_run import set_run
-    from hermes_constants import get_default_hermes_root
+    from zeus_cli import config as config_mod
+    from zeus_cli.onboarding_run import set_run
+    from zeus_constants import get_default_zeus_root
 
     from agent.onboarding import PROFILE_BUILD_FLAG
 
-    section = config_mod.read_user_config_raw(get_default_hermes_root() / "config.yaml").get("onboarding")
+    section = config_mod.read_user_config_raw(get_default_zeus_root() / "config.yaml").get("onboarding")
     section = section if isinstance(section, dict) else {}
     seen = section.get("seen") if isinstance(section.get("seen"), dict) else {}
     if section.get("run") is not False or not seen.get(PROFILE_BUILD_FLAG):
@@ -88,7 +88,7 @@ def start(db, session_id: str, facts: Facts) -> dict:
     """Write a fresh run record (the row must exist) and mark the install as mid-onboarding, so a
     crash or a quit before the end runs onboarding again on the next launch (which starts over:
     ``onboarding.start`` with ``fresh_launch``)."""
-    from hermes_cli.onboarding_run import set_run
+    from zeus_cli.onboarding_run import set_run
 
     record = new_record(facts, now=time.time(), run_id=uuid.uuid4().hex)
     db.patch_session_model_config(session_id, {KEY: record})
@@ -127,7 +127,7 @@ def delete_chat(db, session_id: str, delete: Callable[[], bool]) -> bool:
     compression copy and tell windows once. Only the compression tip holds the live run, so deleting an
     older copy ends nothing. The install flag closes before the delete when no other run is open: a
     failed flag write keeps the chat for a retry, and a refused delete sets the flag again."""
-    from hermes_cli.onboarding_run import set_run
+    from zeus_cli.onboarding_run import set_run
 
     record = load(db, session_id)
     live = is_active(record) and (db.resolve_resume_session_id(session_id) or session_id) == session_id

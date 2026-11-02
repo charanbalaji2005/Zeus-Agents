@@ -11,8 +11,8 @@ import uuid
 from gateway.config import Platform
 from gateway.session_contract import CANONICAL_GATEWAY_PROTOCOL, Principal, SessionRef, Submission
 from gateway.session_llm_oneshot import DeferredReply
-from hermes_constants import profile_name_for_home
-from hermes_state_runtime import RuntimeStoreError
+from zeus_constants import profile_name_for_home
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +175,7 @@ class AuthorityConnection:
         home. Only a host-scoped grant (the Desktop's shared-primary socket, the dashboard gate)
         reaches a sibling; a profile-bound ticket naming any other profile is a mismatch, exactly
         like a profile nobody here serves. Never a fallback, never a rewritten profile_id."""
-        from hermes_cli.profiles import profile_matches_home
+        from zeus_cli.profiles import profile_matches_home
         if profile_matches_home(profile, Path(self.authority.profile_id)):
             return None
         if not self.host_scoped:
@@ -208,7 +208,7 @@ class AuthorityConnection:
         registry = getattr(getattr(self.authority, 'runner', None), 'session_authorities', None)
         if not (self.host_scoped and isinstance(profile, str) and profile and registry is not None):
             return None
-        from hermes_cli.profiles import profile_matches_home
+        from zeus_cli.profiles import profile_matches_home
         key = next((key for key in held if profile_matches_home(profile, Path(key))), None)
         return (key, None) if key is not None else registry.starting(profile)
 
@@ -341,7 +341,7 @@ class AuthorityConnection:
         try:
             from gateway.session_group_controls import GROUP_METHODS, dispatch_group_control
             # Every handler reads config/jobs/policy for the OWNING profile: enter its home so
-            # ``_load_gateway_config`` / ``build_policy(get_hermes_home())`` never snapshot the
+            # ``_load_gateway_config`` / ``build_policy(get_zeus_home())`` never snapshot the
             # launch profile's config into a served secondary's session. Under a single profile
             # the scope is that profile's own home, so behaviour is unchanged.
             from gateway.session_authorities import async_owner_scope
@@ -483,7 +483,7 @@ class AuthorityConnection:
         from gateway.session_local_title import resolve_titled_session, title_new_session
         from gateway.session_policy import BYPASS_FIELDS
         from gateway.session_runtime_workers import tracked_write
-        from hermes_state_local import commit_local_session
+        from zeus_state_local import commit_local_session
         # Bot Mode's forever-chat mint: born hidden from the sidebar. `follow_profile_config` stays in
         # the frozen request: the policy re-reads the profile's current route every turn.
         hidden = params.pop('hidden', False)
@@ -522,7 +522,7 @@ class AuthorityConnection:
             # `--accept-hooks`: record this launch's consent; ``resume`` below registers the hooks.
             if params.get('accept_hooks') is True:
                 from gateway.session_policy import accept_launch_hooks, restore_policy
-                from hermes_state_local import local_receipt
+                from zeus_state_local import local_receipt
                 policy = restore_policy(local_receipt(self.authority.db, ref.session_id)['policy'])
                 await asyncio.to_thread(accept_launch_hooks, policy)
             if title:
@@ -588,7 +588,7 @@ class AuthorityConnection:
                                   'message_count': row.get('message_count', 0),
                                   'running': found.session_id in self.authority.sessions}],
                     'scope': 'stored'}
-        from hermes_state_sessions import INTERNAL_LISTING_SOURCES
+        from zeus_state_sessions import INTERNAL_LISTING_SOURCES
         from gateway.session_live_listing import live_entries
         sessions = []
         for entry in await live_entries(self.authority, self.actor):
@@ -629,7 +629,7 @@ class AuthorityConnection:
                     ref = SessionRef(ref.profile_id, resolved_id)
             from gateway.session_local_migration import resolve_local_target
             from gateway.session_policy_refresh import refresh_settled
-            from hermes_state_local_migration import LEGACY_LOCAL_SOURCES
+            from zeus_state_local_migration import LEGACY_LOCAL_SOURCES
             # Another viewer's refresh mid-cleanup has committed a policy it has not published yet.
             await refresh_settled(self.authority, ref.session_id)
             row = self.authority.db.get_session(ref.session_id)
@@ -660,7 +660,7 @@ class AuthorityConnection:
         mounted = self.authority.sessions[ref.session_id].source
         # Only a local route has a stored creation policy to refresh; a platform lane's turns read the profile.
         if 'session:control' in self.actor.capabilities and getattr(mounted, 'platform', None) == Platform.LOCAL:
-            # A client attaching (main's `hermes -c` was a new process) re-reads the config-derived settings
+            # A client attaching (main's `zeus -c` was a new process) re-reads the config-derived settings
             # (CFG-2); a snapshot poll on this attachment does not. Any open still adopts a frozen Bot Chat
             # whose earlier open found it busy (Desktop's warm `session.activate` resumes on one connection).
             from gateway.session_policy_refresh import refresh_resumed_policy
@@ -833,7 +833,7 @@ class AuthorityConnection:
 
     async def mutate(self, ref, params):
         from gateway.session_mutations import mutate_session
-        from hermes_state_mutation_guards import MUTATION_GUARD_REFUSALS, busy_refusal
+        from zeus_state_mutation_guards import MUTATION_GUARD_REFUSALS, busy_refusal
         try:
             result = await mutate_session(self.authority, self.actor, ref, params)
         except MUTATION_GUARD_REFUSALS as exc:
@@ -871,7 +871,7 @@ class AuthorityConnection:
     async def cancel(self, ref, params):
         admission_id = params.get('admission_id')
         receipt = await self.authority.receipt(self.actor, ref, admission_id)
-        from hermes_state_runtime import get_session_admission
+        from zeus_state_runtime import get_session_admission
         # A transferred steer also reads started (as its receiving claim): only its own claim is stopped here;
         # the transfer is refused below and settles with that claim.
         if receipt.status == 'started' and get_session_admission(

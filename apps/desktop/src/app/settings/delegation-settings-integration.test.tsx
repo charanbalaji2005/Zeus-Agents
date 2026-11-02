@@ -6,14 +6,14 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection, setApiRequestProfile } from '@/api/client'
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { $activeConnectionId } from '@/store/connections'
 import { $settingsRequestProfile } from '@/store/settings-scope'
-import type { HermesConfigRecord } from '@/types/hermes'
+import type { ZeusConfigRecord } from '@/types/zeus'
 
 import type { ConfigSettings as ConfigSettingsType } from './config-settings'
 
-vi.mock('@/hermes', async () => ({
+vi.mock('@/zeus', async () => ({
   ...(await vi.importActual('@/api/client')),
   ...(await vi.importActual('@/api/config')),
   ...(await vi.importActual('@/api/models')),
@@ -38,17 +38,17 @@ vi.mock('@/store/projects', () => ({
 
 const selectedProfile = $settingsRequestProfile as unknown as { set: (value: string) => void }
 const activeConnection = $activeConnectionId as unknown as { set: (value: string) => void }
-const requests: HermesApiRequest[] = []
+const requests: ZeusApiRequest[] = []
 
 // The Model page controller stays mounted on Subagents and reads the same owner's catalog, so assert owners, not counts.
 const catalogOwners = () => [
   ...new Set(requests.filter(r => r.path.startsWith('/api/model/options')).map(r => `${r.connectionId}/${r.profile}`))
 ]
 
-const saves: HermesApiRequest[] = []
-let config: HermesConfigRecord
+const saves: ZeusApiRequest[] = []
+let config: ZeusConfigRecord
 let catalogError = false
-let delayCatalog: ((request: HermesApiRequest) => Promise<unknown> | undefined) | undefined
+let delayCatalog: ((request: ZeusApiRequest) => Promise<unknown> | undefined) | undefined
 let ConfigSettings: typeof ConfigSettingsType
 beforeAll(async () => {
   Element.prototype.scrollIntoView = vi.fn()
@@ -66,9 +66,9 @@ beforeEach(() => {
   config = { delegation: { provider: 'openai', model: 'gpt-5.1', max_iterations: 50 } }
   catalogError = false
   delayCatalog = undefined
-  window.hermesDesktop = {
-    ...window.hermesDesktop,
-    api: vi.fn(async (request: HermesApiRequest) => {
+  window.zeusDesktop = {
+    ...window.zeusDesktop,
+    api: vi.fn(async (request: ZeusApiRequest) => {
       requests.push(request)
 
       if (request.path === '/api/config/schema') {
@@ -123,7 +123,7 @@ beforeEach(() => {
 
       return { ok: true }
     })
-  } as typeof window.hermesDesktop
+  } as typeof window.zeusDesktop
 })
 afterEach(() => {
   cleanup()
@@ -194,7 +194,7 @@ describe('real settings route and autosave integration', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
       await waitFor(() => expect(saves).toHaveLength(1))
-      const route = (saves[0].body as { config: HermesConfigRecord }).config.delegation as Record<string, unknown>
+      const route = (saves[0].body as { config: ZeusConfigRecord }).config.delegation as Record<string, unknown>
       expect(route.base_url).toBe('')
       expect(route.api_key).toBe('')
       expect(route.api_mode).toBe('')

@@ -4,22 +4,22 @@ import crypto from 'node:crypto'
 import { profileCollectionRoute, profileRouteSuffix } from './profile-routes'
 import { hiddenWindowsChildOptions, windowsShellCommand } from './windows-child-options'
 
-// `hermes gateway ensure` answers with a protocol verdict (ready, or `starting: deadline`) within
-// its own startup deadline: `--timeout` defaults to 60 s (hermes_cli/gateway_runtime.py
+// `zeus gateway ensure` answers with a protocol verdict (ready, or `starting: deadline`) within
+// its own startup deadline: `--timeout` defaults to 60 s (zeus_cli/gateway_runtime.py
 // DEFAULT_ENSURE_TIMEOUT). The client is killed only after that deadline plus interpreter start
 // and verdict output, so a slow-but-valid cold start is never reported as "produced no result".
 const GATEWAY_ENSURE_PROTOCOL_DEADLINE_MS = 60_000
 const GATEWAY_ENSURE_CLIENT_GRACE_MS = 15_000
 
-/** Run one bounded `hermes ... gateway <verb>` client (`ensure` by default; `restart` for a stale owner). */
+/** Run one bounded `zeus ... gateway <verb>` client (`ensure` by default; `restart` for a stale owner). */
 export function runGatewayEnsure(
   backend, cwd: string, home: string, parentEnv: NodeJS.ProcessEnv = process.env,
-  { timeoutMs = GATEWAY_ENSURE_PROTOCOL_DEADLINE_MS + GATEWAY_ENSURE_CLIENT_GRACE_MS, label = 'hermes gateway ensure' }: { timeoutMs?: number; label?: string } = {}
+  { timeoutMs = GATEWAY_ENSURE_PROTOCOL_DEADLINE_MS + GATEWAY_ENSURE_CLIENT_GRACE_MS, label = 'zeus gateway ensure' }: { timeoutMs?: number; label?: string } = {}
 ): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     // shell: true hands cmd.exe one command line it cuts at the first unquoted space,
     // so an install under `C:\Users\John Doe\...` must arrive quoted (#74064).
-    const child = spawn(windowsShellCommand(backend.command, Boolean(backend.shell)), backend.args, hiddenWindowsChildOptions({ cwd, env: { ...parentEnv, HERMES_HOME: home, ...backend.env }, shell: backend.shell, stdio: ['ignore', 'pipe', 'pipe'] }))
+    const child = spawn(windowsShellCommand(backend.command, Boolean(backend.shell)), backend.args, hiddenWindowsChildOptions({ cwd, env: { ...parentEnv, ZEUS_HOME: home, ...backend.env }, shell: backend.shell, stdio: ['ignore', 'pipe', 'pipe'] }))
     let stdout = ''
     let stderr = ''
     let expired: Error | undefined
@@ -37,7 +37,7 @@ export function runGatewayEnsure(
     child.stdout.on('data', data => { stdout += data.toString();
 
  if (stdout.length > 65536) { stdout = stdout.slice(0, 65536); expire(`${label} output exceeded limit`) } })
-    // Diagnostics only (never protocol): an older `hermes` without the subcommand, a missing
+    // Diagnostics only (never protocol): an older `zeus` without the subcommand, a missing
     // profile or an import crash explain themselves here while stdout stays empty.
     child.stderr.on('data', data => { stderr = (stderr + data.toString()).slice(-4096) })
     child.on('error', () => { clearTimeout(timer); clearTimeout(forceTimer); reject(new Error(`Could not run ${label}`)) })
@@ -78,7 +78,7 @@ export interface GatewayEndpoint {
  *  drain, and a turn parked on approval/clarify there waits for an answer only this window can give. */
 export type StaleGatewayRestart = (endpoint: GatewayEndpoint, stale: { gateway: string; client: string }) => Promise<null | { done: Promise<void> }>
 
-/** The profile whose `hermes --profile P gateway restart` replaces the process behind `endpoint`:
+/** The profile whose `zeus --profile P gateway restart` replaces the process behind `endpoint`:
  *  the multiplexer root (`default`) for a served secondary, else the endpoint's own profile home. */
 export function gatewayOwnerProfile(endpoint: GatewayEndpoint): string {
   const home = endpoint.control_home || endpoint.profile_id
@@ -86,7 +86,7 @@ export function gatewayOwnerProfile(endpoint: GatewayEndpoint): string {
   return path.basename(path.dirname(home)) === 'profiles' ? path.basename(home) : 'default'
 }
 
-/** `hermes --profile P gateway restart --detach`: without a service, the CLI would otherwise run the
+/** `zeus --profile P gateway restart --detach`: without a service, the CLI would otherwise run the
  *  replacement as this bounded client, a child its timeout kills. A runtime older than `--detach`
  *  names the flag argparse rejects (exit 2); it gets its old restart, which still works wherever a
  *  service owns the gateway, instead of no restart at all. */
@@ -120,12 +120,12 @@ export function createStaleGatewayRestarter(
     }
 
     if (pending) {
-      log(`[gateway] owner still runs ${stale.gateway} (this Hermes is ${stale.client}) after a restart; attaching as-is`)
+      log(`[gateway] owner still runs ${stale.gateway} (this Zeus is ${stale.client}) after a restart; attaching as-is`)
 
       return null
     }
 
-    log(`[gateway] owner runs ${stale.gateway} but this Hermes is ${stale.client}; restarting it`)
+    log(`[gateway] owner runs ${stale.gateway} but this Zeus is ${stale.client}; restarting it`)
     const entry = { done: false, promise: restart(gatewayOwnerProfile(endpoint)).catch(() => undefined) }
     restarts.set(key, entry)
     void entry.promise.then(() => { entry.done = true })
@@ -134,10 +134,10 @@ export function createStaleGatewayRestarter(
   }
 }
 
-/** The single-line JSON `hermes gateway ensure --json` prints, or a diagnosis of why there is none.
+/** The single-line JSON `zeus gateway ensure --json` prints, or a diagnosis of why there is none.
  *
  * Every protocol outcome (ready/starting/incompatible/...) is JSON on stdout. Empty or
- * non-JSON stdout means the command never reached the protocol boundary: an older `hermes`
+ * non-JSON stdout means the command never reached the protocol boundary: an older `zeus`
  * on PATH that has no `ensure` subcommand, a profile that does not exist, an interpreter
  * crash. A bare JSON.parse there surfaced as "Unexpected end of JSON input" with the real
  * reason discarded on stderr. */
@@ -150,11 +150,11 @@ export function parseGatewayEnsureOutput(result: { code: number; stdout: string;
 
   const reason = String(result.stderr ?? '').trim().split(/\r?\n/).filter(Boolean).pop()
 
-  throw new Error(`hermes gateway ensure produced no result (exit ${result.code})${reason ? `: ${reason}` : ''}. Update Hermes or check the profile, then retry.`)
+  throw new Error(`zeus gateway ensure produced no result (exit ${result.code})${reason ? `: ${reason}` : ''}. Update Zeus or check the profile, then retry.`)
 }
 
 /** `{ gateway, client }` commits when a ready owner provably runs other code than the ensure
- *  client (a gateway that outlived `hermes update` answers model calls 503 "Restart required");
+ *  client (a gateway that outlived `zeus update` answers model calls 503 "Restart required");
  *  null when they match or either side cannot name its code. */
 export function staleGatewayCode(payload: Record<string, any>): { gateway: string; client: string } | null {
   const gateway = payload?.endpoint?.code_sha
@@ -237,12 +237,12 @@ export async function ensureLocalGateway(
   const restartWait = isRestartWait(payload)
 
   if (!restartWait && (result.code !== 0 || payload.state !== 'ready')) {
-    // A refused replacement (another install's or a newer Hermes's gateway) names its remedy in
+    // A refused replacement (another install's or a newer Zeus's gateway) names its remedy in
     // `detail`; a start that died carries its own output there. Either beats a pointer elsewhere.
     const detail = typeof payload.detail === 'string' && payload.detail.trim() ? ` ${payload.detail.trim().split(/\r?\n/)[0]}.` : ''
     const recovery = payload.reason_code === 'update_paused' ? 'restart' : 'status'
 
-    throw new Error(`Gateway ${payload.state || 'inaccessible'} (${payload.reason_code || 'ensure_failed'}).${detail} Use hermes gateway ${recovery} for recovery.`)
+    throw new Error(`Gateway ${payload.state || 'inaccessible'} (${payload.reason_code || 'ensure_failed'}).${detail} Use zeus gateway ${recovery} for recovery.`)
   }
 
   const endpoint: GatewayEndpoint = payload.endpoint
@@ -369,15 +369,15 @@ export function createLocalGatewayDials() {
       const headers = { ...details.requestHeaders }
 
       for (const key of Object.keys(headers)) {
-        if (['origin', 'x-hermes-gateway-ticket'].includes(key.toLowerCase())) {delete headers[key]}
+        if (['origin', 'x-zeus-gateway-ticket'].includes(key.toLowerCase())) {delete headers[key]}
       }
 
-      return grant.header ? { ...headers, 'X-Hermes-Gateway-Ticket': grant.ticket } : headers
+      return grant.header ? { ...headers, 'X-Zeus-Gateway-Ticket': grant.ticket } : headers
     }
   }
 }
 
-// A profile home keeps the operator's mode (Python `home_mode_unsafe`: HERMES_HOME_MODE 0750/0701,
+// A profile home keeps the operator's mode (Python `home_mode_unsafe`: ZEUS_HOME_MODE 0750/0701,
 // a 0755 home): read/search bits grant nothing against the 0600 socket; only write by another user
 // could swap it. Group-write is safe only for a proven-private group without an ACL, which Node
 // cannot establish (no xattrs/NSS): a group-writable home returns true so the caller hands the
@@ -396,7 +396,7 @@ async function privateNode(file: string, kind: 'directory' | 'socket' | 'file' |
     // The socket, pointer and fallback directory are the gateway's to recreate; a home is not.
     throw new Error(kind === 'home'
       ? `Unsafe gateway control path: profile home ${quoted} is ${found}, not a directory: move it aside and recreate the profile`
-      : `Unsafe gateway control path: ${quoted} should be a ${kind} but is ${found}: remove it, then run hermes gateway restart`)
+      : `Unsafe gateway control path: ${quoted} should be a ${kind} but is ${found}: remove it, then run zeus gateway restart`)
   }
 
   if (node.uid !== uid) {
@@ -454,7 +454,7 @@ export function routedGatewayEndpoint(endpoint: GatewayEndpoint, urlOrProfile: s
   if (profile === ownName) {return endpoint}
 
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(profile)) {throw new Error('Invalid profile route')}
-  // The root home is the endpoint's own profile_id (Python resolved it); the raw launch HERMES_HOME
+  // The root home is the endpoint's own profile_id (Python resolved it); the raw launch ZEUS_HOME
   // may be a symlink, and a ticket for an unresolved sibling home fails 'Noncanonical' (B2-17).
   const root = path.basename(path.dirname(endpoint.profile_id)) === 'profiles' ? path.dirname(path.dirname(endpoint.profile_id)) : endpoint.profile_id
   const home = profile === 'default' ? root : path.join(root, 'profiles', profile)
@@ -517,7 +517,7 @@ export async function nativeGatewayHttpHeaders(descriptor: { gatewayEndpoint: Ga
 
   const purpose = nativeGrantPurpose(url, method)
 
-  return { 'X-Hermes-Gateway-Ticket': await mintLocalGatewayTicket(await routedTicketEndpoint(descriptor.gatewayEndpoint, nativeGrantRoute(url, body, method), launchHome, method), purpose) }
+  return { 'X-Zeus-Gateway-Ticket': await mintLocalGatewayTicket(await routedTicketEndpoint(descriptor.gatewayEndpoint, nativeGrantRoute(url, body, method), launchHome, method), purpose) }
 }
 
 // The installed runtime's own ticket client: every Windows mint (SID-validated pipe), and a POSIX
@@ -602,7 +602,7 @@ async function resolveControlSocket(home: string): Promise<string> {
     const target = (await fs.readFile(pointer, 'utf8')).trim()
     const hash = crypto.createHash('sha256').update(home).digest('hex').slice(0, 16)
 
-    if (!path.isAbsolute(target) || path.basename(path.dirname(target)) !== `hermes-gw-${hash}` || path.basename(target) !== 'control.sock') {throw new Error('Invalid gateway control pointer')}
+    if (!path.isAbsolute(target) || path.basename(path.dirname(target)) !== `zeus-gw-${hash}` || path.basename(target) !== 'control.sock') {throw new Error('Invalid gateway control pointer')}
     await privateNode(path.dirname(target), 'directory')
     await privateNode(target, 'socket')
 
@@ -629,7 +629,7 @@ export async function mintLocalGatewayTicket(endpoint: GatewayEndpoint, purpose:
   const home = endpoint.profile_id
   // A served secondary has no socket of its own: the default multiplexer's control socket
   // mints its tickets (bound to the secondary's profile_id). Same rule as
-  // hermes_cli.gateway_runtime.control_home_for.
+  // zeus_cli.gateway_runtime.control_home_for.
   const controlHome = endpoint.control_home || home
 
   const groupWritable: string[] = []

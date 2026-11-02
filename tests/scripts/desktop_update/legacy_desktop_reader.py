@@ -20,7 +20,7 @@ def legacy_read(home: Path) -> dict:
         pytest.skip("node is needed to run the shipped Desktop reader")
     code = (f"import fs from 'fs'; import {{ readLiveUpdateMarker }} from {json.dumps(LEGACY_READER.as_uri())}; "
             "const live = readLiveUpdateMarker(process.argv[1]); "
-            "console.log(JSON.stringify({ live, kept: fs.existsSync(process.argv[1] + '/.hermes-update-in-progress') }))")
+            "console.log(JSON.stringify({ live, kept: fs.existsSync(process.argv[1] + '/.zeus-update-in-progress') }))")
     out = subprocess.run([node, "--input-type=module", "-e", code, str(home)], capture_output=True, text=True,
                          encoding="utf-8", timeout=60, check=False)
     assert out.returncode == 0, out.stderr

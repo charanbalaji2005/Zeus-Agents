@@ -1,4 +1,4 @@
-import type { CronJob } from '@/types/hermes'
+import type { CronJob } from '@/types/zeus'
 
 // Ledger statuses of an attempt that has not finished (cron/executions.py). The job list only
 // reports the newest attempt, and the scheduler rewrites a dead owner's row on its next tick,
@@ -71,7 +71,7 @@ export function jobRunLive(job: RunFields, triggerStartedAt?: number): boolean {
   return !(claimedAt >= triggerStartedAt - TRIGGER_CLOCK_SLACK_MS)
 }
 
-/** The newest attempt's reason when it was stopped (Stop, `hermes cron cancel`, or removal). */
+/** The newest attempt's reason when it was stopped (Stop, `zeus cron cancel`, or removal). */
 export function jobLastCancelReason(job: Pick<CronJob, 'latest_execution'>): null | string {
   const execution = job.latest_execution
 

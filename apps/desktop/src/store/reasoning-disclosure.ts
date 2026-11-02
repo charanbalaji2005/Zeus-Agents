@@ -3,9 +3,9 @@ import { atom } from 'nanostores'
 import { persistStore } from '@/lib/persist-store'
 import { persistBoolean, storedBoolean } from '@/lib/storage'
 import { modeBound } from '@/store/interface-mode'
-import type { HermesConfig } from '@/types/hermes'
+import type { ZeusConfig } from '@/types/zeus'
 
-const REASONING_COLLAPSED_BY_DEFAULT_STORAGE_KEY = 'hermes.desktop.reasoning.collapsedByDefault'
+const REASONING_COLLAPSED_BY_DEFAULT_STORAGE_KEY = 'zeus.desktop.reasoning.collapsedByDefault'
 
 /** Desktop-local presentation preference; shared backend config must not be changed by a single window.
  *  Simple mode rests reasoning collapsed without touching this preference. */
@@ -39,6 +39,6 @@ export function setShowReasoningFromConfig(value: unknown): void {
 /** The `display.show_reasoning` a local surface uses: a local session's `/reasoning show|hide` saves the
  *  per-platform `display.platforms.cli` key (the gateway's key for local sessions), which wins over the
  *  global one, as the gateway and the other local clients resolve it. */
-export function localShowReasoning(display: HermesConfig['display']): boolean | string | undefined {
+export function localShowReasoning(display: ZeusConfig['display']): boolean | string | undefined {
   return display?.platforms?.cli?.show_reasoning ?? display?.show_reasoning
 }

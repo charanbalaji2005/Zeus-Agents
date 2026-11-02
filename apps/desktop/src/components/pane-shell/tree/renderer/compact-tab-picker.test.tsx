@@ -25,7 +25,7 @@ beforeEach(() => {
   stubResizeObserver()
   stubMenuDomApis()
   vi.stubGlobal('CSS', { escape: (value: string) => value })
-  globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
   vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
   ids.forEach((id, i) => disposers.push(registry.register({
     area: 'panes', id, title: `Session ${i + 1}`, data: { placement: 'main' },
@@ -42,7 +42,7 @@ afterEach(() => {
   $narrowViewport.set(false)
   $newSessionTabAction.set(null)
   $layoutEditMode.set(false)
-  delete globalThis.document.documentElement.dataset.hermesDesktopHost
+  delete globalThis.document.documentElement.dataset.zeusDesktopHost
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
@@ -107,7 +107,7 @@ it('reserves a separate touch row for phone tabs even when the titlebar reports 
   expect(height()).toBeLessThan(touchHeader)
   expect(container.querySelector('[data-slot="compact-tab-picker"]')).toBeNull()
 
-  delete globalThis.document.documentElement.dataset.hermesDesktopHost
+  delete globalThis.document.documentElement.dataset.zeusDesktopHost
   act(() => $narrowViewport.set(true))
   expect(height()).toBeLessThan(touchHeader)
   expect(container.querySelector('[data-slot="compact-tab-picker"]')).toBeNull()

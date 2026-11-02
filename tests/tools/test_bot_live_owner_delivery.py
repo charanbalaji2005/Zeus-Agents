@@ -103,8 +103,8 @@ def test_live_dm_bom_readers_preserve_pinned_intent(tmp_path, monkeypatch, inten
     """Main 61dc26cd7d9 on the canonical door: a BOM-prefixed DM payload and a BOM-prefixed pinned
     intent read back intact, a pinned intent is never replaced by a rewritten payload, and a
     damaged intent retains its evidence instead of retrying a transport."""
-    import hermes_cli.gateway_runtime as runtime
-    from hermes_state import SessionDB
+    import zeus_cli.gateway_runtime as runtime
+    from zeus_state import SessionDB
     from tools import bot_mode_dm
 
     db = SessionDB(db_path=tmp_path / "state.db")
@@ -197,8 +197,8 @@ def _ready(instance_id):
 
 
 def test_canonical_owner_is_the_authority_and_follows_compression(tmp_path, monkeypatch):
-    from hermes_state import SessionDB
-    import hermes_cli.gateway_runtime as runtime
+    from zeus_state import SessionDB
+    import zeus_cli.gateway_runtime as runtime
 
     from types import SimpleNamespace
 
@@ -313,7 +313,7 @@ def test_authority_delivery_dials_from_a_thread_with_a_running_loop(tmp_path, mo
     import asyncio
     from types import SimpleNamespace
 
-    from hermes_cli import gateway_runtime
+    from zeus_cli import gateway_runtime
 
     probed = []
 
@@ -359,7 +359,7 @@ def test_pre_dial_failure_is_a_definite_no_send_not_ambiguous(tmp_path, monkeypa
     dm_files = _spy_dm_files(bot_mode_dm, monkeypatch)
 
     payload = json.loads(bot_mode_dm._start_delivery(
-        ["hermes", "-p", "researcher"], "hello", "@researcher",
+        ["zeus", "-p", "researcher"], "hello", "@researcher",
         stdin_file=False, task_id=None, agent=None, profile_home=tmp_path))
 
     assert payload["reason"] == "runtime_unavailable"

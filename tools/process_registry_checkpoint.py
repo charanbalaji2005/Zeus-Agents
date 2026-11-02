@@ -32,7 +32,7 @@ class ProcessCheckpointMixin:
                     if s.host_start_time is None and s.pid_scope == "host" and s.pid:
                         s.host_start_time = self._safe_host_start_time(s.pid)
                     entry = {"session_id": s.id, **{f: getattr(s, f) for f in _CHECKPOINT_FIELDS}}
-                    # Redact inline credentials before persisting (~/.hermes/processes.json).
+                    # Redact inline credentials before persisting (~/.zeus/processes.json).
                     # Recovery uses command only for display (adoption re-validates the
                     # PID, never re-runs it), so masking is lossless.
                     # See #77484.
@@ -43,7 +43,7 @@ class ProcessCheckpointMixin:
                     tracked_ids = {item.get("session_id") for item in entries}
                     entries.extend(item for item in extra_entries if item.get("session_id") not in tracked_ids)
                 known = {*self._running, *self._finished}
-            from hermes_cli.active_sessions import _FileLock
+            from zeus_cli.active_sessions import _FileLock
             from utils import atomic_json_write
             path = _checkpoint_path()
             # Every interpreter of the profile (owner, each managed worker) rewrites this file from

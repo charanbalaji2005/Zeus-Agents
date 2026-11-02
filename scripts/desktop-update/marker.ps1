@@ -357,8 +357,8 @@ function Read-MarkerLocked($Ctx) {
 . (Join-Path $PSScriptRoot 'marker-claim.ps1')
 
 function Get-CheckoutLockPath {
-    # hermes_cli/update_lock.py::checkout_lock_path: <git common dir>/hermes-update.lock,
-    # else <root>/.hermes-update.lock.
+    # zeus_cli/update_lock.py::checkout_lock_path: <git common dir>/zeus-update.lock,
+    # else <root>/.zeus-update.lock.
     $root = Get-Variable -Name InstallRoot -ValueOnly -ErrorAction SilentlyContinue
     if (-not $root) { return $null }
     $dot = Join-Path $root '.git'
@@ -372,7 +372,7 @@ function Get-CheckoutLockPath {
             if (-not [System.IO.Path]::IsPathRooted($gitDir)) { $gitDir = Join-Path $root $gitDir }
         }
     }
-    if (-not $gitDir) { return (Join-Path $root '.hermes-update.lock') }
+    if (-not $gitDir) { return (Join-Path $root '.zeus-update.lock') }
     $commonFile = Join-Path $gitDir 'commondir'
     if ([System.IO.File]::Exists($commonFile)) {
         $common = (([System.IO.File]::ReadAllText($commonFile)).TrimStart([char]0xFEFF) -split "`n")[0].Trim()
@@ -380,7 +380,7 @@ function Get-CheckoutLockPath {
             $gitDir = if ([System.IO.Path]::IsPathRooted($common)) { $common } else { Join-Path $gitDir $common }
         }
     }
-    return (Join-Path $gitDir 'hermes-update.lock')
+    return (Join-Path $gitDir 'zeus-update.lock')
 }
 
 function Test-CheckoutLockHeld {

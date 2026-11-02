@@ -18,15 +18,15 @@ import {
   urlSlugTitleLabel
 } from './external-link'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-const initialHermesDesktop = desktopWindow.hermesDesktop
+const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+const initialZeusDesktop = desktopWindow.zeusDesktop
 
-function installDesktopBridge(partial: Partial<Window['hermesDesktop']> = {}) {
-  desktopWindow.hermesDesktop = {
+function installDesktopBridge(partial: Partial<Window['zeusDesktop']> = {}) {
+  desktopWindow.zeusDesktop = {
     fetchLinkTitle: vi.fn().mockResolvedValue(''),
     openExternal: vi.fn().mockResolvedValue(undefined),
     ...partial
-  } as unknown as Window['hermesDesktop']
+  } as unknown as Window['zeusDesktop']
 }
 
 const FORGEJO_URL = 'https://forgejo.home.example/homelab/homelab-ops/issues/101'
@@ -34,7 +34,7 @@ const FORGEJO_URL = 'https://forgejo.home.example/homelab/homelab-ops/issues/101
 function installTitleBridge(title: string) {
   const bridge = vi.fn().mockResolvedValue(title)
 
-  installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+  installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['zeusDesktop']['fetchLinkTitle'] })
 
   return bridge
 }
@@ -42,15 +42,15 @@ function installTitleBridge(title: string) {
 afterEach(() => {
   __resetLinkTitleCache()
   closeRightRail()
-  globalThis.document.documentElement.removeAttribute('data-hermes-desktop-host')
+  globalThis.document.documentElement.removeAttribute('data-zeus-desktop-host')
   setAlwaysExternalLinks(false)
   vi.restoreAllMocks()
   cleanup()
 
-  if (initialHermesDesktop) {
-    desktopWindow.hermesDesktop = initialHermesDesktop
+  if (initialZeusDesktop) {
+    desktopWindow.zeusDesktop = initialZeusDesktop
   } else {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
   }
 })
 
@@ -91,7 +91,7 @@ describe('external link helpers', () => {
 
   it('deduplicates in-flight title fetches and caches results', async () => {
     const bridge = vi.fn().mockResolvedValue('El Yunque Tour Water Slide, Rope Swing & Pickup')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['zeusDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.expedia.com/things-to-do/puerto-rico-el-yunque-rainforest-adventure-with-transport.a46272756.activity-details'
@@ -110,7 +110,7 @@ describe('external link helpers', () => {
 
   it('shares cache across protocol/www URL variants', async () => {
     const bridge = vi.fn().mockResolvedValue('Shared Canonical Title')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['zeusDesktop']['fetchLinkTitle'] })
 
     const first = 'https://www.getyourguide.com/san-juan-puerto-rico-l355/sunset-tours-tc306/'
     const second = 'http://getyourguide.com/san-juan-puerto-rico-l355/sunset-tours-tc306/'
@@ -126,7 +126,7 @@ describe('external link helpers', () => {
   // ⌘/Ctrl-click escape hatch. The connection mode does not change that.
   it('opens an Electron web link in-app', async () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
 
     render(<ExternalLink href="https://example.com/path/to/resource">Example link</ExternalLink>)
 
@@ -139,7 +139,7 @@ describe('external link helpers', () => {
   it.each([false, true])(
     'opens a Webapp web link synchronously without adding a preview when always external is %s',
     alwaysExternal => {
-      globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+      globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
       setAlwaysExternalLinks(alwaysExternal)
       const openExternal = vi.fn().mockResolvedValue(undefined)
       installDesktopBridge({ openExternal })
@@ -157,7 +157,7 @@ describe('external link helpers', () => {
   // ⌘ on macOS, Ctrl elsewhere. The suite runs as non-mac.
   it('escapes to the OS browser on the platform open-elsewhere modifier', () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
 
     render(<ExternalLink href="https://example.com/path/to/resource">Example link</ExternalLink>)
 
@@ -169,7 +169,7 @@ describe('external link helpers', () => {
 
   it('sends an Electron plain click to the OS browser when always external is on', () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
     setAlwaysExternalLinks(true)
 
     render(<ExternalLink href="https://example.com/path/to/resource">Example link</ExternalLink>)
@@ -200,7 +200,7 @@ describe('external link helpers', () => {
 
     try {
       const openExternal = vi.fn().mockResolvedValue(undefined)
-      installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+      installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
 
       render(<ExternalLink href="https://accounts.google.com/o/oauth2/auth">Sign in</ExternalLink>)
 
@@ -218,7 +218,7 @@ describe('external link helpers', () => {
   // none of that session and is the wrong destination even for web URLs.
   it('sends a setup-step link straight to the OS browser', () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
 
     render(<MarkdownLinkText text="Enable the [Docs API](https://console.cloud.google.com/apis/library) first." />)
 
@@ -231,7 +231,7 @@ describe('external link helpers', () => {
   // A webview can't do anything useful with these, so they always hand off.
   it('hands a non-web scheme to the OS', () => {
     const openExternal = vi.fn().mockResolvedValue(undefined)
-    installDesktopBridge({ openExternal: openExternal as unknown as Window['hermesDesktop']['openExternal'] })
+    installDesktopBridge({ openExternal: openExternal as unknown as Window['zeusDesktop']['openExternal'] })
 
     render(<ExternalLink href="mailto:hi@example.com">Mail</ExternalLink>)
 
@@ -242,7 +242,7 @@ describe('external link helpers', () => {
 
   it('renders pretty links with fetched titles and no host suffix', async () => {
     const bridge = vi.fn().mockResolvedValue('From Fajardo: Full-Day Culebra Islands Catamaran Tour')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['zeusDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.getyourguide.com/culebra-island-l145468/from-fajardo-full-day-cordillera-islands-catamaran-tour-t19894/'
@@ -260,7 +260,7 @@ describe('external link helpers', () => {
 
   it('ignores error-like fetched titles and falls back to slug label', async () => {
     const bridge = vi.fn().mockResolvedValue('GetYourGuide – Error')
-    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['hermesDesktop']['fetchLinkTitle'] })
+    installDesktopBridge({ fetchLinkTitle: bridge as unknown as Window['zeusDesktop']['fetchLinkTitle'] })
 
     const url =
       'https://www.getyourguide.com/culebra-island-l145468/from-fajardo-full-day-cordillera-islands-catamaran-tour-t19894/'

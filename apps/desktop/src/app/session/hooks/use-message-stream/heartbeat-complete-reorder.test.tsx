@@ -1,4 +1,4 @@
-import type { GatewayEventName } from '@hermes/shared'
+import type { GatewayEventName } from '@zeus/shared'
 import { QueryClient } from '@tanstack/react-query'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { useRef } from 'react'
@@ -48,7 +48,7 @@ function mount() {
       updateSessionState: cache.updateSessionState,
       queryClient,
       hydrateFromStoredSession: hydrate,
-      refreshHermesConfig: noop,
+      refreshZeusConfig: noop,
       refreshSessions: noop
     })
 

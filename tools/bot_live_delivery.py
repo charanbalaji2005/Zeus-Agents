@@ -13,13 +13,13 @@ import re
 import time
 import uuid
 from contextlib import ExitStack, contextmanager
-from hermes_dir_acl import make_user_dir, unusable_dir_remedy
+from zeus_dir_acl import make_user_dir, unusable_dir_remedy
 
 from utils import atomic_json_write, atomic_write_text, fsync_directory
 from pathlib import Path
 from typing import Any, Callable
 
-from hermes_cli.active_sessions import _FileLock
+from zeus_cli.active_sessions import _FileLock
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ _TERMINAL = frozenset({"settled", "failed", "cancelled", "ambiguous"})
 
 def _bot_chat_tip(home: Path) -> str | None:
     """Current Bot Chat tip id, or None when the profile has no store or no Bot Chat yet."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     if not (home / 'state.db').is_file():
         return None
@@ -49,7 +49,7 @@ def find_canonical_live_owner(profile_home: Path | str) -> dict[str, Any] | None
     ``session_id`` is the current Bot Chat tip, or ``''`` when the profile has none yet: the
     authority's deliver door creates it on first delivery (main's ``--create-if-missing``),
     so a missing chat is not a refusal. None only when the profile has no store at all."""
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint
+    from zeus_cli.gateway_runtime import discover_gateway_endpoint
 
     home = Path(profile_home).resolve()
     discovery = discover_gateway_endpoint(home, timeout=5)
@@ -82,8 +82,8 @@ def authority_settle(home, params):
 
 def _authority_rpc(home, method, params):
     import asyncio
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint
-    from hermes_cli.gateway_client import GATEWAY_WS_PROTOCOL, GatewayClient, _session_ticket, gateway_ws_target
+    from zeus_cli.gateway_runtime import discover_gateway_endpoint
+    from zeus_cli.gateway_client import GATEWAY_WS_PROTOCOL, GatewayClient, _session_ticket, gateway_ws_target
     from websockets.asyncio.client import connect
 
     home = Path(home).resolve()
@@ -471,7 +471,7 @@ def await_delivery(
     """Poll a receipt until the owner settles it, ``timeout`` lapses, or ``should_stop`` says so.
 
     Every transport that hands a turn to a live Bot Chat owner (local ``message_agent``, the
-    Desktop relay, ``hermes peer dm`` and ``hermes peer run``) waits on the same receipt; keeping
+    Desktop relay, ``zeus peer dm`` and ``zeus peer run``) waits on the same receipt; keeping
     the loop here is what stops the lanes drifting (one lane returned a receipt sentence instead
     of the reply, two never waited at all). Returns the last record read — still pending when the
     budget lapsed, None when the receipt was never readable. Polls the local receipt file only, so

@@ -2,10 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 
 const getGlobalModelOptions = vi.fn()
-vi.mock('@/hermes', async () => ({
+vi.mock('@/zeus', async () => ({
   ...(await vi.importActual('@/api/client')),
   getGlobalModelOptions: (...args: unknown[]) => getGlobalModelOptions(...args)
 }))

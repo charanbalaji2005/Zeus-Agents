@@ -5,7 +5,7 @@ Every other Docker backend test mocks ``subprocess`` or the docker CLI. These ru
 a broken ``docker run``/``docker exec`` argv, snapshot bootstrap, cwd tracking or
 env forwarding fails here instead of on a user's machine.
 
-Armed by ``HERMES_TEST_DOCKER_IMAGE`` (a small public image with bash, e.g.
+Armed by ``ZEUS_TEST_DOCKER_IMAGE`` (a small public image with bash, e.g.
 ``debian:13-slim``); the remote-backends CI lane sets it. Skipped otherwise. Once
 armed a missing daemon FAILS rather than skips: a lane that reports green over
 zero coverage is the state this file exists to end.
@@ -19,9 +19,9 @@ import uuid
 
 import pytest
 
-_IMAGE = os.getenv("HERMES_TEST_DOCKER_IMAGE", "")
+_IMAGE = os.getenv("ZEUS_TEST_DOCKER_IMAGE", "")
 
-pytestmark = pytest.mark.skipif(not _IMAGE, reason="HERMES_TEST_DOCKER_IMAGE not set")
+pytestmark = pytest.mark.skipif(not _IMAGE, reason="ZEUS_TEST_DOCKER_IMAGE not set")
 
 
 @pytest.fixture
@@ -31,14 +31,14 @@ def docker_task(monkeypatch):
     monkeypatch.setenv("TERMINAL_DOCKER_IMAGE", _IMAGE)
     monkeypatch.setenv("TERMINAL_DOCKER_IMAGE_PINNED", "1")
     # Remove the container at cleanup instead of leaving it for cross-process reuse,
-    # and never sweep the host's other hermes containers.
+    # and never sweep the host's other zeus containers.
     monkeypatch.setenv("TERMINAL_DOCKER_PERSIST_ACROSS_PROCESSES", "false")
     monkeypatch.setenv("TERMINAL_DOCKER_ORPHAN_REAPER", "false")
     monkeypatch.setenv("TERMINAL_CONTAINER_DISK", "0")
-    monkeypatch.setenv("TERMINAL_DOCKER_ENV", json.dumps({"HERMES_RB_STATIC": "from-config"}))
-    monkeypatch.setenv("TERMINAL_DOCKER_FORWARD_ENV", json.dumps(["HERMES_RB_FORWARDED"]))
-    monkeypatch.setenv("HERMES_RB_FORWARDED", "from-host")
-    monkeypatch.setenv("HERMES_RB_NOT_FORWARDED", "must-stay-on-host")
+    monkeypatch.setenv("TERMINAL_DOCKER_ENV", json.dumps({"ZEUS_RB_STATIC": "from-config"}))
+    monkeypatch.setenv("TERMINAL_DOCKER_FORWARD_ENV", json.dumps(["ZEUS_RB_FORWARDED"]))
+    monkeypatch.setenv("ZEUS_RB_FORWARDED", "from-host")
+    monkeypatch.setenv("ZEUS_RB_NOT_FORWARDED", "must-stay-on-host")
     task_id = f"rb-docker-{uuid.uuid4().hex[:8]}"
     yield task_id
     _teardown(task_id)
@@ -107,14 +107,14 @@ def test_cwd_persists_and_workdir_does_not(docker_task):
 
 
 def test_exported_env_persists_between_commands(docker_task):
-    _run("export HERMES_RB_EXPORTED='kept value'", docker_task)
-    assert _run('echo "$HERMES_RB_EXPORTED"', docker_task)["output"].strip() == "kept value"
-    _run("unset HERMES_RB_EXPORTED", docker_task)
-    assert _run('echo "${HERMES_RB_EXPORTED-gone}"', docker_task)["output"].strip() == "gone"
+    _run("export ZEUS_RB_EXPORTED='kept value'", docker_task)
+    assert _run('echo "$ZEUS_RB_EXPORTED"', docker_task)["output"].strip() == "kept value"
+    _run("unset ZEUS_RB_EXPORTED", docker_task)
+    assert _run('echo "${ZEUS_RB_EXPORTED-gone}"', docker_task)["output"].strip() == "gone"
 
 
 def test_configured_and_forwarded_env_reach_the_container_and_nothing_else(docker_task):
-    r = _run('echo "s=$HERMES_RB_STATIC f=$HERMES_RB_FORWARDED n=${HERMES_RB_NOT_FORWARDED:-unset}"',
+    r = _run('echo "s=$ZEUS_RB_STATIC f=$ZEUS_RB_FORWARDED n=${ZEUS_RB_NOT_FORWARDED:-unset}"',
              docker_task)
     assert r["output"].strip() == "s=from-config f=from-host n=unset"
 

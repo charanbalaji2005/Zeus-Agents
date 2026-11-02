@@ -28,7 +28,7 @@ vi.mock(import('@/store/terminal-backend-warning'), () => ({
   warnIfTerminalBackendUnavailable: vi.fn(async () => false)
 }))
 
-type WebappWindow = Window & { __HERMES_DASHBOARD_PROFILE__?: string }
+type WebappWindow = Window & { __ZEUS_DASHBOARD_PROFILE__?: string }
 
 function Harness() {
   useGatewayBoot({
@@ -37,7 +37,7 @@ function Harness() {
     handleServerRequest: () => false,
     onConnectionReady: () => undefined,
     onGatewayReady: () => undefined,
-    refreshHermesConfig: async () => undefined,
+    refreshZeusConfig: async () => undefined,
     refreshSessions: async () => undefined
   })
 
@@ -68,7 +68,7 @@ async function flush() {
 
 /** Boot a Webapp tab at `url` against a gateway launched as `launch`; resolves once boot is done. */
 async function bootWebappTab(url: string, launch = 'default') {
-  ;(window as WebappWindow).__HERMES_DASHBOARD_PROFILE__ = launch
+  ;(window as WebappWindow).__ZEUS_DASHBOARD_PROFILE__ = launch
   window.history.replaceState(null, '', url)
   seedWebappSession('served-token')
   expect(installBrowserDesktopBridge()).toBe(true)
@@ -146,9 +146,9 @@ afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
   ;(globalThis as { WebSocket: unknown }).WebSocket = originalWebSocket
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  delete (window as WebappWindow).__HERMES_DASHBOARD_PROFILE__
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  delete (window as WebappWindow).__ZEUS_DASHBOARD_PROFILE__
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   clearWebappSession()
   window.localStorage.clear()
   window.history.replaceState(null, '', '/#/')
@@ -184,7 +184,7 @@ it('a bare tab on a gateway launched as a named profile names default when it as
 })
 
 it('a bare tab opens on the saved default the same way, and records it in its address as a switch does', async () => {
-  window.localStorage.setItem('hermes:webapp:default-profile:/', JSON.stringify({ connectionId: 'local', profile: 'research' }))
+  window.localStorage.setItem('zeus:webapp:default-profile:/', JSON.stringify({ connectionId: 'local', profile: 'research' }))
   await bootWebappTab('/#/')
 
   expect($activeGatewayProfile.get()).toBe('research')
@@ -232,7 +232,7 @@ it('a refused pick is final: the store does not redial the profile the gateway d
   installed = ['default', 'research', 'solo']
   served = ['default', 'research']
   await bootWebappTab('/?profile=research#/')
-  const dials = vi.spyOn(window.hermesDesktop!, 'getGatewayWsUrl')
+  const dials = vi.spyOn(window.zeusDesktop!, 'getGatewayWsUrl')
 
   await expect(ensureGatewayProfile('solo')).rejects.toThrow('This gateway does not serve profile "solo"')
   // Well past the redial ladder's ceiling: every scheduled redial would have run by now.

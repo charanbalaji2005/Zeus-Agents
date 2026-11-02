@@ -6,13 +6,13 @@ from types import SimpleNamespace
 import pytest
 
 from gateway import session_kanban
-from hermes_cli import kanban_db as kb
-from hermes_cli.kanban_db_connect import connect_closing
+from zeus_cli import kanban_db as kb
+from zeus_cli.kanban_db_connect import connect_closing
 
 
 def _bound_claim(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
-    monkeypatch.delenv("HERMES_KANBAN_TASK", raising=False)
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
+    monkeypatch.delenv("ZEUS_KANBAN_TASK", raising=False)
     kb.init_db()
     path = kb.kanban_db_path()
     with connect_closing(path) as conn:
@@ -54,8 +54,8 @@ def test_managed_result_persists_exact_worker_exit(tmp_path, monkeypatch, result
 
 
 def _credential_failures():
-    from hermes_cli.auth import AuthError
-    from hermes_cli.auth_constants import CODEX_RATE_LIMITED_CODE
+    from zeus_cli.auth import AuthError
+    from zeus_cli.auth_constants import CODEX_RATE_LIMITED_CODE
     wrapped = RuntimeError("agent init failed")
     wrapped.__cause__ = AuthError("refresh revoked", provider="nous", relogin_required=True)
     return [

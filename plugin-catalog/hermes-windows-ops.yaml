@@ -3,7 +3,7 @@ repo: https://github.com/Yicheng-Mark/hermes-windows-plugins
 sha: 5bad3fb2baf04ce6befecfefce6d14f4c9c98934
 subdir: windows-ops
 description: >-
-  Windows and WSL triage skills for Hermes: processes that survive a quit
+  Windows and WSL triage skills for Zeus: processes that survive a quit
   (orphaned stdio MCP trees, lingering python/uv/node children), WSL-to-Windows
   interop where an argument reaches cmd.exe as shell syntax, config and encoding
   traps (UTF-8 BOM, legacy console code pages), and long-path or reserved-name
@@ -15,7 +15,7 @@ description: >-
 maintainer: Yicheng-Mark
 tier: community
 category: tools
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 docs_url: https://github.com/Yicheng-Mark/hermes-windows-plugins/tree/main/windows-ops
 version: "0.1.0"
 platforms:

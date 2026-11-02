@@ -5,16 +5,16 @@ subdir: memory-rewind
 description: >-
   Automatic version history for the built-in memory (MEMORY.md, USER.md), SOUL.md and skills/
   (including curator-archived skills): browse, diff and restore any past version with
-  `hermes memory-rewind`, or view it from any chat with the read-only `/memory-history`.
+  `zeus memory-rewind`, or view it from any chat with the read-only `/memory-history`.
   Works alongside the built-in memory; not a memory provider.
   Disclosure — runs the local git binary (isolated from the user's git config, hooks and
-  signing) to keep a bare repository in $HERMES_HOME/plugin-data/memory-rewind/; reads only the
+  signing) to keep a bare repository in $ZEUS_HOME/plugin-data/memory-rewind/; reads only the
   tracked files (never .env, auth.json, databases or skills/.hub/); rewrites tracked files only
   when the user runs `restore`; no network.
 maintainer: AhmetArif0
 tier: community
 category: general
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/AhmetArif0/hermes-memory-rewind
 version: "1.3.2"
 image: https://raw.githubusercontent.com/AhmetArif0/hermes-memory-rewind/e5b139b1059a47df34002e76a7bfd84bc60d9f35/docs/card.png

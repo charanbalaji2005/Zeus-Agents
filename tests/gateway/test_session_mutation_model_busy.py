@@ -15,8 +15,8 @@ def _owner(tmp_path, monkeypatch, handle):
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
     from gateway.session_local import create_local_session
-    from hermes_cli import model_switch
-    import hermes_state_runtime as rt
+    from zeus_cli import model_switch
+    import zeus_state_runtime as rt
     monkeypatch.setattr(run, '_load_gateway_config', lambda *a: {})
     monkeypatch.setattr(model_switch, 'switch_model', lambda **k: model_switch.ModelSwitchResult(
         success=True, new_model=k['raw_input'], target_provider='custom', base_url='http://127.0.0.1:9/v1'))
@@ -45,7 +45,7 @@ def _running_model(authority, ref):
 @pytest.mark.asyncio
 async def test_model_pick_during_a_running_turn_applies_to_the_next_turn(tmp_path, monkeypatch):
     from gateway.session_contract import Submission
-    import hermes_state_runtime as rt
+    import zeus_state_runtime as rt
     started, release = threading.Event(), asyncio.Event()
     seen = []
     state = {}
@@ -118,7 +118,7 @@ async def _mutate(owner, db, ref, rid, model, snap=None, *, call=1):
 
 async def _run_turn(authority, owner, db, ref, name):
     from gateway.session_contract import Submission
-    import hermes_state_runtime as rt
+    import zeus_state_runtime as rt
     turn = await authority.submit(owner.actor, Submission(name, ref, {'text': name}, 'queue'))
     await async_wait_until(
         lambda: rt.get_session_admission(db, admission_id=turn.admission_id)['status'] == 'terminal',
@@ -236,7 +236,7 @@ async def test_pending_pick_writes_do_not_stall_the_event_loop(tmp_path, monkeyp
 async def test_a_guarded_deferred_pick_asks_for_confirmation_instead_of_being_dropped(tmp_path, monkeypatch):
     from agent.usage_anchor import USAGE_ANCHOR_MODEL_CONFIG_KEY, capture_usage_anchor
     from gateway.session_contract import Submission
-    from hermes_cli import model_selection_guards
+    from zeus_cli import model_selection_guards
     monkeypatch.setattr(model_selection_guards, '_context_cache_threshold', lambda: 1000)
     started, release = threading.Event(), asyncio.Event()
     seen, events = [], []
@@ -293,7 +293,7 @@ async def test_a_guarded_deferred_pick_asks_for_confirmation_instead_of_being_dr
 @pytest.mark.asyncio
 async def test_a_refused_deferred_pick_names_the_reason_and_the_committed_model(tmp_path, monkeypatch):
     from gateway.session_contract import Submission
-    from hermes_cli import model_switch
+    from zeus_cli import model_switch
     started, release = threading.Event(), asyncio.Event()
     events = []
 
@@ -332,8 +332,8 @@ async def test_a_refused_deferred_pick_names_the_reason_and_the_committed_model(
 async def test_a_deferred_pick_that_raises_is_refused_and_the_queue_keeps_draining(tmp_path, monkeypatch, error):
     from gateway.session_contract import Submission
     from gateway.session_deferred_pick import _PREFIX
-    from hermes_cli import model_switch
-    import hermes_state_runtime as rt
+    from zeus_cli import model_switch
+    import zeus_state_runtime as rt
     started, release = threading.Event(), asyncio.Event()
     events, seen, state, raising = [], [], {}, threading.Event()
 
@@ -473,7 +473,7 @@ async def test_a_reasoning_command_raced_by_another_mutation_is_not_refused(tmp_
     next boundary like a busy session."""
     from gateway import session_mutations
     from gateway.session_policy import policy_for_source
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
 
     async def handle(event):
         return 'ok'

@@ -62,7 +62,7 @@ def test_concurrent_writers_lose_no_handoff_log_lines(tmp_path: Path) -> None:
     # The self-test touches no update state: no marker claim (which its exit would never release).
     home = tmp_path / "home"
     home.mkdir()
-    env["HERMES_HOME"] = os.fspath(home)
+    env["ZEUS_HOME"] = os.fspath(home)
 
     argv = [
         os.fspath(powershell),
@@ -95,4 +95,4 @@ def test_concurrent_writers_lose_no_handoff_log_lines(tmp_path: Path) -> None:
     if "LOG-CONCURRENCY SELF-TEST: PASS" not in result.stdout or result.returncode != 0:
         pytest.fail(diagnosis, pytrace=False)
     left = sorted(p.name for p in home.iterdir() if p.name != "logs")
-    assert not left, f"the self-test left update state in HERMES_HOME: {left}"
+    assert not left, f"the self-test left update state in ZEUS_HOME: {left}"

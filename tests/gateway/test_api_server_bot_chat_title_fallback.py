@@ -2,7 +2,7 @@
 
 ``GET /api/sessions?title=Bot+Chat`` lists a reset lineage as its latest, untitled segment, so a
 fallback returns the titled root. It must not resurrect a deliberately archived Bot Chat into
-``hermes peer dm`` routing, nor answer a ``source=`` query the row does not match."""
+``zeus peer dm`` routing, nor answer a ``source=`` query the row does not match."""
 import pytest
 
 from gateway.platforms import api_server_bot_chat as bot_chat
@@ -19,7 +19,7 @@ class FakeDB:
 
 @pytest.fixture(autouse=True)
 def reset_lineage(monkeypatch):
-    monkeypatch.setattr('hermes_state_local.local_receipt', lambda db, sid: {'lineage': [sid, 'fresh']})
+    monkeypatch.setattr('zeus_state_local.local_receipt', lambda db, sid: {'lineage': [sid, 'fresh']})
 
 
 def test_the_reset_bot_chat_is_found():

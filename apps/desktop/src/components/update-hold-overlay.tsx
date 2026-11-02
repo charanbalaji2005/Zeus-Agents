@@ -52,7 +52,7 @@ export function UpdateHoldOverlay() {
   const recheck = async () => {
     setRefused(false)
     setBusy('recheck')
-    const result = await window.hermesDesktop?.updateHold.recheck().catch(() => null)
+    const result = await window.zeusDesktop?.updateHold.recheck().catch(() => null)
 
     if (!result?.ok) {
       setBusy(null)
@@ -61,13 +61,13 @@ export function UpdateHoldOverlay() {
 
   const quit = async () => {
     setBusy('quit')
-    await window.hermesDesktop?.updateHold.quit().catch(() => undefined)
+    await window.zeusDesktop?.updateHold.quit().catch(() => undefined)
   }
 
   const startAnyway = async () => {
     setBusy('start')
 
-    const result = await window.hermesDesktop?.updateHold
+    const result = await window.zeusDesktop?.updateHold
       .startAnyway({ holdId: hold.holdId, confirmed: true })
       .catch(() => null)
 
@@ -78,7 +78,7 @@ export function UpdateHoldOverlay() {
     }
   }
 
-  const openLogs = () => void window.hermesDesktop?.revealLogs().catch(() => undefined)
+  const openLogs = () => void window.zeusDesktop?.revealLogs().catch(() => undefined)
 
   return (
     <div

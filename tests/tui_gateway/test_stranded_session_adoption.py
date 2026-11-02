@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 STRANDED_ID = "20260823_043331_c93770"
 
@@ -151,16 +151,16 @@ from unittest.mock import MagicMock, patch
 def gateway(tmp_path, monkeypatch):
     from pathlib import Path as _P
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
     monkeypatch.setattr(_P, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
 
     with patch.dict(
         "sys.modules",
         {
-            "hermes_cli.env_loader": MagicMock(),
-            "hermes_cli.banner": MagicMock(),
+            "zeus_cli.env_loader": MagicMock(),
+            "zeus_cli.banner": MagicMock(),
         },
     ):
         mod = importlib.import_module("tui_gateway.server")
@@ -173,9 +173,9 @@ def gateway(tmp_path, monkeypatch):
     profile_home = home / "profiles" / "developer"
     profile_home.mkdir(parents=True)
 
-    # session.resume resolves the profile via hermes_cli.profiles
+    # session.resume resolves the profile via zeus_cli.profiles
     monkeypatch.setattr(
-        "hermes_cli.profiles.get_profile_dir", lambda name: str(profile_home)
+        "zeus_cli.profiles.get_profile_dir", lambda name: str(profile_home)
     )
 
     yield mod, default_db, profile_home

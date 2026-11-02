@@ -1,6 +1,6 @@
-import { GatewayReauthRequiredError } from '@hermes/shared'
+import { GatewayReauthRequiredError } from '@zeus/shared'
 
-export const WEBAPP_LAUNCH_REQUIRED = 'Run hermes webapp on this computer to sign this browser in.'
+export const WEBAPP_LAUNCH_REQUIRED = 'Run zeus webapp on this computer to sign this browser in.'
 
 /**
  * This tab holds no credential the gateway accepts, and only a new launch link signs it in. The
@@ -12,7 +12,7 @@ export function webappSignInRequired(): GatewayReauthRequiredError {
 
 /** Where this tab keeps its launch-link grant for the Webapp at ``basePath`` on this origin. */
 export function webappSessionKey(basePath: string): string {
-  return `hermes.webapp.session.v1:${JSON.stringify([window.location.origin, basePath])}`
+  return `zeus.webapp.session.v1:${JSON.stringify([window.location.origin, basePath])}`
 }
 
 /**

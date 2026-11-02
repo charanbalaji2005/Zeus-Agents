@@ -11,7 +11,7 @@ import { hasOpenServerRequest, resetServerRequestsForTests } from '@/store/serve
 import { setActiveSessionId, setSelectedStoredSessionId, setSessions } from '@/store/session'
 import { $sessionStates, $sessionTiles, dropSessionState, publishSessionState } from '@/store/session-states'
 import { $toursEnabled } from '@/store/tours'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { handleServerRequest, previewSessionRoute, requestNamesActiveSession } from './server-requests'
 import type { ServerRequestContext } from './server-requests'
@@ -78,17 +78,17 @@ describe('connection request routing', () => {
 
 describe('approval request routing', () => {
   const notify = vi.fn().mockResolvedValue(true)
-  const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+  const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
 
   beforeEach(() => {
     notify.mockClear()
-    desktopWindow.hermesDesktop = { notify } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { notify } as unknown as Window['zeusDesktop']
     setSessions([{ id: 'session-a', title: 'Fix the flaky test' } as SessionInfo])
     setActiveSessionId('session-b')
   })
 
   afterEach(() => {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
     setSessions([])
     setActiveSessionId(null)
   })
@@ -175,7 +175,7 @@ describe('preview action request routing', () => {
   it('refuses window.read in a browser tab with an error the tool relays', async () => {
     // A browser tab cannot enumerate OS windows: answer {error, platform} at
     // once rather than an empty value the tool reports as "did not answer".
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       const { respond } = deliver('window.read', {}, null)
@@ -187,7 +187,7 @@ describe('preview action request routing', () => {
         platform: 'browser'
       })
     } finally {
-      delete document.documentElement.dataset.hermesDesktopHost
+      delete document.documentElement.dataset.zeusDesktopHost
     }
   })
 
@@ -418,7 +418,7 @@ describe('preview pop-out forwarding', () => {
   })
 
   it('reads locally in a browser tab, which has no pop-out to wait on', async () => {
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       const { respond } = deliver('preview.read', { session_id: 'session-a' }, 'session-a')
@@ -426,7 +426,7 @@ describe('preview pop-out forwarding', () => {
       await vi.waitFor(() => expect(respond).toHaveBeenCalledTimes(1))
       expect(requestPopoutPreviewRead).not.toHaveBeenCalled()
     } finally {
-      delete document.documentElement.dataset.hermesDesktopHost
+      delete document.documentElement.dataset.zeusDesktopHost
     }
   })
 })

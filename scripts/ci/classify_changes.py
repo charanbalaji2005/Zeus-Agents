@@ -112,8 +112,8 @@ _PY_SKIP = ("docs/", "website/") + _FRONTEND
 # Python lane — otherwise dropping a redirect URI goes green here and breaks
 # every CIMD login on main.
 # website/docs/ and website/scripts/ are asserted about the same way. The docs
-# tree generates llms.txt — the index every LLM (Hermes included, via the
-# hermes-agent skill) reads to learn what Hermes can do — and
+# tree generates llms.txt — the index every LLM (Zeus included, via the
+# zeus-agents skill) reads to learn what Zeus can do — and
 # tests/website/test_generate_llms_txt.py holds every page to appearing in it.
 # Skipping Python on a docs-only PR is how the index drifted to 53% coverage.
 _PY_RELEVANT_SITE = (
@@ -129,7 +129,7 @@ _PY_RELEVANT_CONTRACT_FILES = {
     # tests/tui_gateway/contracts/test_generated.py (rendered from tui_gateway/contracts)
     "apps/shared/src/gateway-contract.generated.ts",
     "apps/shared/src/gateway-contract.openrpc.json",
-    # tests/hermes_cli/test_desktop_slash_registry.py
+    # tests/zeus_cli/test_desktop_slash_registry.py
     "apps/desktop/src/lib/desktop-slash-registry.json",
     # tests/tui_gateway/test_show_reasoning_display_gate.py (card-tool names vs the gateway lifecycle set)
     "apps/desktop/src/lib/tool-render-class.ts",
@@ -150,7 +150,7 @@ _SCAN_FILES = {"setup.cfg", "pyproject.toml"}
 # (the .rs/Cargo files are the ``rust`` lane's job). Changes here get the
 # bootstrap-installer.yml lane — a real sandboxed install + stamp check.
 _BOOTSTRAP_PATHS = ("apps/bootstrap-installer/",)
-_BOOTSTRAP_FILES = {"scripts/install.sh", "setup-hermes.sh"}
+_BOOTSTRAP_FILES = {"scripts/install.sh", "setup-zeus.sh"}
 # Windows desktop-update hand-off (scripts/desktop-update/windows.ps1 + the
 # Electron side that launches it) and the pytest files that spawn it.
 # tests/_fixtures/ holds the conftest's platform gating, so it re-arms the lane too.
@@ -169,8 +169,8 @@ _DESKTOP_UPDATER_FILES = {
     "apps/desktop/electron/remote-update-marker-programs.ts",
     "apps/desktop/electron/remote-update-marker-programs.test.ts",
     # Python the script runs: the post-update verify and the staged app swap.
-    "hermes_cli/desktop_update_verify.py",
-    "hermes_cli/main_desktop.py",
+    "zeus_cli/desktop_update_verify.py",
+    "zeus_cli/main_desktop.py",
     "tests/conftest.py",
     "pyproject.toml",
 }
@@ -184,7 +184,7 @@ _DESKTOP_UPDATER_FILES = {
 _SHARED_FIXTURE_CONSUMERS: dict[str, tuple[str, ...]] = {
     # A7 rule 7: the update-marker parse / judge / release corpus.
     "tests/fixtures/update_marker_corpus.json": (
-        "tests/hermes_cli/test_update_marker_corpus.py",  # Python: update_lock
+        "tests/zeus_cli/test_update_marker_corpus.py",  # Python: update_lock
         "apps/bootstrap-installer/src-tauri/src/marker_tests.rs",  # Rust: cargo test
         "apps/desktop/electron/update-marker-corpus.test.ts",  # Electron: vitest
         "tests/scripts/desktop_update/test_desktop_update_posix_marker_corpus.py",  # marker.sh
@@ -194,7 +194,7 @@ _SHARED_FIXTURE_CONSUMERS: dict[str, tuple[str, ...]] = {
     ),
     # Which halves a plugin folder ships: the gateway's and native Desktop's inspectors.
     "tests/fixtures/plugin_component_detection.json": (
-        "tests/hermes_cli/test_plugins_cmd_inspect.py",  # Python: detect_components
+        "tests/zeus_cli/test_plugins_cmd_inspect.py",  # Python: detect_components
         "apps/desktop/electron/desktop-plugin-install.test.ts",  # Electron: detectPluginComponents
     ),
 }
@@ -203,7 +203,7 @@ _SHARED_FIXTURE_CONSUMERS: dict[str, tuple[str, ...]] = {
 # electron/update-* starts the Desktop update E2E, which never reads the corpus).
 _FIXTURE_CONSUMER_LANES = ("python", "rust", "frontend", "desktop_updater")
 
-# Rust crates — currently just the Tauri bootstrap installer (Hermes-Setup).
+# Rust crates — currently just the Tauri bootstrap installer (Zeus-Setup).
 # These live under ``apps/``, so before this lane existed a ``.rs`` edit matched
 # ``frontend`` and nothing more: the TypeScript matrix built, cargo never ran,
 # and the crate's unit tests had never executed in CI at all.
@@ -254,43 +254,43 @@ _DESKTOP_E2E_SHARED = (
 # The Tauri updater (update.rs, its marker claim marker.rs, the paths.rs both resolve) is
 # compiled and tested by ``cargo test`` alone (the ``rust`` lane, via ``.rs``): no slow lane
 # builds the bootstrap installer, so none of the three starts one.
-# What `hermes update` runs outside the update_* module family: the steps of the
+# What `zeus update` runs outside the update_* module family: the steps of the
 # pipeline (entry, lock, early recovery, completion tail, launchers, fleet
 # restart/verify, Windows pause/resume) and the lock / marker / recovery state
 # the update_* modules import. Editing any of these changes what a real update
 # does, so the real-update suites (Linux e2e-upgrade and the Windows
 # install + update journey, including its crash cells) must run on the PR.
 _UPDATE_PIPELINE = (
-    "hermes_cli/main.py",  # cmd_update: lock, pre-update backup, receipt boundary
-    "hermes_cli/main_dashboard.py",  # hangup protection + update.log mirror
+    "zeus_cli/main.py",  # cmd_update: lock, pre-update backup, receipt boundary
+    "zeus_cli/main_dashboard.py",  # hangup protection + update.log mirror
     # Prefix: main_desktop.py (staged Desktop swap / rebuild in the tail) and the
     # main_desktop_* siblings it imports (macOS signing identity).
-    "hermes_cli/main_desktop",
+    "zeus_cli/main_desktop",
     # Prefix: _early_recovery.py and its _early_recovery_* siblings (ZIP swap journal).
-    "hermes_cli/_early_recovery",  # interrupted pull / shim restore at launch
-    "hermes_cli/venv_sync.py",  # completion obligation + launch-time tail
-    "hermes_cli/source_",  # source_completion/_build/_releases/_check/_stamp
-    "hermes_cli/_launchers.py",
-    "hermes_cli/release_channels.py",
-    "hermes_cli/gitlock.py",  # git self-heal + partial-clone fetch
-    "hermes_cli/git_commit_graph.py",  # every update starts the install checkout's graph refresh
-    "hermes_cli/process_identity.py",  # marker owner liveness
-    "hermes_cli/runtime_state.py",
-    "hermes_cli/relaunch.py",
-    "hermes_cli/managed_uv.py",
-    "hermes_cli/npm_engine.py",
-    "hermes_cli/_scan_venv_blockers.py",
-    "hermes_cli/dashboard_procs.py",
-    "hermes_cli/desktop_update",  # desktop_update_verify
-    "hermes_cli/gateway.py",  # fleet restart / verify
-    "hermes_cli/gateway_windows",  # Windows pause / resume
-    "hermes_cli/gateway_launchd.py",
-    "hermes_cli/gateway_migrate",
-    "hermes_cli/gateway_supervised_restart.py",
-    "hermes_cli/git_pack_tidy.py",  # partial-clone pack tidy: every update's pre-fetch runs it
-    "hermes_bootstrap.py",  # every launch's prepare_launch
-    "hermes_constants.py",  # root home = update marker location
-    "hermes_dir_acl.py",  # update restores the Windows user ACL on the home after elevation
+    "zeus_cli/_early_recovery",  # interrupted pull / shim restore at launch
+    "zeus_cli/venv_sync.py",  # completion obligation + launch-time tail
+    "zeus_cli/source_",  # source_completion/_build/_releases/_check/_stamp
+    "zeus_cli/_launchers.py",
+    "zeus_cli/release_channels.py",
+    "zeus_cli/gitlock.py",  # git self-heal + partial-clone fetch
+    "zeus_cli/git_commit_graph.py",  # every update starts the install checkout's graph refresh
+    "zeus_cli/process_identity.py",  # marker owner liveness
+    "zeus_cli/runtime_state.py",
+    "zeus_cli/relaunch.py",
+    "zeus_cli/managed_uv.py",
+    "zeus_cli/npm_engine.py",
+    "zeus_cli/_scan_venv_blockers.py",
+    "zeus_cli/dashboard_procs.py",
+    "zeus_cli/desktop_update",  # desktop_update_verify
+    "zeus_cli/gateway.py",  # fleet restart / verify
+    "zeus_cli/gateway_windows",  # Windows pause / resume
+    "zeus_cli/gateway_launchd.py",
+    "zeus_cli/gateway_migrate",
+    "zeus_cli/gateway_supervised_restart.py",
+    "zeus_cli/git_pack_tidy.py",  # partial-clone pack tidy: every update's pre-fetch runs it
+    "zeus_bootstrap.py",  # every launch's prepare_launch
+    "zeus_constants.py",  # root home = update marker location
+    "zeus_dir_acl.py",  # update restores the Windows user ACL on the home after elevation
     "gateway/status.py",  # code_sha stamp the fleet verify reads
     "gateway/status_inline_source.py",  # the Windows pause identifies inline-bootstrapped gateways
     "gateway/status_lock_dir.py",  # gateway/status.py imports it at module level
@@ -299,41 +299,41 @@ _UPDATE_PIPELINE = (
     "gateway/host_rendezvous.py",
     "gateway/shutdown_forensics.py",
     "gateway/restart.py",
-    "scripts/desktop-update/",  # the hand-off scripts run `hermes update`
+    "scripts/desktop-update/",  # the hand-off scripts run `zeus update`
 )
 # Selectors are owned by the import graph, not remembered. The update
-# transaction's own modules (what `hermes update` and the launch-time completion
+# transaction's own modules (what `zeus update` and the launch-time completion
 # run between the lock and the receipt) are the entry points;
 # tests/ci/test_update_ci_routing.py reads every repo module they import (AST,
 # module level and lazy) and every build script they run, and fails until each
 # one is routed to the suite below or is a _SHARED_HUBS entry.
 _UPDATE_ENTRY_POINTS = (
-    "hermes_cli/update_",
-    "hermes_cli/_update_",
-    "hermes_cli/source_",
-    "hermes_cli/old_updater",
-    "hermes_cli/_old_updater",
-    "hermes_cli/post_update",
-    "hermes_cli/venv_sync.py",
-    "hermes_cli/_early_recovery",
-    "hermes_cli/main_desktop.py",
-    "hermes_cli/desktop_update_verify.py",
-    "hermes_cli/desktop_build_lock.py",
-    "hermes_cli/subcommands/update",
+    "zeus_cli/update_",
+    "zeus_cli/_update_",
+    "zeus_cli/source_",
+    "zeus_cli/old_updater",
+    "zeus_cli/_old_updater",
+    "zeus_cli/post_update",
+    "zeus_cli/venv_sync.py",
+    "zeus_cli/_early_recovery",
+    "zeus_cli/main_desktop.py",
+    "zeus_cli/desktop_update_verify.py",
+    "zeus_cli/desktop_build_lock.py",
+    "zeus_cli/subcommands/update",
 )
 # The entry points that build or verify the Desktop app inside an update
-# (`hermes desktop --build-only`, the source build/completion that feeds it).
+# (`zeus desktop --build-only`, the source build/completion that feeds it).
 _DESKTOP_BUILD_ENTRY_POINTS = (
-    "hermes_cli/source_build.py",
-    "hermes_cli/source_completion.py",
-    "hermes_cli/main_desktop.py",
-    "hermes_cli/desktop_update_verify.py",
-    "hermes_cli/desktop_build_lock.py",
+    "zeus_cli/source_build.py",
+    "zeus_cli/source_completion.py",
+    "zeus_cli/main_desktop.py",
+    "zeus_cli/desktop_update_verify.py",
+    "zeus_cli/desktop_build_lock.py",
 )
 # What the entry points import, outside the update_* family and the pipeline above.
 _UPDATE_DEPENDENCIES = (
-    "hermes_cli/_subprocess_compat.py",  # update git env, process-tree kill, PM git exposure
-    "hermes_cli/local_runtime/processes.py",  # bounded probes' spawn_server/job custody
+    "zeus_cli/_subprocess_compat.py",  # update git env, process-tree kill, PM git exposure
+    "zeus_cli/local_runtime/processes.py",  # bounded probes' spawn_server/job custody
     "agent/deadline.py",  # bounded probes' process-tree timeout cleanup
     # migrate_all_homes' second-hop provider/profile decisions, run on every update. Its
     # plugin-install branch (plugins_cmd, plugins_cmd_install) runs only for a home whose
@@ -342,46 +342,46 @@ _UPDATE_DEPENDENCIES = (
     "agent/memory_provider.py",
     "pm/plugins_state.py",
     "pm/install.py",  # also sealed()/lazy_installs_allowed(): every update's default-tool install
-    "hermes_cli/desktop_build_lock.py",
-    "hermes_cli/desktop_build_reuse.py",  # source_build keeps the packaged app when no input changed
-    "hermes_cli/desktop_release_holders.py",  # main_desktop names/closes a holder of release/ on a failed swap
-    "hermes_cli/memory_provider_migration.py",
-    "hermes_cli/left_core_migration.py",  # source_build migrates plugins that left core
-    "hermes_cli/config_version_stamp.py",  # post_update converts legacy AGENT_BROWSER_* before stamping
-    "hermes_cli/web_build_limits.py",  # source_build caps the dashboard Node build
-    "hermes_cli/desktop_console.py",
-    "hermes_cli/bundled_app.py",
-    "hermes_cli/gui_uninstall.py",
-    "hermes_cli/linux_desktop_entry.py",
-    "hermes_cli/github_api.py",  # source_check's release lookup
-    "hermes_cli/build_info.py",
-    "hermes_cli/image_provenance.py",
-    "hermes_cli/backup.py",  # pre-update backup
-    "hermes_cli/backup_cron_prompts.py",  # restore_cron_prompt_fields_if_degraded (update_cmd_config)
-    "hermes_cli/backup_restore.py",
-    "hermes_cli/config_backend.py",  # update_channel writes the channel key through the seam
-    "hermes_cli/env_loader.py",  # update_proxy_env keeps proxy keys a .env load wrote
+    "zeus_cli/desktop_build_lock.py",
+    "zeus_cli/desktop_build_reuse.py",  # source_build keeps the packaged app when no input changed
+    "zeus_cli/desktop_release_holders.py",  # main_desktop names/closes a holder of release/ on a failed swap
+    "zeus_cli/memory_provider_migration.py",
+    "zeus_cli/left_core_migration.py",  # source_build migrates plugins that left core
+    "zeus_cli/config_version_stamp.py",  # post_update converts legacy AGENT_BROWSER_* before stamping
+    "zeus_cli/web_build_limits.py",  # source_build caps the dashboard Node build
+    "zeus_cli/desktop_console.py",
+    "zeus_cli/bundled_app.py",
+    "zeus_cli/gui_uninstall.py",
+    "zeus_cli/linux_desktop_entry.py",
+    "zeus_cli/github_api.py",  # source_check's release lookup
+    "zeus_cli/build_info.py",
+    "zeus_cli/image_provenance.py",
+    "zeus_cli/backup.py",  # pre-update backup
+    "zeus_cli/backup_cron_prompts.py",  # restore_cron_prompt_fields_if_degraded (update_cmd_config)
+    "zeus_cli/backup_restore.py",
+    "zeus_cli/config_backend.py",  # update_channel writes the channel key through the seam
+    "zeus_cli/env_loader.py",  # update_proxy_env keeps proxy keys a .env load wrote
     "agent/proxy_bypass.py",  # update_proxy_env reads NO_PROXY entries with it
-    "hermes_cli/relay_plugin_migrate.py",
-    "hermes_cli/macos_tcc_anchor.py",
-    "hermes_cli/model_catalog.py",
-    "hermes_cli/sqlite_runtime.py",
-    "hermes_cli/sqlite_safe_read.py",
-    "hermes_cli/sizefmt.py",
-    "hermes_cli/tools_config_cua.py",
-    "hermes_cli/_startup_fast.py",
-    "hermes_cli/_parser.py",
-    "hermes_cli/gateway_multiplex_mode.py",
-    "hermes_cli/plugin_catalog.py",
-    "hermes_cli/steward.py",
-    "hermes_cli/observability/shared_metrics_update.py",
-    "hermes_cli/main_install_repair.py",
-    "hermes_logging.py",
-    "hermes_platform/host/__init__.py",
-    "hermes_platform/host/facts.py",
-    "hermes_platform/resolver/__init__.py",  # update_cmd_commit's interpreter lookup
-    "hermes_platform/resolver/base.py",
-    "hermes_platform/resolver/core.py",
+    "zeus_cli/relay_plugin_migrate.py",
+    "zeus_cli/macos_tcc_anchor.py",
+    "zeus_cli/model_catalog.py",
+    "zeus_cli/sqlite_runtime.py",
+    "zeus_cli/sqlite_safe_read.py",
+    "zeus_cli/sizefmt.py",
+    "zeus_cli/tools_config_cua.py",
+    "zeus_cli/_startup_fast.py",
+    "zeus_cli/_parser.py",
+    "zeus_cli/gateway_multiplex_mode.py",
+    "zeus_cli/plugin_catalog.py",
+    "zeus_cli/steward.py",
+    "zeus_cli/observability/shared_metrics_update.py",
+    "zeus_cli/main_install_repair.py",
+    "zeus_logging.py",
+    "zeus_platform/host/__init__.py",
+    "zeus_platform/host/facts.py",
+    "zeus_platform/resolver/__init__.py",  # update_cmd_commit's interpreter lookup
+    "zeus_platform/resolver/base.py",
+    "zeus_platform/resolver/core.py",
     "agent/curator.py",
     "plugins/memory/__init__.py",
     "tools/checkpoint_maintenance.py",
@@ -392,7 +392,7 @@ _UPDATE_DEPENDENCIES = (
     # tui, web, desktop and their shared frontend-common).
     "scripts/build/",
     "apps/desktop/scripts/build-webapp.mjs",  # source_build's Webapp renderer build
-    "hermes_cli/webapp.py",  # source_build rebuilds the Webapp bundle a home serves
+    "zeus_cli/webapp.py",  # source_build rebuilds the Webapp bundle a home serves
     "gateway/webapp_listener.py",  # source_build reads which homes serve the Webapp
 )
 # General-purpose modules an entry point imports but that half the product
@@ -402,17 +402,17 @@ _UPDATE_DEPENDENCIES = (
 # them run on most PRs. Never an update-specific module: own those above.
 HUB_MIN_IMPORTERS = 25
 _SHARED_HUBS = frozenset({
-    "hermes_cli/__init__.py",
-    "hermes_cli/config.py",
-    "hermes_cli/profiles.py",
-    "hermes_cli/version_info.py",
+    "zeus_cli/__init__.py",
+    "zeus_cli/config.py",
+    "zeus_cli/profiles.py",
+    "zeus_cli/version_info.py",
     "utils.py",
-    "hermes_state.py",
+    "zeus_state.py",
     "agent/__init__.py",
     "cron/jobs.py",
     "tools/environments/local.py",
     # Desktop lane only (the upgrade lane owns these outright):
-    "hermes_constants.py",
+    "zeus_constants.py",
     "gateway/status.py",
     "pm/__init__.py",
     "pm/paths.py",
@@ -424,7 +424,7 @@ _E2E_LANES: dict[str, tuple[str, ...]] = {
         "tests/e2e/",
         # The state.db torture chamber and the compaction/exactly-once
         # suites are the only tests that run real concurrent writers.
-        "hermes_state",
+        "zeus_state",
         # Messaging-gated gateway cases: only the e2e job installs the real
         # Discord/Telegram SDKs (tests.yml "Run messaging-gated gateway cases").
         "tests/gateway/test_native_role_reauthorization.py",
@@ -440,21 +440,21 @@ _E2E_LANES: dict[str, tuple[str, ...]] = {
         "tests/compat/",
         "pm/",
         "scripts/install.",
-        "setup-hermes.sh",
-        "hermes_cli/update_",
-        "hermes_cli/_update_",
-        "hermes_cli/old_updater",
-        # The downgrade refusal (hermes_cli/update_downgrade_guard.py) reads state.db through it.
-        "hermes_state_holders.py",
-        # The search-index notice (hermes_cli/update_cmd_maint.py) reads the stored FTS layout through it.
-        "hermes_state_fts.py",
-        "hermes_cli/_old_updater",
-        "hermes_cli/post_update",
-        "hermes_cli/config_migrations",
-        "hermes_cli/subcommands/update",
-        "hermes_cli/install_",
-        "hermes_cli/_install_",
-        "hermes_cli/main_install",
+        "setup-zeus.sh",
+        "zeus_cli/update_",
+        "zeus_cli/_update_",
+        "zeus_cli/old_updater",
+        # The downgrade refusal (zeus_cli/update_downgrade_guard.py) reads state.db through it.
+        "zeus_state_holders.py",
+        # The search-index notice (zeus_cli/update_cmd_maint.py) reads the stored FTS layout through it.
+        "zeus_state_fts.py",
+        "zeus_cli/_old_updater",
+        "zeus_cli/post_update",
+        "zeus_cli/config_migrations",
+        "zeus_cli/subcommands/update",
+        "zeus_cli/install_",
+        "zeus_cli/_install_",
+        "zeus_cli/main_install",
         *_UPDATE_PIPELINE,
         *_UPDATE_ENTRY_POINTS,
         *_UPDATE_DEPENDENCIES,
@@ -498,22 +498,22 @@ _E2E_LANES: dict[str, tuple[str, ...]] = {
         "apps/desktop/electron/app-installer-file",
         "scripts/desktop-update/",
         "scripts/install.sh",
-        "hermes_cli/update_",
-        "hermes_cli/main_desktop",  # the entry point and the main_desktop_* siblings it imports
+        "zeus_cli/update_",
+        "zeus_cli/main_desktop",  # the entry point and the main_desktop_* siblings it imports
         *_DESKTOP_BUILD_ENTRY_POINTS,
         *_UPDATE_DEPENDENCIES,
         # Pipeline modules the Desktop build entry points import directly.
-        "hermes_cli/main.py",  # `hermes desktop --build-only`
-        "hermes_cli/venv_sync.py",
-        "hermes_cli/source_stamp.py",
+        "zeus_cli/main.py",  # `zeus desktop --build-only`
+        "zeus_cli/venv_sync.py",
+        "zeus_cli/source_stamp.py",
         # Imported by the Desktop build's scripts (scripts/build/desktop.mjs closure).
         "apps/desktop/product-identity.cjs",
         "scripts/msix-shared.mjs",
         # The launchers the Desktop relaunches through reach the launch-time repair first.
-        "hermes_cli/_launchers.py",
+        "zeus_cli/_launchers.py",
         # The backend's /api/health `commit`, which the Desktop compares to the checkout
         # before attaching to a running backend after an update.
-        "hermes_cli/web_routers/status.py",
+        "zeus_cli/web_routers/status.py",
     ),
 }
 
@@ -577,7 +577,7 @@ def _is_catalog_data(p: str) -> bool:
 def _py_test_only(p: str) -> bool:
     """Is ``p`` inside the test suite (never shipped / imported by the product)?
 
-    Product jobs (Desktop E2E's ``hermes serve`` backend, the Docker image)
+    Product jobs (Desktop E2E's ``zeus serve`` backend, the Docker image)
     run installed code — nothing under ``tests/`` is packaged or importable
     there. scripts/run_tests.sh and scripts/run_tests_parallel.py are deliberately
     NOT test-only: they are runner infrastructure, and a bad edit there can

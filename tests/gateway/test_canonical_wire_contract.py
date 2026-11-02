@@ -6,8 +6,8 @@ import pytest
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_controls import AuthorityConnection
 from gateway.session_group_controls import GROUP_METHODS
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 from tui_gateway.contracts.registry import CANONICAL_METHODS, METHODS
 
 

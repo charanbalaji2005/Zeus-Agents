@@ -16,15 +16,15 @@ from tests.ci.test_update_ci_routing import _REPO, _ci_run, _consumers_reached, 
 # remaining edges are migrate_all_homes' provider/profile/install decisions.
 # backup is the update transaction's pre-build step, not a build dependency.
 @pytest.mark.parametrize("path", [
-    "hermes_cli/local_runtime/processes.py",
+    "zeus_cli/local_runtime/processes.py",
     # Importing processes runs the package init: v2026.9.24's update died there on a name
     # the init's eager imports needed from an already-loaded module.
-    "hermes_cli/local_runtime/__init__.py",
+    "zeus_cli/local_runtime/__init__.py",
     "agent/deadline.py",
     "agent/memory_provider.py",
     "pm/plugins_state.py",
     "pm/install.py",
-    "hermes_cli/backup.py",
+    "zeus_cli/backup.py",
 ])
 def test_second_hop_update_change_dispatches_real_update_consumers(path):
     lanes = _real_classifier([path])
@@ -37,13 +37,13 @@ def test_second_hop_update_change_dispatches_real_update_consumers(path):
 
 # Off the update lanes (review K132346-ci-cost: 4 of 7 replayed main commits that newly started
 # both update journeys touched only these): the journeys cannot observe code their update never runs.
-_PLUGIN_INSTALL = ("hermes_cli/plugins_cmd.py", "hermes_cli/plugins_cmd_install.py")
+_PLUGIN_INSTALL = ("zeus_cli/plugins_cmd.py", "zeus_cli/plugins_cmd_install.py")
 
 
 def test_update_migration_on_a_journey_home_runs_no_plugin_install_code():
     """The journeys' homes configure no memory provider that left core. If the migration ever runs
     plugin-install code there, the journeys exercise it: route these modules again."""
-    from hermes_cli.memory_provider_migration import migrate_all_homes
+    from zeus_cli.memory_provider_migration import migrate_all_homes
 
     ran: set[tuple[str, str]] = set()
 
@@ -63,6 +63,6 @@ def test_update_migration_on_a_journey_home_runs_no_plugin_install_code():
     finally:
         sys.setprofile(None)
     files = {f for f, _name in ran}
-    assert (_REPO / "hermes_cli/memory_provider_migration.py").resolve().as_posix() in files
+    assert (_REPO / "zeus_cli/memory_provider_migration.py").resolve().as_posix() in files
     hit = [rel for rel in _PLUGIN_INSTALL if (_REPO / rel).resolve().as_posix() in files]
     assert hit == [], f"the update runs {hit} on a journey home"

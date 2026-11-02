@@ -13,7 +13,7 @@ description: >-
 maintainer: tempoxyz
 tier: community
 category: tools
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/tempoxyz/hermes-mpp#native-plugin-installation
 capabilities:
   provides_tools:

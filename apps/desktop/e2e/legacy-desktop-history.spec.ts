@@ -23,13 +23,13 @@ test('pre-cutover Desktop conversations remain visible and open across profiles'
   test.setTimeout(300_000)
   const sandbox = createSandbox('legacy-desktop-history')
   const mock = await startMockServer()
-  const python = process.env.HERMES_DESKTOP_PYTHON!
+  const python = process.env.ZEUS_DESKTOP_PYTHON!
   const root = path.resolve(import.meta.dirname, '../../..')
-  const env = buildAppEnv(sandbox, { HERMES_DESKTOP_PYTHON: python, TIRITH_ENABLED: 'false' })
+  const env = buildAppEnv(sandbox, { ZEUS_DESKTOP_PYTHON: python, TIRITH_ENABLED: 'false' })
   const multiplex = process.env.E2E_MULTIPLEX === '1'
-  writeMockProviderConfig(sandbox.hermesHome, mock.url, undefined, multiplex ? 'gateway:\n  multiplex_profiles: true\n' : undefined)
-  writeEnvFile(sandbox.hermesHome)
-  const named = path.join(sandbox.hermesHome, 'profiles', 'developer')
+  writeMockProviderConfig(sandbox.zeusHome, mock.url, undefined, multiplex ? 'gateway:\n  multiplex_profiles: true\n' : undefined)
+  writeEnvFile(sandbox.zeusHome)
+  const named = path.join(sandbox.zeusHome, 'profiles', 'developer')
   fs.mkdirSync(named, { recursive: true })
   writeMockProviderConfig(named, mock.url)
   writeEnvFile(named)
@@ -37,7 +37,7 @@ test('pre-cutover Desktop conversations remain visible and open across profiles'
   const seed = spawnSync(python, ['-c', `
 import json, os, sys
 from pathlib import Path
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 def seed(db_path, rows, profile):
     with SessionDB(db_path=db_path) as db:
@@ -49,7 +49,7 @@ def seed(db_path, rows, profile):
             db._conn.execute('UPDATE sessions SET profile_name=? WHERE id=?', (profile, r['id']))
         db._conn.commit()
 
-home = Path(os.environ['HERMES_HOME'])
+home = Path(os.environ['ZEUS_HOME'])
 seed(home / 'state.db', json.loads(sys.argv[1]), 'default')
 seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source': 'desktop', 'userId': None}], 'developer')
 `, JSON.stringify(ROWS), NAMED_ROW], { cwd: root, env: { ...env, PYTHONPATH: root }, encoding: 'utf8' })
@@ -57,9 +57,9 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
   expect(seed.status, seed.stderr).toBe(0)
 
   // One cron job in each profile's own store, for the all-profiles cron list.
-  for (const [home, name] of [[sandbox.hermesHome, 'default-job'], [named, 'developer-job']]) {
+  for (const [home, name] of [[sandbox.zeusHome, 'default-job'], [named, 'developer-job']]) {
     const job = spawnSync(python, ['-c', 'import sys\nfrom cron.jobs import create_job\ncreate_job("e2e", "every 1h", name=sys.argv[1])', name], {
-      cwd: root, env: { ...env, HERMES_HOME: home, PYTHONPATH: root }, encoding: 'utf8'
+      cwd: root, env: { ...env, ZEUS_HOME: home, PYTHONPATH: root }, encoding: 'utf8'
     })
 
     expect(job.status, job.stderr).toBe(0)
@@ -69,7 +69,7 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
   // from the newest state.db, which here is the named profile's.
   fs.writeFileSync(path.join(sandbox.userDataDir, 'active-profile.json'), JSON.stringify({ profile: 'default' }))
   let app: Awaited<ReturnType<typeof launchDesktop>>['app'] | undefined
-  const evidence = process.env.HERMES_E2E_EVIDENCE || path.join(sandbox.root, 'evidence')
+  const evidence = process.env.ZEUS_E2E_EVIDENCE || path.join(sandbox.root, 'evidence')
   fs.mkdirSync(evidence, { recursive: true })
   const results: Record<string, { listed: boolean; opened: boolean; error?: string }> = {}
   let probes: Record<string, unknown> = {}
@@ -87,7 +87,7 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
 
       // The cross-profile lists the sidebar and Sessions view read, through main's transport.
       probes = await page.evaluate(async () => {
-        const api = (window as any).hermesDesktop.api
+        const api = (window as any).zeusDesktop.api
         const out: Record<string, unknown> = {}
         const q = 'limit=40&offset=0&min_messages=1&archived=exclude&order=recent'
         // The same all-profiles read as the renderer sends it on its registry route.
@@ -209,7 +209,7 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
       // the window, now back on default. An unopened pre-upgrade row is not editable over HTTP at all
       // (only its first resume adopts it), so this runs on the developer row opened above.
       probes['bots:hide'] = await page.evaluate(async () => {
-        const api = (window as any).hermesDesktop.api
+        const api = (window as any).zeusDesktop.api
         const path = '/api/sessions/legacy-developer-desktop'
 
         try {
@@ -235,7 +235,7 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
       fs.writeFileSync(path.join(evidence, 'results.json'), JSON.stringify({ results, views, probes }, null, 2))
 
       for (const name of ['gateway.log', 'errors.log', 'desktop.log']) {
-        const log = path.join(sandbox.hermesHome, 'logs', name)
+        const log = path.join(sandbox.zeusHome, 'logs', name)
 
         if (fs.existsSync(log)) {
           fs.copyFileSync(log, path.join(evidence, name))
@@ -243,7 +243,7 @@ seed(home / 'profiles' / 'developer' / 'state.db', [{'id': sys.argv[2], 'source'
       }
 
       // Opening a row resumes it; every one, Nous-stamped included, must be continuable.
-      const desktopLog = path.join(sandbox.hermesHome, 'logs', 'desktop.log')
+      const desktopLog = path.join(sandbox.zeusHome, 'logs', 'desktop.log')
       resumeFailures = fs.existsSync(desktopLog) ? (fs.readFileSync(desktopLog, 'utf8').match(/Resume failed/g) ?? []).length : -1
       console.log('LEGACY_DESKTOP_RESUME_FAILURES: ' + resumeFailures)
     }
@@ -257,14 +257,14 @@ owned=[]
 for p in psutil.process_iter():
     if p.pid==os.getpid(): continue
     try:
-        if os.path.realpath(p.environ().get('HERMES_HOME') or os.sep)==home:
+        if os.path.realpath(p.environ().get('ZEUS_HOME') or os.sep)==home:
             owned.append(p);p.terminate()
     except (psutil.NoSuchProcess,psutil.AccessDenied): pass
 _,alive=psutil.wait_procs(owned,timeout=5)
 for p in alive:
     try:p.kill()
     except psutil.NoSuchProcess:pass
-`, sandbox.hermesHome], { encoding: 'utf8', env: process.env })
+`, sandbox.zeusHome], { encoding: 'utf8', env: process.env })
     sandbox.cleanup()
   }
 

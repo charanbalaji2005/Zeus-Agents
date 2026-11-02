@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // Class sweep: every Desktop producer frame that reaches the shared owner must fit the closed
 // (`additionalProperties: false`) canonical contract generated from tui_gateway/contracts. The
@@ -90,7 +90,7 @@ const MUTATIONS: Record<string, Record<string, unknown>> = {
 // [label, Desktop method, exact producer params, expected: wire methods sent (after attach) or a named refusal]
 const SITES: Array<[string, string, Record<string, unknown>, string[] | RegExp]> = [
   [
-    'hermes-bots/relay.ts relayDeliverParams',
+    'zeus-bots/relay.ts relayDeliverParams',
     'bot_relay.deliver',
     {
       id: 'e',
@@ -246,7 +246,7 @@ test.each(SITES)('%s: the canonical frame fits the generated contract', async (_
       )
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
 
   try {
     const address = server.address() as { port: number }

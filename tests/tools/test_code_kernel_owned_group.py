@@ -61,7 +61,7 @@ def _read(path):
 def test_owner_sigkill_reaps_the_kernel_group_not_a_live_owners(tmp_path):
     script = tmp_path / "disposable owner.py"
     script.write_text(_OWNER, encoding="utf-8")
-    env = dict(os.environ, HOME=str(tmp_path), HERMES_HOME=str(tmp_path / "home"),
+    env = dict(os.environ, HOME=str(tmp_path), ZEUS_HOME=str(tmp_path / "home"),
                PYTHONPATH=str(Path(__file__).resolve().parents[2]))
     ids = {}
     with (tmp_path / "owners.log").open("w", encoding="utf-8") as log:
@@ -93,7 +93,7 @@ def test_owner_sigkill_reaps_the_kernel_group_not_a_live_owners(tmp_path):
 
 def _kernel_with_cell_child(monkeypatch, tmp_path, child_argv):
     """A real kernel (spawn registration captured) running a cell that spawned *child_argv*."""
-    from hermes_cli import process_identity
+    from zeus_cli import process_identity
     from tools.code_kernel import SessionKernel, _spawn
 
     calls = []

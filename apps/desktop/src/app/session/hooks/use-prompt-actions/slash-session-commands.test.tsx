@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { cleanup } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -19,7 +19,7 @@ import { truncateRewoundMessages } from './slash-session-commands'
 // /undo, /retry, /steer and /queue run against the session owner's canonical verbs (the Ink TUI's
 // behaviour on the same gateway), never as `slash.exec`, which the shared gateway refuses.
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getLatestSessionMessages: vi.fn(async () => ({ messages: [], session_id: 'session' })),
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   getSession: vi.fn(),
@@ -100,7 +100,7 @@ const COMPRESSING = new JsonRpcGatewayError('session_busy', {
 
 beforeEach(() => {
   clearSingleFlightSessionResumeState()
-  window.localStorage.removeItem('hermes.desktop.composerQueue.v1')
+  window.localStorage.removeItem('zeus.desktop.composerQueue.v1')
   $queuedPromptsBySession.set({})
   setComposerDraft('')
 })
@@ -379,7 +379,7 @@ function lostRewindReply(transcript = THREE_EXCHANGES) {
     if (loseReply) {
       loseReply = false
 
-      throw new Error('Hermes gateway connection lost')
+      throw new Error('Zeus gateway connection lost')
     }
 
     return receipt
@@ -466,7 +466,7 @@ describe('a repeat after a lost rewind reply on a canonical session', () => {
     )
 
     await handle!.submitText('/undo')
-    expect(renderedText(handle!)).toContain('Hermes gateway connection lost')
+    expect(renderedText(handle!)).toContain('Zeus gateway connection lost')
 
     await handle!.submitText('/undo')
 

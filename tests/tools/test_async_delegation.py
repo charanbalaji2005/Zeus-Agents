@@ -105,7 +105,7 @@ def test_connect_preserves_wal_and_applies_macos_durability_barriers(
     tmp_path, monkeypatch
 ):
     """Each ledger connection must carry the macOS write barriers."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     seed = sqlite3.connect(tmp_path / "state.db")
     try:
         assert seed.execute("PRAGMA journal_mode=WAL").fetchone()[0] == "wal"
@@ -500,7 +500,7 @@ def test_real_process_restart_restores_owned_completion_once(tmp_path):
     """Real-import E2E: the owning runtime, in a fresh interpreter, restores a prior process's
     result exactly once. Importing the tools graph alone restores nothing (client fence)."""
     repo = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    env = {**os.environ, "HERMES_HOME": str(tmp_path), "PYTHONPATH": repo}
+    env = {**os.environ, "ZEUS_HOME": str(tmp_path), "PYTHONPATH": repo}
     producer = r'''
 import time
 from tools import async_delegation as ad
@@ -1064,7 +1064,7 @@ def test_child_finished_before_crash_is_recovered_with_its_result(tmp_path):
     """Real-import E2E: a 2-task group unit whose owner dies mid-run replays the finished child's real result
     and marks only the unfinished sibling unknown — a crash costs the stragglers, never the finished work."""
     repo = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    env = {**os.environ, "HERMES_HOME": str(tmp_path), "PYTHONPATH": repo}
+    env = {**os.environ, "ZEUS_HOME": str(tmp_path), "PYTHONPATH": repo}
     producer = r'''
 import os, sys, time
 from unittest.mock import MagicMock
@@ -1111,7 +1111,7 @@ def test_one_child_unit_keeps_its_finished_child_when_the_owner_dies(tmp_path):
     must replay the child's real result to the parent."""
     repo = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     marker = tmp_path / "child-returned.flag"
-    env = {**os.environ, "HERMES_HOME": str(tmp_path), "PYTHONPATH": repo, "REPRO_MARKER": str(marker)}
+    env = {**os.environ, "ZEUS_HOME": str(tmp_path), "PYTHONPATH": repo, "REPRO_MARKER": str(marker)}
     producer = r'''
 import os, sys, time
 from unittest.mock import MagicMock
@@ -1163,12 +1163,12 @@ print(json.dumps(q.get_nowait(), sort_keys=True))
 
 @pytest.mark.platforms("posix")  # POSIX mode bits not enforced on Windows
 def test_connect_creates_state_db_0o600_under_permissive_umask(tmp_path, monkeypatch):
-    """``_connect`` shares state.db with hermes_state.SessionDB -- a fresh
-    HERMES_HOME must land the file (and its WAL sidecar, if created) at 0o600
+    """``_connect`` shares state.db with zeus_state.SessionDB -- a fresh
+    ZEUS_HOME must land the file (and its WAL sidecar, if created) at 0o600
     even under a permissive process umask, not the SessionDB-only path."""
     import stat
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     old_umask = os.umask(0o022)
     try:
         conn = ad._connect()

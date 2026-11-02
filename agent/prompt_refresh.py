@@ -2,8 +2,8 @@
 
 A continuing session replays its stored system prompt verbatim so the provider prefix cache stays
 warm, which also means SOUL.md, skills and project-context edits never reach it before ``/new``.
-``hermes sessions refresh-prompts`` records a refresh epoch in the profile's state.db
-(``hermes_state_prompt_refresh``). At the start of the session's next turn this module compares
+``zeus sessions refresh-prompts`` records a refresh epoch in the profile's state.db
+(``zeus_state_prompt_refresh``). At the start of the session's next turn this module compares
 that epoch with the one stamped when the session's prompt was built (``model_config``) and, when
 the prompt is older, rebuilds it once through the normal builder: history, session id and the
 tools[] pin are kept, ``on_session_start`` does not fire, and the new bytes plus the epoch are
@@ -41,7 +41,7 @@ def requested_epoch(agent: Any) -> int:
 
 
 def _applied_epoch(session_row: Any) -> int:
-    from hermes_state_sessions import _parse_model_config
+    from zeus_state_sessions import _parse_model_config
 
     value = _parse_model_config((session_row or {}).get("model_config")).get(SESSION_EPOCH_KEY)
     return value if isinstance(value, int) else 0
@@ -81,7 +81,7 @@ def rebuild_for_refresh(agent: Any, system_message: Any, conversation_history: A
     """Rebuild the session's prompt from current sources and persist it with ``epoch``."""
     from agent.prompt_builder import clear_skills_system_prompt_cache
     from agent.surface_switch import stage_surface_switch_note
-    from hermes_cli.observability.shared_metrics_efficiency import record_cache_break
+    from zeus_cli.observability.shared_metrics_efficiency import record_cache_break
 
     logger.info("Operator requested a system prompt refresh (epoch %d) for session %s; rebuilding it "
                 "from current SOUL.md, skills and context files (one-time prefix-cache break).",

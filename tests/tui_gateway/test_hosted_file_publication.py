@@ -19,14 +19,14 @@ def test_service_share_retains_bytes_and_reuses_frozen_task(tmp_path):
     db = tmp_path / 'state.db'
     service = service_at(db)
     service.create_room(room_id='room', name='Room', members=[
-        {'member_id': 'default', 'profile': 'default', 'handle': 'hermes'},
+        {'member_id': 'default', 'profile': 'default', 'handle': 'zeus'},
         {'member_id': 'ops', 'profile': 'ops', 'handle': 'ops'}])
     store = HostedRoomAttachmentStore(db)
     item = store.put(room_id='room', upload_id='upload', kind='file', name='proof.txt',
                      mime='application/octet-stream', data=b'\x00exact shared bytes\xff')
     manifest = [{k: item[k] for k in ('attachment_id', 'kind', 'name', 'mime', 'size')}]
     event = service.send(room_id='room', event_id='share', payload={
-        'text': '@hermes inspect', 'thread_id': 'thread', 'attachments': manifest})
+        'text': '@zeus inspect', 'thread_id': 'thread', 'attachments': manifest})
     before = driver.list_tasks(db, room_id='room')[0]
     assert before['payload']['attachments'][0]['event_id'] == event['event_id']
     with closing(sqlite3.connect(db)) as conn, conn:
@@ -45,9 +45,9 @@ def test_publication_cursor_race_retries_without_new_task(tmp_path, monkeypatch)
     db = tmp_path / 'state.db'
     service = service_at(db)
     service.create_room(room_id='room', name='Room', members=[
-        {'member_id': 'default', 'profile': 'default', 'handle': 'hermes'},
+        {'member_id': 'default', 'profile': 'default', 'handle': 'zeus'},
         {'member_id': 'ops', 'profile': 'ops', 'handle': 'ops'}])
-    service.send(room_id='room', event_id='share', payload={'text': '@hermes inspect', 'thread_id': 'thread'})
+    service.send(room_id='room', event_id='share', payload={'text': '@zeus inspect', 'thread_id': 'thread'})
     binding = service.bindings()[0]
     task = driver.list_tasks(db, room_id='room')[0]
     lease = driver.acquire_lease(db, room_id='room', gateway_id=binding.gateway_id,

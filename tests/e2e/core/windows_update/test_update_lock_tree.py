@@ -1,16 +1,16 @@
-"""One ``hermes update`` owns an installed checkout on native Windows, and its whole tree.
+"""One ``zeus update`` owns an installed checkout on native Windows, and its whole tree.
 
 Failure class: concurrent updates of one install (contract C1.7). The update lock lives on the
-install's git dir (an msvcrt byte lock on ``<install>/.git/hermes-update.lock``), not in HERMES_HOME, so a
-second ``hermes update`` from ANOTHER home cannot mutate the checkout while the first runs. On
+install's git dir (an msvcrt byte lock on ``<install>/.git/zeus-update.lock``), not in ZEUS_HOME, so a
+second ``zeus update`` from ANOTHER home cannot mutate the checkout while the first runs. On
 Windows a child cannot inherit that lock, so the owner binds every update-tree child into a
 kill-on-close job: ``taskkill /F`` of the owner kills the child too, and only then is the lock free.
 
 One install (install.ps1), then, with NEXT published:
-(a) an update owner holds the lock from another HERMES_HOME with a bound child running; the real
-    ``hermes update`` of the installed checkout must exit 2 and leave the checkout at HEAD;
+(a) an update owner holds the lock from another ZEUS_HOME with a bound child running; the real
+    ``zeus update`` of the installed checkout must exit 2 and leave the checkout at HEAD;
 (b) ``taskkill /F`` of the owner (not ``/T``) must take the bound child down with it;
-(c) with the tree gone the lock is free: the real ``hermes update`` lands NEXT.
+(c) with the tree gone the lock is free: the real ``zeus update`` lands NEXT.
 
 A second install proves the other direction of the job: a gateway the update RESTARTS is started
 with ``CREATE_BREAKAWAY_FROM_JOB`` and must leave the job, so it outlives a successful update.
@@ -36,7 +36,7 @@ from tests.fakes.fake_llm_provider import FakeLLMServer
 pytestmark = [pytest.mark.platforms("windows"), pytest.mark.integration,
               pytest.mark.live_system_guard_bypass, REQUIRES_OPT_IN]
 
-REFUSAL = "Another Hermes update is already running"
+REFUSAL = "Another Zeus update is already running"
 SURVIVAL_SECONDS = 30
 
 # Runs on the INSTALLED venv against the installed checkout's own update_lock. Degrades to the
@@ -44,7 +44,7 @@ SURVIVAL_SECONDS = 30
 _OWNER = r"""
 import inspect, subprocess, sys, time
 sys.path.insert(0, sys.argv[1])
-from hermes_cli import update_lock as ul
+from zeus_cli import update_lock as ul
 kw = {"install_root": sys.argv[1]} if "install_root" in inspect.signature(ul.UpdateLock).parameters else {}
 lock = ul.UpdateLock(**kw)
 assert lock.acquire(), "owner could not take the update lock"
@@ -72,14 +72,14 @@ def journey(tmp_path_factory):
         try:
             install = machine.install()
             assert install.returncode == 0, fail_with(machine, f"install.ps1 exited {install.returncode}", install)
-            pythons = sorted(machine.hermes_home.glob("installs/*/environments/*/venv/Scripts/python.exe"))
+            pythons = sorted(machine.zeus_home.glob("installs/*/environments/*/venv/Scripts/python.exe"))
             assert pythons, fail_with(machine, "harness: the install has no venv python")
             other_home = machine.root / "other-home"
             other_home.mkdir()
             machine.advance()
             owner = subprocess.Popen(
                 [str(pythons[0]), "-c", _OWNER, str(machine.install_dir)], cwd=machine.profile,
-                env=machine.env({"HERMES_HOME": str(other_home)}), stdin=subprocess.DEVNULL,
+                env=machine.env({"ZEUS_HOME": str(other_home)}), stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, creationflags=subprocess.CREATE_NO_WINDOW)
             machine._spawned.append(owner)
             assert owner.stdout is not None
@@ -119,7 +119,7 @@ def test_second_home_update_is_refused_while_the_checkout_is_held(journey) -> No
     assert journey["held_status"] == "", fail_with(
         m, f"the held update lock shows in `git status` (autostash would take it): {journey['held_status']!r}")
     assert run.returncode == 2 and REFUSAL in run.stdout and journey["a_head"] == m.head, fail_with(
-        m, f"a second `hermes update` of one checkout ran while another home's update held it "
+        m, f"a second `zeus update` of one checkout ran while another home's update held it "
            f"(rc={run.returncode}, checkout {journey['a_head']} vs HEAD {m.head}, "
            f"install-root lock in this tree: {journey['root_lock']})", run)
 
@@ -132,7 +132,7 @@ def test_killed_owner_takes_its_update_tree_down(journey) -> None:
 def test_free_lock_lets_the_next_update_land(journey) -> None:
     m, run = journey["machine"], journey["c_update"]
     assert run.returncode == 0 and journey["c_head"] == m.next, fail_with(
-        m, f"after the whole update tree exited, `hermes update` did not land NEXT "
+        m, f"after the whole update tree exited, `zeus update` did not land NEXT "
            f"(rc={run.returncode}, checkout {journey['c_head']}, NEXT {m.next})", run)
 
 
@@ -154,7 +154,7 @@ def gateway_journey(tmp_path_factory):
                 out["relaunched"] = int(machine.wait_gateway_running(not_pid=old_pid).get("pid") or 0)
                 time.sleep(max(0.0, SURVIVAL_SECONDS - (time.monotonic() - exited)))
                 out["alive_after"] = _alive(out["relaunched"])
-                out["status"] = machine.hermes("gateway", "status", label="status-after-30s")
+                out["status"] = machine.zeus("gateway", "status", label="status-after-30s")
                 machine.kill_owned()
             yield out
         finally:
@@ -163,8 +163,8 @@ def gateway_journey(tmp_path_factory):
 
 def test_restarted_gateway_outlives_the_update(gateway_journey) -> None:
     m, run, pid = gateway_journey["machine"], gateway_journey["update"], gateway_journey["relaunched"]
-    assert run.returncode == 0, fail_with(m, f"`hermes update` with a running gateway exited {run.returncode}", run)
+    assert run.returncode == 0, fail_with(m, f"`zeus update` with a running gateway exited {run.returncode}", run)
     status = gateway_journey["status"]
     assert gateway_journey["alive_after"] and str(pid) in status.stdout, fail_with(
         m, f"the gateway the update restarted (pid {pid}) died with the update's job: alive "
-           f"{SURVIVAL_SECONDS}s after `hermes update` exited = {gateway_journey['alive_after']}", status)
+           f"{SURVIVAL_SECONDS}s after `zeus update` exited = {gateway_journey['alive_after']}", status)

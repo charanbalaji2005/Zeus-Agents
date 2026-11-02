@@ -53,7 +53,7 @@ const within = (child: string, parent: string): boolean => {
 export function pathTools(platform: NodeJS.Platform) {
   // Every comparison errs toward refusing. Containment ("may the plugin use
   // this?") compares realpaths exactly, so a case-sensitive volume's `vault`
-  // is never mistaken for the granted `Vault`. Protection ("is this Hermes
+  // is never mistaken for the granted `Vault`. Protection ("is this Zeus
   // data?") also matches case-insensitively where volumes usually are, so a
   // differently-cased spelling of a protected path is still refused.
   const caseless = platform === 'win32' || platform === 'darwin'
@@ -121,9 +121,9 @@ export async function realRoots(roots: string[]): Promise<string[]> {
 }
 
 /**
- * A WSL share path that is Hermes data or not the distro's own files: the
- * distro root, `/home`, a home dir and `/root` each hold a `~/.hermes`, and
- * anything under a `.hermes` segment is one (Windows Desktop cannot know which
+ * A WSL share path that is Zeus data or not the distro's own files: the
+ * distro root, `/home`, a home dir and `/root` each hold a `~/.zeus`, and
+ * anything under a `.zeus` segment is one (Windows Desktop cannot know which
  * WSL user runs the gateway, so every WSL home counts); `/proc`, `/sys`,
  * `/dev` and `/run` are the distro's kernel views, and `/mnt` reaches the
  * Windows drives (and this app's own data) by a second spelling.
@@ -146,7 +146,7 @@ export function wslProtectedPath(candidate: string): boolean {
     (rest.length === 1 && (rest[0] === 'home' || rest[0] === 'root')) ||
     (rest.length === 2 && rest[0] === 'home')
 
-  return holdsHome || WSL_SYSTEM_DIRS.has(rest[0]) || rest.includes('.hermes')
+  return holdsHome || WSL_SYSTEM_DIRS.has(rest[0]) || rest.includes('.zeus')
 }
 
 const LOOPBACK_HOSTS = new Set(['localhost', '::1', '[::1]', '0--1.ipv6-literal.net'])
@@ -233,7 +233,7 @@ export async function overlapsByIdentity(candidate: string, roots: string[]): Pr
 
 /**
  * True when `target`, or a folder between it and `root`, is one of `roots` by
- * filesystem identity: a bind mount of the Hermes home inside a granted folder
+ * filesystem identity: a bind mount of the Zeus home inside a granted folder
  * keeps an inside path but is the protected folder itself.
  */
 export async function protectedIdentityWithin(target: string, root: string, roots: string[]): Promise<boolean> {

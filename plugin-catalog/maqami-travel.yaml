@@ -6,7 +6,7 @@ maintainer: negm17111995
 tier: community
 category: tools
 title: MAQAMI Travel
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/negm17111995/mcp-server#readme
 version: "1.0.7"
 platforms: []

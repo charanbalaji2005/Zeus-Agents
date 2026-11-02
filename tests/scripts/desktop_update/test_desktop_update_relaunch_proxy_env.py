@@ -2,7 +2,7 @@
 
 The Desktop hands its resolved system proxy to the update's children only
 (apps/desktop/electron/updater/system-proxy-env.ts) and marks it:
-HERMES_UPDATE_SYSTEM_PROXY names the variables it added, HERMES_UPDATE_USER_<KEY>
+ZEUS_UPDATE_SYSTEM_PROXY names the variables it added, ZEUS_UPDATE_USER_<KEY>
 holds a NO_PROXY of the user's that it extended. The relaunched app inheriting
 that env would proxy every LAN host the PAC sends direct, and the next update
 would read the stale proxy as the user's own setting.
@@ -25,8 +25,8 @@ _DESKTOP_PROXY_ENV = {
     "http_proxy": "http://10.0.0.7:7890",
     "NO_PROXY": "corp.internal,localhost,127.0.0.1,::1,10.0.0.0/8",
     "no_proxy": "corp.internal,localhost,127.0.0.1,::1,10.0.0.0/8",
-    "HERMES_UPDATE_SYSTEM_PROXY": "HTTPS_PROXY,https_proxy,HTTP_PROXY,http_proxy,no_proxy",
-    "HERMES_UPDATE_USER_NO_PROXY": "corp.internal",
+    "ZEUS_UPDATE_SYSTEM_PROXY": "HTTPS_PROXY,https_proxy,HTTP_PROXY,http_proxy,no_proxy",
+    "ZEUS_UPDATE_USER_NO_PROXY": "corp.internal",
 }
 
 
@@ -37,10 +37,10 @@ def test_relaunched_desktop_gets_the_users_proxy_env_back(tmp_path, monkeypatch)
     home, install = _install(tmp_path)
     unpacked = install / "apps/desktop/release/linux-unpacked"
     unpacked.mkdir(parents=True)
-    app = unpacked / "hermes"
+    app = unpacked / "zeus"
     dump = tmp_path / "relaunched-env.txt"
     app.write_text(f"#!/bin/sh\necho $$ > {dump}.pid\n"
-                   f"env | grep -i -E '_proxy=|^HERMES_UPDATE_(SYSTEM_PROXY|USER_)' > {dump}.part; mv {dump}.part {dump}\n"
+                   f"env | grep -i -E '_proxy=|^ZEUS_UPDATE_(SYSTEM_PROXY|USER_)' > {dump}.part; mv {dump}.part {dump}\n"
                    # Outlive posix.sh's 1.5 s launch-acceptance check, then exit before teardown.
                    "sleep 2\n",
                    encoding="utf-8")

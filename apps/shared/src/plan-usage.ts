@@ -6,7 +6,7 @@
  * returns the empty answer and their pickers are unchanged.
  *
  * Words are each client's own translated copy (desktop `t.modelPicker`, TUI `pickers.model.plan`).
- * Python twin: hermes_cli/model_picker_usage.py.
+ * Python twin: zeus_cli/model_picker_usage.py.
  */
 import type { ModelOptionProvider, PlanUsageGauge, UsageLimit } from './gateway-contract.generated.js'
 
@@ -157,7 +157,7 @@ export function blockingGauge(provider: PlanProvider | null | undefined, model: 
 }
 
 /** "5h", "2d 3h", "12m", "soon" until *resetsAtMs* — the picker's compact reset (Python twin:
- *  hermes_cli/model_picker_usage.py `format_resets_in`, without the "resets in" prefix). */
+ *  zeus_cli/model_picker_usage.py `format_resets_in`, without the "resets in" prefix). */
 export function formatResetsIn(resetsAtMs: null | number | undefined, nowMs: number = Date.now()): string {
   if (typeof resetsAtMs !== 'number' || resetsAtMs <= 0) {
     return ''

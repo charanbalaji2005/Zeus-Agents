@@ -1,10 +1,10 @@
 /**
  * Desktop attaching to a local gateway that was already running (#134889 W3).
  *
- * The shape every Windows login item, `hermes gateway run` console and CLI
+ * The shape every Windows login item, `zeus gateway run` console and CLI
  * session leaves behind: the profile's gateway is up BEFORE the Desktop opens.
  * Desktop must attach to that process through the real main-process path
- * (electron/local-gateway.ts `hermes gateway ensure`, then the ticket mint:
+ * (electron/local-gateway.ts `zeus gateway ensure`, then the ticket mint:
  * the SID-checked named pipe through the installed runtime's helper on
  * Windows, the private control socket elsewhere), never start a second one,
  * and serve a turn on it. Quitting leaves the gateway it did not start
@@ -12,7 +12,7 @@
  *
  * Runs on every OS. The Windows Desktop lane (.github/workflows/
  * windows-desktop-attach-e2e.yml) runs it on a real Windows runner against the
- * dev tree and, with HERMES_E2E_PACKAGED_EXE, against the electron-builder
+ * dev tree and, with ZEUS_E2E_PACKAGED_EXE, against the electron-builder
  * `--dir` build of the same commit.
  */
 
@@ -46,12 +46,12 @@ const nonce = Math.random().toString(36).slice(2, 8).replace(/[^a-z0-9]/g, 'x').
 const U = (n: number) => `U${n}-attach${nonce}`
 const A = (n: number) => `A${n}-attach${nonce}`
 
-const PYTHON = process.env.HERMES_E2E_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
-const PACKAGED_EXE = process.env.HERMES_E2E_PACKAGED_EXE || ''
+const PYTHON = process.env.ZEUS_E2E_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
+const PACKAGED_EXE = process.env.ZEUS_E2E_PACKAGED_EXE || ''
 
 function gatewayState(sandbox: CoreSandbox): Record<string, any> {
   try {
-    return JSON.parse(fs.readFileSync(path.join(sandbox.hermesHome, 'gateway_state.json'), 'utf8').replace(/^\uFEFF/, ''))
+    return JSON.parse(fs.readFileSync(path.join(sandbox.zeusHome, 'gateway_state.json'), 'utf8').replace(/^\uFEFF/, ''))
   } catch {
     return {}
   }
@@ -67,12 +67,12 @@ function alive(pid: number): boolean {
   }
 }
 
-/** `hermes gateway run`, detached and windowless, as a login item / console starts it. */
+/** `zeus gateway run`, detached and windowless, as a login item / console starts it. */
 async function startGatewayFirst(sandbox: CoreSandbox): Promise<{ pid: number; log: string }> {
   const log = path.join(sandbox.root, 'gateway-run.log')
   const out = fs.openSync(log, 'a')
 
-  const child = spawn(PYTHON, ['-m', 'hermes_cli.main', 'gateway', 'run'], {
+  const child = spawn(PYTHON, ['-m', 'zeus_cli.main', 'gateway', 'run'], {
     cwd: REPO_ROOT,
     env: coreAppEnv(sandbox),
     detached: true,
@@ -119,7 +119,7 @@ async function launchApp(sandbox: CoreSandbox): Promise<{ app: ElectronApplicati
 test(`Desktop${PACKAGED_EXE ? ' (packaged)' : ''} attaches to the gateway already running and serves a turn`, async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('attach')
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   let live: null | { app: ElectronApplication; page: Page } = null
 
   try {
@@ -145,7 +145,7 @@ test(`Desktop${PACKAGED_EXE ? ' (packaged)' : ''} attaches to the gateway alread
         await installDuplicateSampler(page)
 
         // Main's descriptor names the very gateway that was running first.
-        const descriptor = await page.evaluate(() => (window as any).hermesDesktop.getConnection())
+        const descriptor = await page.evaluate(() => (window as any).zeusDesktop.getConnection())
         const state = gatewayState(sandbox)
         expect(descriptor?.mode, `connection descriptor: ${JSON.stringify(descriptor)}`).toBe('local')
         expect(String(descriptor?.gatewayEndpoint?.api_origin ?? descriptor?.baseUrl ?? '')).toMatch(
@@ -206,7 +206,7 @@ test(`Desktop${PACKAGED_EXE ? ' (packaged)' : ''} attaches to the gateway alread
     const stopped = stopSandboxGateway(sandbox)
     expect(stopped.code, stopped.output).toBe(0)
     await expect
-      .poll(() => alive(gateway.pid), { timeout: 90_000, message: 'hermes gateway stop ends the gateway' })
+      .poll(() => alive(gateway.pid), { timeout: 90_000, message: 'zeus gateway stop ends the gateway' })
       .toBe(false)
   } finally {
     if (live) {

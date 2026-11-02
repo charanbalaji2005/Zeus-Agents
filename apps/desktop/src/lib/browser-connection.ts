@@ -1,6 +1,6 @@
-import { LOCAL_CONNECTION_ID } from '@hermes/shared'
+import { LOCAL_CONNECTION_ID } from '@zeus/shared'
 
-import type { HermesApiRequest, HermesConnection } from '@/global'
+import type { ZeusApiRequest, ZeusConnection } from '@/global'
 import { webappSignInRequired } from '@/lib/browser-launch-session'
 import { createServedProfiles, SERVED_SET_READ_TIMEOUT_MS, UnservedProfileError } from '@/lib/browser-served-profiles'
 import {
@@ -33,7 +33,7 @@ function ridesWithProfile(profile?: null | string): boolean {
   return Boolean(name) && name !== browserLaunchProfileOrDefault()
 }
 
-function connectionFor(bootstrap: BrowserBootstrap, profile: null | string | undefined, servedHere: boolean): HermesConnection {
+function connectionFor(bootstrap: BrowserBootstrap, profile: null | string | undefined, servedHere: boolean): ZeusConnection {
   if (!bootstrap.authRequired && !bootstrap.token) {throw webappSignInRequired()}
 
   const baseUrl = `${window.location.origin}${bootstrap.basePath}`
@@ -74,20 +74,20 @@ function browserConnectionConfig(bootstrap: BrowserBootstrap, profile?: null | s
     sshHost: '',
     sshKeyPath: '',
     sshPort: null,
-    sshRemoteHermesPath: '',
+    sshRemoteZeusPath: '',
     sshRemoteProfile: '',
     sshUser: ''
   }
 }
 
 interface BrowserConnectionOptions {
-  api: <T>(request: HermesApiRequest) => Promise<T>
+  api: <T>(request: ZeusApiRequest) => Promise<T>
   bootstrap: BrowserBootstrap
 }
 
 /** Connection, gateway socket, roster and sign-in members, all bound to the serving origin. */
 export function createBrowserConnectionBridge({ api, bootstrap }: BrowserConnectionOptions): Pick<
-  Window['hermesDesktop'],
+  Window['zeusDesktop'],
   | 'getAgentRoster'
   | 'getAudioWsUrl'
   | 'getConnection'
@@ -179,8 +179,8 @@ export function createBrowserConnectionBridge({ api, bootstrap }: BrowserConnect
           connectionId: LOCAL_CONNECTION_ID,
           connectionKind: 'local' as const,
           connectionLabel,
-          // A real 'hermes' profile keeps @hermes; the default answers to @default then.
-          handle: profile === 'default' && !profiles.includes('hermes') ? 'hermes' : profile,
+          // A real 'zeus' profile keeps @zeus; the default answers to @default then.
+          handle: profile === 'default' && !profiles.includes('zeus') ? 'zeus' : profile,
           profile,
           targetProfile: profile,
           // Installed here, so listed, but served elsewhere or nowhere.

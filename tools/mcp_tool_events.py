@@ -66,7 +66,7 @@ def _new_secret() -> str:
 def _callback_base() -> Optional[str]:
     """The HTTPS origin servers POST to: ``platforms.webhook.extra.public_url`` (servers reject
     non-https callbacks, and the listener itself is plain HTTP on port 8644 behind it)."""
-    from hermes_cli.webhook import _get_webhook_config
+    from zeus_cli.webhook import _get_webhook_config
     webhook = _get_webhook_config()
     url = (webhook.get("extra") or {}).get("public_url") or webhook.get("public_url") or ""
     url = url.strip().rstrip("/") if isinstance(url, str) else ""
@@ -120,8 +120,8 @@ def _subscribe_params(route_name: str, route: dict, url_base: str, state: dict) 
 # refused if the route changed, so per-event cursor writes on the route would strand in-flight runs.
 
 def _state_path():
-    from hermes_constants import get_hermes_home
-    return get_hermes_home() / _STATE_FILENAME
+    from zeus_constants import get_zeus_home
+    return get_zeus_home() / _STATE_FILENAME
 
 
 def _load_state() -> dict[str, dict]:
@@ -137,7 +137,7 @@ def _mutate_state(mutate, *, route_must_exist: Optional[str] = None) -> Any:
     """Apply *mutate* to the state under the webhook store's lock (never nested inside
     ``_mutate_subscriptions``: the lock is not reentrant). With *route_must_exist*, nothing is written
     and None is returned when that route is gone."""
-    from hermes_cli.webhook import _load_subscriptions_unlocked, _subscriptions_lock
+    from zeus_cli.webhook import _load_subscriptions_unlocked, _subscriptions_lock
     from utils import atomic_json_write
     with _subscriptions_lock():
         if route_must_exist is not None:
@@ -193,7 +193,7 @@ def _refresh_due_at(state: dict) -> float:
 
 
 def _write_route(route_name: str, route: Optional[dict]) -> None:
-    from hermes_cli.webhook import _mutate_subscriptions
+    from zeus_cli.webhook import _mutate_subscriptions
 
     def mutate(subscriptions: dict) -> None:
         if route is None:
@@ -206,7 +206,7 @@ def _write_route(route_name: str, route: Optional[dict]) -> None:
 
 
 def _load_routes(server_name: str) -> dict[str, dict]:
-    from hermes_cli.webhook import _load_subscriptions
+    from zeus_cli.webhook import _load_subscriptions
     return _server_routes(_load_subscriptions(), server_name)
 
 
@@ -348,7 +348,7 @@ async def _subscribe_event(session, args: dict, server_name: str) -> dict:
     route_name = _route_name(server_name, args["name"], arguments)
     existing = (await asyncio.to_thread(_load_routes, server_name)).get(route_name)
     if existing is not None and existing.get("enabled", True) is False:
-        # Only the dashboard's enable action turns a route back on (same rule as hermes_cli.webhook).
+        # Only the dashboard's enable action turns a route back on (same rule as zeus_cli.webhook).
         return {"error": f"The subscription to '{args['name']}' with these arguments is turned off in the "
                          "webhook dashboard. Turn it back on there to resume it."}
     deliver_extra = {"chat_id": args["deliver_chat_id"]} if args.get("deliver_chat_id") else {}

@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 def ctx_bound(fn: Callable[..., Any]) -> Callable[..., Any]:
     """Bind ``fn`` to the CALLER's contextvars for another thread/executor. Profile isolation
-    is a ContextVar-scoped HERMES_HOME override plus the per-turn secret scope; a worker started
+    is a ContextVar-scoped ZEUS_HOME override plus the per-turn secret scope; a worker started
     with an empty context silently lands on the default profile (or fails closed on secrets)."""
     ctx = contextvars.copy_context()
     return lambda *args, **kwargs: ctx.run(fn, *args, **kwargs)
@@ -89,14 +89,14 @@ class MemoryProvider(ABC):
 
     - hand every load a NEW instance (``register(ctx)`` / the loader constructs one per agent). The
       manager refuses an instance another profile's manager already bound, rather than rebinding it;
-    - bind every store, path, client, bank or tenant from ``initialize()``'s ``hermes_home`` (and
+    - bind every store, path, client, bank or tenant from ``initialize()``'s ``zeus_home`` (and
       scoped secrets read during ``initialize``) and keep that binding on the instance;
     - keep no profile-specific mutable state at module or class level, and never "rebind" a shared
       binding per call: two profiles' calls interleave on different threads.
 
     The manager runs tool calls and lifecycle hooks only from the profile the instance was initialized
     for (refusing callers that name another profile, or none on a multiplexed process), runs its
-    background hooks under that profile's ``HERMES_HOME``, and passes ``hermes_home`` /
+    background hooks under that profile's ``ZEUS_HOME``, and passes ``zeus_home`` /
     ``agent_identity`` / ``caller_gsk`` to ``handle_tool_call`` when it accepts ``**kwargs``. Those
     keywords name the same profile the instance is bound to; they are not a reason to rebind. Core
     cannot see inside a provider: one that keeps a process-wide binding still breaks this contract.
@@ -121,8 +121,8 @@ class MemoryProvider(ABC):
     def initialize(self, session_id: str, **kwargs) -> None:
         """Initialize once at agent startup (connections, resources, threads).
 
-        kwargs always include ``hermes_home`` (profile-scoped storage; never hardcode
-        ``~/.hermes``) and ``platform``; may include ``agent_context`` ("primary" |
+        kwargs always include ``zeus_home`` (profile-scoped storage; never hardcode
+        ``~/.zeus``) and ``platform``; may include ``agent_context`` ("primary" |
         "subagent" | "cron" | "flush" — skip writes for non-primary contexts),
         ``agent_identity``, ``agent_workspace``, ``parent_session_id``, ``user_id``, ``user_id_alt``.
         """
@@ -199,13 +199,13 @@ class MemoryProvider(ABC):
         """PARENT-side observation of a completed delegation (the subagent has no provider session)."""
 
     def get_config_schema(self) -> list[dict[str, Any]]:
-        """Setup fields for ``hermes memory setup`` ([] if none): ``key``, ``description``,
+        """Setup fields for ``zeus memory setup`` ([] if none): ``key``, ``description``,
         optional ``secret`` (goes to .env), ``required``, ``default``, ``choices``, ``type``
         (text | integer | number | boolean), ``minimum``/``maximum``/``step``, ``url``,
         ``env_var`` (explicit secret env var; default auto-generated)."""
         return []
 
-    def save_config(self, values: dict[str, Any], hermes_home: str) -> None:
+    def save_config(self, values: dict[str, Any], zeus_home: str) -> None:
         """Write non-secret setup ``values`` to the provider's native config. Plugins MUST either
         override this or use only env vars (every schema field carrying ``env_var``)."""
 
@@ -220,6 +220,6 @@ class MemoryProvider(ABC):
         """
 
     def backup_paths(self) -> list[str]:
-        """Absolute paths of provider state OUTSIDE HERMES_HOME for ``hermes backup``/``import``
+        """Absolute paths of provider state OUTSIDE ZEUS_HOME for ``zeus backup``/``import``
         (paths outside the home dir are skipped). MUST work without ``initialize()`` or network."""
         return []

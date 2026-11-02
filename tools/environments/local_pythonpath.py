@@ -1,9 +1,9 @@
-"""Hermes-owned PYTHONPATH stripping for child processes. Launchers prepend the repo
-root and the Hermes venv's site-packages so the backend can ``import tools``; leaked
+"""Zeus-owned PYTHONPATH stripping for child processes. Launchers prepend the repo
+root and the Zeus venv's site-packages so the backend can ``import tools``; leaked
 into a child Python of a DIFFERENT version they load the backend's C extensions and
-crash. Only entries proven Hermes-owned by *path provenance* are removed — never by a
-cross-version heuristic. Module state (``_hermes_repo_root_aliases``, ``_in_venv``,
-``_hermes_site_packages``) lives in ``tools.environments.local`` (via :func:`_state`)
+crash. Only entries proven Zeus-owned by *path provenance* are removed — never by a
+cross-version heuristic. Module state (``_zeus_repo_root_aliases``, ``_in_venv``,
+``_zeus_site_packages``) lives in ``tools.environments.local`` (via :func:`_state`)
 so tests monkeypatching it there keep working."""
 
 import logging
@@ -31,18 +31,18 @@ def _same_path(left: Path, right: Path) -> bool:
     return [os.path.normcase(p) for p in left.parts] == [os.path.normcase(p) for p in right.parts]
 
 
-def _build_hermes_repo_root_aliases(
+def _build_zeus_repo_root_aliases(
     resolved_root: Path, lexical_root: Path, configured_home: Path,
 ) -> tuple[Path, ...]:
-    """Exact repo-root spellings emitted by Hermes launchers. Mirrors
-    ``gateway_windows._preserve_hermes_home_path`` (physical path under the resolved
-    HERMES_HOME -> configured spelling) so a junction-backed install matches without
-    treating arbitrary HERMES_HOME descendants as Hermes-owned. A repo-level junction
+    """Exact repo-root spellings emitted by Zeus launchers. Mirrors
+    ``gateway_windows._preserve_zeus_home_path`` (physical path under the resolved
+    ZEUS_HOME -> configured spelling) so a junction-backed install matches without
+    treating arbitrary ZEUS_HOME descendants as Zeus-owned. A repo-level junction
     (possibly cross-drive) is accepted only when a strict resolve proves
     <root>/<repo dirname> is the physical root (fail-closed)."""
     candidates = [resolved_root, lexical_root]
     # Profile re-home: with --profile the configured home is <root>/profiles/<name>
-    # and the repo lives beside the profiles dir (as get_default_hermes_root() does).
+    # and the repo lives beside the profiles dir (as get_default_zeus_root() does).
     home_candidates = [configured_home]
     if configured_home.parent.name == "profiles":
         home_candidates.append(configured_home.parent.parent)
@@ -91,7 +91,7 @@ def _validated_runtime_venv(env: dict) -> Path | None:
         return shipped
     candidate = Path(env.get("VIRTUAL_ENV") or "")
     if not env.get("VIRTUAL_ENV") or not any(
-            _same_path(candidate, root / "venv") for root in _state()._hermes_repo_root_aliases):
+            _same_path(candidate, root / "venv") for root in _state()._zeus_repo_root_aliases):
         return None
     try:
         return candidate if (candidate / "pyvenv.cfg").is_file() else None
@@ -99,12 +99,12 @@ def _validated_runtime_venv(env: dict) -> Path | None:
         return None
 
 
-def _get_hermes_site_packages(env: dict) -> list[Path]:
-    """Exact site-packages dirs owned by the Hermes runtime (cached):
+def _get_zeus_site_packages(env: dict) -> list[Path]:
+    """Exact site-packages dirs owned by the Zeus runtime (cached):
     ``site.getsitepackages()`` with a ``sys.prefix`` fallback, plus a validated
     Windows base-interpreter launch's ``VIRTUAL_ENV/Lib/site-packages``."""
     local = _state()
-    if local._hermes_site_packages is None:
+    if local._zeus_site_packages is None:
         result: list[Path] = []
         if local._in_venv:
             try:
@@ -116,8 +116,8 @@ def _get_hermes_site_packages(env: dict) -> list[Path]:
                 pyver = f"python{sys.version_info[0]}.{sys.version_info[1]}"
                 result.append(Path(sys.prefix) / "Lib" / "site-packages" if _IS_WINDOWS
                               else Path(sys.prefix) / "lib" / pyver / "site-packages")
-        local._hermes_site_packages = list(result)
-    result = list(local._hermes_site_packages)
+        local._zeus_site_packages = list(result)
+    result = list(local._zeus_site_packages)
 
     runtime_venv = _validated_runtime_venv(env)
     if runtime_venv is not None:
@@ -128,17 +128,17 @@ def _get_hermes_site_packages(env: dict) -> list[Path]:
     return result
 
 
-def _strip_hermes_owned_pythonpath_and_runtime_markers(env: dict) -> None:
-    """Strip Hermes-owned PYTHONPATH entries, then the runtime marker vars. Order is
+def _strip_zeus_owned_pythonpath_and_runtime_markers(env: dict) -> None:
+    """Strip Zeus-owned PYTHONPATH entries, then the runtime marker vars. Order is
     load-bearing: PYTHONPATH filtering runs BEFORE the markers go so a validated Windows
     base-interpreter launch (VIRTUAL_ENV -> <repo>/venv) can still prove ownership."""
-    _strip_hermes_owned_pythonpath(env)
+    _strip_zeus_owned_pythonpath(env)
     for _marker in _ACTIVE_VENV_MARKER_VARS:
         env.pop(_marker, None)
 
 
-def _strip_hermes_owned_pythonpath(env: dict) -> None:
-    """Remove Hermes-owned PYTHONPATH entries: only exact matches of the repo root
+def _strip_zeus_owned_pythonpath(env: dict) -> None:
+    """Remove Zeus-owned PYTHONPATH entries: only exact matches of the repo root
     (any launcher spelling) and runtime site-packages — never descendants, which are
     user paths. Empty components (= cwd) and everything else are preserved.
 
@@ -149,7 +149,7 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
     pp = env.get("PYTHONPATH")
     if not pp:
         return
-    owned_paths = [*_get_hermes_site_packages(env), *_state()._hermes_repo_root_aliases]
+    owned_paths = [*_get_zeus_site_packages(env), *_state()._zeus_repo_root_aliases]
     entries = pp.split(os.pathsep)
     stripped = [e for e in entries if e and any(_same_path(Path(e), p) for p in owned_paths)]
     kept = [e for e in entries if e not in stripped]
@@ -158,4 +158,4 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
     else:
         env.pop("PYTHONPATH", None)
     if stripped:
-        logger.debug("Stripped Hermes-owned entries from PYTHONPATH: %s", stripped)
+        logger.debug("Stripped Zeus-owned entries from PYTHONPATH: %s", stripped)

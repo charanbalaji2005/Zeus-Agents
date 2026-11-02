@@ -1,5 +1,5 @@
-import type { MouseTrackingMode, ScrollBoxHandle } from '@hermes/ink'
-import type { Usage } from '@hermes/shared/gateway-events'
+import type { MouseTrackingMode, ScrollBoxHandle } from '@zeus/ink'
+import type { Usage } from '@zeus/shared/gateway-events'
 import type { MutableRefObject, ReactNode, RefObject, SetStateAction } from 'react'
 
 import type { PasteEvent } from '../components/textInput.js'
@@ -121,7 +121,7 @@ export interface GatewayProviderProps {
 // the SAME RPCs as the old slash flows (billing.charge / charge_status /
 // auto_reload / step_up).  Backend is unchanged & shared with the CLI.
 
-export type BillingScreen = 'autoreload' | 'buy' | 'confirm' | 'hermes' | 'limit' | 'overview' | 'stepup'
+export type BillingScreen = 'autoreload' | 'buy' | 'confirm' | 'zeus' | 'limit' | 'overview' | 'stepup'
 
 /** Outcome of a charge attempt — lets the overlay route without tearing down. */
 export type BillingChargeOutcome =

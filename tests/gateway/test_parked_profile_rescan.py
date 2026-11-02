@@ -19,12 +19,12 @@ def multiplexed(tmp_path, monkeypatch):
     monkeypatch.setattr(run, '_load_gateway_config', lambda *a: {
         'platform_toolsets': {'cli': [], 'tui': []},
         'model': {'provider': 'custom', 'base_url': 'http://127.0.0.1:9/v1', 'api_key': 'test-key'}})
-    root = tmp_path / '.hermes'
+    root = tmp_path / '.zeus'
     root.mkdir(mode=0o700)
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
-    monkeypatch.setenv('HERMES_HOME', str(root))
-    import hermes_state
-    monkeypatch.setattr(hermes_state, 'DEFAULT_DB_PATH', hermes_state._IMPORT_DEFAULT_DB_PATH)
+    monkeypatch.setenv('ZEUS_HOME', str(root))
+    import zeus_state
+    monkeypatch.setattr(zeus_state, 'DEFAULT_DB_PATH', zeus_state._IMPORT_DEFAULT_DB_PATH)
     beta = root / 'profiles' / 'beta'
     beta.mkdir(parents=True, mode=0o700)
     (beta / 'config.yaml').write_text('{}')
@@ -111,7 +111,7 @@ async def test_api_work_queued_before_the_park_is_recovered_by_the_rescan(multip
     from gateway.run_runtime import initialize_gateway_runtime
     from gateway.session_api import bind_api_session
     from gateway.session_authority import SessionAuthority
-    from hermes_state_runtime import admit_session_input
+    from zeus_state_runtime import admit_session_input
     runner, beta = multiplexed
     api = SimpleNamespace(gateway_runner=runner)
     runner.adapters[Platform.API_SERVER] = api  # the launch API adapter is already published

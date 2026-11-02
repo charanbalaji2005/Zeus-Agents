@@ -1,4 +1,4 @@
-import { LOCAL_CONNECTION_ID } from '@hermes/shared'
+import { LOCAL_CONNECTION_ID } from '@zeus/shared'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { setApiRequestConnection, setApiRequestProfile } from '@/api/client'
@@ -11,7 +11,7 @@ import { resolveMediaDisplaySrc, resolveMediaPlaybackSrc } from './media'
 
 // The Webapp asks its gateway for a Windows drive-letter or UNC file in the forms the gateway
 // resolves: reads by the native path, streams by the file: URL itself. The gateway half,
-// tests/hermes_cli/test_webapp_file_urls.py, answers these exact requests.
+// tests/zeus_cli/test_webapp_file_urls.py, answers these exact requests.
 const FILES = [
   { dir: 'file:///C:/Users/me/renders', native: 'C:\\Users\\me\\renders' },
   { dir: 'file://nas/share/renders', native: '\\\\nas\\share\\renders' }
@@ -46,8 +46,8 @@ beforeEach(() => {
 
 afterEach(() => {
   clearWebappSession()
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   setApiRequestConnection(null)
   setApiRequestProfile(null)
   $connection.set(null)
@@ -69,7 +69,7 @@ describe.each(FILES)('a Webapp file under $dir', ({ dir, native }) => {
   it('previews a page by its native path', async () => {
     const target = localPreviewTarget(`${dir}/report%20%231.html`)
 
-    await expect(window.hermesDesktop.readFileText(target?.path ?? '')).resolves.toMatchObject({
+    await expect(window.zeusDesktop.readFileText(target?.path ?? '')).resolves.toMatchObject({
       text: '<p>report</p>'
     })
 
@@ -95,7 +95,7 @@ it('refuses to stream a file URL that encodes a separator', async () => {
   // The gateway would decode the separator into another path segment, so the clip could be
   // a different file than the one its label names.
   for (const clip of ['file:///C:/Users/me/a%2F..%2Fclip.mp4', 'file:///C:/Users/me/a%5Cclip.mp4']) {
-    await expect(window.hermesDesktop.getGatewayFileStreamUrl!({ ...OWNER, path: clip })).rejects.toThrow(
+    await expect(window.zeusDesktop.getGatewayFileStreamUrl!({ ...OWNER, path: clip })).rejects.toThrow(
       'does not name one file'
     )
   }

@@ -1,6 +1,6 @@
 # Opt-out method playbooks
 
-How the agent executes each broker `optout.method` using native Hermes tools. Obey **least-disclosure**:
+How the agent executes each broker `optout.method` using native Zeus tools. Obey **least-disclosure**:
 submit only the subject's OWN identifiers, and only the fields a broker's official channel requires
 (`pdd.py plan` lists them per broker). Never disclose more than that, and confirm a listing is really
 the subject's before acting on any THIRD-PARTY / indirect record (see "Distinguish the subject" and
@@ -203,7 +203,7 @@ actually sends depends on `email_mode`:
 1. **browser mode (no password, autonomous):** the command returns a recipient-locked `compose`
    payload (`to`/`subject`/`body`). Compose a NEW message in the operator's **logged-in webmail** via
    `browser_exec` (paste `compose.body` exactly, disclosing nothing beyond it) and send. No credentials
-   stored. Requires the inbox signed in in the browser Hermes uses.
+   stored. Requires the inbox signed in in the browser Zeus uses.
 2. **programmatic mode (SMTP creds):** the command SMTP-sends it directly, no human.
 3. **draft_only fallback:** `pdd.py render-email <subject> <broker> --listing <url>`; a digest entry
    tells the operator to send it, and the agent records `submitted --channel email` afterward.
@@ -316,7 +316,7 @@ run stalling in Phase 2.
   Turnstile, hCaptcha checkbox) and reads anti-bot people-search pages that `web_extract` and the
   proxyless agent browser cannot. This is what the skill's `browser_backend` setting governs
   (`auto` picks Browserbase when `BROWSERBASE_API_KEY` is present - now also read from
-  `$HERMES_HOME/.env`, not just the shell env, so `doctor`/`setup --auto` detect the key Hermes
+  `$ZEUS_HOME/.env`, not just the shell env, so `doctor`/`setup --auto` detect the key Zeus
   already loads for its own tools).
 - **Phase 2 (execute: opt-out forms, webmail sends, session-bound multi-step gates):** the work must
   run in the **operator's own everyday browser** - real fingerprint, residential IP, AND the
@@ -326,19 +326,19 @@ run stalling in Phase 2.
   multi-step flows that matter (e.g. PeopleConnect guided-mode, whose verify link is session- and
   device-bound to the browser that opens it - a cloud browser both fails the challenge and breaks the
   binding).
-- **How to drive the operator's browser (CDP).** Point Hermes's browser (`browser_exec`) at the
+- **How to drive the operator's browser (CDP).** Point Zeus's browser (`browser_exec`) at the
   operator's real Chrome over the DevTools protocol: launch
-  `chrome --remote-debugging-port=9222 --user-data-dir="$HOME/.hermes/chrome-debug"` and attach Hermes
+  `chrome --remote-debugging-port=9222 --user-data-dir="$HOME/.zeus/chrome-debug"` and attach Zeus
   with `/browser connect` (or `browser.cdp_url` / `BROWSER_CDP_URL`) to `127.0.0.1:9222`. Use a **dedicated debug profile** (`chrome-debug`), NOT the
   operator's Default Chrome profile, and have the operator sign into their webmail (and any needed
   broker accounts) in that profile once. That single browser then carries residential IP + real
-  fingerprint + logged-in sessions, which is precisely what Phase-2 flows need. (This is a Hermes-side
+  fingerprint + logged-in sessions, which is precisely what Phase-2 flows need. (This is a Zeus-side
   browser setup, not a `pdd` config value; `browser_backend` above only selects the Phase-1 scan
   browser.) **The skill launches this for you: `pdd.py cdp`** finds a Chrome/Chromium/Brave/Edge
   binary, starts it detached on the dedicated profile, waits for the debug port, and prints the CDP
   endpoint (`webSocketDebuggerUrl`). `pdd.py cdp --check` reports whether a debug browser is already
   live (and never launches a second one); `pdd.py cdp --print` just emits the exact command for the
-  operator to run themselves. Attach Hermes's browser to the `endpoint` it returns (`/browser connect`).
+  operator to run themselves. Attach Zeus's browser to the `endpoint` it returns (`/browser connect`).
 - **Always-available fallback:** if no CDP browser is wired up, use the operator-in-the-loop path
   (scan ladder 3b) - hand over paste-ready URLs and field-by-field least-disclosure guidance, pausing
   before submit. It never fails; it just needs a human present.

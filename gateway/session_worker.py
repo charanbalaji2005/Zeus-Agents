@@ -8,7 +8,7 @@ import hmac
 import os
 
 from gateway.session_admission import admission_fingerprint
-from hermes_state_runtime import (
+from zeus_state_runtime import (
     RuntimeStoreError, _secret_digest, adopt_worker_execution,
     mutate_worker_execution, register_worker_execution,
 )
@@ -30,7 +30,7 @@ def _claim(connection, ref, params):
         raise RuntimeStoreError('invalid_params')
     try:
         process = psutil.Process(pid)
-        from hermes_cli.process_identity import worker_birth
+        from zeus_cli.process_identity import worker_birth
         if (worker_birth(process) != birth or not process.is_running()
                 or process.status() == psutil.STATUS_ZOMBIE
                 or process.username() != psutil.Process().username()):
@@ -39,14 +39,14 @@ def _claim(connection, ref, params):
         raise RuntimeStoreError('worker_not_live') from exc
     # Reuse the durable adoption digest as the producer claim. Changing any
     # assignment, principal, profile, PID birth or secret cannot adopt it.
-    from hermes_state_worker_compression import worker_claim_origin
+    from zeus_state_worker_compression import worker_claim_origin
     origin = worker_claim_origin(authority.db, params)
     return admission_fingerprint(canonical_target=origin, payload={
         key: params[key] for key in _SCOPE} | {'session_id': origin, 'principal': connection.actor.subject})
 
 
 def _verify(connection, ref, params, claim):
-    from hermes_state_worker_compression import worker_retry_target
+    from zeus_state_worker_compression import worker_retry_target
     authority = connection.authority
     target = worker_retry_target(authority.db, params)
     with authority.db._read_ctx() as conn:

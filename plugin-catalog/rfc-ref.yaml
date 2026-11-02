@@ -12,7 +12,7 @@ description: >-
 maintainer: EloquentBrush0x
 tier: community
 category: web
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/EloquentBrush0x/hermes-context-refs/tree/main/rfc-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/EloquentBrush0x/hermes-context-refs/7d10da5365b5f6d9cfac8c9f5ce8fdc8273f6624/docs/rfc-ref-card.png

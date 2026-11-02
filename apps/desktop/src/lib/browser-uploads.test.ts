@@ -13,8 +13,8 @@ afterEach(() => {
   cleanup()
   clearNotifications()
   clearWebappSession()
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   $connection.set(null)
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
@@ -37,7 +37,7 @@ describe('browser image paste size', () => {
     vi.stubGlobal('fetch', fetchMock)
     expect(installBrowserDesktopBridge()).toBe(true)
 
-    await expect(window.hermesDesktop!.saveImageBuffer(png(BROWSER_UPLOAD_MAX_BYTES + 1), '.png')).rejects.toThrow(
+    await expect(window.zeusDesktop!.saveImageBuffer(png(BROWSER_UPLOAD_MAX_BYTES + 1), '.png')).rejects.toThrow(
       'The image is larger than 16 MiB, the largest image the browser can send.'
     )
     expect(fetchMock).not.toHaveBeenCalled()
@@ -47,14 +47,14 @@ describe('browser image paste size', () => {
     seedWebappSession('served-token')
 
     const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ path: '/srv/hermes/cache/images/upload.png' }), { status: 200 })
+      new Response(JSON.stringify({ path: '/srv/zeus/cache/images/upload.png' }), { status: 200 })
     )
 
     vi.stubGlobal('fetch', fetchMock)
     expect(installBrowserDesktopBridge()).toBe(true)
 
-    await expect(window.hermesDesktop!.saveImageBuffer(png(BROWSER_UPLOAD_MAX_BYTES), '.png')).resolves.toBe(
-      '/srv/hermes/cache/images/upload.png'
+    await expect(window.zeusDesktop!.saveImageBuffer(png(BROWSER_UPLOAD_MAX_BYTES), '.png')).resolves.toBe(
+      '/srv/zeus/cache/images/upload.png'
     )
     expect((fetchMock.mock.calls[0] as [URL])[0].pathname).toBe('/api/chat/image-upload')
   })
@@ -81,7 +81,7 @@ describe('browser file stage size', () => {
 
     vi.stubGlobal('fetch', fetchMock)
     expect(installBrowserDesktopBridge()).toBe(true)
-    $connection.set(await window.hermesDesktop.getConnection('owner'))
+    $connection.set(await window.zeusDesktop.getConnection('owner'))
 
     const uploads = () => fetchMock.mock.calls.filter(([input]) => String(input).includes('/api/chat/file-upload'))
 

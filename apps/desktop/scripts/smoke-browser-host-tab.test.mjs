@@ -32,7 +32,7 @@ function fakeClient() {
 const navigations = calls => calls.filter(([method]) => method === 'Page.navigate').map(([, params]) => params.url)
 
 describe('browser smoke viewport tab', () => {
-  // The smoke's input URL may be the one-use launch link `hermes webapp --no-open` prints, and only
+  // The smoke's input URL may be the one-use launch link `zeus webapp --no-open` prints, and only
   // the tab that spent it keeps the grant it bought. Every viewport therefore loads in one tab: the
   // first opens the input URL, and each later one reopens the address the first one landed on.
   it('spends a launch link once and reopens the Webapp it landed on for every later viewport', async () => {

@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { Box, Text, useInput } from '@hermes/ink'
+import { Box, Text, useInput } from '@zeus/ink'
 import { useRef, useState } from 'react'
 
 import type { BillingOverlayState } from '../app/interfaces.js'
@@ -38,7 +38,7 @@ const usd = (amount: string) => `$${amount}`
 
 /**
  * The /billing modal.  A self-contained state machine:
- *   overview → buy | autoreload | limit | hermes  (and buy → confirm).
+ *   overview → buy | autoreload | limit | zeus  (and buy → confirm).
  * Esc from a sub-screen returns to overview; Esc from overview closes.
  * All RPCs + error mapping live in billing.ts and are reached through
  * `overlay.ctx` — this component only renders + routes keys.
@@ -64,7 +64,7 @@ export function BillingOverlay({ onClose, onPatch, overlay, t }: BillingOverlayP
       )}
       {screen === 'autoreload' && <AutoReloadScreen ctx={ctx} onClose={onClose} onPatch={onPatch} s={s} t={t} />}
       {screen === 'limit' && <LimitScreen ctx={ctx} onClose={onClose} onPatch={onPatch} s={s} t={t} />}
-      {screen === 'hermes' && <KeepGoingOnCreditsScreen ctx={ctx} onClose={onClose} onPatch={onPatch} s={s} t={t} />}
+      {screen === 'zeus' && <KeepGoingOnCreditsScreen ctx={ctx} onClose={onClose} onPatch={onPatch} s={s} t={t} />}
       {screen === 'stepup' && (
         <StepUpScreen
           amount={overlay.pendingCharge?.amount ?? ''}
@@ -111,18 +111,18 @@ function OverviewScreen({ ctx, onClose, onPatch, s, t }: ScreenProps) {
   // instead of an amount picker that would 403 no_payment_method.
   // Window plans: turning it on spends money later, so it confirms first (like
   // the terminal /topup); turning it off happens at once.
-  const { line: hermesLine, offOnly, row: hermesRow } = keepGoingChrome(s, B, full)
+  const { line: zeusLine, offOnly, row: zeusRow } = keepGoingChrome(s, B, full)
 
   const items = full
     ? [
         B.overview.addFunds,
         B.overview.autoReload,
-        ...(hermesRow ? [hermesRow] : []),
+        ...(zeusRow ? [zeusRow] : []),
         B.overview.monthlyLimit,
         B.common.manageOnPortal,
         B.common.cancel
       ]
-    : [...(offOnly && hermesRow ? [hermesRow] : []), B.common.manageOnPortal, B.common.cancel]
+    : [...(offOnly && zeusRow ? [zeusRow] : []), B.common.manageOnPortal, B.common.cancel]
 
   const choose = (i: number) => {
     const label = items[i]
@@ -133,12 +133,12 @@ function OverviewScreen({ ctx, onClose, onPatch, s, t }: ScreenProps) {
       onPatch({ screen: 'autoreload' })
     } else if (full && label === B.overview.monthlyLimit) {
       onPatch({ screen: 'limit' })
-    } else if ((full || offOnly) && label === hermesRow) {
+    } else if ((full || offOnly) && label === zeusRow) {
       if (s.keep_going_on_credits) {
         applyKeepGoingOnCredits(ctx, B, false)
         onClose()
       } else {
-        onPatch({ screen: 'hermes' })
+        onPatch({ screen: 'zeus' })
       }
     } else {
       if (label === B.common.manageOnPortal && s.portal_url) {
@@ -171,7 +171,7 @@ function OverviewScreen({ ctx, onClose, onPatch, s, t }: ScreenProps) {
           /subscription. Renders nothing when no usage model is available. */}
       <UsageBars model={s.usage} t={t} />
       {auto && <Text color={t.color.muted}>{auto}</Text>}
-      {hermesLine && <Text color={t.color.muted}>{hermesLine}</Text>}
+      {zeusLine && <Text color={t.color.muted}>{zeusLine}</Text>}
       {/* Card presence at a glance: which card a charge would use (with why —
           "the card on your subscription"), or that none is saved. Only for the
           full menu — members/billing-off get the portal note instead. */}

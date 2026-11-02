@@ -1,4 +1,4 @@
-import type { OnboardingStartResult } from '@hermes/shared'
+import type { OnboardingStartResult } from '@zeus/shared'
 
 import { chatMessageText } from '@/lib/chat-messages'
 import { BACKEND_BOOT_WAIT_TIMEOUT_MS } from '@/lib/with-timeout'

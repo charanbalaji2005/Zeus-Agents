@@ -71,7 +71,7 @@ def test_proc_ct_writes_a_dot_under_a_comma_decimal_locale(comma_numeric_env, sl
 
 def test_handoff_keeps_its_claim_and_publishes_the_update_child(tmp_path, comma_numeric_env, sleeper):
     """The reported exit 3: our own claim must stay ours, or the update child is never published."""
-    marker = tmp_path / ".hermes-update-in-progress"
+    marker = tmp_path / ".zeus-update-in-progress"
     script = (f"log() {{ printf '%s\\n' \"$*\" >&2; }}; MARKER={shlex.quote(str(marker))} "
               f"INSTALL_ROOT={shlex.quote(str(tmp_path))} DESKTOP_PID=0 HANDOFF_RUN='' "
               f"STARTED_AT=$(date +%s) MARKER_CLAIMED=0; . {shlex.quote(str(MARKER_SH))}; "

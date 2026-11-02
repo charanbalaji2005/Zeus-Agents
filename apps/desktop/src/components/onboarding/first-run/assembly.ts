@@ -49,7 +49,7 @@ export function openDemoLayout(): void {
   startChatOnboardingSolo()
 
   if ($chatOnboardingSolo.get()) {
-    window.hermesDesktop?.chatOnboarding?.size('onboarding')
+    window.zeusDesktop?.chatOnboarding?.size('onboarding')
   }
 }
 
@@ -72,7 +72,7 @@ function startChatOnboardingSolo(): void {
 /** Leave the demo for the user's own layout at the normal window size. */
 export function endChatOnboardingSolo(): void {
   if ($chatOnboardingSolo.get()) {
-    window.hermesDesktop?.chatOnboarding?.size('normal')
+    window.zeusDesktop?.chatOnboarding?.size('normal')
   }
 
   $chatOnboardingSolo.set(false)
@@ -84,7 +84,7 @@ export function keepChatOnboardingLayout(): void {
   previousLayout = null
 
   if ($chatOnboardingSolo.get()) {
-    window.hermesDesktop?.chatOnboarding?.size('normal')
+    window.zeusDesktop?.chatOnboarding?.size('normal')
   }
 
   $chatOnboardingSolo.set(false)
@@ -144,7 +144,7 @@ export function assembleChatOnboarding(id: string, tree: LayoutNode, mode?: Inte
 
   previousLayout = null
 
-  window.hermesDesktop?.chatOnboarding?.size('normal')
+  window.zeusDesktop?.chatOnboarding?.size('normal')
 
   reconcileLayout(id, tree)
 }

@@ -60,7 +60,7 @@ def test_pre_build_setup_prints_the_dispatch_before_any_other_work():
     ("commit", {}),
     ("channel", {"CHANNEL": "magic-test"}),
     ("channel", {"CHANNEL": "magic-test", "BRANDING": "stable"}),
-    ("commit", {"BUNDLE_ENV_JSON": json.dumps({"HERMES_DATA_DIR_SUFFIX": "-test", "HERMES_HOME": None})}),
+    ("commit", {"BUNDLE_ENV_JSON": json.dumps({"ZEUS_DATA_DIR_SUFFIX": "-test", "ZEUS_HOME": None})}),
 ])
 def test_printed_command_is_the_dispatcher_command(kind, extra):
     values = env(BUILD_COMMIT=SHA, **extra)
@@ -126,7 +126,7 @@ def test_module_prints_the_report_from_the_process_environment(monkeypatch, caps
 
 
 def test_bundle_env_round_trips_the_cli_flags():
-    baked = parse_assignments(["HERMES_SHARED_AUTH_DIR=/shared"], ["HERMES_HOME"])
+    baked = parse_assignments(["ZEUS_SHARED_AUTH_DIR=/shared"], ["ZEUS_HOME"])
     facts = dispatch_log.describe(env(BUILD_COMMIT=SHA, BUNDLE_ENV_JSON=json.dumps(baked)))
     flags = dispatch_log.command_flags(facts)
-    assert flags == ["--build-commit", SHA, "--bundle-unset", "HERMES_HOME", "--bundle-env", "HERMES_SHARED_AUTH_DIR=/shared"]
+    assert flags == ["--build-commit", SHA, "--bundle-unset", "ZEUS_HOME", "--bundle-env", "ZEUS_SHARED_AUTH_DIR=/shared"]

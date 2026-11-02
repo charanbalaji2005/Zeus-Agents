@@ -58,7 +58,7 @@ def api_turn_executor() -> _UnboundedThreadExecutor:
     global _API_TURN_EXECUTOR
     with _API_TURN_EXECUTOR_LOCK:
         if _API_TURN_EXECUTOR is None:
-            _API_TURN_EXECUTOR = _UnboundedThreadExecutor(thread_name_prefix="hermes-api-turn")
+            _API_TURN_EXECUTOR = _UnboundedThreadExecutor(thread_name_prefix="zeus-api-turn")
         return _API_TURN_EXECUTOR
 
 
@@ -117,8 +117,8 @@ def _submit_api_worker(loop, fn):
             _API_WORKER_LIVE -= 1
         raise
 _ROOM_RETENTION_REQUEST_KEY = (
-    RequestKey("hermes.room_run_retention_until", float) if RequestKey is not None
-    else "hermes.room_run_retention_until")
+    RequestKey("zeus.room_run_retention_until", float) if RequestKey is not None
+    else "zeus.room_run_retention_until")
 # Forwarded subagent lifecycle fields; free-text ones are secret-redacted.
 _SUBAGENT_EVENT_KEYS = (
     "goal", "task_count", "task_index", "subagent_id", "child_session_id", "delegation_id", "parent_id",
@@ -210,14 +210,14 @@ def _remember_room_retention(request: web.Request, claims: dict[str, Any]) -> No
     try:
         request[_ROOM_RETENTION_REQUEST_KEY] = value
     except (AttributeError, TypeError):
-        request._hermes_room_run_retention_until = value
+        request._zeus_room_run_retention_until = value
 
 
 def _room_retention_until(request: web.Request) -> float:
     try:
         value = request.get(_ROOM_RETENTION_REQUEST_KEY, 0)
     except AttributeError:
-        value = getattr(request, "_hermes_room_run_retention_until", 0)
+        value = getattr(request, "_zeus_room_run_retention_until", 0)
     return max(0.0, float(value or 0))
 
 
@@ -314,7 +314,7 @@ def _set_run_status(self, run_id: str, status: str, **fields: Any) -> dict[str, 
     current = self._run_statuses.get(run_id, {})
     previous_status = str(current.get("status") or "")
     field_names = set(fields)
-    current.update({"object": "hermes.run", "run_id": run_id, "status": status, "updated_at": now})
+    current.update({"object": "zeus.run", "run_id": run_id, "status": status, "updated_at": now})
     current.setdefault("created_at", fields.pop("created_at", now))
     current.update(fields)
     shutdown_requested_at = getattr(self, "_run_shutdown_requested_at", None)
@@ -459,7 +459,7 @@ def _durable_run_status(self, request: web.Request, run_id: str) -> dict[str, An
         # The documented poll shape: the canonical projection decides status/output/usage; the
         # retained run record still names the object, the requested model and the served runtime.
         retained = self._run_statuses.get(run_id) or {}
-        return {"object": "hermes.run", **{key: retained[key] for key in ("model", "runtime", "created_at")
+        return {"object": "zeus.run", **{key: retained[key] for key in ("model", "runtime", "created_at")
                                            if key in retained}, **canonical}
     status = self._run_statuses.get(run_id)
     if status is not None:
@@ -545,7 +545,7 @@ def _accepted_response(run_id: str, status: str, gateway_session_key, *, replaye
     """202 admission response; replays are flagged via ``Idempotency-Replayed``."""
     headers = {"Idempotency-Replayed": "true"} if replayed else {}
     if gateway_session_key:
-        headers["X-Hermes-Session-Key"] = gateway_session_key
+        headers["X-Zeus-Session-Key"] = gateway_session_key
     return web.json_response(
         {"run_id": run_id, "status": status, "replayed": replayed}, status=202, headers=headers)
 
@@ -731,7 +731,7 @@ async def _admit_run_to_authority(
     from gateway.platforms.api_server_authority_runs import run_admission, store_error_response
     from gateway.session_api_turn import admit_api_turn_async
     from gateway.session_contract import SessionRef
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     try:
         with self._profile_scope(launch.request_profile):
             launch.admission = await admit_api_turn_async(self, user_message=launch.user_message,
@@ -821,7 +821,7 @@ async def _handle_runs(self, request: web.Request, *, _api_server) -> web.Respon
         return limited
     run_id = f"run_{uuid.uuid4().hex}"
     self._run_owners[run_id] = self._run_idempotency_scope(request)
-    # Same precedence as /v1/responses: body session_id > response chain > X-Hermes-Session-Key
+    # Same precedence as /v1/responses: body session_id > response chain > X-Zeus-Session-Key
     # conversation > run_id (which would otherwise re-key every affinity surface per run).
     # An explicit or chained session owns its routing key and is never rebound to the header.
     _declared_selected = not session_id and bool(gateway_session_key)
@@ -835,7 +835,7 @@ async def _handle_runs(self, request: web.Request, *, _api_server) -> web.Respon
         selected_session_id = await _resolve_live_session_id(self, str(selected_session_id))
     session_id = selected_session_id or run_id
     # History loads for the session the request actually selected — including one resolved from
-    # a declared X-Hermes-Session-Key, whose persisted delivery rows must reach the next
+    # a declared X-Zeus-Session-Key, whose persisted delivery rows must reach the next
     # same-key run's context (#98619).  previous_response_id continuations keep their
     # ResponseStore snapshot as history (they cannot consume a SessionDB delivery row and are
     # accordingly denied wake capability in _run_agent_sync); the fresh run_id fallback has
@@ -949,13 +949,13 @@ def _run_agent_sync(self, run: _RunLaunch, agent, approval_notify, *, _api_serve
             # Contextvars, not process env: concurrent runs must not share identity.
             resets.append((set_current_session_key(run.approval_session_key), reset_current_session_key))
             # chat_id carries the raw session id like _run_agent() does; without it
-            # tools.async_delegation sees no HERMES_SESSION_CHAT_ID and forces delegations sync.
+            # tools.async_delegation sees no ZEUS_SESSION_CHAT_ID and forces delegations sync.
             session_tokens = self._bind_api_server_session(
                 chat_id=session_id or "", session_key=run.approval_session_key, session_id=session_id or "",
                 profile=run.request_profile or "",
                 # #98619 audited opt-in: the /v1/runs session id is wake-capable only when its
                 # own continuation path reloads session history — an explicit body/chained
-                # session id or a declared X-Hermes-Session-Key conversation (both load
+                # session id or a declared X-Zeus-Session-Key conversation (both load
                 # SessionDB in _handle_runs), or the run_id fallback the client can post back
                 # as body.session_id.  A previous_response_id continuation consumes its
                 # ResponseStore snapshot instead and can never see a SessionDB delivery row,
@@ -1404,13 +1404,13 @@ async def _handle_run_approval(self, request: web.Request, *, _api_server) -> we
     request_id_field = {"request_id": request_id} if request_id else {}
     _mark_run_event(self, run_id, "approval.responded", choice=choice, **request_id_field, resolved=resolved)
     return web.json_response({
-        "object": "hermes.run.approval_response", "run_id": run_id, "choice": choice, **request_id_field,
+        "object": "zeus.run.approval_response", "run_id": run_id, "choice": choice, **request_id_field,
         "resolved": resolved})
 
 
 async def _respond_authority_run(self, run_id, body, *, kind, _api_server):
     from gateway.platforms.api_server_authority_runs import respond_run, store_error_response
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     try:
         result = await respond_run(self, run_id, body, kind=kind)
         return web.json_response({'run_id': run_id, **result})
@@ -1462,7 +1462,7 @@ async def _handle_steer_run(self, request: web.Request, *, _api_server) -> web.R
             code="invalid_steer_input", status=400)
     if owned is not None:
         from gateway.session_contract import SessionRef
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         authority, row = owned
         sid, latched = row['target_session_id'], False
         try:
@@ -1476,7 +1476,7 @@ async def _handle_steer_run(self, request: web.Request, *, _api_server) -> web.R
             return _steer_refused(_openai_error, run_id)
         if latched:
             _mark_run_event(self, run_id, "run.steered", accepted=True)
-            return web.json_response({"object": "hermes.run.steer", "run_id": run_id, "accepted": True})
+            return web.json_response({"object": "zeus.run.steer", "run_id": run_id, "accepted": True})
     try:
         accepted = bool(agent.steer(steer_text))
     except Exception as exc:
@@ -1486,7 +1486,7 @@ async def _handle_steer_run(self, request: web.Request, *, _api_server) -> web.R
         return _json_error(
             _openai_error, f"Run did not accept steer text: {run_id}", code="steer_not_accepted", status=409)
     _mark_run_event(self, run_id, "run.steered", accepted=True)
-    return web.json_response({"object": "hermes.run.steer", "run_id": run_id, "accepted": True})
+    return web.json_response({"object": "zeus.run.steer", "run_id": run_id, "accepted": True})
 
 
 async def _handle_stop_run(self, request: web.Request, *, _api_server) -> web.Response:
@@ -1501,7 +1501,7 @@ async def _handle_stop_run(self, request: web.Request, *, _api_server) -> web.Re
     if (getattr(self.gateway_runner, 'session_authority', None) is not None
             and not (task is not None and status.get("delivery_id"))):
         from gateway.platforms.api_server_authority_runs import stop_run, store_error_response
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         try:
             return web.json_response(await stop_run(self, run_id))
         except RuntimeStoreError as exc:
@@ -1536,7 +1536,7 @@ async def _handle_resolve_unknown_run(
     except (ValueError, LookupError):  # bad JSON/UTF-8 (ValueError) or unknown charset: no body
         body = None
     from gateway.platforms.api_server_authority_runs import resolve_unknown_run, store_error_response
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     try:
         result = await resolve_unknown_run(self, run_id, body)
         return web.json_response({'run_id': run_id, **result})

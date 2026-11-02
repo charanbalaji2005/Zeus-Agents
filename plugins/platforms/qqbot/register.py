@@ -37,12 +37,12 @@ async def standalone_send(pconfig, chat_id, message, *, thread_id=None, media_fi
 
 def setup_qqbot() -> None:
     """Interactive setup: scan-to-configure or manual App ID / App Secret."""
-    from hermes_cli.cli_output import print_info, print_success, print_warning
-    from hermes_cli.config import save_env_value
-    from hermes_cli.gateway_setup_wizard import (
+    from zeus_cli.cli_output import print_info, print_success, print_warning
+    from zeus_cli.config import save_env_value
+    from zeus_cli.gateway_setup_wizard import (
         confirm_reconfigure, offer_home_channel, print_setup_header, prompt_csv, save_env_values,
     )
-    from hermes_cli.setup import prompt, prompt_choice, prompt_yes_no
+    from zeus_cli.setup import prompt, prompt_choice, prompt_yes_no
 
     print_setup_header("🐧 QQ Bot")
     if not confirm_reconfigure("QQ Bot", "QQ_APP_ID", "QQ_CLIENT_SECRET"):
@@ -101,7 +101,7 @@ def setup_qqbot() -> None:
                 print_success(f"  Allow list set to {user_openid}")
         save_env_value("QQ_ALLOWED_USERS", allowed)
         print_success("  DM pairing enabled.")
-        print_info("  Unknown users can request access; approve with `hermes pairing approve`.")
+        print_info("  Unknown users can request access; approve with `zeus pairing approve`.")
     elif access_idx == 1:
         save_env_values(QQ_ALLOW_ALL_USERS="true", QQ_ALLOWED_USERS="")
         print_warning("  Open DM access enabled for QQ Bot.")
@@ -137,7 +137,7 @@ def register(ctx) -> None:
     ctx.register_platform(
         standalone_send=StandaloneSendPolicy(label="QQ Bot", media=True, captionable=True, text_direct=True),
         name="qqbot",
-        dashboard_description="Connect Hermes to a QQ Bot from the QQ Open Platform.",
+        dashboard_description="Connect Zeus to a QQ Bot from the QQ Open Platform.",
         docs_url="https://q.qq.com",
         dashboard_env_vars=("QQ_APP_ID", "QQ_CLIENT_SECRET", "QQ_ALLOWED_USERS"),
         label="QQ Bot",

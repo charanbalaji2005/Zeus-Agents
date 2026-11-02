@@ -13,7 +13,7 @@ interface ServingHost {
 }
 
 /**
- * Gateways in the Webapp. The page is served by one Hermes host and can only
+ * Gateways in the Webapp. The page is served by one Zeus host and can only
  * talk to it, so the native connection controls (mode, Cloud, saved
  * connections, logs) have nothing to act on. What does apply is which host
  * this is and, behind the sign-in gate, signing out of it.
@@ -27,7 +27,7 @@ export function WebappGatewaySettings({ embedded }: { embedded: boolean }) {
   useEffect(() => {
     let cancelled = false
 
-    void window.hermesDesktop
+    void window.zeusDesktop
       .getConnectionConfig(null)
       .then(config => {
         if (!cancelled) {
@@ -47,7 +47,7 @@ export function WebappGatewaySettings({ embedded }: { embedded: boolean }) {
     setSigningOut(true)
 
     try {
-      await window.hermesDesktop.oauthLogoutConnectionConfig(url)
+      await window.zeusDesktop.oauthLogoutConnectionConfig(url)
     } catch (err) {
       notifyError(err, g.signOutFailed)
       setSigningOut(false)

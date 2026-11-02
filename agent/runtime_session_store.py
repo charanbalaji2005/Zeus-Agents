@@ -16,7 +16,7 @@ from pathlib import Path
 import queue
 import sys
 import threading
-from hermes_dir_acl import make_user_dir
+from zeus_dir_acl import make_user_dir
 
 logger = logging.getLogger(__name__)
 
@@ -135,17 +135,17 @@ class WorkerRPC:
                 return self.link
             # The owner closed it while idle, before any send: redial with a fresh ticket.
             self._drop()
-        from hermes_cli.gateway_client import _session_ticket, gateway_ws_target
-        from hermes_cli.gateway_runtime_discovery import query_identify
+        from zeus_cli.gateway_client import _session_ticket, gateway_ws_target
+        from zeus_cli.gateway_runtime_discovery import query_identify
         from websockets.sync.client import connect
         # A served secondary has no socket; its multiplexer's descriptor names it.
-        from hermes_cli.gateway_runtime import discover_gateway_endpoint
+        from zeus_cli.gateway_runtime import discover_gateway_endpoint
         discovery = discover_gateway_endpoint(self.home, timeout=5)
         if discovery.state == 'ready' and discovery.endpoint is not None:
             self.endpoint = discovery.endpoint
         elif discovery.state != 'draining' or self.endpoint is None:
             raise WorkerPersistenceError('owner_unavailable')
-        from hermes_cli.gateway_runtime import control_home_for
+        from zeus_cli.gateway_runtime import control_home_for
         endpoint = self.endpoint
         descriptor = query_identify(control_home_for(self.home, endpoint), timeout=5)
         if descriptor.get('pid') == os.getpid():
@@ -380,7 +380,7 @@ class RuntimeSessionStore(RuntimeSessionCompressionMixin, RuntimeSessionLifecycl
             on_contended=None):
         # Reuse only the local polling orchestrator, not the SQLite mixin surface. Same signature
         # as the owner's (``on_contended``: a busy-database notice; the RPC try never raises it).
-        from hermes_state_compression import SessionCompressionMixin
+        from zeus_state_compression import SessionCompressionMixin
         return SessionCompressionMixin.acquire_session_turn_lease(self, session_id, holder,
             ttl_seconds=ttl_seconds, wait_seconds=wait_seconds,
             poll_interval_seconds=poll_interval_seconds, on_wait=on_wait,
@@ -457,7 +457,7 @@ class RuntimeSessionStore(RuntimeSessionCompressionMixin, RuntimeSessionLifecycl
         return self._session_number(session_id, 'compression_recovery_deadline', float, 0.0)
 
     def get_session_model_config_value(self, session_id, key, default=None):
-        from hermes_state_sessions import _parse_model_config
+        from zeus_state_sessions import _parse_model_config
         return _parse_model_config(self.get_session(session_id).get('model_config')).get(key, default)
 
     def update_conversation_model_config_value(self, session_id, key, update):

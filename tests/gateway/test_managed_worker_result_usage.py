@@ -4,7 +4,7 @@ accounting fields of ``run_conversation`` and the owner commits them with ``usag
 import io
 
 from agent.managed_worker import accept_result, encode_frame, read_frame, result_frame
-from hermes_cli.oneshot import _USAGE_KEYS
+from zeus_cli.oneshot import _USAGE_KEYS
 
 
 def _run_conversation_result():
@@ -64,7 +64,7 @@ def test_worker_result_frame_carries_the_billing_block():
 
 
 def _usage_db(tmp_path):
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     return SessionDB(db_path=tmp_path / 'state.db')
 
 

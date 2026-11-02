@@ -60,10 +60,10 @@ test.skipIf(process.platform === 'win32').each(['legacy', 'protocol-2'])(
         env: {
           ...process.env,
           HOME: fixture,
-          HERMES_HOME: home,
+          ZEUS_HOME: home,
           TMPDIR: temp,
-          HERMES_UPDATE_STARTED_AT: String(startedAt),
-          HERMES_UPDATE_SHIM_GRACE_SECONDS: '0'
+          ZEUS_UPDATE_STARTED_AT: String(startedAt),
+          ZEUS_UPDATE_SHIM_GRACE_SECONDS: '0'
         },
         stdio: ['ignore', 'pipe', 'pipe']
       }
@@ -87,7 +87,7 @@ test.skipIf(process.platform === 'win32').each(['legacy', 'protocol-2'])(
     }
 
     const observed: { startedAt: number | null; runId?: string | null }[] = []
-    const probe = liveMarkerProbe({ hermesHome: home, reclaim: null, onLiveMarker: marker => observed.push(marker) })
+    const probe = liveMarkerProbe({ zeusHome: home, reclaim: null, onLiveMarker: marker => observed.push(marker) })
 
     try {
       const deadline = Date.now() + 15_000
@@ -112,7 +112,7 @@ test.skipIf(process.platform === 'win32').each(['legacy', 'protocol-2'])(
       let reopened: { startedAt: number | null; runId?: string | null } = { startedAt: null }
 
       const reopenedGate = liveMarkerProbe({
-        hermesHome: home,
+        zeusHome: home,
         reclaim: null,
         onLiveMarker: marker => {
           reopened = marker

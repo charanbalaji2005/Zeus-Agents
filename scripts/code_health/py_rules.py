@@ -1,4 +1,4 @@
-"""Hermes-specific AST rules (the ``HX`` ids in ``config.RULES``).
+"""Zeus-specific AST rules (the ``HX`` ids in ``config.RULES``).
 
 Each checker is a small function ``(tree, ctx) -> iterable of line numbers``; the table at the
 bottom maps rule ids to checkers. Checkers favour precision: a rule that cries wolf gets an
@@ -17,8 +17,8 @@ from scripts.code_health.py_ast import _FUNCS, Ctx, _call_name, _deferred_parts,
 from scripts.code_health.py_rules_sleep import wall_clock_sleep
 
 _CAPTURE_CALLS = {
-    "get_hermes_home",
-    "display_hermes_home",
+    "get_zeus_home",
+    "display_zeus_home",
     "load_config",
     "load_config_readonly",
     "read_raw_config",
@@ -267,12 +267,12 @@ def _env_write_names(node: ast.AST) -> list[str]:
     return []
 
 
-def _hermes_home_path(text: str, prefix: str = "") -> bool:
-    """``text`` (after ``prefix``) starts with the exact ``.hermes`` path component, so
-    ``.hermes/x`` matches and ``.hermes-profile-exports`` does not."""
+def _zeus_home_path(text: str, prefix: str = "") -> bool:
+    """``text`` (after ``prefix``) starts with the exact ``.zeus`` path component, so
+    ``.zeus/x`` matches and ``.zeus-profile-exports`` does not."""
     if not text.startswith(prefix):
         return False
-    return re.split(r"[/\\]", text[len(prefix):].lstrip("/\\"), maxsplit=1)[0] == ".hermes"
+    return re.split(r"[/\\]", text[len(prefix):].lstrip("/\\"), maxsplit=1)[0] == ".zeus"
 
 
 def hardcoded_home(tree: ast.Module, ctx: Ctx) -> Iterable[int]:
@@ -284,13 +284,13 @@ def hardcoded_home(tree: ast.Module, ctx: Ctx) -> Iterable[int]:
                 and _call_name(node.left).endswith("Path.home")
                 and isinstance(right, ast.Constant)
                 and isinstance(right.value, str)
-                and _hermes_home_path(right.value)
+                and _zeus_home_path(right.value)
             ):
                 yield node.lineno
         elif isinstance(node, ast.Call):
             name = _call_name(node)
             arg = _str_arg(node)
-            if arg and _hermes_home_path(arg, "~/") and name.endswith(("expanduser", "Path")):
+            if arg and _zeus_home_path(arg, "~/") and name.endswith(("expanduser", "Path")):
                 yield node.lineno
 
 
@@ -299,7 +299,7 @@ def new_env_var(tree: ast.Module, ctx: Ctx) -> Iterable[int]:
     for node in ast.walk(tree):
         read = _env_read_name(node)
         names = [read] if read else _env_write_names(node)
-        if any(n.startswith("HERMES_") and n not in ctx.known_env for n in names):
+        if any(n.startswith("ZEUS_") and n not in ctx.known_env for n in names):
             yield getattr(node, "lineno", 0)
 
 

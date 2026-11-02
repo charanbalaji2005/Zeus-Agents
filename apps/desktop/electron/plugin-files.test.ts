@@ -13,7 +13,7 @@ import { createPluginFiles, type PluginFiles } from './plugin-files'
 
 let scratch: string
 let userData: string
-let hermesHome: string
+let zeusHome: string
 let vault: string
 let trashed: string[]
 let files: PluginFiles
@@ -21,7 +21,7 @@ let files: PluginFiles
 const make = () =>
   createPluginFiles({
     userDataDir: () => userData,
-    protectedRoots: () => [hermesHome],
+    protectedRoots: () => [zeusHome],
     trashItem: async target => {
       trashed.push(target)
       await fs.promises.rm(target, { recursive: true })
@@ -29,14 +29,14 @@ const make = () =>
   })
 
 beforeEach(() => {
-  scratch = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-plugin-files-')))
+  scratch = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-plugin-files-')))
   userData = path.join(scratch, 'userData')
-  hermesHome = path.join(scratch, 'home', '.hermes')
+  zeusHome = path.join(scratch, 'home', '.zeus')
   vault = path.join(scratch, 'home', 'Vault')
   fs.mkdirSync(userData, { recursive: true })
-  fs.mkdirSync(hermesHome, { recursive: true })
-  fs.writeFileSync(path.join(hermesHome, '.env'), 'OPENROUTER_API_KEY=sk-secret\n')
-  fs.writeFileSync(path.join(hermesHome, 'config.yaml'), 'model: x\n')
+  fs.mkdirSync(zeusHome, { recursive: true })
+  fs.writeFileSync(path.join(zeusHome, '.env'), 'OPENROUTER_API_KEY=sk-secret\n')
+  fs.writeFileSync(path.join(zeusHome, 'config.yaml'), 'model: x\n')
   fs.mkdirSync(path.join(vault, 'notes'), { recursive: true })
   fs.writeFileSync(path.join(vault, 'notes', 'a.md'), '# A\n')
   trashed = []
@@ -71,9 +71,9 @@ describe('grants', () => {
   })
 
   it.each([
-    ['the Hermes home', () => hermesHome],
-    ['a folder inside the Hermes home', () => path.join(hermesHome, 'skills')],
-    ['a folder that contains the Hermes home', () => path.join(scratch, 'home')],
+    ['the Zeus home', () => zeusHome],
+    ['a folder inside the Zeus home', () => path.join(zeusHome, 'skills')],
+    ['a folder that contains the Zeus home', () => path.join(scratch, 'home')],
     ['the app data folder', () => userData],
     ['another plugin data folder', () => path.join(userData, 'plugin-files', 'data', 'other')]
   ])('refuses to grant %s', async (_label, folder) => {
@@ -90,9 +90,9 @@ describe('grants', () => {
     expect(await files.addGrant('plexus', ssh)).toMatchObject({ ok: false, error: 'protected' })
   })
 
-  it('refuses to grant a symlink that resolves into the Hermes home', async () => {
+  it('refuses to grant a symlink that resolves into the Zeus home', async () => {
     const link = path.join(scratch, 'innocent')
-    fs.symlinkSync(hermesHome, link)
+    fs.symlinkSync(zeusHome, link)
 
     expect(await files.addGrant('plexus', link)).toMatchObject({ ok: false, error: 'protected' })
   })
@@ -119,10 +119,10 @@ describe('grants', () => {
     })
   })
 
-  it('refuses a grant whose folder was swapped for a link into the Hermes home', async () => {
+  it('refuses a grant whose folder was swapped for a link into the Zeus home', async () => {
     const id = await grantVault()
     fs.rmSync(vault, { recursive: true })
-    fs.symlinkSync(hermesHome, vault)
+    fs.symlinkSync(zeusHome, vault)
 
     expect(await files.run('plexus', { op: 'readText', folder: id, path: '.env' })).toMatchObject({ ok: false })
     expect(await files.run('plexus', { op: 'list', folder: id, path: '' })).toMatchObject({ ok: false })
@@ -131,17 +131,17 @@ describe('grants', () => {
 
 describe('path containment', () => {
   it.each([
-    ['parent traversal', '../.hermes/.env'],
-    ['nested traversal', 'notes/../../.hermes/.env'],
-    ['backslash traversal', 'notes\\..\\..\\.hermes\\.env'],
+    ['parent traversal', '../.zeus/.env'],
+    ['nested traversal', 'notes/../../.zeus/.env'],
+    ['backslash traversal', 'notes\\..\\..\\.zeus\\.env'],
     ['an absolute POSIX path', '/etc/passwd'],
-    ['an absolute path into the Hermes home', ''],
-    ['a Windows drive path', 'C:\\Users\\me\\.hermes\\.env'],
+    ['an absolute path into the Zeus home', ''],
+    ['a Windows drive path', 'C:\\Users\\me\\.zeus\\.env'],
     ['a UNC path', '\\\\server\\share\\x'],
     ['a NUL byte', 'notes/a.md\0.png']
   ])('refuses %s', async (label, rel) => {
     const id = await grantVault()
-    const target = label === 'an absolute path into the Hermes home' ? path.join(hermesHome, '.env') : rel
+    const target = label === 'an absolute path into the Zeus home' ? path.join(zeusHome, '.env') : rel
 
     expect(await files.run('plexus', { op: 'readText', folder: id, path: target })).toMatchObject({
       ok: false,
@@ -150,12 +150,12 @@ describe('path containment', () => {
     expect(
       await files.run('plexus', { op: 'writeText', folder: id, path: target, text: 'pwned' })
     ).toMatchObject({ ok: false, error: 'invalid-path' })
-    expect(fs.readFileSync(path.join(hermesHome, 'config.yaml'), 'utf8')).toBe('model: x\n')
+    expect(fs.readFileSync(path.join(zeusHome, 'config.yaml'), 'utf8')).toBe('model: x\n')
   })
 
   it('refuses to read through a symlinked file that points outside the folder', async () => {
     const id = await grantVault()
-    fs.symlinkSync(path.join(hermesHome, '.env'), path.join(vault, 'notes', 'leak.md'))
+    fs.symlinkSync(path.join(zeusHome, '.env'), path.join(vault, 'notes', 'leak.md'))
 
     expect(await files.run('plexus', { op: 'readText', folder: id, path: 'notes/leak.md' })).toMatchObject({
       ok: false,
@@ -169,8 +169,8 @@ describe('path containment', () => {
 
   it('refuses to write through a symlinked file or folder that points outside', async () => {
     const id = await grantVault()
-    fs.symlinkSync(path.join(hermesHome, 'config.yaml'), path.join(vault, 'cfg.md'))
-    fs.symlinkSync(hermesHome, path.join(vault, 'home'))
+    fs.symlinkSync(path.join(zeusHome, 'config.yaml'), path.join(vault, 'cfg.md'))
+    fs.symlinkSync(zeusHome, path.join(vault, 'home'))
 
     for (const rel of ['cfg.md', 'home/config.yaml', 'home/new.md']) {
       expect(await files.run('plexus', { op: 'writeText', folder: id, path: rel, text: 'pwned' })).toMatchObject({
@@ -179,8 +179,8 @@ describe('path containment', () => {
       })
     }
 
-    expect(fs.readFileSync(path.join(hermesHome, 'config.yaml'), 'utf8')).toBe('model: x\n')
-    expect(fs.existsSync(path.join(hermesHome, 'new.md'))).toBe(false)
+    expect(fs.readFileSync(path.join(zeusHome, 'config.yaml'), 'utf8')).toBe('model: x\n')
+    expect(fs.existsSync(path.join(zeusHome, 'new.md'))).toBe(false)
   })
 
   it('refuses a dangling symlink instead of creating its target', async () => {
@@ -194,9 +194,9 @@ describe('path containment', () => {
     expect(fs.existsSync(outside)).toBe(false)
   })
 
-  it('refuses listing, renaming and trashing through a symlinked folder into the Hermes home', async () => {
+  it('refuses listing, renaming and trashing through a symlinked folder into the Zeus home', async () => {
     const id = await grantVault()
-    fs.symlinkSync(hermesHome, path.join(vault, 'home'))
+    fs.symlinkSync(zeusHome, path.join(vault, 'home'))
 
     expect(await files.run('plexus', { op: 'list', folder: id, path: 'home' })).toMatchObject({
       ok: false,
@@ -210,12 +210,12 @@ describe('path containment', () => {
       error: 'outside-folder'
     })
     expect(trashed).toEqual([])
-    expect(fs.existsSync(path.join(hermesHome, '.env'))).toBe(true)
+    expect(fs.existsSync(path.join(zeusHome, '.env'))).toBe(true)
   })
 
   it('a listing hides links that leave the folder and keeps links that stay inside', async () => {
     const id = await grantVault()
-    fs.symlinkSync(hermesHome, path.join(vault, 'escape'))
+    fs.symlinkSync(zeusHome, path.join(vault, 'escape'))
     fs.symlinkSync(path.join(vault, 'notes'), path.join(vault, 'alias'))
 
     const listed = await files.run('plexus', { op: 'list', folder: id, path: '' })
@@ -401,16 +401,16 @@ describe('caps and shapes', () => {
 
 describe('protected roots', () => {
   it('an op inside a granted folder never reaches a protected root nested under it', async () => {
-    // A grant made before HERMES_HOME moved inside it must not become a door into the new home.
+    // A grant made before ZEUS_HOME moved inside it must not become a door into the new home.
     const id = await grantVault()
-    const nestedHome = path.join(vault, 'hermes')
+    const nestedHome = path.join(vault, 'zeus')
     fs.mkdirSync(nestedHome)
     fs.writeFileSync(path.join(nestedHome, 'config.yaml'), 'model: y\n')
-    const roots = vi.fn(() => [hermesHome, nestedHome])
+    const roots = vi.fn(() => [zeusHome, nestedHome])
 
     files = createPluginFiles({ userDataDir: () => userData, protectedRoots: roots, trashItem: async () => undefined })
 
-    expect(await files.run('plexus', { op: 'readText', folder: id, path: 'hermes/config.yaml' })).toMatchObject({
+    expect(await files.run('plexus', { op: 'readText', folder: id, path: 'zeus/config.yaml' })).toMatchObject({
       ok: false,
       error: 'protected'
     })

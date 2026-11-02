@@ -13,7 +13,7 @@ import {
 import { notify } from '@/store/notifications'
 import type { PluginInstallRequest } from '@/store/plugin-install-request'
 
-export type ProbeResult = Awaited<ReturnType<NonNullable<NonNullable<Window['hermesDesktop']>['probePluginRepo']>>>
+export type ProbeResult = Awaited<ReturnType<NonNullable<NonNullable<Window['zeusDesktop']>['probePluginRepo']>>>
 
 export type InstallModalCopy = ReturnType<typeof useI18n>['t']['settings']['plugins']['installModal']
 
@@ -32,7 +32,7 @@ const HINT_COMPONENTS = {
  *  browser-hosted app has no disk of its own, so the host that serves it clones one there
  *  (`plugins.manage install_desktop`) and the Webapp's loader picks it up. */
 export function desktopInstallSupported(): boolean {
-  return Boolean(window.hermesDesktop?.installDesktopPlugin) || isBrowserHostedDesktop()
+  return Boolean(window.zeusDesktop?.installDesktopPlugin) || isBrowserHostedDesktop()
 }
 
 /** What an install puts down: every half the repository has, narrowed by a legacy deep link or by
@@ -178,7 +178,7 @@ async function cloneDesktopHalf(
   // Native Desktop clones it in Electron; a browser-hosted tab asks the host that serves it, and the
   // plugin lands in the folder this Webapp already loads. A tab installing a package's agent half never
   // clones the desktop half here: the host copies it out of that one checkout (`desktopHalfFromPackage`).
-  const installFn = window.hermesDesktop?.installDesktopPlugin
+  const installFn = window.zeusDesktop?.installDesktopPlugin
 
   const result: { error?: string; ok: boolean; pluginName?: string; sourceMoved?: boolean; unsupported?: boolean } =
     installFn
@@ -213,7 +213,7 @@ async function cloneDesktopHalf(
  *  prunes the old copy), and one that found the copy current touches nothing. Only a bridge with no
  *  folder reader falls back to the pass's own list. */
 async function desktopHalfLanded(name: string, touched: readonly string[]): Promise<boolean> {
-  const desktop = window.hermesDesktop
+  const desktop = window.zeusDesktop
 
   if (!desktop?.desktopPluginsRoot || !desktop.readDir) {
     return touched.some(folder => folder.split(/[\\/]/).pop() === name)
@@ -232,7 +232,7 @@ async function desktopHalfLanded(name: string, touched: readonly string[]): Prom
 /** Refresh unified packages' desktop halves. `refusal` is why the half of package `name` was not published
  *  (a symlink in its tree, too big, unreadable). */
 async function reconcilePackageHalf(name: string): Promise<{ refusal?: string; touched: string[] }> {
-  const desktop = window.hermesDesktop
+  const desktop = window.zeusDesktop
 
   if (desktop?.reconcileDesktopPluginsReport) {
     const { published, refused } = await desktop.reconcileDesktopPluginsReport()

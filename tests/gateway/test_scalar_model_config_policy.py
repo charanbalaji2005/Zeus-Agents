@@ -13,13 +13,13 @@ async def test_scalar_model_config_creates_sessions(tmp_path, monkeypatch):
     from gateway.session_authority import initialize_session_authority
     from gateway.session_controls import AuthorityConnection
     from gateway.session_policy import restore_policy
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
 
     home = tmp_path / 'home'
     home.mkdir()
     (home / 'config.yaml').write_text('model: scalar-model\nplatform_toolsets:\n  cli: []\n')
-    monkeypatch.setenv('HERMES_HOME', str(home))
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setenv('ZEUS_HOME', str(home))
+    monkeypatch.setattr(run, '_zeus_home', home)
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     runner = SimpleNamespace(session_store=store, _session_db=store._db, adapters={}, _draining=False,
                              _cached_agent_for=lambda route: None)

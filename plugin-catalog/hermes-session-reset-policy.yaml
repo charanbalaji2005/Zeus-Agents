@@ -7,7 +7,7 @@ description: Opt-in idle/daily gateway conversation resets. Reads the existing s
 maintainer: fastfinge
 tier: community
 category: automation
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/fastfinge/hermes-session-reset-policy#readme
 version: "0.3.0"
 platforms: []

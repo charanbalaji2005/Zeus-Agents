@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import assert from 'node:assert/strict';
 const out=process.env.THREAD_SCROLL_OUTPUT;
 assert.ok(out);
-// pm's Chromium: PLAYWRIGHT_BROWSERS_PATH (from `hermes pm env`) is where channel 'chromium' finds it.
+// pm's Chromium: PLAYWRIGHT_BROWSERS_PATH (from `zeus pm env`) is where channel 'chromium' finds it.
 const browser=await chromium.launch({channel:'chromium',headless:true,args:['--no-sandbox']});
 const result={};
 try {

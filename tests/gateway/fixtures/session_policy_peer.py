@@ -64,8 +64,8 @@ async def probe(peer):
     from gateway.session_authority import initialize_session_authority
     from gateway.run_api import start_gateway_api, stop_gateway_api
     from gateway.session_contract import SessionRef
-    from hermes_cli import web_server
-    from hermes_cli.dashboard_auth.ws_tickets import mint_ticket
+    from zeus_cli import web_server
+    from zeus_cli.dashboard_auth.ws_tickets import mint_ticket
     runner = GatewayRunner()
     authority = await initialize_session_authority(runner, profile_id='fixture', instance_id='policy')
     api = await start_gateway_api(runner)
@@ -82,17 +82,17 @@ async def probe(peer):
                     return result
     sockets, sessions, created_ids = [], [], {}
     before = dict(os.environ)
-    config_before = Path(os.environ['HERMES_HOME'], 'config.yaml').read_bytes()
+    config_before = Path(os.environ['ZEUS_HOME'], 'config.yaml').read_bytes()
     try:
         for source in ('cli', 'tui', 'gui'):
             ws = await connect()
             sockets.append(ws)
-            cwd = Path(os.environ['HERMES_HOME'], source)
+            cwd = Path(os.environ['ZEUS_HOME'], source)
             cwd.mkdir()
             params = dict(request_id=source, source=source, cwd=str(cwd), model='policy-' + source)
             if source == 'cli':
                 params['toolsets'] = ['terminal']
-            if source == 'tui':  # `hermes --tui -s policy-skill --pass-session-id`
+            if source == 'tui':  # `zeus --tui -s policy-skill --pass-session-id`
                 params.update(skills=['policy-skill'], pass_session_id=True)
             created = await rpc(ws, 'session.create', **params)
             assert 'result' in created, created
@@ -100,7 +100,7 @@ async def probe(peer):
             sessions.append(sid)
             created_ids[sid] = created['result']['stored_session_id']
             from gateway.session_policy import policy_for_source
-            from hermes_state_runtime import RuntimeStoreError
+            from zeus_state_runtime import RuntimeStoreError
             live_source = authority.sessions[sid].source
             adapter = runner._adapter_for_source(live_source)
             saved_policy = adapter.policies.pop(live_source.chat_id)
@@ -126,7 +126,7 @@ async def probe(peer):
             agent = authority.agent(SessionRef(authority.profile_id, sid))
             assert agent is not None, (source, list(runner._agent_cache), peer.requests, await rpc(ws, 'session.resume', session_id=sid))
             assert agent.platform == {'cli': 'cli', 'tui': 'tui', 'gui': 'desktop'}[source], vars(agent).get('platform')
-            cwd = Path(os.environ['HERMES_HOME'], source)
+            cwd = Path(os.environ['ZEUS_HOME'], source)
             requests = [r for r in peer.requests if r.get('model') == 'policy-' + source]
             tool_results = [m for r in requests for m in r['messages'] if m['role'] == 'tool']
             assert (cwd / 'policy-proof.txt').is_file(), (source, str(cwd), tool_results)
@@ -153,9 +153,9 @@ async def probe(peer):
             result = await rpc(reconnected, 'session.resume', session_id=sid)
             assert result['result']['session_id'] == sid
             assert authority.agent(SessionRef(authority.profile_id, sid)) is agent
-        assert Path(os.environ['HERMES_HOME'], 'config.yaml').read_bytes() == config_before
-        assert {k: os.environ.get(k) for k in ('HERMES_DESKTOP', 'TERMINAL_CWD', 'HERMES_TUI_TOOLSETS')} == {k: before.get(k) for k in ('HERMES_DESKTOP', 'TERMINAL_CWD', 'HERMES_TUI_TOOLSETS')}
-        Path(os.environ['HERMES_HOME'], 'policy-receipt.json').write_text(json.dumps({'sources': ['cli', 'tui', 'gui'], 'requests': len(peer.requests), 'cwd_effects': True, 'same_agents': True, 'no_spill': True}))
+        assert Path(os.environ['ZEUS_HOME'], 'config.yaml').read_bytes() == config_before
+        assert {k: os.environ.get(k) for k in ('ZEUS_DESKTOP', 'TERMINAL_CWD', 'ZEUS_TUI_TOOLSETS')} == {k: before.get(k) for k in ('ZEUS_DESKTOP', 'TERMINAL_CWD', 'ZEUS_TUI_TOOLSETS')}
+        Path(os.environ['ZEUS_HOME'], 'policy-receipt.json').write_text(json.dumps({'sources': ['cli', 'tui', 'gui'], 'requests': len(peer.requests), 'cwd_effects': True, 'same_agents': True, 'no_spill': True}))
     finally:
         for ws in sockets:
             await ws.close()
@@ -169,10 +169,10 @@ def main():
     threading.Thread(target=peer.serve_forever, daemon=True).start()
     url = f'http://127.0.0.1:{peer.server_port}/v1'
     os.environ.update(OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url)
-    skill = Path(os.environ['HERMES_HOME'], 'skills', 'policy-skill')
+    skill = Path(os.environ['ZEUS_HOME'], 'skills', 'policy-skill')
     skill.mkdir(parents=True)
     (skill / 'SKILL.md').write_text('---\nname: policy-skill\ndescription: fixture\n---\n\nPOLICY_SKILL_BODY\n')
-    Path(os.environ['HERMES_HOME'], 'config.yaml').write_text(
+    Path(os.environ['ZEUS_HOME'], 'config.yaml').write_text(
         f'model:\n  default: policy-default\n  provider: custom\n  base_url: {url}\n'
         'terminal:\n  env_type: local\nstreaming:\n  enabled: false\n'
         'platform_toolsets:\n  cli: [terminal]\nauxiliary:\n  title_generation:\n    enabled: false\n')

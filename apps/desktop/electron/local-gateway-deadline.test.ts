@@ -42,7 +42,7 @@ test('a stale-owner restart client that times out but obeys SIGTERM is logged an
   const logs: string[] = []
 
   const restartOwner = async (owner: string) => {
-    const result = await runGatewayEnsure({ command: 'owned-client', args: [], env: {}, shell: false }, '.', owner, {}, { timeoutMs: 10, label: 'hermes gateway restart' })
+    const result = await runGatewayEnsure({ command: 'owned-client', args: [], env: {}, shell: false }, '.', owner, {}, { timeoutMs: 10, label: 'zeus gateway restart' })
     const reason = `${result.stdout}\n${result.stderr}`.trim().split(/\r?\n/).filter(Boolean).pop()
     logs.push(`gateway restart exited ${result.code}${reason ? `: ${reason}` : ''}`)
   }
@@ -61,12 +61,12 @@ test('a stale-owner restart client that times out but obeys SIGTERM is logged an
   await expect(attached).resolves.toMatchObject({ gatewayEndpoint: { instance_id: 'new' } })
   expect(child.kill.mock.calls).toEqual([[]])
   expect(ensures).toBe(2)
-  expect(logs).toEqual(['gateway restart exited 7: hermes gateway restart timed out'])
+  expect(logs).toEqual(['gateway restart exited 7: zeus gateway restart timed out'])
 })
 
-// `hermes gateway ensure` owns a 60 s startup deadline (hermes_cli/gateway_runtime.py
+// `zeus gateway ensure` owns a 60 s startup deadline (zeus_cli/gateway_runtime.py
 // DEFAULT_ENSURE_TIMEOUT) and always answers with a protocol verdict by then. Killing the client
-// earlier turned a slow-but-valid cold start into "produced no result … Update Hermes".
+// earlier turned a slow-but-valid cold start into "produced no result … Update Zeus".
 test('the default ensure client outlives the protocol deadline and reads a late verdict', async () => {
   vi.useFakeTimers()
 

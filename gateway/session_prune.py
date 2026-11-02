@@ -1,4 +1,4 @@
-"""``session.prune``: the owner runs `hermes sessions prune` for its own store.
+"""``session.prune``: the owner runs `zeus sessions prune` for its own store.
 
 The CLI computes the filters and shows the preview from a read-only view; the delete itself is
 this owner's write, through the same ``prune_sessions`` / ``retire_prunable`` path housekeeping
@@ -8,13 +8,13 @@ the store under a live gateway would be a second writer, so it never does.
 import asyncio
 from pathlib import Path
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 _SCALARS = (type(None), bool, int, float, str)
 
 
 def _filters(raw):
-    from hermes_state_maintenance import _PRUNE_FILTER_NAMES
+    from zeus_state_maintenance import _PRUNE_FILTER_NAMES
     if (not isinstance(raw, dict) or set(raw) - (_PRUNE_FILTER_NAMES | {'older_than_days'})
             or not all(isinstance(value, _SCALARS) for value in raw.values())):
         raise RuntimeStoreError('invalid_params')
@@ -42,10 +42,10 @@ async def prune(connection, ref, params):
 
 
 async def _apply(authority, filters, never_active):
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     from gateway.session_mutations import retire_live_sessions
     # Same transcript dir the CLI's local prune unlinks under (dispatch runs in the owner's scope).
-    sessions_dir = Path(get_hermes_home()) / 'sessions'
+    sessions_dir = Path(get_zeus_home()) / 'sessions'
     deleted_ids = []
     if filters is None:
         deleted, routing, skipped = await asyncio.to_thread(

@@ -8,7 +8,7 @@ import pytest
 
 from agent import onboarding_record
 from agent.onboarding_flow import End, Facts
-from hermes_cli.config import read_user_config_raw
+from zeus_cli.config import read_user_config_raw
 from tui_gateway import server
 
 FACTS = Facts(os="macos", arch="arm64", machine_kind="Mac", plugins=())
@@ -16,11 +16,11 @@ FACTS = Facts(os="macos", arch="arm64", machine_kind="Mac", plugins=())
 
 @pytest.fixture
 def db(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr(server, "_hermes_home", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    monkeypatch.setattr(server, "_zeus_home", str(home))
     monkeypatch.setattr(server, "_db", None)
     db = server._get_db()
     db.create_session("onb", "desktop")
@@ -36,7 +36,7 @@ def ended(monkeypatch) -> list[dict]:
 
 
 def _flag(db) -> bool:
-    return read_user_config_raw(Path(server._hermes_home) / "config.yaml")["onboarding"]["run"]
+    return read_user_config_raw(Path(server._zeus_home) / "config.yaml")["onboarding"]["run"]
 
 
 def test_a_refused_delete_leaves_the_run_going(db, ended):
@@ -59,7 +59,7 @@ def test_deleting_the_newest_copy_ends_the_run_on_every_copy(db, ended):
 
 
 def _failing_flag_write(monkeypatch):
-    from hermes_cli import onboarding_run
+    from zeus_cli import onboarding_run
 
     def disk_full(value, **kw):
         raise OSError("disk full")
@@ -79,7 +79,7 @@ def test_a_delete_whose_flag_write_fails_keeps_the_chat_for_a_retry(db, ended, m
 
 
 def test_a_delete_refused_by_the_write_guard_leaves_the_flag_set(db, ended):
-    from hermes_state_errors import SessionActiveWriteGuardError
+    from zeus_state_errors import SessionActiveWriteGuardError
 
     def guarded():
         raise SessionActiveWriteGuardError("active turn lease")

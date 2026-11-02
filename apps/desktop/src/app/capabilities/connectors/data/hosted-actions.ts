@@ -1,6 +1,6 @@
 import { useStore } from '@nanostores/react'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 import { useI18n } from '@/i18n'
 import { notifyError } from '@/store/notifications'
 
@@ -69,7 +69,7 @@ export function useHostedActions(
       const url = outcome.operation.targets.find(target => target.connectUrl)?.connectUrl
 
       if (url) {
-        void window.hermesDesktop?.openExternal?.(url)
+        void window.zeusDesktop?.openExternal?.(url)
       }
     }
 

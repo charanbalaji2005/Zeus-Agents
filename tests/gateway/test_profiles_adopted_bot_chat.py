@@ -3,12 +3,12 @@ from types import SimpleNamespace
 
 from gateway.session_contract import Principal
 from gateway.session_group_controls import _profiles
-from hermes_state import SessionDB
-from hermes_state_local_migration import bind_legacy_target
+from zeus_state import SessionDB
+from zeus_state_local_migration import bind_legacy_target
 
 
 def test_adopted_hidden_bot_chat_is_canonical_but_not_recent(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     sid = '20261006_105832_fixture'
     actor = Principal('fixture-owner', str(tmp_path), frozenset({'session:read'}), 'fixture')
     with SessionDB(tmp_path / 'state.db') as db:
@@ -48,7 +48,7 @@ def test_adopted_hidden_bot_chat_is_canonical_but_not_recent(tmp_path, monkeypat
 
 
 def test_unbound_native_chat_is_not_a_local_bot_chat(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     actor = Principal('owner', str(tmp_path), frozenset({'session:read', 'session:operator'}), 'fixture')
     with SessionDB(tmp_path / 'state.db') as db:
         authority = SimpleNamespace(db=db, profile_id=str(tmp_path))

@@ -653,9 +653,9 @@ async def _standalone_send(pconfig, chat_id: str, message: str, *, thread_id: Op
 
 def interactive_setup() -> None:
     """Guide the user through Mattermost bot setup (URL + token, allowlist, home channel)."""
-    from hermes_cli.config import remove_env_value, save_env_value
-    from hermes_cli.cli_output import prompt, print_header, print_info, print_success
-    from hermes_cli.setup_platforms import declines_reconfigure
+    from zeus_cli.config import remove_env_value, save_env_value
+    from zeus_cli.cli_output import prompt, print_header, print_info, print_success
+    from zeus_cli.setup_platforms import declines_reconfigure
 
     def info(*lines: str) -> None:
         for line in lines:
@@ -690,7 +690,7 @@ def interactive_setup() -> None:
     else:
         print_info("⚠️  No allowlist set - anyone who can message the bot can use it!")
     print()
-    info("📬 Home Channel: where Hermes delivers cron job results and notifications.",
+    info("📬 Home Channel: where Zeus delivers cron job results and notifications.",
          "   To get a channel ID: click channel name → View Info → copy the ID",
          "   You can also set this later by typing /set-home in a Mattermost channel.")
     home_channel = prompt("Home channel ID (leave empty to set later with /set-home)").strip()
@@ -698,7 +698,7 @@ def interactive_setup() -> None:
         save_env_value("MATTERMOST_HOME_CHANNEL", home_channel)
     elif remove_env_value("MATTERMOST_HOME_CHANNEL"):
         print_info("Home channel cleared.")
-    print_info("   Open config in your editor:  hermes config edit")
+    print_info("   Open config in your editor:  zeus config edit")
 
 
 # --- YAML → env config bridge (apply_yaml_config_fn) ---
@@ -730,11 +730,11 @@ _PLATFORM_HINT = (
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the Zeus plugin system."""
     from . import gateway_env  # env -> GatewayConfig bridge (gateway.config_env)
     ctx.register_platform(
         name="mattermost", label="Mattermost", adapter_factory=MattermostAdapter,
-        dashboard_description="Connect Hermes to Mattermost channels and direct messages.",
+        dashboard_description="Connect Zeus to Mattermost channels and direct messages.",
         docs_url="https://mattermost.com/deploy/",
         dashboard_env_vars=("MATTERMOST_URL", "MATTERMOST_TOKEN", "MATTERMOST_ALLOWED_USERS"),
         check_fn=check_mattermost_requirements, validate_config=validate_mattermost_config,

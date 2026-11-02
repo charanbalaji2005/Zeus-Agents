@@ -1,4 +1,4 @@
-import { formatResetsIn } from '@hermes/shared/plan-usage'
+import { formatResetsIn } from '@zeus/shared/plan-usage'
 
 import type { BillingStateResponse } from '../../gatewayTypes.js'
 import { t } from '../../i18n/runtime.js'

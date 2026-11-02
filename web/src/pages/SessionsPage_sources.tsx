@@ -27,7 +27,7 @@ export const SOURCE_CONFIG: Record<string, { icon: typeof Terminal; color: strin
     oneshot: { icon: Terminal, color: "text-warning" },
     api_server: { icon: Globe, color: "text-muted-foreground" },
     acp: { icon: Database, color: "text-muted-foreground" },
-    hermes_flow: { icon: Play, color: "text-warning" },
+    zeus_flow: { icon: Play, color: "text-warning" },
     vulcan_delegate: { icon: Play, color: "text-warning" },
     webhook: { icon: Globe, color: "text-warning" },
   };
@@ -38,12 +38,12 @@ export const AUTOMATION_SESSION_SOURCES = [
   "oneshot",
   "api_server",
   "acp",
-  "hermes_flow",
+  "zeus_flow",
   "vulcan_delegate",
   "webhook",
 ];
 const AUTOMATION_SESSION_SOURCE_SET = new Set(AUTOMATION_SESSION_SOURCES);
-export const NO_MATCHING_SESSION_SOURCE = "__hermes_dashboard_no_matching_source__";
+export const NO_MATCHING_SESSION_SOURCE = "__zeus_dashboard_no_matching_source__";
 
 export type SessionFilterCategory = "chats" | "automation" | "all";
 export type SourceSelectionsByCategory = Record<SessionFilterCategory, string[] | null>;
@@ -87,8 +87,8 @@ export function sourceLabel(source: string): string {
       return "Cron";
     case "tool":
       return "Tool";
-    case "hermes_flow":
-      return "Hermes Flow";
+    case "zeus_flow":
+      return "Zeus Flow";
     case "vulcan_delegate":
       return "Vulcan delegate";
     case "webhook":

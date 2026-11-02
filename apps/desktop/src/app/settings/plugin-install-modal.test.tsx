@@ -13,7 +13,7 @@ const { requestGateway } = vi.hoisted(() => ({
 vi.mock('@/app/gateway/hooks/use-gateway-request', () => ({
   useGatewayRequest: () => ({ requestGateway })
 }))
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getProfiles: async () => ({ profiles: [] })
 }))
@@ -97,7 +97,7 @@ beforeEach(() => {
   ])
   requestGateway.mockImplementation(async () => ({ plugins: [] }))
   probePluginRepo.mockResolvedValue({ ok: true, agent: true, agentName: 'blender', desktop: false, warnings: [] })
-  vi.stubGlobal('hermesDesktop', { probePluginRepo, installDesktopPlugin })
+  vi.stubGlobal('zeusDesktop', { probePluginRepo, installDesktopPlugin })
 })
 afterEach(() => {
   cleanup()
@@ -315,7 +315,7 @@ describe('Unified package desktop half on a local backend', () => {
         : { plugins: [] }
     )
     installDesktopPlugin.mockResolvedValue({ ok: true, pluginName: 'pkg' })
-    vi.stubGlobal('hermesDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
+    vi.stubGlobal('zeusDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
     renderFlow()
     act(() => openPluginInstallRequest({ repo: 'https://github.com/example/pkg' }))
     expect(await screen.findByText('This package includes')).toBeTruthy()
@@ -344,7 +344,7 @@ describe('Unified package desktop half on a local backend', () => {
       method === 'plugins.manage' && params?.action === 'install' ? { ok: true, plugin_name: 'pkg' } : { plugins: [] }
     )
     installDesktopPlugin.mockResolvedValue({ ok: true, pluginName: 'pkg' })
-    vi.stubGlobal('hermesDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
+    vi.stubGlobal('zeusDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
     renderFlow()
     act(() => openPluginInstallRequest({ repo: 'https://github.com/example/pkg' }))
     expect(await screen.findByText('This package includes')).toBeTruthy()
@@ -381,7 +381,7 @@ describe('Unified package desktop half on a local backend', () => {
 
       return ['/app/desktop-plugins/pkg']
     })
-    vi.stubGlobal('hermesDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
+    vi.stubGlobal('zeusDesktop', { installDesktopPlugin, probePluginRepo, reconcileDesktopPlugins })
     renderFlow()
     act(() => openPluginInstallRequest({ repo: 'https://github.com/example/pkg' }))
     expect(await screen.findByText('This package includes')).toBeTruthy()
@@ -406,7 +406,7 @@ describe('Unified package desktop half on a local backend', () => {
     reconcileDesktopPlugins.mockImplementation(async () => ['/app/desktop-plugins/pkg'])
     const desktopPluginsRoot = vi.fn(async () => '/app/desktop-plugins')
     const readDir = vi.fn(async () => ({ entries: [] }))
-    vi.stubGlobal('hermesDesktop', { desktopPluginsRoot, installDesktopPlugin, probePluginRepo, readDir, reconcileDesktopPlugins })
+    vi.stubGlobal('zeusDesktop', { desktopPluginsRoot, installDesktopPlugin, probePluginRepo, readDir, reconcileDesktopPlugins })
     renderFlow()
     act(() => openPluginInstallRequest({ repo: 'https://github.com/example/pkg' }))
     expect(await screen.findByText('This package includes')).toBeTruthy()
@@ -453,7 +453,7 @@ describe('Unified package desktop half on a local backend', () => {
         ? { ok: true, plugin_name: 'pkg', enabled: false }
         : { plugins: [] }
     )
-    vi.stubGlobal('hermesDesktop', {
+    vi.stubGlobal('zeusDesktop', {
       installDesktopPlugin,
       probePluginRepo,
       reconcileDesktopPlugins,

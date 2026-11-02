@@ -20,7 +20,7 @@ from gateway.session_contract import Principal
 from gateway.session_authorities import owner_scope
 from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
 from gateway.owner_identity import same_owner
-from hermes_state_runtime import RuntimeStoreError, _epoch
+from zeus_state_runtime import RuntimeStoreError, _epoch
 
 _BINDING = 'gateway.hosted.transport.v1:'
 _OPERATIONS = frozenset({'resolve_exact', 'create', 'resume', 'submit', 'history', 'results',
@@ -39,13 +39,13 @@ def owner_request(home, verb, params, *, timeout=30):
     home = Path(home)
     if home != home.resolve():
         raise RuntimeStoreError('permission_denied')
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint, control_home_for
+    from zeus_cli.gateway_runtime import discover_gateway_endpoint, control_home_for
     deadline = time.monotonic() + timeout
     discovered = discover_gateway_endpoint(home, timeout=timeout)
     if discovered.state != 'ready' or discovered.endpoint is None:
         raise RuntimeStoreError('runtime_draining')
-    from hermes_constants import hermes_home_key
-    if hermes_home_key(discovered.endpoint.profile_id) != hermes_home_key(home):
+    from zeus_constants import zeus_home_key
+    if zeus_home_key(discovered.endpoint.profile_id) != zeus_home_key(home):
         raise RuntimeStoreError('profile_mismatch')
     # Socket identity and logical authority identity are distinct under multiplex.
     params = {**params, 'profile_id': discovered.endpoint.profile_id}
@@ -60,7 +60,7 @@ def owner_request(home, verb, params, *, timeout=30):
         from gateway.runtime_bootstrap_windows import query_runtime_control
         raw = query_runtime_control(home, request, timeout)
     else:
-        from hermes_cli.gateway_runtime_discovery import connect_private
+        from zeus_cli.gateway_runtime_discovery import connect_private
         from gateway.control_socket import _read_response_line
         with connect_private(home, timeout) as peer:
             peer.sendall(request)
@@ -185,7 +185,7 @@ def install_hosted_transport(server, authority, loop, *, attest):
     Reinstallation for a secondary preserves routing to all other served owners.
     """
     def select(envelope):
-        from hermes_constants import assert_named_profile_home_live
+        from zeus_constants import assert_named_profile_home_live
         params = dict(envelope)
         profile_id = params.pop('profile_id', None)
         if not isinstance(profile_id, str) or not Path(profile_id).is_absolute():

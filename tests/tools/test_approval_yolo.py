@@ -4,7 +4,7 @@ compression rotation publishes the continuation row with it (the CLI manual /com
 
 import pytest
 
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 from tools import approval
 from tools.approval_yolo import restore_session_yolo, toggle_session_yolo, transfer_session_yolo, with_session_yolo
 

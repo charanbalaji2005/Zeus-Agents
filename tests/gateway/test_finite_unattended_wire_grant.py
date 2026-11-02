@@ -1,4 +1,4 @@
-"""B1-17: an unattended (auto-approving) finite turn is ``hermes -z`` only. Main set HERMES_YOLO_MODE inside
+"""B1-17: an unattended (auto-approving) finite turn is ``zeus -z`` only. Main set ZEUS_YOLO_MODE inside
 the one-shot's own process; over the wire only the local bootstrap principal on its own CLI session may
 ask for it. Every other submitter (dashboard identity, operator attach, a Desktop/TUI/Bot Chat session)
 gets invalid_params and nothing is admitted. Real SessionStore/SessionAuthority/AuthorityConnection."""
@@ -26,11 +26,11 @@ async def _rpc(connection, method, **params):
 async def test_only_the_local_cli_owner_may_submit_an_unattended_turn(monkeypatch):
     from gateway import run
     from gateway.session_controls import AuthorityConnection
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import list_session_admissions
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import list_session_admissions
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     (home / 'config.yaml').write_text(json.dumps({'model': {'provider': 'custom', 'default': 'm',
                                                             'base_url': 'http://127.0.0.1:1/v1'}}))
     store, _runner, authority, dashboard = _owner(home)

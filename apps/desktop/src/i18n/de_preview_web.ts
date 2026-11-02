@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import type { Translations } from './types'
 
@@ -12,11 +12,11 @@ export const dePreviewWeb: TranslationOverride<Translations['preview']['web']> =
     'Diese Adresse verweist auf den Rechner, auf dem Ihr Agent läuft – nicht auf diesen. Das Browserfenster lädt Seiten lokal, daher braucht ein entfernter Entwicklungsserver eine Portweiterleitung oder einen erreichbaren Hostnamen.',
   failedToLoad: 'Vorschau konnte nicht geladen werden',
   tryAgain: 'Nochmal versuchen',
-  restarting: 'Hermes wird neu gestartet …',
-  askRestart: 'Hermes bitten, den Server neu zu starten',
-  lookingRestart: taskId => `Hermes sucht nach einem Vorschau-Server zum Neustarten (${taskId})`,
+  restarting: 'Zeus wird neu gestartet …',
+  askRestart: 'Zeus bitten, den Server neu zu starten',
+  lookingRestart: taskId => `Zeus sucht nach einem Vorschau-Server zum Neustarten (${taskId})`,
   restartingTitle: 'Vorschau-Server wird neu gestartet',
-  restartingMessage: 'Hermes arbeitet im Hintergrund. Beobachte im Fortschritt die Vorschau-Konsole.',
+  restartingMessage: 'Zeus arbeitet im Hintergrund. Beobachte im Fortschritt die Vorschau-Konsole.',
   startRestartFailed: message => `Server-Neustart konnte nicht gestartet werden: ${message}`,
   restartFailed: 'Server-Neustart fehlgeschlagen',
   hideConsole: 'Vorschau-Konsole ausblenden',
@@ -28,16 +28,16 @@ export const dePreviewWeb: TranslationOverride<Translations['preview']['web']> =
   reload: 'Seite neu laden',
   address: 'Adresse',
   addressPlaceholder: 'Adresse eingeben',
-  blankPageBody: 'Geben Sie oben eine Adresse ein, um zu browsen, oder bitten Sie Hermes, eine Seite zu öffnen.',
-  finishedRestarting: message => `Hermes hat den Vorschau-Server neu gestartet${message ? `: ${message}` : ''}`,
+  blankPageBody: 'Geben Sie oben eine Adresse ein, um zu browsen, oder bitten Sie Zeus, eine Seite zu öffnen.',
+  finishedRestarting: message => `Zeus hat den Vorschau-Server neu gestartet${message ? `: ${message}` : ''}`,
   failedRestarting: message => `Server-Neustart fehlgeschlagen: ${message}`,
   unknownError: 'unbekannter Fehler',
   restartedTitle: 'Vorschau-Server neu gestartet',
   reloadingNow: 'Die Vorschau wird jetzt neu geladen.',
   restartFailedTitle: 'Vorschau-Neustart fehlgeschlagen',
-  restartFailedMessage: 'Hermes konnte den Server nicht neu starten.',
+  restartFailedMessage: 'Zeus konnte den Server nicht neu starten.',
   stillWorking:
-    'Hermes arbeitet noch, aber es ist noch kein Ergebnis des Neustarts eingetroffen. Der Server-Befehl läuft möglicherweise im Vordergrund.',
+    'Zeus arbeitet noch, aber es ist noch kein Ergebnis des Neustarts eingetroffen. Der Server-Befehl läuft möglicherweise im Vordergrund.',
   workspaceReloading: 'Arbeitsbereich geändert, Vorschau wird neu geladen',
   fileChanged: url => `Datei geändert, Vorschau wird neu geladen: ${url}`,
   filesChanged: (count, url) => `${count} Dateiänderungen, Vorschau wird neu geladen: ${url}`,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """MCP (Model Context Protocol) client: connects to the ``mcp_servers`` configured in
-~/.hermes/config.yaml (stdio, Streamable HTTP or SSE), discovers their tools and registers them
-into the hermes tool registry. The ``mcp`` package is optional (no-op without it).
+~/.zeus/config.yaml (stdio, Streamable HTTP or SSE), discovers their tools and registers them
+into the zeus tool registry. The ``mcp`` package is optional (no-op without it).
 
 One background event loop (``_mcp_loop``) in a daemon thread runs each server as a long-lived
 Task (``MCPServerTask``) so the transport's anyio cancel scopes enter and exit in one Task; every
@@ -53,7 +53,7 @@ async def _preflight_stdio_command(server_name: str, command: str, args: list) -
         raise ValueError(f"MCP server '{server_name}': {malware_error}")
 
     # npx resolves the package and then FORKS, staying resident as the real server's parent for
-    # nothing (~48 MB per server, measured). Hermes already supervises the child (shared death
+    # nothing (~48 MB per server, measured). Zeus already supervises the child (shared death
     # supervisor), so a cached package is spawned directly; a cache miss leaves npx untouched.
     if os.path.basename(command).lower().startswith("npx"):
         # A sealed Windows payload's own npx cannot start its node through cmd.exe.
@@ -429,7 +429,7 @@ class MCPServerTask(MCPServerRunMixin, MCPServerTransportMixin, MCPServerHealthM
         self._rpc_lock = asyncio.Lock()
         self._pending_refresh_tasks: set[asyncio.Task] = set()
         # contextvars snapshot inside session.call_tool(): the SDK runs elicitation/create on a
-        # task that does not inherit HERMES_SESSION_PLATFORM, so the callback replays this.
+        # task that does not inherit ZEUS_SESSION_PLATFORM, so the callback replays this.
         self._pending_call_context: Optional[contextvars.Context] = None
         self._lifecycle_started_at = self._last_tool_call_at = time.monotonic()
         self._idle_timeout_seconds = self._max_lifetime_seconds = self._recycled_reason = None
@@ -570,7 +570,7 @@ _lock = threading.Lock()
 def _mcp_registry_scope() -> Optional[str]:
     """Registry scope for MCP registrations: the session's own tool scope when one is bound, else a
     profile overlay when this process serves profiles, else None. Under ``gateway.multiplex_profiles``
-    every turn runs scoped; a process that serves a routed profile through the HERMES_HOME override
+    every turn runs scoped; a process that serves a routed profile through the ZEUS_HOME override
     (dashboard/desktop backend, per-profile cron ticker) is a multiplexer too, even with the flag
     off — keying its connections by the bare name would hand one profile's credentialed connection
     to every other served profile (#111151). Single-profile processes (no override, or an override

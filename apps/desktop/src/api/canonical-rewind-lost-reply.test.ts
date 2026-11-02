@@ -17,7 +17,7 @@ const derived = (target: number) => ({ session_id: 's', target_message_id: targe
 test('a derived rewind whose reply was lost is re-sent for the repeat, not re-derived', () => {
   const protocol = primed()
   const lost = protocol.prepare('session.rewind', derived(5))
-  protocol.failure(lost, new Error('Hermes gateway connection lost'))
+  protocol.failure(lost, new Error('Zeus gateway connection lost'))
 
   // The repeat's snapshot already lacks row 5 and names row 3; the original request goes out again.
   protocol.result('session.resume', { session_id: 's' }, { session_id: 's', revision: 8, execution_generation: 4 })

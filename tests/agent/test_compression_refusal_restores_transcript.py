@@ -20,7 +20,7 @@ from unittest.mock import patch
 import pytest
 
 from agent.conversation_compression import CompressionCommitFence
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 
 def _build_agent(db: SessionDB, session_id: str):

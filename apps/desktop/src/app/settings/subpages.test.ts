@@ -48,14 +48,14 @@ describe('settings subpage routing', () => {
   // child page to land on and no search hit that would scroll to nothing.
   it('gives the Webapp Gateways page no native-only children or search rows', () => {
     const nativeChildren = settingsSubpages('gateway').length
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     try {
       expect(settingsSubpages('gateway')).toEqual([])
       expect(resolveSettingsSubpage('gateway', new URLSearchParams({ page: 'devices' }))).toBeUndefined()
       expect(settingSearchTargets(TRANSLATIONS.en).filter(target => target.view === 'gateway')).toEqual([])
     } finally {
-      window.document.documentElement.removeAttribute('data-hermes-desktop-host')
+      window.document.documentElement.removeAttribute('data-zeus-desktop-host')
     }
 
     expect(settingsSubpages('gateway')).toHaveLength(nativeChildren)

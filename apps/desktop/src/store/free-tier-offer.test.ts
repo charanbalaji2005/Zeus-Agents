@@ -11,7 +11,7 @@ import {
 import { activeGatewayProfileKey, ensureGatewayForProfile } from '@/store/gateway'
 import { $localModelOfferPending } from '@/store/local-model-offer'
 import { $onboardingDecided, markOnboardingDecided, setOnboardingSurfaceActive } from '@/store/onboarding-presence'
-import type { FreeTierStatus } from '@/types/hermes'
+import type { FreeTierStatus } from '@/types/zeus'
 
 const status = (nudge_due_in: null | number, available = true): FreeTierStatus => ({
   available,

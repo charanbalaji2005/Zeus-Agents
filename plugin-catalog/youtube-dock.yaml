@@ -4,7 +4,7 @@ sha: 31d2635ed1ef49250dc89a5707281a5fa66dd76e
 title: YouTube Dock
 description: >-
   Open your signed-in YouTube Home recommendations and Shorts in the existing
-  Hermes Desktop Browser beside your conversation, without pasting video URLs
+  Zeus Desktop Browser beside your conversation, without pasting video URLs
   or launching an external browser. Desktop-only SDK launcher; no agent tools,
   hooks, middleware or API keys. Disclosure — explicit user clicks load YouTube
   and its normal service/CDN requests in the native Browser; this plugin does
@@ -14,7 +14,7 @@ description: >-
 maintainer: metamindedu
 tier: community
 category: desktop
-requires_hermes: ">=0.22.2"
+requires_zeus: ">=0.22.2"
 version: "1.1.0"
 docs_url: https://github.com/metamindedu/hermes-youtube-dock
 screenshots:

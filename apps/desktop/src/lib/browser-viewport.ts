@@ -7,7 +7,7 @@ export function installBrowserViewport(): () => void {
   const viewport = window.visualViewport
   const root = document.getElementById('root')
 
-  if (!viewport || !root || document.documentElement.dataset.hermesDesktopHost !== 'browser') {
+  if (!viewport || !root || document.documentElement.dataset.zeusDesktopHost !== 'browser') {
     return () => {}
   }
 
@@ -56,7 +56,7 @@ export function installBrowserViewport(): () => void {
       return
     }
 
-    // Hermes' UI scale is CSS zoom on <html>, separate from pinch zoom.
+    // Zeus' UI scale is CSS zoom on <html>, separate from pinch zoom.
     const zoom = Number.parseFloat(getComputedStyle(document.documentElement).zoom) || 1
     root.style.setProperty('--browser-viewport-height', `${height / zoom}px`)
     root.style.setProperty('--browser-viewport-top', `${top / zoom}px`)

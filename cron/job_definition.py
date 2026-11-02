@@ -8,7 +8,7 @@ from typing import Any, Dict
 
 from cron.jobs import _apply_schedule_update, _jobs_lock, is_job_runnable, load_jobs, parse_schedule, save_jobs
 from cron.quota_hold import clear_state as _clear_quota_hold
-from hermes_time import now as _hermes_now
+from zeus_time import now as _zeus_now
 
 JOB_DEFINITION_FIELDS = frozenset({
     "name", "prompt", "skills", "skill", "model", "provider", "base_url",
@@ -55,7 +55,7 @@ def import_job_definitions(shipped: dict[str, dict[str, Any]], *, paused_reason:
     Unknown ids arrive with the marker set ``create_job(paused=True)`` writes; known ids keep
     their scheduler state. Nothing is written when a record cannot be merged: the ValueError
     is re-raised naming the job."""
-    now = _hermes_now().isoformat()
+    now = _zeus_now().isoformat()
     seed = {
         "enabled": False,
         "state": "paused",

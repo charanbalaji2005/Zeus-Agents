@@ -6,7 +6,7 @@ const api = vi.fn<(request: unknown) => Promise<unknown>>()
 
 vi.mock('@/api/client', () => ({
   getApiRequestConnection: () => 'gw-b',
-  hermesApi: (request: unknown) => api(request)
+  zeusApi: (request: unknown) => api(request)
 }))
 vi.mock('@/store/connection-registry-state', () => ({
   $connectionsRegistry: { get: () => ({ connections: [{ id: 'local' }, { id: 'gw-b' }] }) },
@@ -35,7 +35,7 @@ describe('maybeBackfillLegacySessionOwners (one-shot per scope)', () => {
     // The gateway answers 409 for as long as it owns the profile: re-arming here is a request
     // storm the backend will keep refusing. Reported and verified by @ahrazzle (#106742).
     api.mockRejectedValue(new Error(
-      "Error invoking remote method 'hermes:api': Error: 409: " +
+      "Error invoking remote method 'zeus:api': Error: 409: " +
       '{"detail":"Exclusive maintenance refused: Gateway runtime already owns profile /x"}'
     ))
     expect(await enumerateTwice()).toBe(1)

@@ -26,7 +26,7 @@ from tests.e2e.core.upgrade.network import _seed as S
 
 pytestmark = [
     pytest.mark.platforms("linux"),
-    # Every `hermes update` here targets a throwaway sandboxed install, never the real checkout.
+    # Every `zeus update` here targets a throwaway sandboxed install, never the real checkout.
     pytest.mark.live_system_guard_bypass,
     pytest.mark.skipif(H.sandbox_required_reason() is not None, reason=str(H.sandbox_required_reason())),
     pytest.mark.skipif(N.netns_required_reason() is not None, reason=str(N.netns_required_reason())),
@@ -40,7 +40,7 @@ LATEST = f"/repos/{S.REPOSITORY}/releases/latest"
 @pytest.fixture(scope="module")
 def inst(tmp_path_factory):
     inst = S.seed_install(tmp_path_factory.mktemp("net-channels"))
-    r = inst.hermes("update", "--set-channel", "stable", edge=None, timeout=120)
+    r = inst.zeus("update", "--set-channel", "stable", edge=None, timeout=120)
     assert r.rc == 0, "could not subscribe the install to stable\n" + r.report(inst)
     return inst
 
@@ -56,7 +56,7 @@ def _release_and_main_tip(inst: S.Installed, tag: str) -> tuple[str, str]:
 def _update(inst: S.Installed, api: N.App | None = None, **edge_kw) -> S.Result:
     edge = inst.edge(extra={S.GITHUB_API: api or N.static_app({})}, **edge_kw)
     try:
-        return inst.hermes("update", "--yes", edge=edge, timeout=600)
+        return inst.zeus("update", "--yes", edge=edge, timeout=600)
     finally:
         edge.close()
 

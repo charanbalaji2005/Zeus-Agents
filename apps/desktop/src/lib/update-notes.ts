@@ -6,7 +6,7 @@
  * caller keeps the commit changelog when nothing comes back.
  */
 
-const REPOSITORY = 'NousResearch/hermes-agent'
+const REPOSITORY = 'charanbalaji2005/Zeus-Agents'
 const API = `https://api.github.com/repos/${REPOSITORY}`
 const SITE = `https://github.com/${REPOSITORY}`
 const MAX_ITEMS = 5

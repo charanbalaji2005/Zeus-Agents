@@ -10,8 +10,8 @@ from gateway.session import SessionSource
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_contract import Principal, SessionRef, Submission
 from gateway.config import Platform
-from hermes_state import SessionDB
-from hermes_state_runtime import (
+from zeus_state import SessionDB
+from zeus_state_runtime import (
     RuntimeStoreError,
     admit_session_input,
     begin_runtime_epoch,

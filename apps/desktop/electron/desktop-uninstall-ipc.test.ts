@@ -5,7 +5,7 @@ import type { DesktopUninstallIpcDeps, DesktopUninstallSummary } from './desktop
 import type { InstallStamp } from './install-stamp'
 
 const fallbackSummary: Omit<DesktopUninstallSummary, 'code_removal_allowed' | 'native_removal_instructions'> = {
-  hermes_home: '/test/.hermes',
+  zeus_home: '/test/.zeus',
   agent_installed: true,
   gui_installed: true,
   source_built_artifacts: [],
@@ -87,7 +87,7 @@ test('excluded artifact owners block every uninstall IPC before a Python probe o
   for (const stamp of stamps) {
     const ipc: CapturedIpc = captureIpc(stamp)
 
-    expect(await ipc.invoke('hermes:uninstall:summary')).toMatchObject({
+    expect(await ipc.invoke('zeus:uninstall:summary')).toMatchObject({
       ...fallbackSummary,
       code_removal_allowed: false,
       native_removal_instructions: expect.any(String)
@@ -96,7 +96,7 @@ test('excluded artifact owners block every uninstall IPC before a Python probe o
 
     for (const mode of ['gui', 'lite', 'full', 'data']) {
       for (const payload of [mode, { mode }]) {
-        expect(await ipc.invoke('hermes:uninstall:run', payload)).toMatchObject({
+        expect(await ipc.invoke('zeus:uninstall:run', payload)).toMatchObject({
           ok: false,
           error: 'externally-managed'
         })
@@ -117,7 +117,7 @@ test('self-managed installs retain summary and uninstall IPC behavior under Elec
       code_removal_allowed: false,
       native_removal_instructions: null
     })
-    expect(await ipc.invoke('hermes:uninstall:summary')).toEqual({
+    expect(await ipc.invoke('zeus:uninstall:summary')).toEqual({
       ...fallbackSummary,
       probe: 'python',
       code_removal_allowed: true,
@@ -131,14 +131,14 @@ test('self-managed installs retain summary and uninstall IPC behavior under Elec
       code_removal_allowed: false,
       native_removal_instructions: null
     })
-    expect(await ipc.invoke('hermes:uninstall:summary')).toMatchObject({
+    expect(await ipc.invoke('zeus:uninstall:summary')).toMatchObject({
       probe: 'fallback',
       code_removal_allowed: true
     })
 
     for (const mode of ['gui', 'lite', 'full']) {
       for (const payload of [mode, { mode }]) {
-        expect(await ipc.invoke('hermes:uninstall:run', payload)).toEqual({ ok: true, mode })
+        expect(await ipc.invoke('zeus:uninstall:run', payload)).toEqual({ ok: true, mode })
         expect(ipc.runUninstall).toHaveBeenLastCalledWith(mode)
       }
     }
@@ -146,7 +146,7 @@ test('self-managed installs retain summary and uninstall IPC behavior under Elec
     ipc.runUninstall.mockClear()
 
     for (const payload of ['unknown', 'data', undefined, { mode: 'unknown' }]) {
-      expect(await ipc.invoke('hermes:uninstall:run', payload)).toMatchObject({ ok: false, error: 'invalid-mode' })
+      expect(await ipc.invoke('zeus:uninstall:run', payload)).toMatchObject({ ok: false, error: 'invalid-mode' })
     }
 
     expect(ipc.runUninstall).not.toHaveBeenCalled()

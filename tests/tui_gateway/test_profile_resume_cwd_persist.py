@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import pytest
 
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 from tests.tui_gateway.test_tui_gateway_server import _write_profile_cfg
 from tui_gateway import server
 
@@ -33,7 +33,7 @@ class _Agent:
 def resume_path(monkeypatch):
     """``session.resume`` for named profile ``austin`` (placeholder ``terminal.cwd``) whose row holds the launch
     profile's root; returns ``(run(flags) -> stored row cwd, profile home)``."""
-    root = server.get_hermes_home()
+    root = server.get_zeus_home()
     home = _write_profile_cfg(root / "profiles" / "austin", ".")
     monkeypatch.setattr(server, "_profile_home", lambda name: home if name else None)
     monkeypatch.setenv("TERMINAL_CWD", str(root))

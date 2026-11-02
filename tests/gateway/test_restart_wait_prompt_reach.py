@@ -8,21 +8,21 @@ from types import SimpleNamespace
 
 import pytest
 
-from hermes_state import SessionDB
-from hermes_state_runtime import RuntimeStoreError, begin_runtime_epoch, list_session_admissions
+from zeus_state import SessionDB
+from zeus_state_runtime import RuntimeStoreError, begin_runtime_epoch, list_session_admissions
 
 
 @pytest.mark.platforms("linux")
 def test_ensure_hands_out_the_restart_wait_owner_as_draining_with_its_endpoint(tmp_path):
-    from tests.hermes_cli.test_gateway_runtime import control_peer
-    from hermes_cli.gateway_runtime import discover_gateway_endpoint
-    from hermes_cli.gateway_runtime_cli import ensure_exit_code
+    from tests.zeus_cli.test_gateway_runtime import control_peer
+    from zeus_cli.gateway_runtime import discover_gateway_endpoint
+    from zeus_cli.gateway_runtime_cli import ensure_exit_code
 
     async def probe():
         home = tmp_path / "profile"
         identity = str(home.resolve())
         payload = {"protocol": 1, "runtime_protocol": 1, "instance_id": "owner", "authority_epoch": 1,
-                   "hermes_home": identity, "state": "draining", "drain_reason": "restart_wait",
+                   "zeus_home": identity, "state": "draining", "drain_reason": "restart_wait",
                    "api_origin": "http://127.0.0.1:41817", "supervisor": "none",
                    "served_profiles": [{"profile_id": identity, "home": identity}],
                    "capabilities": ["session-authority-v1"]}
@@ -42,19 +42,19 @@ def test_ensure_hands_out_the_restart_wait_owner_as_draining_with_its_endpoint(t
 
 @pytest.mark.platforms("linux")
 def test_update_fence_hands_out_only_the_draining_owners_restart_wait(tmp_path):
-    """`hermes update`'s drain (pause-for-update) is a restart wait: while the update marker is live,
+    """`zeus update`'s drain (pause-for-update) is a restart wait: while the update marker is live,
     ensure still hands that owner out so a parked prompt can be answered; anything else (a ready owner,
     a stopping one, none at all) stays ``update_paused`` and nothing is ever started."""
     import os
     import time
-    from tests.hermes_cli.test_gateway_runtime import control_peer
-    from hermes_cli.gateway_runtime import ensure_gateway_runtime
-    from hermes_cli.update_lock import MARKER_NAME, process_create_time
+    from tests.zeus_cli.test_gateway_runtime import control_peer
+    from zeus_cli.gateway_runtime import ensure_gateway_runtime
+    from zeus_cli.update_lock import MARKER_NAME, process_create_time
 
     home = tmp_path / "profile"
     identity = str(home.resolve())
     payload = {"protocol": 1, "runtime_protocol": 1, "instance_id": "owner", "authority_epoch": 1,
-               "hermes_home": identity, "state": "draining", "drain_reason": "restart_wait",
+               "zeus_home": identity, "state": "draining", "drain_reason": "restart_wait",
                "api_origin": "http://127.0.0.1:41817", "supervisor": "none",
                "served_profiles": [{"profile_id": identity, "home": identity}],
                "capabilities": ["session-authority-v1"]}
@@ -85,7 +85,7 @@ async def test_restart_wait_commits_new_input_queued_and_never_claims_it(tmp_pat
     from gateway.session_authority import LiveSession, SessionAuthority
     from gateway.session_contract import Principal, SessionRef, Submission
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     db = SessionDB(tmp_path / "state.db")
     db.create_session("s", source="telegram")
     ran = []
@@ -210,7 +210,7 @@ async def test_restart_wait_queues_only_interactive_input(tmp_path, monkeypatch)
     from gateway.session_authority import LiveSession, SessionAuthority
     from gateway.session_contract import Principal, SessionRef, Submission
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     db = SessionDB(tmp_path / "state.db")
     db.create_session("s", source="telegram")
     runner = SimpleNamespace(_draining=True, _running=True, config=SimpleNamespace(multiplex_profiles=False),
@@ -230,16 +230,16 @@ async def test_restart_wait_queues_only_interactive_input(tmp_path, monkeypatch)
 
 def test_update_drain_hint_names_the_draining_profile(tmp_path, monkeypatch):
     """The updater's hint opens the profile whose gateway holds the parked turn: a bare
-    ``hermes --tui`` opens the default profile, where that session isn't listed (#139041)."""
-    from hermes_cli.update_cmd_drain_report import format_drain_report
+    ``zeus --tui`` opens the default profile, where that session isn't listed (#139041)."""
+    from zeus_cli.update_cmd_drain_report import format_drain_report
 
-    root = tmp_path / ".hermes"
+    root = tmp_path / ".zeus"
     (root / "profiles" / "work").mkdir(parents=True)
     monkeypatch.setenv("HOME", str(tmp_path))
-    monkeypatch.setenv("HERMES_HOME", str(root))
+    monkeypatch.setenv("ZEUS_HOME", str(root))
     work = [{"kind": "chat", "session": "s1"}]
-    assert "`hermes -p work --tui`" in format_drain_report(work, remaining_s=60, home=root / "profiles" / "work")
-    assert "`hermes --tui`" in format_drain_report(work, remaining_s=60, home=root)
+    assert "`zeus -p work --tui`" in format_drain_report(work, remaining_s=60, home=root / "profiles" / "work")
+    assert "`zeus --tui`" in format_drain_report(work, remaining_s=60, home=root)
 
 
 @pytest.mark.asyncio
@@ -252,8 +252,8 @@ async def test_restart_wait_cuts_sockets_opened_before_it(tmp_path, monkeypatch,
 
     from gateway.run_api import GatewayRuntimeAPI
     from gateway.runtime_bootstrap import TicketStore
-    from hermes_cli import web_server as web
-    from hermes_cli import web_server_chat
+    from zeus_cli import web_server as web
+    from zeus_cli import web_server_chat
 
     tickets = TicketStore("owner", [str(tmp_path)])
     ticket = tickets.mint(profile_id=str(tmp_path), subject="human", purpose="interactive")
@@ -270,7 +270,7 @@ async def test_restart_wait_cuts_sockets_opened_before_it(tmp_path, monkeypatch,
     received = []
 
     async def handle(ws, **kwargs):
-        await ws.accept(subprotocol="hermes-gateway-v1")
+        await ws.accept(subprotocol="zeus-gateway-v1")
         open_restart_wait()  # the wait opens while this socket is live
         while True:
             message = await ws.receive()
@@ -297,8 +297,8 @@ async def test_restart_wait_cuts_sockets_opened_before_it(tmp_path, monkeypatch,
 
     scope = {"type": "websocket", "path": "/api/ws", "scheme": "ws", "query_string": b"",
              "client": ("127.0.0.1", 1234), "server": ("127.0.0.1", 9999),
-             "headers": [(b"sec-websocket-protocol", ("hermes-gateway-v1, hermes-gateway-ticket." + ticket).encode())],
-             "subprotocols": ["hermes-gateway-v1", "hermes-gateway-ticket." + ticket]}
+             "headers": [(b"sec-websocket-protocol", ("zeus-gateway-v1, zeus-gateway-ticket." + ticket).encode())],
+             "subprotocols": ["zeus-gateway-v1", "zeus-gateway-ticket." + ticket]}
     await GatewayRuntimeAPI(fallback, runner, web.app)(scope, receive, send)
     if opened_in_wait:
         assert received == [("text", frame), ("disconnect", 1000)], received
@@ -319,7 +319,7 @@ async def test_restart_wait_lets_a_webapp_tab_dial_back_in_to_answer_the_parked_
 
     from gateway.run_api import GatewayRuntimeAPI
     from gateway.session_authority import LiveSession, SessionAuthority
-    from tests.hermes_cli.test_webapp_socket_tickets import _SESSION, serve_webapp
+    from tests.zeus_cli.test_webapp_socket_tickets import _SESSION, serve_webapp
     from tests.waiting import async_wait_until
     from tui_gateway import server as tui_server
 
@@ -328,7 +328,7 @@ async def test_restart_wait_lets_a_webapp_tab_dial_back_in_to_answer_the_parked_
                              session_authority=None)
     db = SessionDB(tmp_path / "state.db")
     db.create_session("s", source="test")
-    authority = SessionAuthority(runner, profile_id=str(tmp_path / ".hermes"), instance_id="owner", db=db,
+    authority = SessionAuthority(runner, profile_id=str(tmp_path / ".zeus"), instance_id="owner", db=db,
                                  epoch=begin_runtime_epoch(db, instance_id="owner"))
     authority.sessions["s"] = LiveSession(None, "route")
     monkeypatch.setattr(web.app.state, "session_authority", authority, raising=False)
@@ -363,7 +363,7 @@ async def test_restart_wait_lets_a_webapp_tab_dial_back_in_to_answer_the_parked_
                 assert (await mint("host-terminal")).status_code == 503
             minted = await mint("gateway")
             assert minted.status_code == 200, minted.text
-            protocols = ["hermes-gateway-v1", f"hermes-gateway-ticket.{minted.json()['ticket']}"]
+            protocols = ["zeus-gateway-v1", f"zeus-gateway-ticket.{minted.json()['ticket']}"]
             scope = {"type": "websocket", "path": "/api/ws", "scheme": "ws", "query_string": b"native_dial=browser",
                      "client": ("127.0.0.1", 1234), "server": ("localhost", 80),
                      "headers": [(b"host", b"localhost"), (b"origin", b"http://localhost"),
@@ -404,7 +404,7 @@ async def test_restart_wait_admits_a_browser_ticket_only_where_its_gate_redeems_
     """Off the Webapp the loopback dashboard gate takes the legacy ``?token=`` and never redeems a
     ticket, so a ticket-shaped subprotocol beside it is still closed 1013 during the wait."""
     from gateway.run_api import GatewayRuntimeAPI
-    from tests.hermes_cli.test_webapp_socket_tickets import _TOKEN, serve_webapp
+    from tests.zeus_cli.test_webapp_socket_tickets import _TOKEN, serve_webapp
 
     web = serve_webapp(tmp_path, monkeypatch).server
     monkeypatch.delattr(web.app.state, "ui_surface")  # the gateway's own listener, as on main
@@ -424,7 +424,7 @@ async def test_restart_wait_admits_a_browser_ticket_only_where_its_gate_redeems_
     async def send(message):
         sent.append(message)
 
-    protocols = ["hermes-gateway-v1", "hermes-gateway-ticket.not-a-ticket"]
+    protocols = ["zeus-gateway-v1", "zeus-gateway-ticket.not-a-ticket"]
     scope = {"type": "websocket", "path": "/api/ws", "scheme": "ws", "query_string": f"token={_TOKEN}".encode(),
              "client": ("127.0.0.1", 1234), "server": ("localhost", 80),
              "headers": [(b"host", b"localhost"), (b"origin", b"http://localhost"),

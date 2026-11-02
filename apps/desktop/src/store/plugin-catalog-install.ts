@@ -7,7 +7,7 @@ import { openPluginInstallRequest, type PluginInstallRequest } from './plugin-in
 
 /**
  * THE way a curated-catalog pick reaches the Install Plugin dialog. The
- * Plugins tab's embedded picker and the `hermes://plugin/install?catalog=`
+ * Plugins tab's embedded picker and the `zeus://plugin/install?catalog=`
  * deep link both land here, so a link opens exactly the reviewed/pinned
  * dialog an in-app pick does: `catalogName` makes the backend resolve the
  * pinned SHA and record provenance; `repo#subdir` is what the dialog inspects.
@@ -43,7 +43,7 @@ const DEEP_LINK_ERROR_KEYS: Record<PluginCatalogLookupError, string> = {
 }
 
 /**
- * `hermes://plugin/install?catalog=<name>`: resolve the name against the live
+ * `zeus://plugin/install?catalog=<name>`: resolve the name against the live
  * catalog and open the dialog in catalog mode for the active profile. Any
  * failure (bad name, catalog unreachable, name not listed) is a clear error
  * toast — the string is never reinterpreted as a git path.

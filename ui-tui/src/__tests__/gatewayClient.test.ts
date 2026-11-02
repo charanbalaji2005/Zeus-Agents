@@ -112,23 +112,23 @@ describe('GatewayClient websocket attach mode', () => {
   let originalSidecarUrl: string | undefined
 
   beforeEach(() => {
-    originalGatewayUrl = process.env.HERMES_TUI_GATEWAY_URL
-    originalSidecarUrl = process.env.HERMES_TUI_SIDECAR_URL
+    originalGatewayUrl = process.env.ZEUS_TUI_GATEWAY_URL
+    originalSidecarUrl = process.env.ZEUS_TUI_SIDECAR_URL
     FakeWebSocket.reset()
     ;(globalThis as { WebSocket?: unknown }).WebSocket = FakeWebSocket as unknown as typeof WebSocket
   })
 
   afterEach(() => {
     if (originalGatewayUrl === undefined) {
-      delete process.env.HERMES_TUI_GATEWAY_URL
+      delete process.env.ZEUS_TUI_GATEWAY_URL
     } else {
-      process.env.HERMES_TUI_GATEWAY_URL = originalGatewayUrl
+      process.env.ZEUS_TUI_GATEWAY_URL = originalGatewayUrl
     }
 
     if (originalSidecarUrl === undefined) {
-      delete process.env.HERMES_TUI_SIDECAR_URL
+      delete process.env.ZEUS_TUI_SIDECAR_URL
     } else {
-      process.env.HERMES_TUI_SIDECAR_URL = originalSidecarUrl
+      process.env.ZEUS_TUI_SIDECAR_URL = originalSidecarUrl
     }
 
     FakeWebSocket.reset()
@@ -142,8 +142,8 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('publishes canonical readiness once after discovery and arms the negotiated heartbeat', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    delete process.env.HERMES_TUI_SIDECAR_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_SIDECAR_URL
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
     const events: any[] = []
     gw.on('event', event => events.push(event))
@@ -180,10 +180,10 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('/logs carries the attach lifecycle like main\'s sidecar spawn line (row 24)', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    delete process.env.HERMES_TUI_SIDECAR_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_SIDECAR_URL
     const gw = new GatewayClient(async () => ({
-      url: 'ws://127.0.0.1:9/api/ws?token=secret', protocols: [], instance_id: 'owner-1', profile_id: '/home/u/.hermes/profiles/work'
+      url: 'ws://127.0.0.1:9/api/ws?token=secret', protocols: [], instance_id: 'owner-1', profile_id: '/home/u/.zeus/profiles/work'
     }))
 
     try {
@@ -191,7 +191,7 @@ describe('GatewayClient websocket attach mode', () => {
       await vi.advanceTimersByTimeAsync(0)
       const tail = gw.getLogTail(20)
       expect(tail).toMatch(/^\[lifecycle\] attached shared gateway /m)
-      expect(tail).toContain('profile=/home/u/.hermes/profiles/work')
+      expect(tail).toContain('profile=/home/u/.zeus/profiles/work')
       expect(tail).toContain('instance=owner-1')
       expect(tail).not.toContain('secret')
     } finally {
@@ -202,8 +202,8 @@ describe('GatewayClient websocket attach mode', () => {
 
   it("boots the owner's profile skin: runtime.describe.skin rides the client-local ready (row 3)", async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    delete process.env.HERMES_TUI_SIDECAR_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_SIDECAR_URL
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
     const events: any[] = []
     gw.on('event', event => events.push(event))
@@ -230,8 +230,8 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('remembers clarify-batch-v1 from runtime.describe and forgets it on reconnect to an owner without it', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    delete process.env.HERMES_TUI_SIDECAR_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_SIDECAR_URL
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
 
     const open = async () => {
@@ -272,8 +272,8 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('treats a failed runtime.describe as a transport failure: redial, re-describe, then ready (B2-21)', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    delete process.env.HERMES_TUI_SIDECAR_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_SIDECAR_URL
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
     const events: any[] = []
     gw.on('event', event => events.push(event))
@@ -315,7 +315,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('keeps discovery-only retries alive and delivers readiness to the mounted subscriber', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
     const grant = { url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }
     const bootstrap = vi.fn().mockResolvedValueOnce(grant).mockRejectedValueOnce(new Error('owner stopped')).mockRejectedValueOnce(new Error('owner stopped')).mockResolvedValue(grant)
     const gw = new GatewayClient(bootstrap)
@@ -340,10 +340,10 @@ describe('GatewayClient websocket attach mode', () => {
     } finally { gw.kill(); vi.useRealTimers() }
   })
 
-  it('pins the launcher tool-progress mode (hermes --tui -v) on the created session before returning it', async () => {
+  it('pins the launcher tool-progress mode (zeus --tui -v) on the created session before returning it', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    vi.stubEnv('HERMES_TUI_TOOL_PROGRESS', 'verbose')
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    vi.stubEnv('ZEUS_TUI_TOOL_PROGRESS', 'verbose')
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
     gw.on('event', () => undefined)
 
@@ -384,8 +384,8 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('retries a create whose launch pin failed after the ACK under the same request_id (one session, pin reapplied)', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
-    vi.stubEnv('HERMES_TUI_TOOL_PROGRESS', 'verbose')
+    delete process.env.ZEUS_TUI_GATEWAY_URL
+    vi.stubEnv('ZEUS_TUI_TOOL_PROGRESS', 'verbose')
     const gw = new GatewayClient(async () => ({ url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }))
     gw.on('event', () => undefined)
 
@@ -432,7 +432,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('re-ensures a crashed owner on a bounded number of reconnects, then stays discovery-only', async () => {
     vi.useFakeTimers()
-    delete process.env.HERMES_TUI_GATEWAY_URL
+    delete process.env.ZEUS_TUI_GATEWAY_URL
     const grant = { url: 'ws://gateway.test/api/ws', protocols: [], instance_id: 'owner', profile_id: 'fixture' }
     const bootstrap = vi.fn().mockResolvedValueOnce(grant).mockRejectedValue(new Error('gateway absent: not ready'))
     const gw = new GatewayClient(bootstrap)
@@ -451,7 +451,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('negotiates the canonical wire on an explicit attach whose listener advertises a session authority', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
     const events: any[] = []
 
@@ -485,7 +485,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('waits for websocket open and resolves RPC requests', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -513,7 +513,7 @@ describe('GatewayClient websocket attach mode', () => {
     // setState cascade would run inside React's first commit -> "Too many
     // re-renders" (#301). drain() must defer the buffered flush so the first
     // commit settles first.
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -546,7 +546,7 @@ describe('GatewayClient websocket attach mode', () => {
     // A live event delivered in the window between drain() returning and the
     // deferred microtask running must still queue BEHIND the chronologically
     // earlier buffered events, not jump ahead of them.
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -579,8 +579,8 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('mirrors event frames to sidecar websocket when configured', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
-    process.env.HERMES_TUI_SIDECAR_URL = 'ws://gateway.test/api/pub?token=abc&channel=demo'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_SIDECAR_URL = 'ws://gateway.test/api/pub?token=abc&channel=demo'
 
     const gw = new GatewayClient()
     const seen: string[] = []
@@ -615,8 +615,8 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('publishes local dashboard-control events to the sidecar websocket', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
-    process.env.HERMES_TUI_SIDECAR_URL = 'ws://gateway.test/api/pub?token=abc&channel=demo'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_SIDECAR_URL = 'ws://gateway.test/api/pub?token=abc&channel=demo'
 
     const gw = new GatewayClient()
     const seen: string[] = []
@@ -657,7 +657,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('emits exit when attached websocket closes', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
     const exits: Array<null | number> = []
 
@@ -677,7 +677,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('rejects pending RPCs when the attached socket closes', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -695,7 +695,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('rejects pending RPCs when kill() closes the attached websocket', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -712,8 +712,8 @@ describe('GatewayClient websocket attach mode', () => {
     await expect(req).rejects.toThrow()
   })
 
-  it('reattaches when HERMES_TUI_GATEWAY_URL rotates between requests', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway-old.test/api/ws?token=abc'
+  it('reattaches when ZEUS_TUI_GATEWAY_URL rotates between requests', async () => {
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway-old.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -725,7 +725,7 @@ describe('GatewayClient websocket attach mode', () => {
     const stale = gw.request('session.create', {})
     await vi.waitFor(() => expect(firstSocket.sent.length).toBeGreaterThan(0))
 
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway-new.test/api/ws?token=xyz'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway-new.test/api/ws?token=xyz'
     const next = gw.request('session.create', {})
 
     await expect(stale).rejects.toThrow(t('libText.gateway.attachUrlChanged'))
@@ -745,7 +745,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('surfaces JSON-RPC error code and data to callers (shared error mapping)', async () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     gw.start()
@@ -773,7 +773,7 @@ describe('GatewayClient websocket attach mode', () => {
   })
 
   it('uses the undici WebSocket fallback when global WebSocket is unavailable', () => {
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=hunter2&channel=secret'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=hunter2&channel=secret'
     delete (globalThis as { WebSocket?: unknown }).WebSocket
 
     const gw = new GatewayClient()
@@ -788,7 +788,7 @@ describe('GatewayClient websocket attach mode', () => {
   it('redacts attach URL secrets when the WebSocket constructor throws', () => {
     const secretUrl = 'ws://gateway.test/api/ws?token=hunter2&channel=secret'
 
-    process.env.HERMES_TUI_GATEWAY_URL = secretUrl
+    process.env.ZEUS_TUI_GATEWAY_URL = secretUrl
     ;(globalThis as { WebSocket?: unknown }).WebSocket = class ThrowingWebSocket extends FakeWebSocket {
       constructor(url: string) {
         throw new TypeError(`Invalid URL: ${url}`)
@@ -812,8 +812,8 @@ describe('GatewayClient websocket attach mode', () => {
   it('redacts sidecar URL secrets when the WebSocket constructor throws', async () => {
     const sidecarUrl = 'ws://gateway.test/api/pub?token=hunter2&channel=secret'
 
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
-    process.env.HERMES_TUI_SIDECAR_URL = sidecarUrl
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_SIDECAR_URL = sidecarUrl
     ;(globalThis as { WebSocket?: unknown }).WebSocket = class ThrowingSidecarWebSocket extends FakeWebSocket {
       constructor(url: string) {
         if (url.includes('/api/pub')) {
@@ -850,7 +850,7 @@ describe('GatewayClient websocket attach mode', () => {
     const fixture = 'ws://alice:hunter2@gateway.test:99999/api/ws?token=secret'
     expect(() => new URL(fixture)).toThrow()
 
-    process.env.HERMES_TUI_GATEWAY_URL = fixture
+    process.env.ZEUS_TUI_GATEWAY_URL = fixture
     ;(globalThis as { WebSocket?: unknown }).WebSocket = class ThrowingWebSocket extends FakeWebSocket {
       constructor(url: string) {
         throw new TypeError(`Invalid URL: ${url}`)
@@ -872,7 +872,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('keeps a healthy idle websocket open when heartbeat acknowledgements arrive (issue #32997)', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     try {
@@ -922,7 +922,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('auto-reconnects after a missing heartbeat acknowledgement (issue #32997)', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     try {
@@ -950,7 +950,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('does not heartbeat an older backend that omits the capability', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     try {
@@ -979,7 +979,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('does not double-reconnect when the exit subscriber restarts immediately', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
 
     try {
@@ -1003,7 +1003,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('keeps delivering events to the mounted subscriber across reconnects, with growing backoff (#111594)', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
     const ready: number[] = []
     const delays: number[] = []
@@ -1057,7 +1057,7 @@ describe('GatewayClient websocket attach mode', () => {
 
   it('does not auto-reconnect after an intentional kill() (issue #32997)', async () => {
     vi.useFakeTimers()
-    process.env.HERMES_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
+    process.env.ZEUS_TUI_GATEWAY_URL = 'ws://gateway.test/api/ws?token=abc'
     const gw = new GatewayClient()
     gw.start()
     FakeWebSocket.instances[0]!.open()

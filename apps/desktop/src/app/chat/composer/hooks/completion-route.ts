@@ -1,4 +1,4 @@
-import type { HermesGateway } from '@/hermes'
+import type { ZeusGateway } from '@/zeus'
 import { ambientRequestFor } from '@/store/session-gone-latch'
 import { sessionOwnerIsKnown } from '@/store/session-owner-resolution'
 import { isSessionOwnerRoute, requestForSessionProfile, type SessionOwnerScope } from '@/store/session-request-router'
@@ -34,7 +34,7 @@ export function completionOwnerKey(owner: SessionOwnerScope): string {
 }
 
 export function requestCompletion<T>(
-  gateway: HermesGateway,
+  gateway: ZeusGateway,
   owner: SessionOwnerScope,
   method: string,
   params: Record<string, unknown>

@@ -105,8 +105,8 @@ def test_gateway_startup_takes_over_the_standalone_rooms(tmp_path, monkeypatch):
     import asyncio
     from types import SimpleNamespace
     from gateway import session_hosted_service, session_hosted_transport
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch
 
     source = tmp_path / "shared-state.db"
     _standalone_room(source, "old-room")

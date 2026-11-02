@@ -22,11 +22,11 @@ export const arDesktopCommands = {
   processesHeader: (count: string) => `عمليات في الخلفية (${count}):`,
   configHeader: 'الإعدادات (العرض والموافقات واللصق والصوت فقط؛ لا يُعرض أي شيء آخر):',
   configDefaults: '(القيم الافتراضية)',
-  configFooter: 'غيّر الإعدادات من الإعدادات، أو حرّر config.yaml باستخدام `hermes config edit` على مضيف البوابة.',
+  configFooter: 'غيّر الإعدادات من الإعدادات، أو حرّر config.yaml باستخدام `zeus config edit` على مضيف البوابة.',
   historyHeader: (count: string) => `سجل المحادثة (${count} رسالة):`,
   historyEmpty: 'لا توجد رسائل بعد.',
   historyYou: 'أنت',
-  historyHermes: 'Hermes',
+  historyZeus: 'Zeus',
   saveUsage: 'الاستخدام: /save [json|md|html] [filename] [redact]',
   saveLegacyRefused:
     'لم يتم الحفظ: لا تستطيع هذه البوابة تصدير نسخة منقّحة أو باسم محدد أو بغير JSON. حدّث البوابة، أو شغّل /save دون خيارات لكتابة JSON خام على مضيف البوابة.',
@@ -37,9 +37,9 @@ export const arDesktopCommands = {
   savedTo: (path: string) => `تم حفظ المحادثة في ${path}`,
   saveCancelled: 'لم يتم الحفظ (أُلغي).',
   exportRemote:
-    'يحزم /export ملفًا شخصيًا من مضيف البوابة، وهو ليس هذا الجهاز. شغّل `hermes profile export` على ذلك المضيف.',
+    'يحزم /export ملفًا شخصيًا من مضيف البوابة، وهو ليس هذا الجهاز. شغّل `zeus profile export` على ذلك المضيف.',
   importRemote:
-    'يثبّت /import ملفًا شخصيًا على مضيف البوابة، وهو ليس هذا الجهاز. شغّل `hermes profile import <archive>` على ذلك المضيف.',
+    'يثبّت /import ملفًا شخصيًا على مضيف البوابة، وهو ليس هذا الجهاز. شغّل `zeus profile import <archive>` على ذلك المضيف.',
   timestampsUsage: 'الاستخدام: /timestamps [on|off|status]',
   timestampsOn: 'الطوابع الزمنية: مفعّلة (هذه النافذة فقط؛ اضبط display.timestamps في config.yaml للاحتفاظ بها)',
   timestampsOff: 'الطوابع الزمنية: معطّلة (هذه النافذة فقط؛ اضبط display.timestamps في config.yaml للاحتفاظ بها)'

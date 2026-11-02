@@ -32,7 +32,7 @@ describe('update child proxy env from the system proxy (#123387)', () => {
       ...proxied('http://10.0.0.7:7890'),
       NO_PROXY: noProxy,
       no_proxy: noProxy,
-      HERMES_UPDATE_SYSTEM_PROXY: 'HTTPS_PROXY,https_proxy,HTTP_PROXY,http_proxy,NO_PROXY,no_proxy'
+      ZEUS_UPDATE_SYSTEM_PROXY: 'HTTPS_PROXY,https_proxy,HTTP_PROXY,http_proxy,NO_PROXY,no_proxy'
     })
   })
 
@@ -110,19 +110,19 @@ describe('update child proxy env from the system proxy (#123387)', () => {
     const restored = restoreUserProxyEnv({ ...user, ...env })
 
     expect(env.NO_PROXY?.split(',')).toContain('corp.internal')
-    expect(env.HERMES_UPDATE_SYSTEM_PROXY?.split(',')).not.toContain('NO_PROXY')
+    expect(env.ZEUS_UPDATE_SYSTEM_PROXY?.split(',')).not.toContain('NO_PROXY')
     expect(new Set(Object.entries(restored).filter(([key]) => key.toLowerCase() === 'no_proxy').map(([, v]) => v)))
       .toEqual(new Set(['corp.internal']))
   })
 
   it("keeps a fork origin and the user's package mirrors direct when the system sends them direct (S2)", async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-update-hosts-'))
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-update-hosts-'))
 
     try {
       fs.mkdirSync(path.join(root, '.git'))
       fs.writeFileSync(
         path.join(root, '.git', 'config'),
-        '[core]\n\tbare = false\n[remote "origin"]\n\turl = https://git.corp.example/me/hermes-agent.git\n'
+        '[core]\n\tbare = false\n[remote "origin"]\n\turl = https://git.corp.example/me/zeus-agents.git\n'
       )
       fs.writeFileSync(path.join(root, 'npmrc'), 'registry=https://npm.corp.example/\n')
       const user = { UV_INDEX_URL: 'https://pypi.corp.example/simple', npm_config_userconfig: path.join(root, 'npmrc') }

@@ -41,18 +41,18 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 @pytest.fixture
 def cron_env(tmp_path, monkeypatch):
     """Isolated cron env + a recurring no_agent interval job."""
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
-    (hermes_home / "cron").mkdir()
-    (hermes_home / "cron" / "output").mkdir()
-    (hermes_home / "scripts").mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
+    (zeus_home / "cron").mkdir()
+    (zeus_home / "cron" / "output").mkdir()
+    (zeus_home / "scripts").mkdir()
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
 
     import cron.jobs as jobs_mod
-    monkeypatch.setattr(jobs_mod, "HERMES_DIR", hermes_home)
-    monkeypatch.setattr(jobs_mod, "CRON_DIR", hermes_home / "cron")
-    monkeypatch.setattr(jobs_mod, "JOBS_FILE", hermes_home / "cron" / "jobs.json")
-    monkeypatch.setattr(jobs_mod, "OUTPUT_DIR", hermes_home / "cron" / "output")
+    monkeypatch.setattr(jobs_mod, "ZEUS_DIR", zeus_home)
+    monkeypatch.setattr(jobs_mod, "CRON_DIR", zeus_home / "cron")
+    monkeypatch.setattr(jobs_mod, "JOBS_FILE", zeus_home / "cron" / "jobs.json")
+    monkeypatch.setattr(jobs_mod, "OUTPUT_DIR", zeus_home / "cron" / "output")
 
     job = jobs_mod.create_job(
         prompt="probe",
@@ -60,9 +60,9 @@ def cron_env(tmp_path, monkeypatch):
         no_agent=True,
         script="probe.py",
     )
-    script = hermes_home / "scripts" / "probe.py"
+    script = zeus_home / "scripts" / "probe.py"
     script.write_text("print('ok')\n")
-    return {"home": hermes_home, "job_id": job["id"]}
+    return {"home": zeus_home, "job_id": job["id"]}
 
 
 def _setup(cron_env, monkeypatch):
@@ -72,7 +72,7 @@ def _setup(cron_env, monkeypatch):
 
     env = cron_env
     monkeypatch.setattr(E, "EXECUTIONS_FILE", env["home"] / "cron" / "executions.db")
-    monkeypatch.setattr(S, "_hermes_home", env["home"])
+    monkeypatch.setattr(S, "_zeus_home", env["home"])
     return S, E, J, env
 
 

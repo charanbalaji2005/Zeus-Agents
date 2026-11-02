@@ -1,4 +1,4 @@
-import { LOCAL_CONNECTION_ID } from '@hermes/shared'
+import { LOCAL_CONNECTION_ID } from '@zeus/shared'
 import { renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
@@ -15,7 +15,7 @@ const win = window
 
 afterEach(() => {
   clearWebappSession()
-  Reflect.deleteProperty(win, 'hermesDesktop')
+  Reflect.deleteProperty(win, 'zeusDesktop')
   setApiRequestConnection(null)
   setApiRequestProfile(null)
   $connection.set(null)

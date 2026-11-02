@@ -42,7 +42,7 @@ def _bind(db: Path, room_id: str, member_id: str) -> list[dict]:
 
 @pytest.fixture
 def tui_db(tmp_path: Path, monkeypatch) -> Path:
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "member-home"))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "member-home"))
     path = tmp_path / "rooms.db"
     hosted_rooms.create_room(
         path, room_id=ROOM_ID, name="Release room", members=[{"profile": PROFILE, "handle": PROFILE}],

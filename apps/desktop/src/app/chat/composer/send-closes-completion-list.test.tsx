@@ -146,7 +146,7 @@ afterEach(() => {
   cleanup()
   mainComposerScope.clear()
   setReactionsEnabled(false)
-  window.document.documentElement.removeAttribute('data-hermes-desktop-host')
+  window.document.documentElement.removeAttribute('data-zeus-desktop-host')
   vi.unstubAllGlobals()
 })
 
@@ -172,7 +172,7 @@ describe('Send closes the completion list', () => {
   })
 
   it('browser-hosted Desktop: Send keeps the editor focused and still closes the list', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     const { container, editor, onSubmit, send } = await openListWhileTyping('hello :smi')
     const mouseDown = createEvent.mouseDown(send)
 
@@ -188,7 +188,7 @@ describe('Send closes the completion list', () => {
   })
 
   it('browser-hosted Desktop: queueing from the Queue button closes the list too', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     const { container, editor } = await openListWhileTyping('later :smi', { busy: true })
     const queue = container.querySelector<HTMLButtonElement>('button[aria-label="Queue message"]')!
 

@@ -8,8 +8,8 @@ notification (fire-and-forget). Containment: the schema is injected ONLY into a
 bot's canonical "Bot Chat" session on a Bot-Mode-managed install (same gate as
 ``tools/bot_mode_probe.py``; never in the registry or any toolset), and dispatch
 re-checks that gate so a forged call returns a structured error. Transports:
-local → ``hermes -p <name> chat --in ~ -c "Bot Chat" --create-if-missing -Q
---query-file <tmp>``; peer → ``hermes peer dm <peer>[/<name>] < <tmp>``; both via
+local → ``zeus -p <name> chat --in ~ -c "Bot Chat" --create-if-missing -Q
+--query-file <tmp>``; peer → ``zeus peer dm <peer>[/<name>] < <tmp>``; both via
 ``terminal_tool(background=True, notify_on_complete=True)``.
 """
 
@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 # Top-level imports stay stdlib-only: this module also runs directly as the background
-# delivery runner (``python bot_mode_dm.py --run-delivery …``); Hermes helpers import lazily.
+# delivery runner (``python bot_mode_dm.py --run-delivery …``); Zeus helpers import lazily.
 
 logger = logging.getLogger(__name__)
 
@@ -46,22 +46,22 @@ MESSAGE_MAX_CHARS = 16000
 REPLY_COMPLETION_CHARS = MESSAGE_MAX_CHARS + 2000
 # A runner owns and removes each DM file; this bounds residual plaintext lifetime if
 # the machine dies between spawn ack and the runner's finally.
-_DM_DIR_NAME = "hermes-dm"
+_DM_DIR_NAME = "zeus-dm"
 _DM_STALE_SECONDS = 24 * 60 * 60
 _LIVE_WAIT_SECONDS = 300
 # A live owner may run a turn past one wait window, but each waiting runner holds ~46 MB and the
 # sender's notify slot: past this the runner reports pending (do not resend) and exits.
 _LIVE_WAIT_MAX_SECONDS = 30 * 60
 
-# '<peer>/<agent>' — peer names are lowercase (``hermes peer`` normalizes them).
+# '<peer>/<agent>' — peer names are lowercase (``zeus peer`` normalizes them).
 _PEER_TARGET_RE = re.compile(r"^([a-z0-9][a-z0-9_-]{0,63})/([a-zA-Z0-9][a-zA-Z0-9_-]{0,63})$")
 # Same shape as ``tools.bot_relay._HANDLE_RE`` (kept local: see import note above).
 _LOCAL_TARGET_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
 
 
 def _default_home() -> str:
-    from hermes_constants import get_process_hermes_home
-    return str(get_process_hermes_home())
+    from zeus_constants import get_process_zeus_home
+    return str(get_process_zeus_home())
 
 
 def message_agent_tool_schema() -> dict:
@@ -101,7 +101,7 @@ def message_agent_tool_schema() -> dict:
                         "type": "string",
                         "description": (
                             "Who to message: a teammate profile name from your roster "
-                            "('researcher', 'hermes' for the default agent), or "
+                            "('researcher', 'zeus' for the default agent), or "
                             "'<peer>' / '<peer>/<agent>' for a registered peer gateway."
                         ),
                     },
@@ -168,7 +168,7 @@ def ensure_message_agent_tool(agent: Any) -> bool:
 
 
 def _resolve_local_name(target: str, roster: list[str], root: Path | None = None) -> Optional[str]:
-    """Map a target to a local profile FOLDER id: 'hermes' → 'default' unless a real 'hermes'
+    """Map a target to a local profile FOLDER id: 'zeus' → 'default' unless a real 'zeus'
     profile holds that handle (``_profile_for_handle``); an exact folder id
     (case-insensitive); else — when ``root`` is given — a friendly name or its Desktop @-slug
     (profile.yaml ``display_name`` / Bot Mode title: 'Scribe', '@scribe', 'Dr. Foo' → 'foo').
@@ -206,10 +206,10 @@ def message_agent_tool(target: str = "", message: str = "", task_id: Optional[st
     home = _agent_home(agent)
     try:
         from tools.bot_mode_probe import (
-            BOT_CHAT_TITLE, _display_name, _handle, _hermes_root, _peers, _profile_name as _self_profile_name,
+            BOT_CHAT_TITLE, _display_name, _handle, _zeus_root, _peers, _profile_name as _self_profile_name,
             _roster, is_bot_mode_managed,
         )
-        from tools.bot_relay import _hermes_cli
+        from tools.bot_relay import _zeus_cli
 
         if _session_title(agent) != BOT_CHAT_TITLE:
             return _err("message_agent is only available in a Bot Mode 'Bot Chat' session. "
@@ -219,10 +219,10 @@ def message_agent_tool(target: str = "", message: str = "", task_id: Optional[st
                         "message_agent is unavailable. Do not retry.")
     except Exception as exc:  # pragma: no cover — defensive
         return _err(f"Bot Mode gate check failed: {exc}")
-    from hermes_cli.observability.shared_metrics_signals import record_feature_used
-    record_feature_used("bot_mode", hermes_home=home)
+    from zeus_cli.observability.shared_metrics_signals import record_feature_used
+    record_feature_used("bot_mode", zeus_home=home)
 
-    root, me = _hermes_root(Path(home)), _self_profile_name(Path(home))
+    root, me = _zeus_root(Path(home)), _self_profile_name(Path(home))
     roster_homes = dict(_roster(root))
     roster = list(roster_homes)
     peers = _peers(root)
@@ -257,21 +257,21 @@ def message_agent_tool(target: str = "", message: str = "", task_id: Optional[st
         # A peer dm crosses installs: qualify the id with this host so the peer's own '<me>' stays distinct.
         from agent.turn_author import bot_author_id, local_origin
         peer_author = {**author, "id": bot_author_id(me, local_origin())}
-        # Pin the registry-owning profile: `hermes peer` resolves bot_peers via the profile-scoped
+        # Pin the registry-owning profile: `zeus peer` resolves bot_peers via the profile-scoped
         # load_config(), while the roster above reads the machine-root config — the CLI must run
         # in that same profile or a secondary-profile bot sees an empty registry.
         # The delivery runs in a background service context whose PATH lacks the gateway's
-        # venv bin dir, so a bare "hermes" resolves to a system install and dies on import
-        # under the wrong interpreter (#108628). _hermes_cli pins the entrypoint beside
+        # venv bin dir, so a bare "zeus" resolves to a system install and dies on import
+        # under the wrong interpreter (#108628). _zeus_cli pins the entrypoint beside
         # this interpreter; _delivery_lock/_local_delivery_home match argv[0] by basename,
         # so the absolute path stays compatible.
-        return _start_delivery([_hermes_cli(), "-p", _self_profile_name(root), "peer", "dm", dm_target], content,
+        return _start_delivery([_zeus_cli(), "-p", _self_profile_name(root), "peer", "dm", dm_target], content,
                                f"@{peer_profile or peer_name} on peer '{peer_name}'", stdin_file=True,
                                author=peer_author, **delivery)
 
-    # A connection-qualified target ('hermes@mini') names a relay row outright; it is the form the relay itself
+    # A connection-qualified target ('zeus@mini') names a relay row outright; it is the form the relay itself
     # hands out for a colliding row, and stamps on replies. Resolved locally first, a local bot whose friendly
-    # name slugs to 'hermes-mini' captured it. An '@' name no connection answers to still resolves locally.
+    # name slugs to 'zeus-mini' captured it. An '@' name no connection answers to still resolves locally.
     if "@" in raw_target.strip().lstrip("@"):
         # The sender's own relay folder, as below: the default's would relay a named bot's DM as the default.
         relayed = _try_relay_delivery(Path(home), raw_target, content, me, **delivery)
@@ -296,7 +296,7 @@ def message_agent_tool(target: str = "", message: str = "", task_id: Optional[st
                            "(roles are listed in your system prompt).")
     # Local teammates are admitted through the profile authority; the argv only names the
     # profile for the runner's lock/home lookups and is never executed.
-    return _start_delivery([_hermes_cli(), "-p", resolved], content, f"@{_handle(resolved, roster)}",
+    return _start_delivery([_zeus_cli(), "-p", resolved], content, f"@{_handle(resolved, roster)}",
                            stdin_file=False, profile_home=roster_homes[resolved], author=author, **delivery)
 
 
@@ -307,7 +307,7 @@ def _try_relay_delivery(root: Path, raw_target: str, content: str, me: str, *,
     to drain; a background waiter is spawned immediately so the relayed reply wakes
     the sender through the standard completion-notification path."""
     try:
-        from tools.bot_mode_probe import _handle, _hermes_root, _roster, local_taken_forms
+        from tools.bot_mode_probe import _handle, _zeus_root, _roster, local_taken_forms
         from tools.bot_relay import (
             EnvelopeRefusedError, _target_aliases, enqueue_envelope, read_remote_roster, remote_target_forms,
             resolve_remote_target, waiter_command,
@@ -324,7 +324,7 @@ def _try_relay_delivery(root: Path, raw_target: str, content: str, me: str, *,
             return _err(f"'{raw_target}' exists on several connected machines — disambiguate with one of: {forms}.")
         try:
             envelope = enqueue_envelope(root, target=match, message=content, sender_profile=me,
-                                       sender_handle=_handle(me, [n for n, _d in _roster(_hermes_root(root))]))
+                                       sender_handle=_handle(me, [n for n, _d in _roster(_zeus_root(root))]))
         except EnvelopeRefusedError as exc:
             # Fail fast: target definitively offline — nothing was queued.
             # Structured refusal so the agent can distinguish it from a resolution error ('runtime_offline'
@@ -371,7 +371,7 @@ def cleanup_bot_dm_cache(max_age_hours: float = _DM_STALE_SECONDS / 3600, *, now
     Same contract as the other ``cleanup_*_cache`` helpers (hourly gateway housekeeping);
     legacy temp-root locations from versions predating the dedicated directory are swept too."""
     temp_root = Path(tempfile.gettempdir())
-    locations = [(temp_root, "hermes-dm-*.txt"), (temp_root, "hermes-relay-dm-*.txt")]
+    locations = [(temp_root, "zeus-dm-*.txt"), (temp_root, "zeus-relay-dm-*.txt")]
     with contextlib.suppress(OSError):
         dm_dir = _dm_dir()
         locations.append((dm_dir, "*.txt"))
@@ -417,12 +417,12 @@ def _delivery_lock(argv: list[str], *, stdin_file: bool):
     # (service contexts lack PATH) and carries .exe on Windows; split on both separators.
     # Split on both separators so the shape matches regardless of which platform built the argv. See #93590.
     cli = (argv[0] if argv else "").rsplit("\\", 1)[-1].rsplit("/", 1)[-1]
-    if stdin_file or len(argv) < 3 or cli not in ("hermes", "hermes.exe") or argv[1] != "-p":
+    if stdin_file or len(argv) < 3 or cli not in ("zeus", "zeus.exe") or argv[1] != "-p":
         return contextlib.nullcontext()
-    from tools.bot_mode_probe import _hermes_root
+    from tools.bot_mode_probe import _zeus_root
     from tools.bot_relay import acquire_turn_lock
 
-    return acquire_turn_lock(_hermes_root(Path(_default_home())), argv[2])
+    return acquire_turn_lock(_zeus_root(Path(_default_home())), argv[2])
 
 
 def _live_intent_file(dm_file: str | os.PathLike) -> str:
@@ -523,7 +523,7 @@ def _admit_live_dm(profile_home: Path | None, dm_file: str, author: Optional[dic
     home = intent["owner"]["profile_home"]
     record = read_delivery_result(home, intent["delivery_id"])
     if record is None or intent["owner"].get("canonical"):
-        from hermes_cli.gateway_client import GatewayRPCError
+        from zeus_cli.gateway_client import GatewayRPCError
         from tools.bot_failure_reasons import HELD_NOT_SENT
         from tools.bot_live_delivery import settle_held_delivery
 
@@ -599,11 +599,11 @@ def _wait_live_dm(home: str, delivery_id: str, *, dm_file: str | os.PathLike | N
 
 def _local_delivery_home(argv: list[str]) -> Path | None:
     cli = (argv[0] if argv else "").rsplit("\\", 1)[-1].rsplit("/", 1)[-1]
-    if len(argv) < 3 or cli not in ("hermes", "hermes.exe") or argv[1] != "-p":
+    if len(argv) < 3 or cli not in ("zeus", "zeus.exe") or argv[1] != "-p":
         return None
-    from tools.bot_mode_probe import _hermes_root, _roster
+    from tools.bot_mode_probe import _zeus_root, _roster
 
-    return dict(_roster(_hermes_root(Path(_default_home())))).get(argv[2])
+    return dict(_roster(_zeus_root(Path(_default_home())))).get(argv[2])
 
 
 def _live_outcome_unknown(dm_file: str, cause: object) -> str:
@@ -616,7 +616,7 @@ def _live_outcome_unknown(dm_file: str, cause: object) -> str:
 def _runner_argv(args: list[str]) -> tuple[Optional[str], str, str, list[str]] | None:
     """Split ``--run-delivery [--author <json>] <mode> <dm_file> <argv…>`` into
     ``(author_json, mode, dm_file, argv)``; None when malformed. Stdlib only: the boot-failure
-    report runs it when no Hermes import is available."""
+    report runs it when no Zeus import is available."""
     if args[:1] != ["--run-delivery"]:
         return None
     rest, author = args[1:], None
@@ -916,13 +916,13 @@ def _session_title(agent: Any) -> str:
 if __name__ == "__main__":  # pragma: no cover - exercised as a background process
     # Spawned as a script with the sender's sys.executable, which under PM is the bare store
     # interpreter (dependencies are activated in-process, never inherited), so boot like every
-    # entry point before the lazy Hermes imports. Run as a path, sys.path[0] is tools/.
+    # entry point before the lazy Zeus imports. Run as a path, sys.path[0] is tools/.
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     # Only the delivery lane boots: the reply waiter is stdlib only and its stdout is the
-    # sender's wake-up, and any other argv exits 2 before a Hermes import.
+    # sender's wake-up, and any other argv exits 2 before a Zeus import.
     if sys.argv[1:2] == ["--run-delivery"]:
         try:
-            import hermes_bootstrap
+            import zeus_bootstrap
         except (Exception, SystemExit) as exc:
             # A pinned live intent means the sender may already have admitted this DM and was
             # told not to resend; a bare repair hint would read as "NOT delivered". Without an
@@ -932,6 +932,6 @@ if __name__ == "__main__":  # pragma: no cover - exercised as a background proce
             parsed = _runner_argv(sys.argv[1:])
             if not booted and parsed and os.path.exists(_live_intent_file(parsed[2])):
                 print(_live_outcome_unknown(parsed[2], "the delivery runner could not activate "
-                                                       "Hermes dependencies (see stderr)"))
+                                                       "Zeus dependencies (see stderr)"))
             raise
     raise SystemExit(_delivery_main(sys.argv[1:]))

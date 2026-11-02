@@ -24,7 +24,7 @@ def bind_route_entry(agent: Any, entry: dict[str, Any], provider: str, model: st
         _fallback_api_mode_hint, _fallback_api_mode_resolved, _rebind_fallback_credential_pool,
         _reresolve_fallback_reasoning_config, _rescope_fallback_extra_body, _update_fallback_context_compressor,
     )
-    from hermes_cli.fallback_config import resolve_entry_api_key
+    from zeus_cli.fallback_config import resolve_entry_api_key
     # Pass the entry's base_url/api_key so custom endpoints (Ollama Cloud) resolve instead
     # of falling through to OpenRouter defaults.
     base_url_hint = (entry.get("base_url") or "").strip() or None
@@ -48,12 +48,12 @@ def bind_route_entry(agent: Any, entry: dict[str, Any], provider: str, model: st
         base_url, api_mode = "moa://local", "chat_completions"
     else:
         try:
-            from hermes_cli.model_normalize import normalize_model_for_provider
+            from zeus_cli.model_normalize import normalize_model_for_provider
             model = normalize_model_for_provider(model, provider)
         except Exception as norm_err:  # health: allow BLE001 -- moved verbatim from try_activate_fallback; a bad catalog entry keeps the raw id
             logger.warning("Could not normalize fallback model %r for provider %r: %s", model, provider, norm_err)
         base_url = str(client.base_url)
-        from hermes_cli.providers import is_actual_route
+        from zeus_cli.providers import is_actual_route
         if is_actual_route(provider, base_url):
             api_mode = "chat_completions"
         elif not api_mode_explicit and api_mode == "chat_completions":

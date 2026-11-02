@@ -52,7 +52,7 @@ function isGuardedGitEnvKey(key: string): boolean {
 }
 
 // Explicit env for the Windows no-console host tuple: the host script needs
-// HERMES_GIT_ARGV0, and simple-git replaces the inherited env with whatever
+// ZEUS_GIT_ARGV0, and simple-git replaces the inherited env with whatever
 // `.env()` receives, so the rest of the environment is forwarded minus the
 // guarded keys that are not allow-listed.
 export function simpleGitHostEnv(base: NodeJS.ProcessEnv | undefined, gitBin: string): NodeJS.ProcessEnv {

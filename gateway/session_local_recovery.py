@@ -8,9 +8,9 @@ from pathlib import Path
 from gateway.config import Platform
 from gateway.session import SessionEntry, SessionSource
 from gateway.session_contract import SessionRef
-from hermes_state_keys import local_identity
-from hermes_state_local import POLICY_PREFIX, local_receipt
-from hermes_state_runtime import RuntimeStoreError, list_session_admissions
+from zeus_state_keys import local_identity
+from zeus_state_local import POLICY_PREFIX, local_receipt
+from zeus_state_runtime import RuntimeStoreError, list_session_admissions
 
 
 def local_adapter_map(authority):
@@ -78,7 +78,7 @@ def _with_untracked_compression(authority, sid, receipt):
     (``session_local_adoption``); a sync restore on the loop that still finds it hands it to a tracked
     worker, which publishes the session once it commits, and refuses this read.
     """
-    from hermes_state_local_lineage import adopt_untracked_compression, adoptable_compression
+    from zeus_state_local_lineage import adopt_untracked_compression, adoptable_compression
     with authority.db._read_ctx() as conn:
         if adoptable_compression(conn, receipt) is None:
             return receipt
@@ -163,7 +163,7 @@ def restore_local_session(authority, sid):
         if adopted is not receipt:  # re-read after a catch-up: check the copy that will be served
             receipt, entry = adopted, _checked_entry(authority, adopted, source, route)
         target = entry.session_id
-        from hermes_state_local_lineage import validate_local_lineage
+        from zeus_state_local_lineage import validate_local_lineage
         with authority.db._read_ctx() as conn:
             validate_local_lineage(conn, receipt)
     except _CatchUpPending:
@@ -238,7 +238,7 @@ def transcript_target(authority, ref):
 
 # A resume reply's rows reach Ink twice (``messages`` and ``display_messages``). Archived rows are display-only
 # and fill only what the live rows leave of this budget, so they keep the reply well under the gateway clients'
-# 8 MiB WebSocket frame cap (``hermes_cli/gateway_client.py``) and never push a reply main could send past it.
+# 8 MiB WebSocket frame cap (``zeus_cli/gateway_client.py``) and never push a reply main could send past it.
 # Live rows are never dropped.
 RESUME_HISTORY_BYTES = 3 * 1024 * 1024
 
@@ -249,7 +249,7 @@ def display_rows(db, target):
     REST transcript show it: every live row, and the newest compaction-archived rows that fit what the
     live rows leave of ``RESUME_HISTORY_BYTES`` (``truncated`` when older ones were left out). A lineage
     over the resume cap shows only the live rows."""
-    from hermes_state import SessionResumeTooLargeError
+    from zeus_state import SessionResumeTooLargeError
     live_rows = db.get_messages_as_conversation(target, include_row_ids=True)
     live = {row['_row_id'] for row in live_rows}
     try:
@@ -377,7 +377,7 @@ def reopen_local_session(authority, ref):
 
 
 def reset_local_session(store, old_entry, session_id, now, display_name):
-    from hermes_state_local_lineage import reset_local_target
+    from zeus_state_local_lineage import reset_local_target
     entry = SessionEntry(old_entry.session_key, session_id, now, now,
         origin=old_entry.origin, platform=old_entry.platform, chat_type=old_entry.chat_type,
         display_name=display_name if display_name is not None else old_entry.display_name,
@@ -424,8 +424,8 @@ def release_handed_off_receipts(db, *, epoch):
     there with it (``hand_off_conversations``). Only receipts whose CURRENT target a messaging lane
     now holds: any other refused receipt stays as it is, logged when it is touched."""
     from gateway.session_route_recovery import _messaging_platform
-    from hermes_state_local import hand_off_conversations, moved_receipts
-    from hermes_state_runtime import _epoch
+    from zeus_state_local import hand_off_conversations, moved_receipts
+    from zeus_state_runtime import _epoch
 
     def write(conn):
         _epoch(conn, epoch)

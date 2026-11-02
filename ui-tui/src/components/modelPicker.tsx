@@ -1,9 +1,9 @@
-import { Box, Text, useInput, useStdout } from '@hermes/ink'
-import { fuzzyRank } from '@hermes/shared/fuzzy'
-import type { ModelOptionProvider, ModelOptionsResult } from '@hermes/shared/gateway-events'
-import { modelSearchText } from '@hermes/shared/model-search-text'
-import { hasTopTier, planBlocks, planLimitLine, sectionAt, usageLevel, usageTag } from '@hermes/shared/plan-usage'
-import { REASONING_EFFORTS } from '@hermes/shared/reasoning-effort'
+import { Box, Text, useInput, useStdout } from '@zeus/ink'
+import { fuzzyRank } from '@zeus/shared/fuzzy'
+import type { ModelOptionProvider, ModelOptionsResult } from '@zeus/shared/gateway-events'
+import { modelSearchText } from '@zeus/shared/model-search-text'
+import { hasTopTier, planBlocks, planLimitLine, sectionAt, usageLevel, usageTag } from '@zeus/shared/plan-usage'
+import { REASONING_EFFORTS } from '@zeus/shared/reasoning-effort'
 import { useEffect, useMemo, useState } from 'react'
 
 import { providerDisplayNames } from '../domain/providers.js'
@@ -371,7 +371,7 @@ export function ModelPicker({
                         authenticated: false,
                         models: [],
                         total_models: 0,
-                        warning: p.key_env ? M.pasteKeyToActivate(p.key_env) : M.runHermesModelToConfigure
+                        warning: p.key_env ? M.pasteKeyToActivate(p.key_env) : M.runZeusModelToConfigure
                       }
                     : p
                 )
@@ -495,7 +495,7 @@ export function ModelPicker({
             setFilter('')
           }
 
-          // Other auth types: no-op (warning shown tells them to run hermes model)
+          // Other auth types: no-op (warning shown tells them to run zeus model)
           return
         }
 
@@ -551,7 +551,7 @@ export function ModelPicker({
     }
 
     // Persist-global toggle moved to Ctrl+G so 'g' can be typed into the
-    // filter. With Ctrl held, @hermes/ink reports `ch` as the key name ('g'),
+    // filter. With Ctrl held, @zeus/ink reports `ch` as the key name ('g'),
     // not the raw control byte (see input-event.ts: input = ctrl ? name : seq).
     if (allowPersistGlobal && key.ctrl && ch === 'g') {
       setPersistGlobal(v => !v)

@@ -6,7 +6,7 @@ description: "@unicode: context references that spell text out character by char
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/unicode-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/d33c8c9379ee8d90ef4276ddc61073b28fa32abe/docs/unicode-ref-card.png

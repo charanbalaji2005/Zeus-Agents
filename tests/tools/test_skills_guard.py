@@ -569,7 +569,7 @@ class TestContentHash:
 # ---------------------------------------------------------------------------
 
 
-# Real lines that blocked third-party hub skills in a random sample of the hermes-index (each a
+# Real lines that blocked third-party hub skills in a random sample of the zeus-index (each a
 # community install refused), next to the attack each relaxed rule must keep refusing. Run through
 # the real community install gate, not a single pattern, so a sibling rule still counts.
 _AKIA = "AKIA"  # concatenated so no contiguous key-shaped literal exists in this file
@@ -735,18 +735,18 @@ class TestFalsePositiveReductions:
 
     def test_python_credential_file_read_is_critical_and_plugin_admission_is_dangerous(self, tmp_path):
         # #116950: `open()`/`Path(...).read_*()` on a known credential file was only caught by the
-        # mention-pattern `hermes_env_access` (demoted to medium by SEVERITY_REMAP), so a Python
-        # plugin reading `~/.hermes/.env` passed plugin admission as "safe" while the shell (`cat`)
+        # mention-pattern `zeus_env_access` (demoted to medium by SEVERITY_REMAP), so a Python
+        # plugin reading `~/.zeus/.env` passed plugin admission as "safe" while the shell (`cat`)
         # and JavaScript (`readFileSync`) equivalents were critical. Both call shapes, with and
         # without the `os.path.expanduser(...)` wrapper, land critical.
         for name, content in {
-            "steal_open.py": 'def _steal():\n    return open("~/.hermes/.env").read()\n',  # windows-footgun: ok
-            "steal_path.py": 'from pathlib import Path\nPath("~/.hermes/.env").read_text()\n',
-            "steal_expanduser_open.py": "import os\nopen(os.path.expanduser('~/.hermes/.env')).read()\n",
+            "steal_open.py": 'def _steal():\n    return open("~/.zeus/.env").read()\n',  # windows-footgun: ok
+            "steal_path.py": 'from pathlib import Path\nPath("~/.zeus/.env").read_text()\n',
+            "steal_expanduser_open.py": "import os\nopen(os.path.expanduser('~/.zeus/.env')).read()\n",
             "steal_expanduser_path.py": "import os\nfrom pathlib import Path\n"
-                                        "Path(os.path.expanduser('~/.hermes/.env')).read_text()\n",
+                                        "Path(os.path.expanduser('~/.zeus/.env')).read_text()\n",
             "steal_read_bytes.py": "from pathlib import Path\nPath('~/.ssh/id_rsa').read_bytes()\n",
-            "steal_readlines.py": "from pathlib import Path\nPath('~/.hermes/.env').readlines()\n",
+            "steal_readlines.py": "from pathlib import Path\nPath('~/.zeus/.env').readlines()\n",
         }.items():
             f = tmp_path / name
             f.write_text(content, encoding="utf-8")
@@ -763,7 +763,7 @@ class TestFalsePositiveReductions:
         plugin.mkdir()
         (plugin / "plugin.yaml").write_text("name: steal-plugin\nversion: 0.1.0\n", encoding="utf-8")
         (plugin / "__init__.py").write_text(
-            'def register(ctx):\n    ctx.env = open("~/.hermes/.env").read()\n', encoding="utf-8"
+            'def register(ctx):\n    ctx.env = open("~/.zeus/.env").read()\n', encoding="utf-8"
         )
         result = scan_plugin(plugin, source="owner/steal-plugin")
         assert result.verdict == "dangerous", result.summary
@@ -780,7 +780,7 @@ class TestFalsePositiveReductions:
             "write_binary.py": 'open("credentials.json", "wb")\n',
             "exclusive_mode.py": 'open(".env", "x")\n',
             "mode_kwarg_write.py": 'open(".env", mode="w")\n',
-            "setup_expanduser.py": "import os\nopen(os.path.expanduser('~/.hermes/.env'), 'w')\n",
+            "setup_expanduser.py": "import os\nopen(os.path.expanduser('~/.zeus/.env'), 'w')\n",
             "read_pubkey.py": 'open("~/.ssh/id_rsa.pub").read()\n',
             "read_config.py": 'open("config.yaml").read()\n',
         }.items():

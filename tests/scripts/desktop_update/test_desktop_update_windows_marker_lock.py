@@ -112,7 +112,7 @@ exit 1
 
 @pytest.mark.platforms('windows')
 def test_script_killed_before_publishing_the_delegate_runs_no_update(tmp_path: Path) -> None:
-    """Kill cell at the pre-publication boundary: windows.ps1 has created its `hermes update`
+    """Kill cell at the pre-publication boundary: windows.ps1 has created its `zeus update`
     child but has not published it as the marker delegate (the marker lock is held elsewhere).
     Killed there, no update instruction may have run, and the custodian line 1 names releases
     the marker (nothing holds the checkout)."""

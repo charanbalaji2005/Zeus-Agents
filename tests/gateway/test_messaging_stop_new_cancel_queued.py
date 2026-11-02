@@ -20,8 +20,8 @@ async def test_busy_stop_and_new_cancel_the_queued_messaging_followup(tmp_path, 
     from gateway.session_authority import SessionAuthority, initialize_session_authority
     from gateway.session_ingress import admit_message
     from gateway.session_ingress_context import native_callback
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import list_session_admissions
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import list_session_admissions
     from plugins.platforms.discord.adapter import DiscordAdapter
 
     monkeypatch.setattr(SessionAuthority, '_schedule', lambda self, ref: None)
@@ -35,7 +35,7 @@ async def test_busy_stop_and_new_cancel_the_queued_messaging_followup(tmp_path, 
 
     # Turn A is running; follow-up B is committed to the durable FIFO behind it.
     follow_up = MessageEvent(text='B', source=source, message_id='B')
-    with native_callback(runner, follow_up, get_hermes_home()):
+    with native_callback(runner, follow_up, get_zeus_home()):
         waiter = asyncio.create_task(admit_message(authority, follow_up))
         for _ in range(200):
             if authority.waiters:
@@ -52,7 +52,7 @@ async def test_busy_stop_and_new_cancel_the_queued_messaging_followup(tmp_path, 
             self.interrupted.append(message)
 
     runner._session_state(key).turn.agent = RunningAgent()
-    with native_callback(runner, MessageEvent(text=command, source=source), get_hermes_home()):
+    with native_callback(runner, MessageEvent(text=command, source=source), get_zeus_home()):
         reply = await runner._handle_message(MessageEvent(text=command, source=source))
     assert reply is not None
 

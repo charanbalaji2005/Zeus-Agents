@@ -37,15 +37,15 @@ export function validateMockUrl(value: string): string {
 
 /** Merge only test-owned settings. Do not replace the update feed or plugins. */
 export function writeMockProviderConfig(
-  hermesHome: string,
+  zeusHome: string,
   mockUrl: string,
   extraDisplayConfig?: string,
   extraConfig?: string,
   modelContextLength?: number,
 ): void {
   const url = validateMockUrl(mockUrl)
-  fs.mkdirSync(hermesHome, { recursive: true })
-  const configPath = path.join(hermesHome, 'config.yaml')
+  fs.mkdirSync(zeusHome, { recursive: true })
+  const configPath = path.join(zeusHome, 'config.yaml')
   const config = configSchema.parse(fs.existsSync(configPath) ? yaml.load(fs.readFileSync(configPath, 'utf8')) ?? {} : {})
   const extra = configSchema.parse(extraConfig ? yaml.load(extraConfig) ?? {} : {})
   const display = section.parse(extraDisplayConfig ? yaml.load(extraDisplayConfig) ?? {} : {})
@@ -87,12 +87,12 @@ export function writeMockProviderConfig(
 }
 
 /** Keep journey-owned entries, replacing only the inert test keys. */
-export function writeEnvFile(hermesHome: string, apiKey = 'e2e-mock-key', mockUrl?: string): void {
+export function writeEnvFile(zeusHome: string, apiKey = 'e2e-mock-key', mockUrl?: string): void {
   if (!/^[\w-]+$/.test(apiKey)) {
     throw new Error('Mock key must be an inert single-line test value')
   }
 
-  const envPath = path.join(hermesHome, '.env')
+  const envPath = path.join(zeusHome, '.env')
   const prior = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf8') : ''
   const reps = new Map<string, string>([['MOCK_API_KEY', `MOCK_API_KEY=${apiKey}`]])
 
@@ -143,7 +143,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const [home, url] = process.argv.slice(2)
 
   if (!home || !url || !path.isAbsolute(home)) {
-    throw new Error('usage: node mock-provider-config.ts ABSOLUTE_HERMES_HOME MOCK_URL')
+    throw new Error('usage: node mock-provider-config.ts ABSOLUTE_ZEUS_HOME MOCK_URL')
   }
 
   writeMockProviderConfig(home, url)

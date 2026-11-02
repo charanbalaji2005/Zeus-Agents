@@ -107,7 +107,7 @@ describe('useComposerMetrics — published clearance survives an effect replay',
   afterEach(() => {
     cleanup()
     vi.unstubAllGlobals()
-    delete window.document.documentElement.dataset.hermesDesktopHost
+    delete window.document.documentElement.dataset.zeusDesktopHost
   })
 
   // Native Desktop collapses its composer at main's fixed widths and never
@@ -133,7 +133,7 @@ describe('useComposerMetrics — published clearance survives an effect replay',
   })
 
   it('uses a single control column below the two-touch-target budget', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     vi.spyOn(window, 'getComputedStyle').mockReturnValue({ getPropertyValue: () => '44px' } as unknown as CSSStyleDeclaration)
     const { getByTestId } = render(<Harness dockHeight={200} surfaceHeight={120} width={80} />)
     expect(JSON.parse(getByTestId('fit').textContent!)).toMatchObject({ minimal: true, singleColumn: true })
@@ -141,7 +141,7 @@ describe('useComposerMetrics — published clearance survives an effect replay',
   })
 
   it('collapses extra controls earlier when touch targets consume more width', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     const minimalAt = (controlPx: number) => {
       const style = vi.spyOn(window, 'getComputedStyle').mockReturnValue({

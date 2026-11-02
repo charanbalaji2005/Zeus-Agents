@@ -1,8 +1,8 @@
 """Tests for Automation Blueprints — the parameterized automation blueprint system.
 
 Covers the core catalog/slot schema/renderers/fill (cron/blueprint_catalog.py),
-the shared /blueprint command handler (hermes_cli/blueprint_cmd.py), and
-the docs generator. Uses an isolated HERMES_HOME for anything that touches the
+the shared /blueprint command handler (zeus_cli/blueprint_cmd.py), and
+the docs generator. Uses an isolated ZEUS_HOME for anything that touches the
 cron job store.
 """
 
@@ -112,17 +112,17 @@ class TestRenderers:
 
     def test_deeplink_shape(self):
         url = blueprint_deeplink(get_blueprint("morning-brief"), {"time": "07:15"})
-        assert url.startswith("hermes://blueprint/morning-brief?")
+        assert url.startswith("zeus://blueprint/morning-brief?")
         assert "time=07" in url
 
 
 @pytest.fixture
 def isolated_home(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    import hermes_constants
-    importlib.reload(hermes_constants)
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    import zeus_constants
+    importlib.reload(zeus_constants)
     from cron import jobs
     importlib.reload(jobs)
     return jobs
@@ -133,7 +133,7 @@ class TestCommandHandler:
 
 
     def test_fill_creates_job(self, isolated_home):
-        from hermes_cli.blueprint_cmd import handle_blueprint_command
+        from zeus_cli.blueprint_cmd import handle_blueprint_command
 
         res = handle_blueprint_command("morning-brief time=07:30 deliver=telegram")
         assert "Scheduled" in res.text

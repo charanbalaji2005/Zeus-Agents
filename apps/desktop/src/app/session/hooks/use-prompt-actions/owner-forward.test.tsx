@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { cleanup } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -20,7 +20,7 @@ describe('usePromptActions gateway-owner queue (#140385)', () => {
   it('re-uploads the image of a draft restored after a SESSION_OWNER_BUSY refusal: serve dropped it (#140968)', async () => {
     $connection.set({ mode: 'local' } as never)
     $currentCwd.set('/root')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:image/jpeg;base64,aGVsbG8=') }
     })

@@ -6,7 +6,7 @@ description: "BharatCode (bharatcode.ai) OpenAI-compatible model provider — fr
 maintainer: thenabbu
 tier: community
 category: models
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/thenabbu/bharatcode-hermes#readme
 version: "1.0.0"
 capabilities:

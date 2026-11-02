@@ -1,6 +1,6 @@
 """session/list finds editor threads the gateway owner stores as ``local`` (#143547 ACP-24)."""
 from acp_adapter.catalog import catalog_sessions
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 
 def test_catalog_lists_gateway_owned_editor_threads_only(tmp_path):

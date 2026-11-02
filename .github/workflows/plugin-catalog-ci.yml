@@ -4,11 +4,11 @@ name: Plugin Catalog CI
 # plugin-catalog/** so it can never go red on unrelated PRs.
 #
 # Two gates:
-#   structural            — cheap schema check, no hermes install needed
+#   structural            — cheap schema check, no zeus install needed
 #   pinned-source-validate — supply-chain gate: the pinned sha MUST be
 #                            reachable in the entry's repo, and the plugin
 #                            at that exact commit must pass
-#                            `hermes plugins validate`.
+#                            `zeus plugins validate`.
 
 on:
   pull_request:
@@ -50,12 +50,12 @@ jobs:
       - uses: useblacksmith/checkout@25227e61ff9dafe400e22fa487b673eac4e4409a  # v1
         with:
           # Full commit graph + tags, blobs on demand: the diff below needs the
-          # merge commit's first parent, and Hermes resolves its own version
+          # merge commit's first parent, and Zeus resolves its own version
           # from the release tags merged into HEAD. A shallow checkout reports
           # "unknown", which plugins checking the host version reject (omh).
           fetch-depth: 0
           filter: blob:none
-          # `hermes plugins validate` below runs pinned-repo code; keep the
+          # `zeus plugins validate` below runs pinned-repo code; keep the
           # job's token out of .git/config where that code could read it.
           persist-credentials: false
 
@@ -82,7 +82,7 @@ jobs:
           if [ -n "$CHANGED" ]; then
             # Admission PRs must be data-only: the gate's own enforcement code
             # (this workflow, the validator, the composite actions, the built
-            # hermes) resolves from the PR checkout, so an entry PR that also
+            # zeus) resolves from the PR checkout, so an entry PR that also
             # touches tooling could neuter the gate vetting it. Contributor
             # email maps are data the gate never executes; README/policy/CI PRs
             # with no entry change skip this check.
@@ -106,7 +106,7 @@ jobs:
             echo '__EOF__'
           } >> "$GITHUB_OUTPUT"
 
-      - name: Prepare Hermes from the PR's own checkout
+      - name: Prepare Zeus from the PR's own checkout
         if: steps.changed.outputs.files != ''
         uses: ./.github/actions/setup-pm
         with:
@@ -127,7 +127,7 @@ jobs:
           set -euo pipefail
           FAILED=0
           WORKROOT=$(realpath "$(mktemp -d)")
-          # Entries arrive on fd 3, not stdin: `hermes plugins validate` executes
+          # Entries arrive on fd 3, not stdin: `zeus plugins validate` executes
           # plugin-declared install code that could otherwise read stdin and
           # silently drain the remaining entry list.
           while IFS= read -r entry <&3; do
@@ -209,7 +209,7 @@ jobs:
 
             CLONE_DIR=$(realpath "$(mktemp -d -p "$WORKROOT")")
             # Full clone (no --depth 1): the pinned sha may not be the branch tip.
-            # 600s: listed repos reach >1 GB (hermes-jackal-verified 1.43 GB,
+            # 600s: listed repos reach >1 GB (zeus-jackal-verified 1.43 GB,
             # hindsight 741 MB); 120s would false-fail a re-pin on a slow runner.
             if ! timeout 600 git clone "$REPO" "$CLONE_DIR" </dev/null; then
               echo "::error file=$entry::clone failed for $REPO"
@@ -256,8 +256,8 @@ jobs:
             fi
 
             # Manifest schema + declared-vs-registered capability check.
-            if ! timeout 600 hermes plugins validate --install-deps "$PLUGIN_DIR" </dev/null; then
-              echo "::error file=$entry::hermes plugins validate failed"
+            if ! timeout 600 zeus plugins validate --install-deps "$PLUGIN_DIR" </dev/null; then
+              echo "::error file=$entry::zeus plugins validate failed"
               FAILED=1; echo "::endgroup::"; continue
             fi
 

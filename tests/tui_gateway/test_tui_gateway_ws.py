@@ -451,7 +451,7 @@ def _drive_authority_fallback(monkeypatch, *, capabilities, profile_id, method):
     sent, inbound = [], [json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": {}})]
 
     class FakeWS:
-        scope = {"hermes.session_authority": object()}
+        scope = {"zeus.session_authority": object()}
 
         async def accept(self, **_kw):
             pass
@@ -472,7 +472,7 @@ def _drive_authority_fallback(monkeypatch, *, capabilities, profile_id, method):
 
 
 def test_ready_frame_advertises_a_session_authority_only_when_one_is_bound(monkeypatch):
-    """An explicit TUI attach (HERMES_TUI_GATEWAY_URL) negotiates the canonical wire from this flag."""
+    """An explicit TUI attach (ZEUS_TUI_GATEWAY_URL) negotiates the canonical wire from this flag."""
     from gateway import session_controls
 
     class FakeConnection:
@@ -505,7 +505,7 @@ def test_ready_frame_advertises_a_session_authority_only_when_one_is_bound(monke
         asyncio.run(ws_mod.handle_ws(FakeWS(), auth_identity={"user_id": "u"}))
         return sent[0]["params"]["payload"]
 
-    assert ready({"hermes.session_authority": object()})["session_authority"] is True
+    assert ready({"zeus.session_authority": object()})["session_authority"] is True
     assert "session_authority" not in ready({})
 
 
@@ -526,12 +526,12 @@ def test_legacy_fallback_requires_the_interactive_grant(monkeypatch):
 def test_legacy_fallback_keeps_the_ticket_profile_for_sessionless_scoped_handlers(monkeypatch, tmp_path):
     """A secondary-profile ticket's sessionless ``@_profile_scoped`` legacy call runs in THAT profile's
     home, not the launch profile's."""
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     secondary = tmp_path / "profiles" / "l106742sec"
     secondary.mkdir(parents=True)
     monkeypatch.setitem(server._methods, "probe.scoped", server._profile_scoped(
-        lambda rid, params: {"jsonrpc": "2.0", "id": rid, "result": {"home": str(get_hermes_home())}}))
+        lambda rid, params: {"jsonrpc": "2.0", "id": rid, "result": {"home": str(get_zeus_home())}}))
     reply = _drive_authority_fallback(monkeypatch, capabilities=_INTERACTIVE, profile_id=str(secondary),
                                       method="probe.scoped")
     assert reply["result"]["home"] == str(secondary)
@@ -547,8 +547,8 @@ def test_legacy_fallback_never_writes_an_authority_owned_session(monkeypatch, tm
     the authority holding a live session whose row is gone)."""
     from types import SimpleNamespace
     from gateway.session_authority import LiveSession, SessionAuthority
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch
 
     monkeypatch.setattr(server, "_WS_ORPHAN_REAP_GRACE_S", 0)
     with SessionDB(db_path=tmp_path / "state.db") as db:
@@ -561,7 +561,7 @@ def test_legacy_fallback_never_writes_an_authority_owned_session(monkeypatch, tm
         sent, inbound = [], [json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})]
 
         class FakeWS:
-            scope = {"hermes.session_authority": authority}
+            scope = {"zeus.session_authority": authority}
 
             async def accept(self, **_kw):
                 pass

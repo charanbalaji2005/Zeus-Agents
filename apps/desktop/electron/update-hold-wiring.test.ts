@@ -40,7 +40,7 @@ function register(state: { phase: string; updateHold: UpdateHoldWire | null }) {
 test('the boot snapshot carries the update hold to the primary window only', async () => {
   const state = { phase: 'backend.update-hold', updateHold: HOLD }
   const { handlers, primary } = register(state)
-  const get = handlers.get('hermes:boot-progress:get')
+  const get = handlers.get('zeus:boot-progress:get')
 
   assert.ok(get, 'registerUpdateHoldIpc owns the boot snapshot channel')
   assert.deepEqual(await get({ sender: primary }), state)
@@ -50,7 +50,7 @@ test('the boot snapshot carries the update hold to the primary window only', asy
 
 test('a non-primary window cannot quit from the update-hold screen', async () => {
   const { handlers, primary, quits } = register({ phase: 'x', updateHold: HOLD })
-  const quit = handlers.get('hermes:update-hold:quit')!
+  const quit = handlers.get('zeus:update-hold:quit')!
 
   assert.deepEqual(await quit({ sender: { id: 'session' } }), { ok: false })
   assert.equal(quits(), 0)

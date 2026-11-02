@@ -6,7 +6,7 @@ description: SidePulse lifecycle status backend; Desktop focus tracking requires
 maintainer: d31tcjg
 tier: community
 category: desktop
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/d31tcjg/hermes-sidepulse/blob/v0.2.0-beta.1/README.md
 version: "0.2.0-beta.1"
 platforms:

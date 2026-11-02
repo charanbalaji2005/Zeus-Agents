@@ -18,23 +18,23 @@ describe('ownAppImage', () => {
   // The runtime builds APPDIR from the raw $TMPDIR; process.execPath has its
   // symlinks resolved (TMPDIR=~/tmp on Fedora Atomic, /home -> /var/home).
   it.skipIf(process.platform === 'win32')('follows a symlinked TMPDIR to the mount it names', () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-appdir-link-'))
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-appdir-link-'))
 
     try {
-      const mount = path.join(root, 'var-home', '.mount_HermesQ7x2Lp')
+      const mount = path.join(root, 'var-home', '.mount_ZeusQ7x2Lp')
       fs.mkdirSync(mount, { recursive: true })
-      fs.writeFileSync(path.join(mount, 'hermes'), '')
-      fs.mkdirSync(path.join(root, 'other', '.mount_HermesQ7x2Lp'), { recursive: true })
+      fs.writeFileSync(path.join(mount, 'zeus'), '')
+      fs.mkdirSync(path.join(root, 'other', '.mount_ZeusQ7x2Lp'), { recursive: true })
       fs.symlinkSync(path.join(root, 'var-home'), path.join(root, 'home'))
       fs.symlinkSync(path.join(root, 'other'), path.join(root, 'elsewhere'))
-      const exe = fs.realpathSync(path.join(mount, 'hermes'))
-      const appImage = '/home/u/Apps/Hermes.AppImage'
+      const exe = fs.realpathSync(path.join(mount, 'zeus'))
+      const appImage = '/home/u/Apps/Zeus.AppImage'
 
-      expect(ownAppImage(exe, { APPIMAGE: appImage, APPDIR: path.join(root, 'home', '.mount_HermesQ7x2Lp') })).toBe(
+      expect(ownAppImage(exe, { APPIMAGE: appImage, APPDIR: path.join(root, 'home', '.mount_ZeusQ7x2Lp') })).toBe(
         appImage
       )
       expect(
-        ownAppImage(exe, { APPIMAGE: appImage, APPDIR: path.join(root, 'elsewhere', '.mount_HermesQ7x2Lp') })
+        ownAppImage(exe, { APPIMAGE: appImage, APPDIR: path.join(root, 'elsewhere', '.mount_ZeusQ7x2Lp') })
       ).toBeUndefined()
     } finally {
       fs.rmSync(root, { recursive: true, force: true })
@@ -57,8 +57,8 @@ describe('spawnRelaunch', () => {
     'starts the image free of this mount, and stays put when it cannot',
     async () => {
       const saved = { ...process.env }
-      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-relaunch-fds-'))
-      const image = path.join(dir, 'Hermes.AppImage')
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-relaunch-fds-'))
+      const image = path.join(dir, 'Zeus.AppImage')
       const report = path.join(dir, 'fds')
       const held = path.join(dir, 'held')
       const events: string[] = []
@@ -99,7 +99,7 @@ describe('spawnRelaunch', () => {
         )
         fs.writeFileSync(held, '')
         // This mount's AppRun prepended it to PATH; the mount is gone soon after the child starts.
-        const mount = path.join(dir, '.mount_HermesQ7x2Lp')
+        const mount = path.join(dir, '.mount_ZeusQ7x2Lp')
 
         const helper = spawnRelaunch(image, [], {
           ...process.env,
@@ -135,8 +135,8 @@ describe('spawnRelaunch', () => {
 
       return { on: () => undefined, unref: () => undefined } as unknown as ChildProcess
     }) as typeof spawn)
-    const mount = '/run/user/1000/.mount_HermesQ7x2Lp'
-    const image = '/home/u/Apps/Hermes.AppImage'
+    const mount = '/run/user/1000/.mount_ZeusQ7x2Lp'
+    const image = '/home/u/Apps/Zeus.AppImage'
 
     spawnRelaunch(
       image,
@@ -146,7 +146,7 @@ describe('spawnRelaunch', () => {
         LD_LIBRARY_PATH: `${mount}/usr/lib`,
         PATH: `${mount}:${mount}/usr/bin:/tmp/.mount_IdeAbC123/usr/bin:/usr/bin`
       },
-      `${mount}/hermes`
+      `${mount}/zeus`
     )
 
     expect(childEnv).toEqual({ APPIMAGE: image, PATH: '/tmp/.mount_IdeAbC123/usr/bin:/usr/bin' })
@@ -157,7 +157,7 @@ describe('spawnRelaunch', () => {
   // and uninstall unable to find the image file.
   it.skipIf(process.platform !== 'linux')('keeps APPDIR for an executable inside it', async () => {
     const appDir = path.join(os.tmpdir(), 'appimage_extracted_0123abcd')
-    const env: NodeJS.ProcessEnv = { APPDIR: appDir, APPIMAGE: '/apps/Hermes.AppImage', PATH: `${appDir}/usr/bin:/bin` }
+    const env: NodeJS.ProcessEnv = { APPDIR: appDir, APPIMAGE: '/apps/Zeus.AppImage', PATH: `${appDir}/usr/bin:/bin` }
     const realSpawn = (await vi.importActual<typeof childProcess>('node:child_process')).spawn
     let childEnv: NodeJS.ProcessEnv | undefined
     vi.mocked(spawn).mockImplementationOnce((_file, _args, options) => {
@@ -166,7 +166,7 @@ describe('spawnRelaunch', () => {
       return realSpawn('true', [], { stdio: 'pipe' })
     })
 
-    spawnRelaunch(path.join(appDir, 'hermes'), [], env).stdin!.end()
+    spawnRelaunch(path.join(appDir, 'zeus'), [], env).stdin!.end()
 
     expect(childEnv).toMatchObject(env)
   })
@@ -176,19 +176,19 @@ describe('spawnRelaunch', () => {
   it.skipIf(process.platform !== 'linux')(
     'keeps APPDIR when the extracted dir is reached through a symlink',
     async () => {
-      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-extracted-link-'))
+      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-extracted-link-'))
 
       try {
         const realDir = path.join(root, 'var-home', 'appimage_extracted_0123abcd')
         fs.mkdirSync(realDir, { recursive: true })
-        fs.writeFileSync(path.join(realDir, 'hermes'), '')
+        fs.writeFileSync(path.join(realDir, 'zeus'), '')
         fs.symlinkSync(path.join(root, 'var-home'), path.join(root, 'home'))
         const appDir = path.join(root, 'home', 'appimage_extracted_0123abcd')
-        const exe = fs.realpathSync(path.join(realDir, 'hermes'))
+        const exe = fs.realpathSync(path.join(realDir, 'zeus'))
 
         const env: NodeJS.ProcessEnv = {
           APPDIR: appDir,
-          APPIMAGE: '/apps/Hermes.AppImage',
+          APPIMAGE: '/apps/Zeus.AppImage',
           PATH: `${appDir}/usr/bin:/bin`
         }
 
@@ -200,18 +200,18 @@ describe('spawnRelaunch', () => {
           return realSpawn('true', [], { stdio: 'pipe' })
         })
 
-        expect(ownAppImage(exe, env)).toBe('/apps/Hermes.AppImage')
+        expect(ownAppImage(exe, env)).toBe('/apps/Zeus.AppImage')
         spawnRelaunch(exe, [], env).stdin!.end()
 
         expect(childEnv).toMatchObject(env)
-        expect(ownAppImage(exe, childEnv!)).toBe('/apps/Hermes.AppImage')
+        expect(ownAppImage(exe, childEnv!)).toBe('/apps/Zeus.AppImage')
       } finally {
         fs.rmSync(root, { recursive: true, force: true })
       }
     }
   )
 
-  // Started from another app's AppImage (an AppImage terminal), Hermes inherits
+  // Started from another app's AppImage (an AppImage terminal), Zeus inherits
   // that app's APPDIR/APPIMAGE and its mount on PATH and EDITOR; app.relaunch
   // kept them, so a restart must not strip half of that env.
   it.skipIf(process.platform !== 'linux')("keeps another app's AppImage env intact", async () => {
@@ -232,7 +232,7 @@ describe('spawnRelaunch', () => {
       return realSpawn('true', [], { stdio: 'pipe' })
     })
 
-    spawnRelaunch('/opt/Hermes/hermes', [], env).stdin!.end()
+    spawnRelaunch('/opt/Zeus/zeus', [], env).stdin!.end()
 
     expect(childEnv).toEqual(env)
   })
@@ -241,8 +241,8 @@ describe('spawnRelaunch', () => {
   // (crashpad client socket, DevTools listener, caches); dash, Debian's
   // /bin/sh, cannot close them, and each relaunch carried the last one's.
   it.skipIf(process.platform !== 'linux')('starts the target without an fd above 9 this process holds', async () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-relaunch-high-fd-'))
-    const exe = path.join(dir, 'hermes')
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-relaunch-high-fd-'))
+    const exe = path.join(dir, 'zeus')
     const report = path.join(dir, 'fds')
     const held = path.join(dir, 'held')
     const fd = fs.openSync(held, 'w')

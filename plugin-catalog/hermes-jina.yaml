@@ -6,7 +6,7 @@ description: Jina Reader web backend for web_extract (r.jina.ai, works without a
 maintainer: Adolanium
 tier: community
 category: web
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 docs_url: https://github.com/Adolanium/hermes-jina#readme
 version: "0.1.0"
 image: https://raw.githubusercontent.com/Adolanium/hermes-jina/98505951a3d26230dc30dfd47a502fcdc396f793/assets/catalog-banner.png

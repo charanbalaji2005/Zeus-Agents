@@ -10,8 +10,8 @@ import pytest
 
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_contract import Principal, SessionRef, Submission
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 
 ACTOR = Principal('human', 'owned', frozenset({'session:submit', 'session:control'}), 'cli')
 REF = SessionRef('owned', 's')
@@ -21,7 +21,7 @@ REF = SessionRef('owned', 's')
 @pytest.mark.parametrize('reused', [True, False])
 async def test_completion_carries_the_reused_final_flag(tmp_path, monkeypatch, reused):
     from gateway import session_finite
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db = SessionDB(db_path=tmp_path / 'state.db')
     db.create_session('s', source='test')
     epoch = begin_runtime_epoch(db, instance_id='current')

@@ -14,7 +14,7 @@ import pytest
 import pytest_asyncio
 
 from gateway.session_contract import Principal
-from hermes_state_runtime import list_session_admissions
+from zeus_state_runtime import list_session_admissions
 
 KEY = 'c' * 32
 
@@ -27,9 +27,9 @@ async def bot(tmp_path, monkeypatch):
     from gateway.session_authority import initialize_session_authority
     from gateway.session_local import create_local_session
     from gateway.session_local_title import title_new_session
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'cli': []}})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     store._db = SessionDB(db_path=tmp_path / 'state.db')
@@ -165,7 +165,7 @@ async def test_context_overflow_retries_once_unless_the_failed_dm_is_still_an_op
 
 @pytest.mark.asyncio
 async def test_peer_dm_waiter_follows_the_retry_admission_to_its_answer(bot):
-    """``hermes peer dm`` waits on the delivery, not on the original admission id: once that
+    """``zeus peer dm`` waits on the delivery, not on the original admission id: once that
     fails transiently its future never fires again, and the answer is the retry's."""
     from gateway.platforms.api_server_bot_chat import await_peer_receipt
     from gateway import session_bot
@@ -260,7 +260,7 @@ async def test_mailbox_file_lock_held_elsewhere_never_stalls_the_owner_loop(bot)
     import threading
     import time
     from gateway.session_bot import deliver
-    from hermes_cli.active_sessions import _FileLock
+    from zeus_cli.active_sessions import _FileLock
     from tools.bot_live_delivery import _locked, _root
     with _locked(bot.home):
         pass

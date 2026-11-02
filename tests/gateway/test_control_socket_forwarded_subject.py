@@ -88,8 +88,8 @@ def test_a_forwarded_subject_matching_the_row_owner_takes_the_mutation(tmp_path)
     """The reviewer-repro shape: a stored ``desktop`` row owned by a dashboard account is
     deletable by a forwarded actor acting as that account, and refused for any other."""
     from gateway.session_contract import Principal
-    from hermes_state import SessionDB
-    from hermes_state_mutation_binding import authorize_history
+    from zeus_state import SessionDB
+    from zeus_state_mutation_binding import authorize_history
 
     db = SessionDB(db_path=tmp_path / "state.db")
     try:

@@ -13,7 +13,7 @@ afterEach(async () => { await fs.rm(dir, { recursive: true, force: true }) })
 
 // A POSIX script stands in for the installation launcher's --print-runtime-command boundary.
 async function launcher(body: string): Promise<string> {
-  const file = path.join(dir, 'hermes')
+  const file = path.join(dir, 'zeus')
   await fs.writeFile(file, `#!/bin/sh\nprintf '%s\\n' "$@" > "${dir}/argv"\n${body}\n`, { mode: 0o755 })
 
   return file
@@ -26,10 +26,10 @@ test('a Python backend is the helper interpreter as-is', async () => {
 
 test('a bundled launcher keeps its CLI command but names the payload Python for ticket minting', async () => {
   const backend = {
-    command: '/resources/agent-payload/bin/hermes.exe',
+    command: '/resources/agent-payload/bin/zeus.exe',
     kind: 'python',
     shell: false,
-    env: { HERMES_RUNTIME_DIR: '/resources/agent-payload/tools' },
+    env: { ZEUS_RUNTIME_DIR: '/resources/agent-payload/tools' },
     ticketCommand: '/resources/agent-payload/tools/python/python.exe',
     ticketEnv: { PYTHONPATH: '/resources/agent-payload/repo;/resources/agent-payload/venv/Lib/site-packages' }
   }
@@ -44,7 +44,7 @@ test.skipIf(process.platform === 'win32')('an installed launcher backend mints w
   // The normal Windows install resolves to kind 'command' (the installation launcher).
   const python = process.execPath
   const command = await launcher(`printf '%s' '${JSON.stringify([python, '-I', '-c', 'bootstrap'])}'`)
-  const root = path.join(dir, 'hermes-agent')
+  const root = path.join(dir, 'zeus-agents')
   await fs.mkdir(root)
 
   await expect(ticketRuntimeFor({ command, kind: 'command', shell: false, root, env: { PYTHONPATH: '/scrubbed', B: '2' } }))
@@ -69,9 +69,9 @@ test.skipIf(process.platform === 'win32')('a launcher without a usable runtime c
 
 test('backends with no interpreter to name stay refused', async () => {
   for (const backend of [
-    { command: 'hermes', kind: 'command', shell: false },
+    { command: 'zeus', kind: 'command', shell: false },
     { command: '"python.cmd"', kind: 'python', shell: true }
   ]) {
-    await expect(ticketRuntimeFor(backend)).rejects.toThrow('requires the installed Hermes Python runtime')
+    await expect(ticketRuntimeFor(backend)).rejects.toThrow('requires the installed Zeus Python runtime')
   }
 })

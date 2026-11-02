@@ -12,7 +12,7 @@ async def test_stored_picker_survives_upgrade_and_resumes_without_copying(tmp_pa
     from gateway.session_authority import initialize_session_authority
     from gateway.session_controls import AuthorityConnection
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'cli': []}})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     db = store._db
@@ -35,7 +35,7 @@ async def test_stored_picker_survives_upgrade_and_resumes_without_copying(tmp_pa
         db.release_compression_lock('old-tui', 'fixture')
     db.set_session_hidden('hidden', True)
     db.set_session_archived('archived', True)
-    from hermes_state_mutation_binding import BINDING_PREFIX
+    from zeus_state_mutation_binding import BINDING_PREFIX
     db._write_sql('INSERT INTO state_meta(key,value) VALUES(?,?)',
                   (BINDING_PREFIX + 'imported-other', '["other-profile","other-user"]'))
     runner = SimpleNamespace(session_store=store, _session_db=db, adapters={}, _draining=False,

@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { DelegationRouting } from '@/api/delegation'
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { queryClient } from '@/lib/query-client'
 
 import { DelegationRoutingSection } from './routing-section'
@@ -11,7 +11,7 @@ import { SubagentModelGate } from './subagent-model-gate'
 
 // A stateful stand-in for the backend's /api/delegation routes (same shapes, same refusal).
 let routing: DelegationRouting
-const writes: HermesApiRequest[] = []
+const writes: ZeusApiRequest[] = []
 
 function backend(names: string[]): DelegationRouting['backends'] {
   return names.map(name => ({
@@ -35,9 +35,9 @@ beforeEach(() => {
     profile_routes: { profiles: [], default: null },
     profiles: ['default', 'work']
   }
-  window.hermesDesktop = {
-    ...window.hermesDesktop,
-    api: async (request: HermesApiRequest) => {
+  window.zeusDesktop = {
+    ...window.zeusDesktop,
+    api: async (request: ZeusApiRequest) => {
       if (request.path === '/api/delegation/routing') {
         return structuredClone(routing)
       }
@@ -61,7 +61,7 @@ beforeEach(() => {
 
       throw new Error('404: Not Found')
     }
-  } as typeof window.hermesDesktop
+  } as typeof window.zeusDesktop
 })
 
 afterEach(cleanup)

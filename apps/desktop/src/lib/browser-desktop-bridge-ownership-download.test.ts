@@ -86,7 +86,7 @@ it.each([
     clicked.push(this.href)
   })
   expect(installBrowserDesktopBridge()).toBe(true)
-  await expect(win.hermesDesktop.saveImageFromUrl('https://images.example/image.png')).resolves.toBe(!oversized)
+  await expect(win.zeusDesktop.saveImageFromUrl('https://images.example/image.png')).resolves.toBe(!oversized)
   const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit]
   expect(String(url)).toBe('https://images.example/image.png')
   expect(init.credentials).toBe('omit')
@@ -131,7 +131,7 @@ it.each([
   const directUrls = [`${window.location.origin}/same-origin.png`, 'blob:https://images.example/local', 'data:image/png;base64,AA==']
 
   for (const directUrl of directUrls) {
-    await expect(win.hermesDesktop.saveImageFromUrl(directUrl)).resolves.toBe(true)
+    await expect(win.zeusDesktop.saveImageFromUrl(directUrl)).resolves.toBe(true)
   }
 
   expect(clicked.slice(-directUrls.length)).toEqual(directUrls)
@@ -164,7 +164,7 @@ it.each(['headers', 'body'])('times out stalled image %s within one whole-downlo
   const create = vi.spyOn(URL, 'createObjectURL')
   expect(installBrowserDesktopBridge()).toBe(true)
   let saved: boolean | undefined
-  void win.hermesDesktop.saveImageFromUrl('https://images.example/slow.png').then(result => {saved = result})
+  void win.zeusDesktop.saveImageFromUrl('https://images.example/slow.png').then(result => {saved = result})
   const signal = fetchMock.mock.calls[0][1].signal
   await vi.advanceTimersByTimeAsync(BROWSER_IMAGE_DOWNLOAD_TIMEOUT_MS - 1)
   expect(saved).toBeUndefined()
@@ -192,8 +192,8 @@ it('names a fetched cross-origin image after its URL, not the blob URL that carr
   })
   expect(installBrowserDesktopBridge()).toBe(true)
 
-  await expect(win.hermesDesktop.saveImageFromUrl('https://v3.fal.media/files/x/MKZV6h-RrKLV')).resolves.toBe(true)
-  await expect(win.hermesDesktop.saveImageFromUrl(`${window.location.origin}/api/media/a.png`)).resolves.toBe(true)
+  await expect(win.zeusDesktop.saveImageFromUrl('https://v3.fal.media/files/x/MKZV6h-RrKLV')).resolves.toBe(true)
+  await expect(win.zeusDesktop.saveImageFromUrl(`${window.location.origin}/api/media/a.png`)).resolves.toBe(true)
 
   // The same-origin route stays unnamed so the server's Content-Disposition wins.
   expect(names).toEqual(['MKZV6h-RrKLV.webp', ''])
@@ -213,7 +213,7 @@ it('surfaces CORS and HTTP download failures without clicking a navigation link'
   expect(installBrowserDesktopBridge()).toBe(true)
 
   for (const suffix of ['cors.png', 'denied.png']) {
-    await expect(win.hermesDesktop.saveImageFromUrl(`https://images.example/${suffix}`)).resolves.toBe(false)
+    await expect(win.zeusDesktop.saveImageFromUrl(`https://images.example/${suffix}`)).resolves.toBe(false)
     expect($notifications.get().at(-1)).toMatchObject({ kind: 'error', title: 'Download failed' })
   }
 
@@ -232,8 +232,8 @@ const win = window
 
 afterEach(() => {
   clearWebappSession()
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   window.history.replaceState(null, '', '/#/')
   setApiRequestConnection(null)
   setApiRequestProfile(null)
@@ -253,11 +253,11 @@ it("reconnects the tab's own socket rather than the profile the tab is on", asyn
   $connection.set({ profile: 'active-secondary' } as never)
   // The tab's own socket names no profile: its gateway answers it for the profile it runs as, and
   // `?profile=window-owner` is selected on top of it (requests for it carry `profile`).
-  const reconnect = await win.hermesDesktop.getConnection()
+  const reconnect = await win.zeusDesktop.getConnection()
   expect(reconnect.profile).toBeUndefined()
   expect(new URL(reconnect.wsUrl).searchParams.has('profile')).toBe(false)
-  const explicitDefault = await win.hermesDesktop.getConnection(null)
+  const explicitDefault = await win.zeusDesktop.getConnection(null)
   expect(new URL(explicitDefault.wsUrl).searchParams.has('profile')).toBe(false)
-  const namedDefault = await win.hermesDesktop.getConnection('default')
+  const namedDefault = await win.zeusDesktop.getConnection('default')
   expect(new URL(namedDefault.wsUrl).searchParams.get('profile')).toBe('default')
 })

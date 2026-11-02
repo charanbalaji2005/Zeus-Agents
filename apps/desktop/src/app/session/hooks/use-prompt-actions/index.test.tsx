@@ -1,10 +1,10 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
-import type { GatewayEventName } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
+import type { GatewayEventName } from '@zeus/shared'
 import { act, cleanup, render, waitFor } from '@testing-library/react'
 import type { MutableRefObject } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getLatestSessionMessages, getSession } from '@/hermes'
+import { getLatestSessionMessages, getSession } from '@/zeus'
 import { en } from '@/i18n/en'
 import { textPart } from '@/lib/chat-messages'
 import { createClientSessionState } from '@/lib/chat-runtime'
@@ -44,12 +44,12 @@ beforeEach(() => {
   clearStoredJournal()
   // Queue mutations build on the persisted map, not the atom — a queue an
   // earlier test left in storage would otherwise sit ahead of this test's send.
-  window.localStorage.removeItem('hermes.desktop.composerQueue.v1')
+  window.localStorage.removeItem('zeus.desktop.composerQueue.v1')
   vi.mocked(getLatestSessionMessages).mockReset()
   vi.mocked(getLatestSessionMessages).mockImplementation(async () => ({ messages: [], session_id: 'session' }))
 })
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getLatestSessionMessages: vi.fn(async () => ({ messages: [], session_id: 'session' })),
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   getSession: vi.fn(),
@@ -78,8 +78,8 @@ describe('durable submit acknowledgement', () => {
     const { preparedJournal } = await import(nativeJournalModule)
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'desktop-retire-'))
     const journal = preparedJournal(home, 'http://native-fixture')
-    const previous = window.hermesDesktop
-    window.hermesDesktop = { ...previous, preparedSubmissions: {
+    const previous = window.zeusDesktop
+    window.zeusDesktop = { ...previous, preparedSubmissions: {
       read: async () => JSON.stringify(journal.read()),
       update: async (key, entry) => { journal.update(key, entry === null ? null : JSON.parse(entry)) }
     } }
@@ -102,7 +102,7 @@ describe('durable submit acknowledgement', () => {
       expect(preparedJournal(home, 'http://native-fixture').read()).toEqual({})
       expect(fs.readdirSync(home)).toHaveLength(1)
     } finally {
-      window.hermesDesktop = previous
+      window.zeusDesktop = previous
       fs.rmSync(home, { recursive: true, force: true })
       vi.doUnmock('electron')
     }
@@ -110,9 +110,9 @@ describe('durable submit acknowledgement', () => {
 
   it('a journal retirement that fails after admission still reports the delivered prompt and never reuses its identity', async () => {
     const entries = new Map<string, string>()
-    const previous = window.hermesDesktop
+    const previous = window.zeusDesktop
     // The private-file journal accepts the preparation write, then the disk fills before retirement.
-    window.hermesDesktop = { ...previous, preparedSubmissions: {
+    window.zeusDesktop = { ...previous, preparedSubmissions: {
       read: async () => JSON.stringify(Object.fromEntries([...entries].map(([key, entry]) => [key, JSON.parse(entry)]))),
       update: async (key, entry) => {
         if (entry === null) {throw Object.assign(new Error('ENOSPC: no space left on device'), { code: 'ENOSPC' })}
@@ -141,7 +141,7 @@ describe('durable submit acknowledgement', () => {
       expect(ids).toHaveLength(2)
       expect(ids[1]).not.toBe(ids[0])
     } finally {
-      window.hermesDesktop = previous
+      window.zeusDesktop = previous
     }
   })
 
@@ -193,7 +193,7 @@ describe('durable submit acknowledgement', () => {
   })
 
   it('a legacy backend refusing submission_id as version skew (4000) gets one identityless retry', async () => {
-    // `hermes serve` validates params against a strict contract: an unknown key is refused
+    // `zeus serve` validates params against a strict contract: an unknown key is refused
     // as 4000 before any handler ran (surfaced by the remote-topology E2E as "Session unavailable").
     const submits: Array<Record<string, unknown>> = []
 
@@ -202,7 +202,7 @@ describe('durable submit acknowledgement', () => {
       submits.push(params!)
 
       if ('submission_id' in params!) {
-        throw Object.assign(new Error('invalid params for prompt.submit: submission_id: Extra inputs are not permitted — the client and the Hermes backend are out of sync (different versions)'), { code: 4000 })
+        throw Object.assign(new Error('invalid params for prompt.submit: submission_id: Extra inputs are not permitted — the client and the Zeus backend are out of sync (different versions)'), { code: 4000 })
       }
 
       return { status: 'streaming' } as never
@@ -572,7 +572,7 @@ function renderedSeedTexts(seeds: Record<string, unknown>[]): string[] {
 
 // The HUD floats over the app the user is really working in, so the gateway
 // turns this flag into a per-turn hint: read the window underneath and work in
-// it, rather than reaching for Hermes's own browser and panes.
+// it, rather than reaching for Zeus's own browser and panes.
 describe('usePromptActions HUD surface', () => {
   afterEach(() => {
     cleanup()
@@ -741,7 +741,7 @@ describe('usePromptActions /wake', () => {
       if (method === 'wake.start') {
         return {
           owner_surface: 'gui',
-          phrase: 'hey hermes',
+          phrase: 'hey zeus',
           provider: 'openwakeword',
           started: true
         } as never
@@ -759,7 +759,7 @@ describe('usePromptActions /wake', () => {
           },
           listening: true,
           owner_surface: 'gui',
-          phrase: 'hey hermes',
+          phrase: 'hey zeus',
           provider: 'openwakeword'
         } as never
       }
@@ -803,7 +803,7 @@ describe('usePromptActions /wake', () => {
           enabled: statusCalls === 1,
           listening: statusCalls === 1,
           owner_surface: statusCalls === 1 ? 'gui' : null,
-          phrase: 'hey hermes',
+          phrase: 'hey zeus',
           provider: 'openwakeword'
         } as never
       }
@@ -2284,7 +2284,7 @@ describe('usePromptActions submit / queue drain semantics', () => {
   })
 
   it('pins prompt.submit to the active registry connection when the remote session row is untagged', async () => {
-    $connection.set({ connectionId: 'hermes01', mode: 'remote' } as never)
+    $connection.set({ connectionId: 'zeus01', mode: 'remote' } as never)
     setSessions([sessionInfo({ id: 'stored-remote', profile: 'default' })])
 
     const ambientRequest = vi.fn(async () => ({}) as never)
@@ -3426,7 +3426,7 @@ describe('usePromptActions file attachment sync', () => {
     // not the original /Users/... path (which would dead-end as "outside the
     // allowed workspace").
     $connection.set({ mode: 'remote' } as never)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:text/plain;base64,aGVsbG8=') }
     })
@@ -3439,8 +3439,8 @@ describe('usePromptActions file attachment sync', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          path: '/remote/work/.hermes/desktop-attachments/report.txt',
-          ref_text: '@file:.hermes/desktop-attachments/report.txt',
+          path: '/remote/work/.zeus/desktop-attachments/report.txt',
+          ref_text: '@file:.zeus/desktop-attachments/report.txt',
           uploaded: true
         } as never
       }
@@ -3466,7 +3466,7 @@ describe('usePromptActions file attachment sync', () => {
     expect(calls[1]?.params).toEqual({
       session_id: RUNTIME_SESSION_ID,
       submission_id: expect.any(String),
-      text: '@file:.hermes/desktop-attachments/report.txt\n\nconvert this to epub'
+      text: '@file:.zeus/desktop-attachments/report.txt\n\nconvert this to epub'
     })
   })
 
@@ -3474,7 +3474,7 @@ describe('usePromptActions file attachment sync', () => {
     $connection.set({ mode: 'local' } as never)
     $currentCwd.set('/root')
     const readFileDataUrl = vi.fn(async () => 'data:text/plain;base64,aGVsbG8=')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl }
     })
@@ -3493,8 +3493,8 @@ describe('usePromptActions file attachment sync', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          path: '/root/.hermes/desktop-attachments/report.txt',
-          ref_text: '@file:.hermes/desktop-attachments/report.txt',
+          path: '/root/.zeus/desktop-attachments/report.txt',
+          ref_text: '@file:.zeus/desktop-attachments/report.txt',
           uploaded: true
         } as never
       }
@@ -3523,7 +3523,7 @@ describe('usePromptActions file attachment sync', () => {
       params: {
         submission_id: expect.any(String),
         session_id: RUNTIME_SESSION_ID,
-        text: '@file:.hermes/desktop-attachments/report.txt\n\nsummarize'
+        text: '@file:.zeus/desktop-attachments/report.txt\n\nsummarize'
       }
     })
   })
@@ -3535,7 +3535,7 @@ describe('usePromptActions file attachment sync', () => {
     const hostPath = 'C:\\Users\\alice\\Pictures\\photo.jpg'
     const thumbnailUrl = 'data:image/jpeg;base64,dGh1bWJuYWls'
 
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:image/jpeg;base64,aGVsbG8=') }
     })
@@ -3604,7 +3604,7 @@ describe('usePromptActions file attachment sync', () => {
       resolveAttach = resolve
     })
 
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:image/jpeg;base64,aGVsbG8=') }
     })
@@ -3696,7 +3696,7 @@ describe('usePromptActions file attachment sync', () => {
     $connection.set({ mode: 'remote' } as never)
     const original = fileAttachment()
 
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:text/plain;base64,aGVsbG8=') }
     })
@@ -3705,7 +3705,7 @@ describe('usePromptActions file attachment sync', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          ref_text: '@file:.hermes/desktop-attachments/report.txt',
+          ref_text: '@file:.zeus/desktop-attachments/report.txt',
           uploaded: true
         } as never
       }
@@ -3731,7 +3731,7 @@ describe('usePromptActions file attachment sync', () => {
     $connection.set({ mode: 'local' } as never)
     $terminalBackend.set('docker')
     const readFileDataUrl = vi.fn(async () => 'data:text/plain;base64,aGVsbG8=')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl }
     })
@@ -3744,8 +3744,8 @@ describe('usePromptActions file attachment sync', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          path: '/root/.hermes/attachments/report.txt',
-          ref_text: '@file:/root/.hermes/attachments/report.txt',
+          path: '/root/.zeus/attachments/report.txt',
+          ref_text: '@file:/root/.zeus/attachments/report.txt',
           uploaded: true
         } as never
       }
@@ -3786,7 +3786,7 @@ describe('usePromptActions file attachment sync', () => {
     // path-less inline ref. See partitionDroppedFiles in use-composer-actions.
     $connection.set({ mode: 'remote' } as never)
     const readFileDataUrl = vi.fn(async () => 'data:application/pdf;base64,JVBERi0=')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl }
     })
@@ -3825,7 +3825,7 @@ describe('usePromptActions file attachment sync', () => {
     $connection.set({ mode: 'local' } as never)
     $currentCwd.set('C:\\Users\\alice\\project')
     const readFileDataUrl = vi.fn(async () => 'data:text/plain;base64,c2hvdWxkLW5vdC1iZS1yZWFk')
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl }
     })
@@ -3887,10 +3887,10 @@ describe('usePromptActions eager-upload races', () => {
   it('joins an in-flight eager upload at submit instead of staging the file twice', async () => {
     // Drop-then-immediately-Enter: the drop kicks off an eager file.attach; if
     // submit doesn't join it, both calls stage the file and leave a duplicate
-    // under .hermes/desktop-attachments/. Submit must await the in-flight upload
+    // under .zeus/desktop-attachments/. Submit must await the in-flight upload
     // and reuse its gateway-side ref.
     $connection.set({ mode: 'remote' } as never)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:application/pdf;base64,JVBERi0=') }
     })
@@ -3907,7 +3907,7 @@ describe('usePromptActions eager-upload races', () => {
           releaseAttach = resolve
         })
 
-        return { attached: true, ref_text: '@file:.hermes/desktop-attachments/doc.pdf', uploaded: true } as never
+        return { attached: true, ref_text: '@file:.zeus/desktop-attachments/doc.pdf', uploaded: true } as never
       }
 
       return {} as never
@@ -4436,7 +4436,7 @@ describe('usePromptActions new-chat first-send delivery (#63078)', () => {
     let releaseAttach: () => void = () => {}
 
     $connection.set({ mode: 'remote' } as never)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:text/plain;base64,aGVsbG8=') }
     })
@@ -4523,7 +4523,7 @@ describe('usePromptActions new-chat first-send delivery (#63078)', () => {
     let releaseFileAttach: () => void = () => {}
 
     $connection.set({ mode: 'remote' } as never)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:application/pdf;base64,JVBERi0=') }
     })
@@ -4549,7 +4549,7 @@ describe('usePromptActions new-chat first-send delivery (#63078)', () => {
 
         return {
           attached: true,
-          ref_text: '@file:.hermes/desktop-attachments/test.pdf',
+          ref_text: '@file:.zeus/desktop-attachments/test.pdf',
           uploaded: true
         } as never
       }
@@ -5108,7 +5108,7 @@ describe('usePromptActions eager attachment upload (drop-time)', () => {
     // waiting for submit.
     $connection.set({ mode: 'remote' } as never)
     const readFileDataUrl = vi.fn(async () => 'data:application/pdf;base64,JVBERi0=')
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { readFileDataUrl } })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { readFileDataUrl } })
 
     const calls: string[] = []
 
@@ -5118,7 +5118,7 @@ describe('usePromptActions eager attachment upload (drop-time)', () => {
       if (method === 'file.attach') {
         return {
           attached: true,
-          ref_text: '@file:.hermes/desktop-attachments/DEVIS_signed.pdf',
+          ref_text: '@file:.zeus/desktop-attachments/DEVIS_signed.pdf',
           uploaded: true
         } as never
       }
@@ -5138,14 +5138,14 @@ describe('usePromptActions eager attachment upload (drop-time)', () => {
     await waitFor(() => expect($composerAttachments.get()[0]?.attachedSessionId).toBe(RUNTIME_SESSION_ID))
 
     const chip = $composerAttachments.get()[0]!
-    expect(chip.refText).toBe('@file:.hermes/desktop-attachments/DEVIS_signed.pdf')
+    expect(chip.refText).toBe('@file:.zeus/desktop-attachments/DEVIS_signed.pdf')
     expect(chip.uploadState).toBeUndefined()
     expect(readFileDataUrl).toHaveBeenCalledWith('/Users/mahmoud/Downloads/DEVIS_signed.pdf')
   })
 
   it('flags the chip uploadState=error when the eager upload fails, keeping the path so submit can retry', async () => {
     $connection.set({ mode: 'remote' } as never)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { readFileDataUrl: vi.fn(async () => 'data:application/pdf;base64,JVBERi0=') }
     })

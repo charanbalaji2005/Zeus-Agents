@@ -108,7 +108,7 @@ def marker_verdict(raw):
 `
 
 /**
- * POSIX gate: `python3 -c GATE <marker> [payload] [hermes...]`, or the same
+ * POSIX gate: `python3 -c GATE <marker> [payload] [zeus...]`, or the same
  * arguments after `python3 -` with the program on stdin (an empty payload is the
  * probe, which the relaunch gate ships on stdin to keep its ssh argv small).
  * Holds the updaters' kernel lock `<marker>.lock` (A7 rule 1:
@@ -116,10 +116,10 @@ def marker_verdict(raw):
  * marker, and unlinks a dead claim inside that hold only while the install's
  * CHECKOUT lock is free (update_lock._reclaim_dead): a killed updater's
  * completion/build child still holding it answers HELD and keeps the marker.
- * The checkouts probed are `<marker dir>/hermes-agent` plus the checkout of
- * each `hermes` executable argument (`<root>/venv/bin/hermes`, symlinks
+ * The checkouts probed are `<marker dir>/zeus-agents` plus the checkout of
+ * each `zeus` executable argument (`<root>/venv/bin/zeus`, symlinks
  * resolved). Then it either prints the verdict (no payload: the relaunch probe)
- * or runs the payload as `sh -c payload hermes-update-mutex <fd>` still holding
+ * or runs the payload as `sh -c payload zeus-update-mutex <fd>` still holding
  * the lock. A refused payload exits 75 with the verdict on stderr. The probe
  * skips the lock when there is no marker, so it never creates files on a clean host.
  */
@@ -145,8 +145,8 @@ def read_marker():
     except FileNotFoundError:return None
 
 def checkout_lock(root):
-    # hermes_cli/update_lock.py::checkout_lock_path: <git common dir>/hermes-update.lock, else <root>/.hermes-update.lock.
-    plain=os.path.join(root,'.hermes-update.lock');dot=os.path.join(root,'.git')
+    # zeus_cli/update_lock.py::checkout_lock_path: <git common dir>/zeus-update.lock, else <root>/.zeus-update.lock.
+    plain=os.path.join(root,'.zeus-update.lock');dot=os.path.join(root,'.git')
     try:
         if os.path.isdir(dot):gitdir=dot
         elif os.path.isfile(dot):
@@ -158,12 +158,12 @@ def checkout_lock(root):
         if os.path.isfile(common):
             with open(common,encoding='utf-8-sig') as stream:gitdir=os.path.join(gitdir,stream.read().strip())
     except (OSError,ValueError):return plain
-    return os.path.join(os.path.normpath(gitdir),'hermes-update.lock')
+    return os.path.join(os.path.normpath(gitdir),'zeus-update.lock')
 
 def checkout_held():
     # update_lock.checkout_lock_held: take the flock for one try and drop it. A lock file that
     # exists but cannot be opened or probed counts as held: reclaim needs a provably free checkout.
-    roots=[os.path.join(os.path.dirname(marker),'hermes-agent')]
+    roots=[os.path.join(os.path.dirname(marker),'zeus-agents')]
     roots+=[os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(os.path.expanduser(exe))))) for exe in sys.argv[3:] if exe]
     for root in roots:
         try:lock=os.open(checkout_lock(root),os.O_RDONLY|os.O_CLOEXEC)
@@ -187,7 +187,7 @@ if hold(fd):
             except FileNotFoundError:pass
 if payload is None or verdict!='CLEAR':
     print(verdict,file=sys.stderr if payload else sys.stdout);sys.exit(75 if payload else 0)
-sys.exit(subprocess.run(['sh','-c',payload,'hermes-update-mutex',str(fd)],pass_fds=(fd,)).returncode)
+sys.exit(subprocess.run(['sh','-c',payload,'zeus-update-mutex',str(fd)],pass_fds=(fd,)).returncode)
 `
 
 /**
@@ -237,13 +237,13 @@ export const WINDOWS_MARKER_JUDGE_PS = [
  */
 export const WINDOWS_CHECKOUT_LOCK_PS = [
   'function Get-CheckoutLockPath([string]$root){',
-  '$plain=[IO.Path]::Combine($root,".hermes-update.lock");$dot=[IO.Path]::Combine($root,".git");$gitdir=$null',
+  '$plain=[IO.Path]::Combine($root,".zeus-update.lock");$dot=[IO.Path]::Combine($root,".git");$gitdir=$null',
   'try{',
   'if([IO.Directory]::Exists($dot)){$gitdir=$dot}elseif([IO.File]::Exists($dot)){$text=[IO.File]::ReadAllText($dot).Trim();if($text.StartsWith("gitdir:")){$gitdir=[IO.Path]::Combine($root,$text.Substring(7).Trim())}}',
   'if($gitdir){$common=[IO.Path]::Combine($gitdir,"commondir");if([IO.File]::Exists($common)){$gitdir=[IO.Path]::Combine($gitdir,[IO.File]::ReadAllText($common).Trim())}}',
   '}catch{return $plain}',
   'if(-not $gitdir){return $plain}',
-  'return [IO.Path]::GetFullPath([IO.Path]::Combine($gitdir,"hermes-update.lock"))',
+  'return [IO.Path]::GetFullPath([IO.Path]::Combine($gitdir,"zeus-update.lock"))',
   '}',
   'function Test-CheckoutLockHeld([object[]]$roots){',
   'foreach($root in $roots){',

@@ -16,15 +16,15 @@ def homes(tmp_path, monkeypatch):
     launch = tmp_path / 'root'
     bee = launch / 'profiles' / 'bee'
     bee.mkdir(parents=True)
-    monkeypatch.setenv('HERMES_HOME', str(launch))
-    monkeypatch.setattr(server, '_hermes_home', launch)
+    monkeypatch.setenv('ZEUS_HOME', str(launch))
+    monkeypatch.setattr(server, '_zeus_home', launch)
     monkeypatch.setattr(server, '_db', None)
     return server, launch, bee
 
 
 def test_profile_bound_ticket_reads_only_its_own_profile(homes, monkeypatch):
     from gateway.runtime_bootstrap import _PURPOSE_CAPABILITIES
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from tui_gateway.ws_legacy_fallback import dispatch_legacy, legacy_fallback_allowed
     server, launch, bee = homes
     with SessionDB(launch / 'state.db') as db:

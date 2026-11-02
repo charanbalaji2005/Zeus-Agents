@@ -1,8 +1,8 @@
 """Importing a tool module must never open the canonical store.
 
 Only the runtime that owns delegation state (gateway authority, interactive agent) may
-restore durable completions, and only explicitly; an ordinary client CLI (``hermes cron
-run``, ``hermes sessions list``) imports ``tools.process_registry`` transitively and must
+restore durable completions, and only explicitly; an ordinary client CLI (``zeus cron
+run``, ``zeus sessions list``) imports ``tools.process_registry`` transitively and must
 stay a zero-writer against ``state.db``.
 """
 import json
@@ -16,7 +16,7 @@ import pytest
 
 _IMPORT_PROBE = r'''
 import json, os, sys
-home = os.environ["HERMES_HOME"]
+home = os.environ["ZEUS_HOME"]
 connects = []
 sys.addaudithook(lambda ev, a: connects.append(str(a[0])) if ev == "sqlite3.connect" and home in str(a[0]) else None)
 import tools.process_registry  # noqa: F401
@@ -27,8 +27,8 @@ print(json.dumps(connects))
 def test_importing_process_registry_does_not_connect_to_state_db(tmp_path):
     home = tmp_path / "home"
     home.mkdir()
-    env = {k: v for k, v in os.environ.items() if not k.startswith("HERMES_")}
-    env.update(HERMES_HOME=str(home), HOME=str(tmp_path), PYTHONPATH=os.getcwd())
+    env = {k: v for k, v in os.environ.items() if not k.startswith("ZEUS_")}
+    env.update(ZEUS_HOME=str(home), HOME=str(tmp_path), PYTHONPATH=os.getcwd())
     out = subprocess.run([sys.executable, "-c", _IMPORT_PROBE], env=env, capture_output=True, text=True,
                          timeout=120, stdin=subprocess.DEVNULL, check=False)
     assert out.returncode == 0, out.stderr
@@ -45,8 +45,8 @@ async def test_gateway_startup_restores_pending_delegation_completions(tmp_path,
     from tools.process_registry import process_registry
 
     monkeypatch.setattr(ad, "_db_path", lambda: tmp_path / "state.db")
-    monkeypatch.setattr(gateway_run, "_hermes_home", tmp_path)
-    monkeypatch.setattr("hermes_cli.plugins.discover_plugins", lambda: None)
+    monkeypatch.setattr(gateway_run, "_zeus_home", tmp_path)
+    monkeypatch.setattr("zeus_cli.plugins.discover_plugins", lambda: None)
     monkeypatch.setattr("agent.shell_hooks.register_from_config", lambda *a, **k: None)
     monkeypatch.setattr(process_registry, "recover_from_checkpoint", lambda: 0)
     event = {"type": "async_delegation", "delegation_id": "d-owner", "session_key": "OLD", "origin_ui_session_id": "",

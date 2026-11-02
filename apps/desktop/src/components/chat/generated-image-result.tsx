@@ -109,7 +109,7 @@ export const GeneratedImage: FC<{ aspectRatio?: string; result?: unknown }> = ({
               .then(origin => downloadGatewayMediaFile(image, origin))
               .catch(error => notifyError(error, copy.imageDownloadFailed))
           } else {
-            void window.hermesDesktop?.openExternal(mediaExternalUrl(image))
+            void window.zeusDesktop?.openExternal(mediaExternalUrl(image))
           }
         }}
       >

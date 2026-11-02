@@ -20,11 +20,11 @@ def _owner(home, monkeypatch):
     from gateway.session import SessionStore
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
-    import hermes_state_runtime as rt
+    import zeus_state_runtime as rt
     home.mkdir(parents=True, exist_ok=True)
     (home / 'config.yaml').write_text(json.dumps({'model': {'default': 'm'}}))
-    monkeypatch.setenv('HERMES_HOME', str(home))
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setenv('ZEUS_HOME', str(home))
+    monkeypatch.setattr(run, '_zeus_home', home)
     store = SessionStore(home / 'sessions', GatewayConfig())
     db = store._db
     runner = SimpleNamespace(session_store=store, _session_db=db, adapters={}, _draining=False,
@@ -109,8 +109,8 @@ def _set_created(db, sid, value):
 
 def _reset(authority, store, sid, child):
     from gateway.session import SessionEntry
-    from hermes_state_local import local_receipt
-    from hermes_state_local_lineage import reset_local_target
+    from zeus_state_local import local_receipt
+    from zeus_state_local_lineage import reset_local_target
 
     live = authority.sessions[sid]
     store._record_gateway_session_peer(sid, live.route, live.source)
@@ -155,8 +155,8 @@ async def test_reset_copies_the_parent_surface_and_falls_back_to_policy(tmp_path
 async def test_compress_mutation_copies_parent_or_uses_the_policy_surface(tmp_path, monkeypatch):
     """The compress mutation copies the parent's surface. A NULL or ``local`` parent is not a
     surface, so the child falls back to the policy label."""
-    from hermes_state_mutation_compress import compress_in_transaction
-    from hermes_state_mutation_prepared import local_snapshot
+    from zeus_state_mutation_compress import compress_in_transaction
+    from zeus_state_mutation_prepared import local_snapshot
 
     store, authority, owner = _owner(tmp_path / 'home', monkeypatch)
     try:
@@ -182,7 +182,7 @@ async def test_compress_mutation_copies_parent_or_uses_the_policy_surface(tmp_pa
 
 def _listed(db, source, capsys):
     from argparse import Namespace
-    from hermes_cli.sessions_cmd import _cmd_list
+    from zeus_cli.sessions_cmd import _cmd_list
     _cmd_list(db, Namespace(limit=20, source=source, workspace=None))
     return capsys.readouterr().out
 
@@ -255,9 +255,9 @@ async def test_latest_skips_a_newer_empty_launch_stub(tmp_path, monkeypatch, adm
         authority.sessions.clear()
         expected = stub if admission else real
 
-        from hermes_cli.main import _resolve_last_session
-        monkeypatch.setattr('hermes_cli.main._resolve_workspace_key', lambda: None)
-        monkeypatch.setattr('hermes_cli.main.get_hermes_home', lambda: authority.db.db_path.parent)
+        from zeus_cli.main import _resolve_last_session
+        monkeypatch.setattr('zeus_cli.main._resolve_workspace_key', lambda: None)
+        monkeypatch.setattr('zeus_cli.main.get_zeus_home', lambda: authority.db.db_path.parent)
         assert _resolve_last_session('cli') == expected
 
         resumed = await _call(owner, 'session.resume', latest='cli')

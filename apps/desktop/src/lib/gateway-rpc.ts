@@ -1,4 +1,4 @@
-import { JSON_RPC_METHOD_NOT_FOUND } from '@hermes/shared'
+import { JSON_RPC_METHOD_NOT_FOUND } from '@zeus/shared'
 
 /** True when a JSON-RPC call failed because the backend predates the method.
  *  The gateway answers -32601 (`tui_gateway/server.py::dispatch`) and the
@@ -23,7 +23,7 @@ export function isOutOfSyncRpcParams(error: Error | string): boolean {
 /** REST twin of isMissingRpcMethod: the route does not exist on this backend.
  *  Matches the backend catch-all ('404: {"detail":"No such API endpoint: …}'),
  *  FastAPI's bare 404 on headless serve — directly, or wrapped as "Error
- *  invoking remote method 'hermes:api': Error: 404: …" through the IPC bridge
+ *  invoking remote method 'zeus:api': Error: 404: …" through the IPC bridge
  *  — and the Electron JSON-guard ("endpoint is likely missing"). Transient
  *  failures (timeouts, 5xx, connection refused) must NOT match: they are
  *  retryable, not a capability verdict. Only sound for calls where a 404 can
@@ -41,8 +41,8 @@ export function isMissingRestEndpoint(error: unknown): boolean {
 /** Narrow twin of isMissingRestEndpoint for routes with path params: only a
  *  backend catch-all verdict (or the Electron HTML guard) proves the ROUTE is
  *  absent; a handler's own 404 (unknown session/profile) never matches. Two
- *  catch-alls exist: `hermes dashboard` answers unmatched `/api/*` with
- *  "No such API endpoint", and headless `hermes serve` (what Desktop's SSH
+ *  catch-alls exist: `zeus dashboard` answers unmatched `/api/*` with
+ *  "No such API endpoint", and headless `zeus serve` (what Desktop's SSH
  *  remotes launch) answers every unmatched GET with its fixed "web UI disabled"
  *  body. A bare `{"detail":"Not Found"}` is not a route verdict. */
 export function isUnroutedRestPath(error: unknown): boolean {
@@ -50,7 +50,7 @@ export function isUnroutedRestPath(error: unknown): boolean {
 
   return (
     /no such api endpoint|endpoint is likely missing/i.test(message) ||
-    /(?:^\s*|error:\s*)404:.*headless backend \(hermes serve\): web ui disabled/i.test(message)
+    /(?:^\s*|error:\s*)404:.*headless backend \(zeus serve\): web ui disabled/i.test(message)
   )
 }
 
@@ -59,7 +59,7 @@ export function isUnroutedRestPath(error: unknown): boolean {
  *  → HTTP 409 "Exclusive maintenance refused"). The refusal is the steady state
  *  for as long as that gateway runs, so callers treat it as terminal, not
  *  transient. Only the anchored `409: {...}` status marker — bare, or wrapped as
- *  "Error invoking remote method 'hermes:api': Error: 409: …" by the IPC bridge —
+ *  "Error invoking remote method 'zeus:api': Error: 409: …" by the IPC bridge —
  *  counts; a `409` token inside a message body ("Query returned 409 rows", "4096")
  *  never does. */
 export function isOfflineMaintenance(error: unknown): boolean {

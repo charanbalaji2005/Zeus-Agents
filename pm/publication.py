@@ -62,13 +62,13 @@ def validate_manifest(source: Path) -> dict:
 
 class PluginSelection:
     def __init__(self, selection: dict):
-        from hermes_yaml import roundtrip_yaml
+        from zeus_yaml import roundtrip_yaml
         from pm.plugin_eviction import settle_record
 
         self.configs = selection_snapshot()
         self.home = Path(selection["home"]).resolve()
         if not self.home.is_relative_to(dependency_home_root().resolve()):
-            raise ValueError("config path is outside Hermes state")
+            raise ValueError("config path is outside Zeus state")
         self.path = self.home / "config.yaml"
         self.previous = read_bytes_or_none(self.path)  # config-reader: ok — pm publication: byte-level compare-and-swap rewrite of the local file
         expected = selection.get("expected_config")
@@ -145,7 +145,7 @@ class StagedPlugin:
     def publish(self, project: Path) -> None:
         import os
         import uuid
-        from hermes_cli.auth import _file_lock
+        from zeus_cli.auth import _file_lock
         from pm.store import tree_digest
 
         if selection_snapshot() != self.configs:

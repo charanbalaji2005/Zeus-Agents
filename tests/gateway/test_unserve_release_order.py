@@ -14,7 +14,7 @@ async def test_unserve_holds_the_profile_lock_until_its_handles_close(tmp_path, 
     deleter_could_start = []
 
     def close_all_under(directory):
-        # A `hermes profile delete` waiting on the lock rmtree's the home the moment it wins.
+        # A `zeus profile delete` waiting on the lock rmtree's the home the moment it wins.
         try:
             with exclusive_maintenance([home]):
                 deleter_could_start.append(True)
@@ -22,7 +22,7 @@ async def test_unserve_holds_the_profile_lock_until_its_handles_close(tmp_path, 
             deleter_could_start.append(False)
         return 0
 
-    monkeypatch.setattr('hermes_state_registry.close_all_under', close_all_under)
+    monkeypatch.setattr('zeus_state_registry.close_all_under', close_all_under)
     runner = SimpleNamespace(
         _profile_failed_platforms={}, _profile_adapters={}, _served_profile_homes={'gone': home},
         _served_profile_signatures={}, _agent_cache={}, _evict_cached_agent=lambda key: None,

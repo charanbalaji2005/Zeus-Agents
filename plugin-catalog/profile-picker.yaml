@@ -5,7 +5,7 @@ description: "Pick the profile for a new chat right in the composer, next to the
 maintainer: weltmaister
 tier: community
 category: desktop
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/weltmaister/hermes-profile-picker#readme
 version: "1.1.0"
 platforms: []

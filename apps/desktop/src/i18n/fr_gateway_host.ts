@@ -4,12 +4,12 @@ import type { GatewayHostTranslations } from './types_gateway_host'
 export const frGatewayHost: GatewayHostTranslations = {
   unavailableTitle: 'Paramètres du gateway indisponibles',
   unavailableDesc: "Le pont IPC du desktop n'expose pas les paramètres du gateway.",
-  webappHostTitle: 'Hôte Hermes',
+  webappHostTitle: 'Hôte Zeus',
   webappHostDesc:
-    "La Webapp utilise toujours l'hôte Hermes qui la sert. Pour changer de gateway, vous connecter à Hermes Cloud ou gérer les connexions enregistrées, utilisez l'application Hermes Desktop.",
+    "La Webapp utilise toujours l'hôte Zeus qui la sert. Pour changer de gateway, vous connecter à Zeus Cloud ou gérer les connexions enregistrées, utilisez l'application Zeus Desktop.",
   webAccess: {
     title: 'Accès web',
-    intro: "Ouvrez Hermes sur cet ordinateur depuis votre téléphone ou un autre ordinateur, avec votre compte Nous. Toute personne connectée peut exécuter des commandes sur cet ordinateur.",
+    intro: "Ouvrez Zeus sur cet ordinateur depuis votre téléphone ou un autre ordinateur, avec votre compte Nous. Toute personne connectée peut exécuter des commandes sur cet ordinateur.",
     failed: "Impossible de modifier l'accès web",
     running: 'En cours',
     stopped: 'Arrêté',
@@ -17,7 +17,7 @@ export const frGatewayHost: GatewayHostTranslations = {
     stopping: 'Arrêt en cours',
     restartNeeded: 'Redémarrage requis',
     unavailable: 'Indisponible',
-    notRunningDetail: 'Démarrez-le pour ouvrir Hermes depuis un autre appareil.',
+    notRunningDetail: 'Démarrez-le pour ouvrir Zeus depuis un autre appareil.',
     needsNous: "Connectez-vous d'abord à votre compte Nous dans Fournisseurs.",
     runningLan: 'Ouvrez cette adresse sur un appareil du même réseau.',
     runningPublic: 'Servi via votre URL.',

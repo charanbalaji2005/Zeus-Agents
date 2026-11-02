@@ -1,7 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { installBrowserDesktopBridge } from '@/lib/browser-desktop-bridge'
 import { createClientSessionState } from '@/lib/chat-runtime'
 import { $sidebarShowArchived } from '@/store/layout'
@@ -47,7 +47,7 @@ function render(
         refreshActiveTranscript: noop,
         refreshCronJobs: noop,
         refreshCurrentModel: noop,
-        refreshHermesConfig: noop,
+        refreshZeusConfig: noop,
         refreshMessagingSessions: noop,
         refreshSessions,
         requestGateway: gatewayRequest
@@ -142,9 +142,9 @@ describe('useBackgroundSync live-status poll with no session open', () => {
   // A profile picked on top of the shared primary socket (a Webapp tab's live pick, a global remote)
   // is a view of that socket: a request that names no profile is answered for the socket's own
   // profile, so the sidebar dot would show that profile's turns instead of the selected one's.
-  const sharedResearch = { profile: 'research', sharedPrimary: true } as HermesConnection
+  const sharedResearch = { profile: 'research', sharedPrimary: true } as ZeusConnection
 
-  async function polledParams(connection: HermesConnection | null) {
+  async function polledParams(connection: ZeusConnection | null) {
     $connection.set(connection)
     const request = vi.fn(async (_method: string, _params?: Record<string, unknown>) => ({ sessions: [] }))
     render('research', 'local', async () => undefined, request as typeof requestGateway)
@@ -179,7 +179,7 @@ describe('useBackgroundSync live-status poll with no session open', () => {
   })
 
   it('names no profile on a socket of the selected profile’s own', async () => {
-    expect(await polledParams({ profile: 'research' } as HermesConnection)).toEqual([{}])
+    expect(await polledParams({ profile: 'research' } as ZeusConnection)).toEqual([{}])
     cleanup()
     expect(await polledParams(null)).toEqual([{}])
   })
@@ -187,14 +187,14 @@ describe('useBackgroundSync live-status poll with no session open', () => {
   // A reconnect re-resolves the socket's own route and publishes the primary's descriptor
   // (sharedPrimary false) while the picked profile stays selected; the poll must still name it.
   it('keeps naming the picked profile after a reconnect republishes the primary descriptor', async () => {
-    const win = window as unknown as Window & { __HERMES_DASHBOARD_PROFILE__?: string }
-    win.__HERMES_DASHBOARD_PROFILE__ = 'default'
+    const win = window as unknown as Window & { __ZEUS_DASHBOARD_PROFILE__?: string }
+    win.__ZEUS_DASHBOARD_PROFILE__ = 'default'
     seedWebappSession('served-token')
     window.history.replaceState(null, '', '/?profile=research#/')
 
     try {
       expect(installBrowserDesktopBridge()).toBe(true)
-      const desktop = window.hermesDesktop!
+      const desktop = window.zeusDesktop!
 
       const request = vi.fn(async (_method: string, _params?: Record<string, unknown>) => ({ sessions: [] }))
       $connection.set(await desktop.getConnection('research'))
@@ -212,9 +212,9 @@ describe('useBackgroundSync live-status poll with no session open', () => {
         request.mock.calls.filter(([method]) => method === 'session.active_list').map(([, params]) => params)
       ).toEqual([{ profile: 'research' }, { profile: 'research' }])
     } finally {
-      delete win.__HERMES_DASHBOARD_PROFILE__
+      delete win.__ZEUS_DASHBOARD_PROFILE__
       clearWebappSession()
-      Reflect.deleteProperty(window, 'hermesDesktop')
+      Reflect.deleteProperty(window, 'zeusDesktop')
       window.history.replaceState(null, '', '/#/')
     }
   })
@@ -225,17 +225,17 @@ describe('useBackgroundSync live-status poll with no session open', () => {
     // descriptor to an unflagged local one.
     const getConnection = vi.fn(async (profile?: string) =>
       profile === 'research'
-        ? ({ mode: 'local', profile: 'research', sharedPrimary: true } as HermesConnection)
-        : ({ mode: 'local', profile: 'default' } as HermesConnection)
+        ? ({ mode: 'local', profile: 'research', sharedPrimary: true } as ZeusConnection)
+        : ({ mode: 'local', profile: 'default' } as ZeusConnection)
     )
 
     beforeEach(() => {
       getConnection.mockClear()
-      Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { getConnection } })
+      Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { getConnection } })
     })
 
     afterEach(() => {
-      Reflect.deleteProperty(window, 'hermesDesktop')
+      Reflect.deleteProperty(window, 'zeusDesktop')
     })
 
     it('keeps naming the picked profile after a reconnect republishes the primary local descriptor', async () => {
@@ -256,7 +256,7 @@ describe('useBackgroundSync live-status poll with no session open', () => {
     })
 
     it('names no profile and asks main nothing on the selected profile’s own local descriptor', async () => {
-      expect(await polledParams({ mode: 'local', profile: 'research' } as HermesConnection)).toEqual([{}])
+      expect(await polledParams({ mode: 'local', profile: 'research' } as ZeusConnection)).toEqual([{}])
       expect(getConnection).not.toHaveBeenCalled()
     })
   })
@@ -337,7 +337,7 @@ describe('useBackgroundSync keeps a quiet working turn live', () => {
     render('default', 'local', async () => undefined, request)
     await act(async () => undefined)
     request.mockImplementation(async () => {
-      throw new Error('Hermes gateway unavailable')
+      throw new Error('Zeus gateway unavailable')
     })
 
     await act(async () => {

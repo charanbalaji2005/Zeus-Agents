@@ -4,7 +4,7 @@ import path from 'node:path'
 
 import { app } from 'electron'
 
-import { resolveDesktopHermesHome } from './data-paths'
+import { resolveDesktopZeusHome } from './data-paths'
 import { releasePackagedWorkingDirectory } from './packaged-working-directory'
 import { readDesktopLaunchConfig } from './renderer-heap-flags'
 import { restoreUserProxyEnv } from './updater/system-proxy-env'
@@ -15,23 +15,23 @@ import { spawnWslgLaunch } from './wslg-launch-process'
 // Start-Process) must not keep the system proxy the update's children were given.
 restoreUserProxyEnv(process.env)
 
-// `hermes desktop` asks this binary whether Chromium's namespace sandbox starts under the host's
+// `zeus desktop` asks this binary whether Chromium's namespace sandbox starts under the host's
 // AppArmor policy (#130177). Chromium creates its sandboxed zygote before any JS runs, so reaching
 // this line answers yes; exit before any window, single-instance lock, backend or relaunch.
-if (process.argv.includes('--hermes-sandbox-probe')) {
+if (process.argv.includes('--zeus-sandbox-probe')) {
   process.exit(0)
 }
 
 // Run before main creates windows/IME integrations or spawns resident helpers.
-// Closing Hermes cannot release a CWD inherited by an out-of-tree process.
-releasePackagedWorkingDirectory(app.isPackaged || Boolean(process.env.HERMES_DESKTOP_IS_PACKAGED))
+// Closing Zeus cannot release a CWD inherited by an out-of-tree process.
+releasePackagedWorkingDirectory(app.isPackaged || Boolean(process.env.ZEUS_DESKTOP_IS_PACKAGED))
 
 function configuredElectronFlags(env: NodeJS.ProcessEnv): string[] {
   // Resolve the home exactly like main.ts does, through the shared resolver:
-  // HERMES_DATA_DIR_SUFFIX channel installs and profiles/-rooted HERMES_HOME
+  // ZEUS_DATA_DIR_SUFFIX channel installs and profiles/-rooted ZEUS_HOME
   // values must pick the same config.yaml before the relaunch and inside the
   // app, or desktop.electron_flags silently never reaches the relaunch.
-  const home = resolveDesktopHermesHome({
+  const home = resolveDesktopZeusHome({
     home: os.homedir(),
     env,
     // Linux-only pre-launch path; the win32 legacy-migration probe is never
@@ -82,7 +82,7 @@ if (args) {
   const child = spawnWslgLaunch(args)
 
   child.once('error', error => {
-    console.error('[hermes] Wayland ozone launch failed:', error)
+    console.error('[zeus] Wayland ozone launch failed:', error)
     app.exit(1)
   })
   child.once('exit', code => app.exit(code ?? 1))

@@ -43,7 +43,7 @@ afterEach(() => {
   cleanup()
   $reactionsEnabled.set(false)
   $touchPointer.set(false)
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 describe('user message reactions by pointer', () => {
@@ -51,7 +51,7 @@ describe('user message reactions by pointer', () => {
   // Copy), but a mouse plugged into that device right-clicks the way it does anywhere else: the
   // reaction picker opens.
   it('opens the reaction picker on a mouse right-click in a touch-layout browser tab', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     $touchPointer.set(true)
     render(<Harness />)
 
@@ -62,7 +62,7 @@ describe('user message reactions by pointer', () => {
   })
 
   it('leaves a touch long-press in a touch-layout browser tab to the platform', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     $touchPointer.set(true)
     render(<Harness />)
 

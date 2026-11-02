@@ -20,8 +20,8 @@ const exec = promisify(execCallback)
 test.runIf(process.platform === 'linux')(
   'POSIX relaunch gate clears a dead v2 claim but keeps one a live delegate or held mutex still guards',
   async () => {
-    const home = await mkdtemp(path.join(os.tmpdir(), 'hermes-v2-marker-'))
-    const marker = path.join(home, '.hermes-update-in-progress')
+    const home = await mkdtemp(path.join(os.tmpdir(), 'zeus-v2-marker-'))
+    const marker = path.join(home, '.zeus-update-in-progress')
     const shell = (await exec('command -v bash')).stdout.trim()
     const ssh = shellSshDouble({ shell })
     const exited = spawn(process.execPath, ['-e', ''])
@@ -31,7 +31,7 @@ test.runIf(process.platform === 'linux')(
     // A delegate is live only at its real creation time (the judge checks pid AND ct, so a reused
     // pid cannot impersonate it): record the spawn time, well inside the 2 s tolerance.
     const delegateCt = (Date.now() / 1000).toFixed(3)
-    const delegate = spawn('sleep', ['30'], { argv0: 'hermes-update', stdio: 'ignore' })
+    const delegate = spawn('sleep', ['30'], { argv0: 'zeus-update', stdio: 'ignore' })
     let mutexHolder: ReturnType<typeof spawn> | undefined
 
     const refused = (error: any) => error.kind === 'update-in-progress'
@@ -75,10 +75,10 @@ test.runIf(process.platform === 'linux')(
 test.runIf(process.platform === 'linux')(
   'POSIX relaunch gate and managed observer read every corpus marker shape like update_lock',
   async () => {
-    const home = await mkdtemp(path.join(os.tmpdir(), 'hermes-v2-shapes-'))
-    const marker = path.join(home, '.hermes-update-in-progress')
+    const home = await mkdtemp(path.join(os.tmpdir(), 'zeus-v2-shapes-'))
+    const marker = path.join(home, '.zeus-update-in-progress')
     const ssh = shellSshDouble()
-    const target = { ssh, platform: 'Linux', hermesPath: '/opt/hermes/hermes', hermesHome: home }
+    const target = { ssh, platform: 'Linux', zeusPath: '/opt/zeus/zeus', zeusHome: home }
     const correlation = randomUUID()
 
     const observe = async () =>

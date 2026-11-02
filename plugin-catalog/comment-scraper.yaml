@@ -7,7 +7,7 @@ description: "Ask about the Reddit and Hacker News threads you exported with the
 maintainer: Comment Scraper
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://comment-scraper.com/docs
 version: "0.1.0"
 image: https://raw.githubusercontent.com/supertj/comment-scraper-mcp/fd739bc532f351d22f056ff74bf48a1a14beca7f/plugin/assets/icon.png

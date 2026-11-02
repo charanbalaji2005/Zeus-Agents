@@ -8,7 +8,7 @@ maintainer: aidatatools-dev
 tier: community
 category: tools
 docs_url: https://github.com/aidatatools-dev/astro-agents-mcp
-requires_hermes: ">=0.22.5"
+requires_zeus: ">=0.22.5"
 readme: true
 platforms: []
 capabilities:

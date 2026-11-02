@@ -90,10 +90,10 @@ describe('decideLinuxGpuLaunch', () => {
     expect(second.reason).toContain('boot-loop')
   })
 
-  it('HERMES_DESKTOP_DISABLE_GPU=0 keeps the GPU on and clears the stale fallback marker', () => {
+  it('ZEUS_DESKTOP_DISABLE_GPU=0 keeps the GPU on and clears the stale fallback marker', () => {
     const decision = decideLinuxGpuLaunch({
       ...LINUX,
-      env: { HERMES_DESKTOP_DISABLE_GPU: '0' },
+      env: { ZEUS_DESKTOP_DISABLE_GPU: '0' },
       marker: { state: 'fallback', reason: 'gpu-launch-failure', version: '0.21.5' }
     })
 
@@ -295,7 +295,7 @@ describe('linuxGpuChildDeathPath', () => {
 
 describe('disableGpuSwitchNeededForReason', () => {
   it('spawn-blocks the GPU process only for the explicit env override', () => {
-    expect(disableGpuSwitchNeededForReason('override (HERMES_DESKTOP_DISABLE_GPU)')).toBe(true)
+    expect(disableGpuSwitchNeededForReason('override (ZEUS_DESKTOP_DISABLE_GPU)')).toBe(true)
     expect(disableGpuSwitchNeededForReason('ssh-session')).toBe(false)
     expect(disableGpuSwitchNeededForReason('vnc-session')).toBe(false)
     expect(disableGpuSwitchNeededForReason(null)).toBe(false)

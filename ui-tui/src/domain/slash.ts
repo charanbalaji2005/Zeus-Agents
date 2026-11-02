@@ -1,7 +1,7 @@
 /** Appended by TUI pickers; converted to the backend's `--session` flag before `config.set`. */
 export const TUI_SESSION_MODEL_FLAG = '--tui-session'
 
-/** The levels `hermes_constants.parse_reasoning_effort` accepts; the display words are config.yaml
+/** The levels `zeus_constants.parse_reasoning_effort` accepts; the display words are config.yaml
  *  writes. */
 export const CANONICAL_REASONING_EFFORTS = new Set([
   'none',

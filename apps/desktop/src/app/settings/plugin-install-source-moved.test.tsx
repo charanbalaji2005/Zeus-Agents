@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
@@ -15,7 +15,7 @@ const { requestGateway } = vi.hoisted(() => ({
 vi.mock('@/app/gateway/hooks/use-gateway-request', () => ({
   useGatewayRequest: () => ({ requestGateway })
 }))
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getProfiles: async () => ({ profiles: [] })
 }))
@@ -60,12 +60,12 @@ afterEach(() => {
   cleanup()
   closePluginInstallRequest()
   vi.unstubAllGlobals()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 describe('Install after the source moved past the reviewed commit', () => {
   it('browser-hosted: re-inspects, shows the new commit, and installs that one instead of resending the old', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     let tip = V1
 
     requestGateway.mockImplementation(async (method, params) => {
@@ -108,7 +108,7 @@ describe('Install after the source moved past the reviewed commit', () => {
   })
 
   it('an ordinary install failure still offers Retry and never re-inspects', async () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     requestGateway.mockImplementation(async (method, params) => {
       if (method === 'plugins.manage' && params?.action === 'inspect') {
         return { ok: true, agent: true, agent_name: 'pkg', desktop: false, sha: V1, warnings: [] }
@@ -142,7 +142,7 @@ describe('Install after the source moved past the reviewed commit', () => {
       .mockResolvedValueOnce({ ok: false, sourceMoved: true, error: 'The commit you reviewed could not be checked out.' })
       .mockResolvedValueOnce({ ok: true, pluginName: 'ui' })
 
-    vi.stubGlobal('hermesDesktop', { installDesktopPlugin, probePluginRepo })
+    vi.stubGlobal('zeusDesktop', { installDesktopPlugin, probePluginRepo })
 
     renderModal()
     act(() => openPluginInstallRequest({ repo: REPO }))

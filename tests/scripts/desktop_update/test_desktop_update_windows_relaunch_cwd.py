@@ -31,13 +31,13 @@ def test_relaunched_desktop_does_not_hold_its_app_folder(tmp_path: Path) -> None
         directory.mkdir(parents=True)
     # A console exe with no arguments waits on its own console: a stand-in Desktop
     # that stays alive until the test kills it.
-    relaunch = app_dir / 'Hermes.exe'
+    relaunch = app_dir / 'Zeus.exe'
     shutil.copy2(Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32' / 'cmd.exe', relaunch)
 
     result = subprocess.run(
         ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
-         '-InstallRoot', str(home / 'hermes-agent'), '-NoUi', '-SelfTestMarker', '-RelaunchExe', str(relaunch)],
-        cwd=home, env={**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(home / 'empty-store'),
+         '-InstallRoot', str(home / 'zeus-agents'), '-NoUi', '-SelfTestMarker', '-RelaunchExe', str(relaunch)],
+        cwd=home, env={**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(home / 'empty-store'),
                        'USERPROFILE': str(profile)},
         capture_output=True, text=True, timeout=180, check=False,
     )

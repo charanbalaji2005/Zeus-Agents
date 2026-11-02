@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Canonical test runner for hermes-agent. Run this instead of calling
+# Canonical test runner for zeus-agents. Run this instead of calling
 # `pytest` directly to guarantee your local run matches CI behavior.
 #
 # What this script enforces:
@@ -11,7 +11,7 @@
 #   * Env vars blanked (conftest.py also does this, but this
 #     is belt-and-suspenders for anyone running pytest outside our
 #     conftest path — e.g. on a single file)
-#   * The checkout's test environment (via scripts/run-in-hermes-env when needed)
+#   * The checkout's test environment (via scripts/run-in-zeus-env when needed)
 #
 # Usage:
 #   scripts/run_tests.sh                            # full suite
@@ -40,16 +40,16 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # ── Locate python ───────────────────────────────────────────────────────────
 # The suite runs under the checkout's isolated test environment (pm.testenv),
 # and only there: unless the inherited environment is current for this
-# checkout, this script re-executes itself under scripts/run-in-hermes-env,
+# checkout, this script re-executes itself under scripts/run-in-zeus-env,
 # which syncs and applies it. That holds however the script is launched
 # (`scripts/run_tests.sh`, `bash scripts/run_tests.sh`, from CI or a shell), so
 # a branch switch or lock edit never runs the suite against the previous
 # dependency set.
 #
-# Without an activation, an explicit HERMES_PYTHON that has pytest is honored:
+# Without an activation, an explicit ZEUS_PYTHON that has pytest is honored:
 # the Nix devShell's editable venv and CI's minimal installer lanes provide
-# one on purpose. The import check matters: a wrapped `hermes` binary exports
-# HERMES_PYTHON pointing at a release venv without pytest.
+# one on purpose. The import check matters: a wrapped `zeus` binary exports
+# ZEUS_PYTHON pointing at a release venv without pytest.
 _has_pytest() { [ -n "$1" ] && [ -x "$1" ] && "$1" -c 'import pytest' 2>/dev/null; }
 # shellcheck source=scripts/_activation.sh
 . "$SCRIPT_DIR/_activation.sh"
@@ -60,63 +60,63 @@ _has_pytest() { [ -n "$1" ] && [ -x "$1" ] && "$1" -c 'import pytest' 2>/dev/nul
 # records this checkout's pins (_store_has_pins). The check runs unlocked
 # before `pm install` takes the store's install lock, so it keeps runs that
 # START on different pins apart; it does not cover the window in between, where
-# the account's own `hermes update` (or a run on other pins) can re-point
+# the account's own `zeus update` (or a run on other pins) can re-point
 # facts.json and this run's `pm install` then re-stages its pins over them.
-# Only this runner's own provisioning gets HERMES_RUNTIME_DIR: the pytest
+# Only this runner's own provisioning gets ZEUS_RUNTIME_DIR: the pytest
 # children below start from `env -i` without it, so tests that exercise setup,
 # install or update resolve their own stores. Their PATH still holds the
 # account store's tool dirs, so a test writing through a PATH tool
 # (`pip install`, `npm -g`) would write into the account store. An explicit
-# HERMES_RUNTIME_DIR, a custom HERMES_HOME, a home that already holds a store,
+# ZEUS_RUNTIME_DIR, a custom ZEUS_HOME, a home that already holds a store,
 # or an account without a usable store keep today's per-home layout.
 # Prints the account home, then the pinned Python minor.
 _account_tool_store() {
   local account py_minor
-  [ -z "${HERMES_RUNTIME_DIR:-}" ] || return 1
-  case "${HERMES_HOME:-}" in "" | "$HOME/.hermes" | "$HOME/.hermes/"*) ;; *) return 1 ;; esac
-  [ ! -f "$HOME/.hermes/tools/facts.json" ] || return 1
+  [ -z "${ZEUS_RUNTIME_DIR:-}" ] || return 1
+  case "${ZEUS_HOME:-}" in "" | "$HOME/.zeus" | "$HOME/.zeus/"*) ;; *) return 1 ;; esac
+  [ ! -f "$HOME/.zeus/tools/facts.json" ] || return 1
   account="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)"
   [ -n "$account" ] || account="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | sed -n 's/^NFSHomeDirectory: *//p')"
   [ -n "$account" ] && [ -d "$account" ] && [ ! "$account" -ef "$HOME" ] || return 1
-  [ -f "$account/.hermes/tools/facts.json" ] && [ -w "$account/.hermes/tools" ] || return 1
-  py_minor="$(_store_has_pins "$account/.hermes/tools")" || return 1
+  [ -f "$account/.zeus/tools/facts.json" ] && [ -w "$account/.zeus/tools" ] || return 1
+  py_minor="$(_store_has_pins "$account/.zeus/tools")" || return 1
   printf '%s\n%s\n' "$account" "$py_minor"
 }
 # Read-only check that the store already records this checkout's pins
 # (scripts/tool_store_pins.py says why and what counts); prints the Python minor.
 _store_has_pins() {
   local python
-  python="$(HERMES_RUNTIME_DIR="$1" hermes_bootstrap_python "$REPO_ROOT")" || return 1
+  python="$(ZEUS_RUNTIME_DIR="$1" zeus_bootstrap_python "$REPO_ROOT")" || return 1
   PYTHONHOME= "$python" -I -B "$REPO_ROOT/scripts/tool_store_pins.py" "$REPO_ROOT" "$1" 2>/dev/null
 }
 if _shared="$(_account_tool_store)"; then
   _account="${_shared%%$'\n'*}"
-  export HERMES_RUNTIME_DIR="$_account/.hermes/tools"
-  # setup-hermes.sh's uv-managed bootstrap interpreter is the same kind of
+  export ZEUS_RUNTIME_DIR="$_account/.zeus/tools"
+  # setup-zeus.sh's uv-managed bootstrap interpreter is the same kind of
   # cache, but only reused: a missing pinned minor would download into it.
   if [ -z "${UV_PYTHON_INSTALL_DIR:-}" ] && [ -w "$_account/.local/share/uv/python" ] \
       && compgen -G "$_account/.local/share/uv/python/cpython-${_shared#*$'\n'}[.-]*" >/dev/null; then
     export UV_PYTHON_INSTALL_DIR="$_account/.local/share/uv/python"
   fi
-  echo "▶ faked HOME: using the account's tool store $HERMES_RUNTIME_DIR"
+  echo "▶ faked HOME: using the account's tool store $ZEUS_RUNTIME_DIR"
 fi
 unset _account _shared
-if [ -z "${__HERMES_ACTIVATED:-}" ] && _has_pytest "${HERMES_PYTHON:-}"; then
-  PYTHON="$HERMES_PYTHON"
-  echo "▶ not activated — using HERMES_PYTHON: $PYTHON"
+if [ -z "${__ZEUS_ACTIVATED:-}" ] && _has_pytest "${ZEUS_PYTHON:-}"; then
+  PYTHON="$ZEUS_PYTHON"
+  echo "▶ not activated — using ZEUS_PYTHON: $PYTHON"
 else
-  if ! hermes_activation_current "$REPO_ROOT"; then
-    if [ -n "${__HERMES_TESTS_REEXEC:-}" ]; then
-      echo "error: run-in-hermes-env did not produce a current environment for $REPO_ROOT" >&2
+  if ! zeus_activation_current "$REPO_ROOT"; then
+    if [ -n "${__ZEUS_TESTS_REEXEC:-}" ]; then
+      echo "error: run-in-zeus-env did not produce a current environment for $REPO_ROOT" >&2
       exit 1
     fi
-    echo "▶ environment missing or stale for $REPO_ROOT — re-running under run-in-hermes-env" >&2
-    export __HERMES_TESTS_REEXEC=1
-    exec "$SCRIPT_DIR/run-in-hermes-env" "$BASH" "${BASH_SOURCE[0]}" "$@"
+    echo "▶ environment missing or stale for $REPO_ROOT — re-running under run-in-zeus-env" >&2
+    export __ZEUS_TESTS_REEXEC=1
+    exec "$SCRIPT_DIR/run-in-zeus-env" "$BASH" "${BASH_SOURCE[0]}" "$@"
   fi
-  PYTHON="${__HERMES_TEST_PYTHON:-}"
+  PYTHON="${__ZEUS_TEST_PYTHON:-}"
   if ! _has_pytest "$PYTHON"; then
-    echo "error: activation provided no test interpreter with pytest (__HERMES_TEST_PYTHON=${PYTHON:-unset})" >&2
+    echo "error: activation provided no test interpreter with pytest (__ZEUS_TEST_PYTHON=${PYTHON:-unset})" >&2
     exit 1
   fi
 fi
@@ -125,8 +125,8 @@ fi
 # ── Live-gateway plugin (computed before we drop env) ───────────────────────
 EXTRA_PYTHONPATH=""
 EXTRA_PYTEST_PLUGINS=""
-if [ -f "$HOME/.hermes/pytest_live_guard.py" ]; then
-  EXTRA_PYTHONPATH="$HOME/.hermes"
+if [ -f "$HOME/.zeus/pytest_live_guard.py" ]; then
+  EXTRA_PYTHONPATH="$HOME/.zeus"
   EXTRA_PYTEST_PLUGINS="pytest_live_guard"
 fi
 
@@ -173,46 +173,46 @@ _pf86="$(env | sed -n 's/^ProgramFiles(x86)=//p' | head -n1)"
 # The runner's own documented environment knobs must survive the hermetic
 # `env -i` below, or they are silent no-ops for anyone invoking this script:
 #
-#   * HERMES_TEST_WORKERS / PATHS / FILE_TIMEOUT / FILE_RETRIES / SLICE are
+#   * ZEUS_TEST_WORKERS / PATHS / FILE_TIMEOUT / FILE_RETRIES / SLICE are
 #     read by run_tests_parallel.py at argparse-default time — inside the
 #     stripped environment.
-#   * HERMES_TEST_IMAGE is read by tests/docker/conftest.py to skip its
+#   * ZEUS_TEST_IMAGE is read by tests/docker/conftest.py to skip its
 #     session-scoped `docker build`. CI's docker.yml sets it to the image
 #     the build step just loaded; stripping it made every per-file pytest
 #     subprocess rebuild the 5GB image from a cold builder cache instead
 #     (~4 min per worker per run, and the rebuilt image lacked the
-#     HERMES_GIT_SHA build-arg the workflow bakes in).
-#   * HERMES_E2E_REQUIRE_TUI turns a missing Ink TUI build into a failure in
+#     ZEUS_GIT_SHA build-arg the workflow bakes in).
+#   * ZEUS_E2E_REQUIRE_TUI turns a missing Ink TUI build into a failure in
 #     tests/e2e/core/terminal instead of a skip (set by the e2e CI job).
 #   * CI / GITHUB_ACTIONS tell suites they run on a disposable runner (e.g.
 #     tests/e2e/core/upgrade runs the real updater unsandboxed only there).
-#   * HERMES_E2E_WINDOWS_INSTALL opts tests/e2e/core/windows_update into running
-#     the real install.ps1 (it writes HKCU PATH); HERMES_E2E_MACHINE_ROOT,
-#     HERMES_E2E_PROFILES_ROOT and HERMES_E2E_ARTIFACTS place its fake machines,
+#   * ZEUS_E2E_WINDOWS_INSTALL opts tests/e2e/core/windows_update into running
+#     the real install.ps1 (it writes HKCU PATH); ZEUS_E2E_MACHINE_ROOT,
+#     ZEUS_E2E_PROFILES_ROOT and ZEUS_E2E_ARTIFACTS place its fake machines,
 #     their user profiles and the transcripts CI uploads.
-#   * HERMES_E2E_STRICT_ACCEPTANCE makes tests/e2e/core/_pending_fixes.py's
+#   * ZEUS_E2E_STRICT_ACCEPTANCE makes tests/e2e/core/_pending_fixes.py's
 #     known gaps hard failures in an acceptance run (workflow dispatch input).
-#   * HERMES_TEST_SSH_HOST / _USER / _PORT / _KEY and HERMES_TEST_DOCKER_IMAGE
+#   * ZEUS_TEST_SSH_HOST / _USER / _PORT / _KEY and ZEUS_TEST_DOCKER_IMAGE
 #     arm the real-backend tests (tests/tools/test_ssh_environment.py,
 #     tests/tools/test_docker_backend_real.py); remote-backends.yml points them at
 #     a throwaway sshd container and a small public image. The key is a
 #     per-run throwaway, never a credential.
 #
 # These are test-infrastructure knobs, not credentials — same class as the
-# HERMES_RUN_SLOW_PET_TESTS / HERMES_E2E_BROWSER / HERMES_RUN_E2E opt-ins
+# ZEUS_RUN_SLOW_PET_TESTS / ZEUS_E2E_BROWSER / ZEUS_RUN_E2E opt-ins
 # forwarded below.
 # SSL_CERT_FILE/DIR are trust-store locations: the pinned interpreter's
 # OpenSSL has no compiled-in bundle path on NixOS, so network tests (PM
 # downloads, channel reads) need the host's pointer to verify TLS.
-# Keep this an explicit allowlist (no HERMES_TEST_* glob) so the "no
+# Keep this an explicit allowlist (no ZEUS_TEST_* glob) so the "no
 # credential can leak" property stays auditable at a glance.
 TEST_ENV=()
-for _test_var in HERMES_TEST_IMAGE HERMES_TEST_WORKERS HERMES_TEST_PATHS \
-  HERMES_TEST_FILE_TIMEOUT HERMES_TEST_FILE_RETRIES HERMES_TEST_SLICE \
-  SSL_CERT_FILE SSL_CERT_DIR HERMES_GATEWAY_LOCK_DIR HERMES_E2E_REQUIRE_TUI CI GITHUB_ACTIONS \
-  HERMES_E2E_WINDOWS_INSTALL HERMES_E2E_MACHINE_ROOT HERMES_E2E_PROFILES_ROOT HERMES_E2E_ARTIFACTS \
-  HERMES_E2E_STRICT_ACCEPTANCE HERMES_TEST_SSH_HOST HERMES_TEST_SSH_USER HERMES_TEST_SSH_PORT \
-  HERMES_TEST_SSH_KEY HERMES_TEST_DOCKER_IMAGE; do
+for _test_var in ZEUS_TEST_IMAGE ZEUS_TEST_WORKERS ZEUS_TEST_PATHS \
+  ZEUS_TEST_FILE_TIMEOUT ZEUS_TEST_FILE_RETRIES ZEUS_TEST_SLICE \
+  SSL_CERT_FILE SSL_CERT_DIR ZEUS_GATEWAY_LOCK_DIR ZEUS_E2E_REQUIRE_TUI CI GITHUB_ACTIONS \
+  ZEUS_E2E_WINDOWS_INSTALL ZEUS_E2E_MACHINE_ROOT ZEUS_E2E_PROFILES_ROOT ZEUS_E2E_ARTIFACTS \
+  ZEUS_E2E_STRICT_ACCEPTANCE ZEUS_TEST_SSH_HOST ZEUS_TEST_SSH_USER ZEUS_TEST_SSH_PORT \
+  ZEUS_TEST_SSH_KEY ZEUS_TEST_DOCKER_IMAGE; do
   if [ -n "${!_test_var:-}" ]; then
     TEST_ENV+=("$_test_var=${!_test_var}")
   fi
@@ -221,7 +221,7 @@ done
 # ── Run in hermetic env ──────────────────────────────────────────────────────
 # env -i: start with empty environment, opt-in only what we need.
 # No credential var can leak — you'd have to explicitly add it here.
-# Never forward HERMES_RUNTIME_DIR or UV_PYTHON_INSTALL_DIR: under a faked HOME
+# Never forward ZEUS_RUNTIME_DIR or UV_PYTHON_INSTALL_DIR: under a faked HOME
 # they point at the account's shared stores (see _account_tool_store).
 echo "▶ running per-file parallel test suite via run_tests_parallel.py"
 echo "  (TZ=UTC LANG=C.UTF-8 PYTHONHASHSEED=0; clean env)"
@@ -247,9 +247,9 @@ exec env -i \
   LC_ALL=C.UTF-8 \
   PYTHONHASHSEED=0 \
   PYTHONUTF8=1 \
-  ${HERMES_RUN_SLOW_PET_TESTS:+HERMES_RUN_SLOW_PET_TESTS="$HERMES_RUN_SLOW_PET_TESTS"} \
-  ${HERMES_E2E_BROWSER:+HERMES_E2E_BROWSER="$HERMES_E2E_BROWSER"} \
-  ${HERMES_RUN_E2E:+HERMES_RUN_E2E="$HERMES_RUN_E2E"} \
+  ${ZEUS_RUN_SLOW_PET_TESTS:+ZEUS_RUN_SLOW_PET_TESTS="$ZEUS_RUN_SLOW_PET_TESTS"} \
+  ${ZEUS_E2E_BROWSER:+ZEUS_E2E_BROWSER="$ZEUS_E2E_BROWSER"} \
+  ${ZEUS_RUN_E2E:+ZEUS_RUN_E2E="$ZEUS_RUN_E2E"} \
   ${EXTRA_PYTHONPATH:+PYTHONPATH="$EXTRA_PYTHONPATH"} \
   ${EXTRA_PYTEST_PLUGINS:+PYTEST_PLUGINS="$EXTRA_PYTEST_PLUGINS"} \
   "$PYTHON" "$SCRIPT_DIR/run_tests_parallel.py" "$@"

@@ -160,7 +160,7 @@ export function ChatBar({
   const hudMode = useStore($hudMode)
   const touchPointer = useStore($touchPointer)
   const tapFocus = useMemo(() => (touchPointer ? touchTapFocusHandlers() : undefined), [touchPointer])
-  const hudWindowing = window.hermesDesktop?.hud?.windowing
+  const hudWindowing = window.zeusDesktop?.hud?.windowing
   const hudNativeDrag = hudMode && hudWindowing?.nativeDrag === true
 
   const { grabbing: hudGrabbing, onPointerDown: onHudDragPointerDown } = useHudComposerDrag(hudMode && !hudNativeDrag, {

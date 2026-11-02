@@ -2,7 +2,7 @@
 
 Downgrading is unsupported, but a manual ``git checkout <older release>`` under a running gateway
 leaves this process serving every local session from code the tree no longer has. Older clients
-cannot attach to it, and older ``hermes gateway run`` refuses because this process still holds the
+cannot attach to it, and older ``zeus gateway run`` refuses because this process still holds the
 profile. Nothing on the older side knows how to stop it. So the gateway watches its own tree, using the boot
 revision ``gateway.code_skew`` records. Once the checkout has provably moved (two consecutive
 reads, never while an update holds the tree) to code whose state-store modules lack the runtime
@@ -35,7 +35,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 def tree_predates_runtime(root: Path = _PROJECT_ROOT) -> bool:
     """True only when the checkout's state-store modules are readable and none defines the ledger."""
     try:
-        sources = [path.read_text(encoding="utf-8-sig", errors="replace") for path in root.glob("hermes_state*.py")]
+        sources = [path.read_text(encoding="utf-8-sig", errors="replace") for path in root.glob("zeus_state*.py")]
     except OSError:
         return False  # mid-checkout or unreadable: proves nothing
     return bool(sources) and not any(_RUNTIME_SCHEMA_MARKER in text for text in sources)
@@ -70,7 +70,7 @@ async def runtime_downgrade_watcher(runner, *, poll_s: float = POLL_S, skew_fn=N
     if skew_fn is None:
         from gateway.code_skew import detect_code_skew as skew_fn
     if update_probe is None:
-        from hermes_cli.update_lock import update_in_progress as update_probe
+        from zeus_cli.update_lock import update_in_progress as update_probe
     observe_skew: Callable = skew_fn
     observe_update: Callable[[], bool] = update_probe
 

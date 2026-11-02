@@ -7,8 +7,8 @@ import pytest
 
 from gateway.session_bot import _migrate, recover_bot_deliveries
 from gateway.session_results import retain_result
-from hermes_state import SessionDB
-from hermes_state_runtime import (
+from zeus_state import SessionDB
+from zeus_state_runtime import (
     admit_session_input,
     begin_runtime_epoch,
     claim_session_input,
@@ -156,7 +156,7 @@ async def test_legacy_migration_skips_structurally_corrupt_neighbor(monkeypatch,
             yield False
 
         monkeypatch.setattr(
-            "hermes_cli.active_sessions.active_session_liveness_guard",
+            "zeus_cli.active_sessions.active_session_liveness_guard",
             inactive_session,
         )
 

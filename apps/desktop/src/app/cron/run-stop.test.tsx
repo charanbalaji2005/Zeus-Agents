@@ -3,14 +3,14 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, render, renderHook, screen } from '@testing-library/react'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type * as HermesApi from '@/hermes'
-import type { CronJob } from '@/hermes'
+import type * as ZeusApi from '@/zeus'
+import type { CronJob } from '@/zeus'
 import type { Translations } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
 import { $cronJobs, invalidateCronJobsRequests, setCronFocusJobId, setCronJobs } from '@/store/cron'
 import { setChangeEventsAvailable } from '@/store/live-sync'
 import { notify } from '@/store/notifications'
-import type { CronCancelResult } from '@/types/hermes'
+import type { CronCancelResult } from '@/types/zeus'
 
 import { useCronRunStop } from './use-cron-run-stop'
 
@@ -18,8 +18,8 @@ const cancelCronJobRun = vi.fn()
 const getCronJobRuns = vi.fn()
 const getCronJobs = vi.fn()
 
-vi.mock('@/hermes', async importOriginal => ({
-  ...(await importOriginal<typeof HermesApi>()),
+vi.mock('@/zeus', async importOriginal => ({
+  ...(await importOriginal<typeof ZeusApi>()),
   cancelCronJobRun: (jobId: string) => cancelCronJobRun(jobId),
   getCronJobRuns: (jobId: string) => getCronJobRuns(jobId),
   getCronJobs: (profile?: string) => getCronJobs(profile)

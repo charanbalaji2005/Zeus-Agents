@@ -21,7 +21,7 @@ import { ToggleRow } from './primitives'
 
 /**
  * Settings › Safety › Privacy: one switch for the answer the first-run offer and
- * `hermes setup` write, for the profile this page applies to. On sets both
+ * `zeus setup` write, for the profile this page applies to. On sets both
  * opt-ins (collect and send), off clears both. A collect-only answer from
  * before the offer dropped it reads off here: nothing is shared. Optimistic,
  * rolled back on failure.

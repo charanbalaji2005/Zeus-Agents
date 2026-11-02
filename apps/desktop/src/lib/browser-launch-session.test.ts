@@ -1,4 +1,4 @@
-import { isGatewayReauthRequired } from '@hermes/shared'
+import { isGatewayReauthRequired } from '@zeus/shared'
 import { afterEach, expect, it, vi } from 'vitest'
 
 import { pluginSocket } from '@/api/plugins'
@@ -7,17 +7,17 @@ import { installBrowserDesktopBridge } from './browser-desktop-bridge'
 import { readWebappSession, WEBAPP_LAUNCH_REQUIRED, webappSessionKey } from './browser-launch-session'
 
 const win = window as Window & {
-  __HERMES_UI_SURFACE__?: string
-  __HERMES_BASE_PATH__?: string
-  __HERMES_AUTH_REQUIRED__?: boolean
+  __ZEUS_UI_SURFACE__?: string
+  __ZEUS_BASE_PATH__?: string
+  __ZEUS_AUTH_REQUIRED__?: boolean
 }
 
 afterEach(() => {
   window.dispatchEvent(new Event('beforeunload'))
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  delete win.__HERMES_UI_SURFACE__
-  delete win.__HERMES_BASE_PATH__
-  delete win.__HERMES_AUTH_REQUIRED__
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  delete win.__ZEUS_UI_SURFACE__
+  delete win.__ZEUS_BASE_PATH__
+  delete win.__ZEUS_AUTH_REQUIRED__
   sessionStorage.clear()
   localStorage.clear()
   window.history.replaceState(null, '', '/')
@@ -27,8 +27,8 @@ afterEach(() => {
 
 it('uses one private session for REST, RPC and terminal across reload without losing the profile', async () => {
   const token = 'a'.repeat(43)
-  win.__HERMES_UI_SURFACE__ = 'webapp'
-  win.__HERMES_BASE_PATH__ = '/one'
+  win.__ZEUS_UI_SURFACE__ = 'webapp'
+  win.__ZEUS_BASE_PATH__ = '/one'
   // Where /webapp/launch leaves the credential before it opens /one/?profile=coder.
   sessionStorage.setItem(webappSessionKey('/one'), token)
   window.history.replaceState(null, '', '/one/?profile=coder')
@@ -38,7 +38,7 @@ it('uses one private session for REST, RPC and terminal across reload without lo
     onmessage: ((event: { data: string }) => void) | null = null
     constructor(url: URL) {
       urls.push(new URL(url))
-      queueMicrotask(() => this.onmessage?.({ data: '\0HERMES_TERMINAL_META:{"terminalId":"shell","pid":1,"cwd":"/work","shell":"sh","reconnected":false}' }))
+      queueMicrotask(() => this.onmessage?.({ data: '\0ZEUS_TERMINAL_META:{"terminalId":"shell","pid":1,"cwd":"/work","shell":"sh","reconnected":false}' }))
     }
     close() {}
   }
@@ -57,9 +57,9 @@ it('uses one private session for REST, RPC and terminal across reload without lo
   expect(installBrowserDesktopBridge()).toBe(true)
   expect(window.location.hash).toBe('')
   expect(window.location.search).toBe('?profile=coder')
-  const desktop = window.hermesDesktop!
+  const desktop = window.zeusDesktop!
   await desktop.api({ path: '/api/fs/read-text' })
-  expect(new Headers(fetchMock.mock.calls[0][1].headers).get('X-Hermes-Session-Token')).toBe(token)
+  expect(new Headers(fetchMock.mock.calls[0][1].headers).get('X-Zeus-Session-Token')).toBe(token)
   expect((await desktop.getConnection()).token).toBe(token)
   // RPC: the gateway socket's one-use ticket is minted over REST with the same private session;
   // the session token itself never rides a socket URL.
@@ -77,14 +77,14 @@ it('uses one private session for REST, RPC and terminal across reload without lo
     )!
 
   const mint = mintFor('gateway')
-  expect(new Headers(mint[1].headers).get('X-Hermes-Session-Token')).toBe(token)
+  expect(new Headers(mint[1].headers).get('X-Zeus-Session-Token')).toBe(token)
   // Terminal: each dial mints its own one-use ticket the same way.
   await desktop.terminal.start({ cwd: '/work' })
   expect(urls[0].pathname).toBe('/one/api/host-terminal')
   expect(urls[0].searchParams.get('ticket')).toBe('shell-ticket')
   const shellMint = mintFor('host-terminal')
   expect(shellMint[1].method).toBe('POST')
-  expect(new Headers(shellMint[1].headers).get('X-Hermes-Session-Token')).toBe(token)
+  expect(new Headers(shellMint[1].headers).get('X-Zeus-Session-Token')).toBe(token)
   // A plugin's live socket cannot carry a ticket here; it stays on its polling fallback.
   const stopPluginSocket = pluginSocket('kanban', '/events', () => undefined)
   await new Promise(resolve => setTimeout(resolve, 20))
@@ -94,39 +94,39 @@ it('uses one private session for REST, RPC and terminal across reload without lo
   expect(requested.filter(url => url.includes(token))).toEqual([])
   expect(urls).toHaveLength(1)
   window.dispatchEvent(new Event('beforeunload'))
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
   window.history.replaceState(null, '', '/one/?profile=coder#/settings')
   expect(installBrowserDesktopBridge()).toBe(true)
-  expect((await window.hermesDesktop!.getConnection()).token).toBe(token)
+  expect((await window.zeusDesktop!.getConnection()).token).toBe(token)
   expect(window.location.hash).toBe('#/settings')
   expect(readWebappSession('/other')).toBe('')
   expect(Object.values(localStorage)).not.toContain(token)
 })
 
 it('fails closed with actionable launch instructions in a fresh tab and ignores local grants under OAuth', async () => {
-  win.__HERMES_UI_SURFACE__ = 'webapp'
+  win.__ZEUS_UI_SURFACE__ = 'webapp'
   const fetchMock = vi.fn()
   vi.stubGlobal('fetch', fetchMock)
   expect(installBrowserDesktopBridge()).toBe(true)
-  await expect(window.hermesDesktop!.getConnection()).rejects.toThrow('Run hermes webapp')
-  await expect(window.hermesDesktop!.api({ path: '/api/fs/read-text' })).rejects.toThrow('Run hermes webapp')
+  await expect(window.zeusDesktop!.getConnection()).rejects.toThrow('Run zeus webapp')
+  await expect(window.zeusDesktop!.api({ path: '/api/fs/read-text' })).rejects.toThrow('Run zeus webapp')
   expect(fetchMock).not.toHaveBeenCalled()
   window.dispatchEvent(new Event('beforeunload'))
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
   sessionStorage.setItem(webappSessionKey(''), 'b'.repeat(43))
   expect(readWebappSession('')).toHaveLength(43)
   sessionStorage.clear()
   expect(readWebappSession('')).toBe('')
-  win.__HERMES_AUTH_REQUIRED__ = true
+  win.__ZEUS_AUTH_REQUIRED__ = true
   expect(installBrowserDesktopBridge()).toBe(true)
-  expect((await window.hermesDesktop!.getConnection()).authMode).toBe('oauth')
-  expect((await window.hermesDesktop!.getConnection()).token).toBe('')
+  expect((await window.zeusDesktop!.getConnection()).authMode).toBe('oauth')
+  expect((await window.zeusDesktop!.getConnection()).token).toBe('')
 })
 
 it('takes the credential only from the tab storage the launch page fills, never from the address', () => {
   // The browser records every address in its history, where a credential would outlive the tab.
-  win.__HERMES_UI_SURFACE__ = 'webapp'
-  window.history.replaceState(null, '', `/?profile=coder#hermes-session=${'c'.repeat(43)}`)
+  win.__ZEUS_UI_SURFACE__ = 'webapp'
+  window.history.replaceState(null, '', `/?profile=coder#zeus-session=${'c'.repeat(43)}`)
   expect(readWebappSession('')).toBe('')
   expect(installBrowserDesktopBridge()).toBe(true)
   expect(sessionStorage.length).toBe(0)
@@ -137,8 +137,8 @@ it('takes the credential only from the tab storage the launch page fills, never 
 it.each(['window', 'session'] as const)('hands off a private %s through a one-use ticket without sharing its session token', async kind => {
   const token = 'a'.repeat(43)
   const ticket = 'b'.repeat(43)
-  win.__HERMES_UI_SURFACE__ = 'webapp'
-  win.__HERMES_BASE_PATH__ = '/one'
+  win.__ZEUS_UI_SURFACE__ = 'webapp'
+  win.__ZEUS_BASE_PATH__ = '/one'
   sessionStorage.setItem(webappSessionKey('/one'), token)
   window.history.replaceState(null, '', '/one/?profile=coder')
   const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ticket })))
@@ -156,8 +156,8 @@ it.each(['window', 'session'] as const)('hands off a private %s through a one-us
   expect(installBrowserDesktopBridge()).toBe(true)
 
   const pending = kind === 'window'
-    ? window.hermesDesktop.openWindow({ connectionId: 'local', profile: 'research' })
-    : window.hermesDesktop.openSessionWindow('session / 1', { profile: 'research', watch: true })
+    ? window.zeusDesktop.openWindow({ connectionId: 'local', profile: 'research' })
+    : window.zeusDesktop.openSessionWindow('session / 1', { profile: 'research', watch: true })
 
   // The window opens before any await, preserving the browser user gesture.
   expect(open).toHaveBeenCalledOnce()
@@ -169,7 +169,7 @@ it.each(['window', 'session'] as const)('hands off a private %s through a one-us
   const [url, init] = fetchMock.mock.calls[0] as [URL, RequestInit]
   expect(url.pathname).toBe('/one/api/webapp/window-ticket')
   expect(init.method).toBe('POST')
-  expect(new Headers(init.headers).get('X-Hermes-Session-Token')).toBe(token)
+  expect(new Headers(init.headers).get('X-Zeus-Session-Token')).toBe(token)
   expect(open).toHaveBeenCalledOnce()
   const [opened, target, features] = open.mock.calls[0]
   const child = new URL(String(opened))
@@ -177,7 +177,7 @@ it.each(['window', 'session'] as const)('hands off a private %s through a one-us
   expect(child.pathname).toBe('/one/webapp/window')
   expect(child.search).toBe('')
   const handoff = new URLSearchParams(child.hash.slice(1))
-  expect(Channel.current.name).toBe(`hermes.webapp.window:${handoff.get('channel')}`)
+  expect(Channel.current.name).toBe(`zeus.webapp.window:${handoff.get('channel')}`)
   expect(Channel.current.postMessage).toHaveBeenCalledWith({ ticket })
   expect(Channel.current.close).toHaveBeenCalledOnce()
   expect(handoff.get('query')).toContain('profile=research')
@@ -191,7 +191,7 @@ it.each(['window', 'session'] as const)('hands off a private %s through a one-us
 
   fetchMock.mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }))
   open.mockClear()
-  const failed = window.hermesDesktop.openWindow()
+  const failed = window.zeusDesktop.openWindow()
   Channel.current.onmessage?.({ data: { type: 'ready' } })
   await expect(failed).rejects.toThrow()
   expect(Channel.current.postMessage).toHaveBeenCalledWith({ error: expect.any(String) })
@@ -202,24 +202,24 @@ it('asks a tab without a working credential to sign in, so reconnecting stops', 
   // The reconnect loop stops retrying only for an error that reads as a sign-in requirement;
   // the startup overlay then shows the Webapp sign-in view for this message.
   const failure = (request: Promise<unknown>) => request.then(() => null, (error: unknown) => error)
-  win.__HERMES_UI_SURFACE__ = 'webapp'
+  win.__ZEUS_UI_SURFACE__ = 'webapp'
   vi.stubGlobal('fetch', vi.fn(async () => new Response('Unauthorized', { status: 401 })))
   expect(installBrowserDesktopBridge()).toBe(true)
 
   for (const error of [
-    await failure(window.hermesDesktop!.getConnection()),
-    await failure(window.hermesDesktop!.api({ path: '/api/status' }))
+    await failure(window.zeusDesktop!.getConnection()),
+    await failure(window.zeusDesktop!.api({ path: '/api/status' }))
   ]) {
     expect(isGatewayReauthRequired(error)).toBe(true)
     expect((error as Error).message).toBe(WEBAPP_LAUNCH_REQUIRED)
   }
 
-  // hermes webapp --sign-out replaced the credential this tab holds.
+  // zeus webapp --sign-out replaced the credential this tab holds.
   window.dispatchEvent(new Event('beforeunload'))
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
   sessionStorage.setItem(webappSessionKey(''), 'd'.repeat(43))
   expect(installBrowserDesktopBridge()).toBe(true)
-  const signedOut = await failure(window.hermesDesktop!.api({ path: '/api/status' }))
+  const signedOut = await failure(window.zeusDesktop!.api({ path: '/api/status' }))
 
   expect(isGatewayReauthRequired(signedOut)).toBe(true)
   expect((signedOut as Error).message).toBe(WEBAPP_LAUNCH_REQUIRED)

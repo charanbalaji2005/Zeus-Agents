@@ -9,7 +9,7 @@ actually adopted it, and a launch-dir fallback still persists nothing.
 
 import os
 
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 from tui_gateway import server
 
 

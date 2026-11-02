@@ -14,4 +14,4 @@ capabilities:
   provides_middleware: []
   requires_env:
   - RENTAHUMAN_API_KEY
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"

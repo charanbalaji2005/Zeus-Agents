@@ -6,7 +6,7 @@ description: "How fast each model starts answering and how fast it writes: /spee
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/stream-speed
 version: "1.4.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/d7b48bbe90d18bfdf26ccbf7bd4da6616e7645d6/docs/stream-speed-card.png

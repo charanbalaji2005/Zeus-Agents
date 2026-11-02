@@ -36,7 +36,7 @@ COMMANDS: dict[str, tuple[str, str | None]] = {
     "queue": ("Queue a prompt to run after the current turn finishes", "prompt to run next"),
     "usage": ("Show token usage and rate limits", None),
     "status": ("Show session, model, token, and context info", None),
-    "version": ("Show Hermes version", None),
+    "version": ("Show Zeus version", None),
     "title": ("Show or set the session title", "new title"),
     "undo": ("Remove the last N user turns and their replies", "number of turns"),
     "retry": ("Resend the last user message", None),
@@ -53,7 +53,7 @@ def available_commands_update() -> AvailableCommandsUpdate:
 def help_text() -> str:
     lines = ["Available commands:", ""]
     lines.extend(f"  /{name:10s}  {description}" for name, (description, _hint) in COMMANDS.items())
-    lines.extend(["", "Other Hermes commands run on the gateway, which answers them or says why not.",
+    lines.extend(["", "Other Zeus commands run on the gateway, which answers them or says why not.",
                   "Unrecognized /commands are sent to the model as normal messages."])
     return "\n".join(lines)
 
@@ -74,7 +74,7 @@ REASONING_CONFIG_ID = "reasoning_effort"
 
 def reasoning_choices() -> tuple[str, ...]:
     """The owner's ``reasoning`` levels; ``default`` hands the level back to the profile."""
-    from hermes_constants import VALID_REASONING_EFFORTS
+    from zeus_constants import VALID_REASONING_EFFORTS
     return ("default", "none", *VALID_REASONING_EFFORTS)
 
 
@@ -119,10 +119,10 @@ def model_state(info: dict) -> SessionModelState | None:
 
 
 def provenance_meta(db_path: Path, acp_session_id: str, session_id: str) -> dict | None:
-    """``_meta.hermes.sessionProvenance`` for the editor's id, the logical session's current
+    """``_meta.zeus.sessionProvenance`` for the editor's id, the logical session's current
     compression tip and its lineage (``acp_adapter/provenance.py``). Blocking."""
     from acp_adapter.provenance import session_provenance_meta
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     if not Path(db_path).exists():
         return None
     try:

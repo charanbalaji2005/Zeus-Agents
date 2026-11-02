@@ -13,7 +13,7 @@ vi.mock('@/themes/context', () => ({
 beforeEach(() => {
   vi.resetModules()
   localStorage.clear()
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   closeTab.mockClear()
 })
 
@@ -22,7 +22,7 @@ afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
   window.document.body.replaceChildren()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 async function mountKeybinds(inTerminal = false) {

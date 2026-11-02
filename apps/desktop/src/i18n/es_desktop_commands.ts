@@ -24,11 +24,11 @@ export const esDesktopCommands = {
   configHeader: 'Configuración (pantalla, aprobaciones, pegado y voz; no se muestra nada más):',
   configDefaults: '(valores predeterminados)',
   configFooter:
-    'Cambia los ajustes en Ajustes, o edita config.yaml con `hermes config edit` en el host de la pasarela.',
+    'Cambia los ajustes en Ajustes, o edita config.yaml con `zeus config edit` en el host de la pasarela.',
   historyHeader: (count: string) => `Historial de la conversación (${count} mensajes):`,
   historyEmpty: 'Todavía no hay mensajes.',
   historyYou: 'Tú',
-  historyHermes: 'Hermes',
+  historyZeus: 'Zeus',
   saveUsage: 'uso: /save [json|md|html] [filename] [redact]',
   saveLegacyRefused:
     'No guardado: esta pasarela no puede exportar una copia censurada, con nombre o que no sea JSON. Actualiza la pasarela o ejecuta /save sin opciones para escribir el JSON sin procesar en el host de la pasarela.',
@@ -39,9 +39,9 @@ export const esDesktopCommands = {
   savedTo: (path: string) => `Conversación guardada en ${path}`,
   saveCancelled: 'No guardado (cancelado).',
   exportRemote:
-    '/export empaqueta un perfil desde el host de la pasarela, que no es este equipo. Ejecuta `hermes profile export` en ese host.',
+    '/export empaqueta un perfil desde el host de la pasarela, que no es este equipo. Ejecuta `zeus profile export` en ese host.',
   importRemote:
-    '/import instala un perfil en el host de la pasarela, que no es este equipo. Ejecuta `hermes profile import <archive>` en ese host.',
+    '/import instala un perfil en el host de la pasarela, que no es este equipo. Ejecuta `zeus profile import <archive>` en ese host.',
   timestampsUsage: 'uso: /timestamps [on|off|status]',
   timestampsOn:
     'Marcas de tiempo: activadas (esta ventana; configura display.timestamps en config.yaml para conservarlo)',

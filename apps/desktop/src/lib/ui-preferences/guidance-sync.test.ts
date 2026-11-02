@@ -40,7 +40,7 @@ async function load(file: string) {
 }
 
 it('onboarding skipped and tips seen or dismissed in one browser stay so in another (#145600)', async () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-ui-guidance-'))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-ui-guidance-'))
   dirs.push(dir)
   const file = path.join(dir, 'ui-preferences.json')
 

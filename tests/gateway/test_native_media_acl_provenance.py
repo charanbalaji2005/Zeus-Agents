@@ -1,4 +1,4 @@
-"""Review-9 (a): native media capture keeps the Hermes-home provenance of its store for elevated grants.
+"""Review-9 (a): native media capture keeps the Zeus-home provenance of its store for elevated grants.
 
 ``native_inputs_root()`` resolves the store, which erases a link planted below the home
 (``cache/documents`` -> elsewhere). An elevated grant on that resolved path landed outside the home
@@ -10,16 +10,16 @@ from pathlib import Path
 
 import pytest
 
-import hermes_dir_acl
+import zeus_dir_acl
 from gateway import session_ingress_media as media
 
 
 def _elevated(monkeypatch, home):
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr(hermes_dir_acl, "process_is_elevated", lambda: True)
-    monkeypatch.setattr(hermes_dir_acl, "_granted", set())
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    monkeypatch.setattr(zeus_dir_acl, "process_is_elevated", lambda: True)
+    monkeypatch.setattr(zeus_dir_acl, "_granted", set())
     grants = []
-    monkeypatch.setattr(hermes_dir_acl, "_grant_with_pywin32",
+    monkeypatch.setattr(zeus_dir_acl, "_grant_with_pywin32",
                         lambda path, is_dir, expected=None: grants.append((os.path.realpath(path), expected)))
     return grants
 
@@ -55,9 +55,9 @@ def test_capture_grants_the_real_store_with_a_home_fence(tmp_path, monkeypatch):
 
 
 def test_icacls_fallback_refuses_a_grant_with_no_trusted_root(tmp_path, monkeypatch):
-    monkeypatch.setattr(hermes_dir_acl, "_whoami_sid", lambda: "S-1-5-21-1-2-3-1001")
+    monkeypatch.setattr(zeus_dir_acl, "_whoami_sid", lambda: "S-1-5-21-1-2-3-1001")
     calls = []
-    monkeypatch.setattr(hermes_dir_acl.subprocess, "run", lambda argv, **_k: calls.append(argv))
-    with pytest.raises(hermes_dir_acl.ReparsePointRefused):
-        hermes_dir_acl._grant_with_icacls(tmp_path, True, None)
+    monkeypatch.setattr(zeus_dir_acl.subprocess, "run", lambda argv, **_k: calls.append(argv))
+    with pytest.raises(zeus_dir_acl.ReparsePointRefused):
+        zeus_dir_acl._grant_with_icacls(tmp_path, True, None)
     assert calls == []

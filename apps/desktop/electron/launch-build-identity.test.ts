@@ -23,7 +23,7 @@ test('launchBuildIdentity retains version labels and qualifies stamped artifacts
 })
 
 test('launchBuildIdentity falls back to the install stamp on a source install', () => {
-  // A source/`hermes update` install reports 0.0.0 on every build, so the
+  // A source/`zeus update` install reports 0.0.0 on every build, so the
   // stamp's commit is the only thing that differs between two of them.
   assert.equal(
     launchBuildIdentity({ appVersion: '0.0.0', installStamp: stamp() }),

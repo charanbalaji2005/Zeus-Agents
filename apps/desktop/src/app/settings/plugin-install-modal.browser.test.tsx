@@ -1,10 +1,10 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-// The browser-hosted app: no Electron preload, so no `window.hermesDesktop.probePluginRepo` and no
+// The browser-hosted app: no Electron preload, so no `window.zeusDesktop.probePluginRepo` and no
 // `installDesktopPlugin`. Inspection and install both ride the gateway.
 const { requestGateway } = vi.hoisted(() => ({
   requestGateway: vi.fn(async (_method: string, _params?: Record<string, unknown>): Promise<unknown> => ({
@@ -15,7 +15,7 @@ const { requestGateway } = vi.hoisted(() => ({
 vi.mock('@/app/gateway/hooks/use-gateway-request', () => ({
   useGatewayRequest: () => ({ requestGateway })
 }))
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getProfiles: async () => ({ profiles: [] })
 }))
@@ -83,14 +83,14 @@ beforeEach(() => {
   // The browser bridge's connection is always `remote` (browser-connection.ts).
   $connection.set({ mode: 'remote' } as NonNullable<ReturnType<typeof $connection.get>>)
   $activeGatewayProfile.set('default')
-  expect(window.hermesDesktop).toBeUndefined()
+  expect(window.zeusDesktop).toBeUndefined()
 })
 afterEach(() => {
   cleanup()
   closePluginInstallRequest()
 })
 
-describe('Plugin install in the browser-hosted app (no window.hermesDesktop)', () => {
+describe('Plugin install in the browser-hosted app (no window.zeusDesktop)', () => {
   it('inspects the catalog pick through the gateway and installs the agent plugin', async () => {
     backend(AGENT_ONLY)
     renderModal()
@@ -185,10 +185,10 @@ describe('Plugin install in the browser-hosted app (no window.hermesDesktop)', (
 // the Webapp already loads, so a desktop package is installable from the dialog instead of refused.
 describe('Plugin install in the browser-hosted app with a backend that installs desktop halves', () => {
   beforeEach(() => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   })
   afterEach(() => {
-    delete window.document.documentElement.dataset.hermesDesktopHost
+    delete window.document.documentElement.dataset.zeusDesktopHost
   })
 
   const desktopBackend = (inspection: unknown, desktop: unknown, install: unknown = { ok: true, plugin_name: 'pkg' }) =>
@@ -256,8 +256,8 @@ describe('Plugin install in the browser-hosted app with a backend that installs 
     const reviewed = 'e404b6816b20237a82f6fbe2749b5a576cf75dba'
     // The browser bridge's door to the host's desktop-plugins folder (browser-desktop-plugins.ts): the
     // host's pass copies the package's half into desktop-plugins/pkg.
-    const reconcileDesktopPlugins = vi.fn(async () => ['/srv/hermes/desktop-plugins/pkg'])
-    window.hermesDesktop = { reconcileDesktopPlugins } as unknown as Window['hermesDesktop']
+    const reconcileDesktopPlugins = vi.fn(async () => ['/srv/zeus/desktop-plugins/pkg'])
+    window.zeusDesktop = { reconcileDesktopPlugins } as unknown as Window['zeusDesktop']
 
     try {
       desktopBackend(
@@ -280,7 +280,7 @@ describe('Plugin install in the browser-hosted app with a backend that installs 
       expect(reconcileDesktopPlugins).toHaveBeenCalled()
       expect($notifications.get().some(n => n.message === DESKTOP_UNAVAILABLE)).toBe(false)
     } finally {
-      delete (window as { hermesDesktop?: unknown }).hermesDesktop
+      delete (window as { zeusDesktop?: unknown }).zeusDesktop
     }
   })
 
@@ -288,13 +288,13 @@ describe('Plugin install in the browser-hosted app with a backend that installs 
     // The probe saw a desktop half, but the host's pass put nothing down for it (an entry it does not
     // read, a refused tree): the folder the loader scans has no pkg/, so the dialog must not say it does.
     const reconcileDesktopPlugins = vi.fn(async () => [] as string[])
-    const desktopPluginsRoot = vi.fn(async () => '/srv/hermes/desktop-plugins')
+    const desktopPluginsRoot = vi.fn(async () => '/srv/zeus/desktop-plugins')
 
     const readDir = vi.fn(async (path: string) => ({
-      entries: path === '/srv/hermes/desktop-plugins' ? [{ name: 'other', path: `${path}/other`, isDirectory: true }] : []
+      entries: path === '/srv/zeus/desktop-plugins' ? [{ name: 'other', path: `${path}/other`, isDirectory: true }] : []
     }))
 
-    window.hermesDesktop = { desktopPluginsRoot, readDir, reconcileDesktopPlugins } as unknown as Window['hermesDesktop']
+    window.zeusDesktop = { desktopPluginsRoot, readDir, reconcileDesktopPlugins } as unknown as Window['zeusDesktop']
 
     try {
       desktopBackend(
@@ -311,25 +311,25 @@ describe('Plugin install in the browser-hosted app with a backend that installs 
 
       expect(await screen.findByText('Desktop plugin install failed')).toBeTruthy()
       expect(reconcileDesktopPlugins).toHaveBeenCalled()
-      expect(readDir).toHaveBeenCalledWith('/srv/hermes/desktop-plugins')
+      expect(readDir).toHaveBeenCalledWith('/srv/zeus/desktop-plugins')
       expect($notifications.get().some(n => n.message === 'Desktop plugin pkg installed')).toBe(false)
       expect($notifications.get().some(n => n.message.startsWith('Agent plugin pkg installed'))).toBe(true)
     } finally {
-      delete (window as { hermesDesktop?: unknown }).hermesDesktop
+      delete (window as { zeusDesktop?: unknown }).zeusDesktop
     }
   })
 
   it('never reports a desktop half installed when the host pass only pruned the old copy', async () => {
     // A force reinstall whose new tree dropped its desktop entry: the host's pass deletes
     // desktop-plugins/pkg and names it among the folders it touched. Nothing is on disk to load.
-    const reconcileDesktopPlugins = vi.fn(async () => ['/srv/hermes/desktop-plugins/pkg'])
-    const desktopPluginsRoot = vi.fn(async () => '/srv/hermes/desktop-plugins')
+    const reconcileDesktopPlugins = vi.fn(async () => ['/srv/zeus/desktop-plugins/pkg'])
+    const desktopPluginsRoot = vi.fn(async () => '/srv/zeus/desktop-plugins')
 
     const readDir = vi.fn(async (path: string) => ({
-      entries: path === '/srv/hermes/desktop-plugins' ? [{ name: 'other', path: `${path}/other`, isDirectory: true }] : []
+      entries: path === '/srv/zeus/desktop-plugins' ? [{ name: 'other', path: `${path}/other`, isDirectory: true }] : []
     }))
 
-    window.hermesDesktop = { desktopPluginsRoot, readDir, reconcileDesktopPlugins } as unknown as Window['hermesDesktop']
+    window.zeusDesktop = { desktopPluginsRoot, readDir, reconcileDesktopPlugins } as unknown as Window['zeusDesktop']
 
     try {
       desktopBackend(
@@ -345,10 +345,10 @@ describe('Plugin install in the browser-hosted app with a backend that installs 
       fireEvent.click(installButton()!)
 
       expect(await screen.findByText('Desktop plugin install failed')).toBeTruthy()
-      expect(readDir).toHaveBeenCalledWith('/srv/hermes/desktop-plugins')
+      expect(readDir).toHaveBeenCalledWith('/srv/zeus/desktop-plugins')
       expect($notifications.get().some(n => n.message === 'Desktop plugin pkg installed')).toBe(false)
     } finally {
-      delete (window as { hermesDesktop?: unknown }).hermesDesktop
+      delete (window as { zeusDesktop?: unknown }).zeusDesktop
     }
   })
 

@@ -154,7 +154,7 @@ function UpdateChangeList({
           href={notes.url}
           onClick={event => {
             event.preventDefault()
-            void window.hermesDesktop?.openExternal?.(event.currentTarget.href)
+            void window.zeusDesktop?.openExternal?.(event.currentTarget.href)
           }}
           rel="noreferrer"
           target="_blank"

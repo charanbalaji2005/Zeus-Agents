@@ -3,7 +3,7 @@ import { act, cleanup, render } from '@testing-library/react'
 import type { MutableRefObject } from 'react'
 import { afterEach, beforeAll, beforeEach, expect, it, vi } from 'vitest'
 
-import { deleteSession, type SessionInfo, setSessionArchived, setSessionPinnedRemote } from '@/hermes'
+import { deleteSession, type SessionInfo, setSessionArchived, setSessionPinnedRemote } from '@/zeus'
 import { $pinnedSessionIds } from '@/store/layout'
 import { $sessions, setSessions } from '@/store/session'
 import { resetSessionPinMirror, watchSessionPins } from '@/store/session-pin-sync'
@@ -13,7 +13,7 @@ import type { ClientSessionState } from '../../../types'
 
 import { useSessionActions } from './index'
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   deleteSession: vi.fn(),
   setSessionArchived: vi.fn(),
@@ -51,7 +51,7 @@ function Harness({ onReady }: { onReady: (handle: Handle) => void }) {
 }
 
 beforeAll(() => {
-  window.hermesDesktop = {} as typeof window.hermesDesktop
+  window.zeusDesktop = {} as typeof window.zeusDesktop
   watchSessionPins()
 })
 

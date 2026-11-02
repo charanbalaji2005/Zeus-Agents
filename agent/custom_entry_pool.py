@@ -26,7 +26,7 @@ def entry_declares_credential(entry: Any) -> bool:
 
 
 def row_owned_by_entry(row: Any, entry: Any) -> bool:
-    """Ownership by provenance: ``hermes auth add`` (manual) rows, and rows seeded from the entry's
+    """Ownership by provenance: ``zeus auth add`` (manual) rows, and rows seeded from the entry's
     own ``key_env``. Rows the built-in seeded from its registry env vars or auth files are foreign."""
     from agent.credential_pool import _is_manual_source
     source = str(getattr(row, "source", "") or "").strip()

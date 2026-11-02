@@ -1,6 +1,6 @@
-import { stripAnsi } from '@hermes/shared/ansi'
-import { compactNumber } from '@hermes/shared/format'
-import type { ToolLabel } from '@hermes/shared/gateway-events'
+import { stripAnsi } from '@zeus/shared/ansi'
+import { compactNumber } from '@zeus/shared/format'
+import type { ToolLabel } from '@zeus/shared/gateway-events'
 
 import {
   LIVE_RENDER_MAX_CHARS,

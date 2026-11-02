@@ -17,7 +17,7 @@ import uuid
 from functools import partial
 
 from gateway.session_contract import SessionRef
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ async def start(connection, ref, params):
         finally:
             discards.ids.difference_update(plan['replaced'])
         if plan['claimed'] is not None:
-            from hermes_cli import free_tier_bootstrap
+            from zeus_cli import free_tier_bootstrap
             await asyncio.to_thread(free_tier_bootstrap.refresh_record)
         _withdraw_setup_cards(authority, [sid for sid in plan['replaced'] if sid not in deleted])
         chat = SessionRef(authority.profile_id, stored)
@@ -104,7 +104,7 @@ def _choose_run(authority, request):
     from agent.onboarding_flow import Facts
     from agent.onboarding_record import load, open_session_ids
     from agent.onboarding_text import opening_prompt
-    from hermes_cli.auth_constants import AuthError
+    from zeus_cli.auth_constants import AuthError
     db = authority.db
     open_ids = open_session_ids(db)
     stored = None if request.rerun or request.fresh_launch else next(iter(open_ids), None)
@@ -132,9 +132,9 @@ def _choose_run(authority, request):
 def _claim_before_run(*, assume_fresh):
     """``onboarding.run: true`` on disk before the welcome-trial claim, so a crash after the claim still
     opens onboarding next launch."""
-    from hermes_cli import anon_auth
-    from hermes_cli.onboarding_run import set_run
-    from hermes_cli.welcome_trial import claim_desktop_free_tier, provider_configured
+    from zeus_cli import anon_auth
+    from zeus_cli.onboarding_run import set_run
+    from zeus_cli.welcome_trial import claim_desktop_free_tier, provider_configured
     if not anon_auth.on_local_desktop_backend():
         # A CLI or TUI holds a native ticket too: its start schedules nothing. A rerun (Settings, any
         # Desktop) never claims and never reaches here.
@@ -150,7 +150,7 @@ async def _create_chat(connection):
     from gateway.session_local import stage_local_session
     from gateway.session_local_recovery import restore_local_session
     from gateway.session_runtime_workers import tracked_write
-    from hermes_state_local import commit_local_session
+    from zeus_state_local import commit_local_session
     authority = connection.authority
     staged = stage_local_session(authority, connection.actor, {'source': 'gui', 'request_id': uuid.uuid4().hex},
                                  client_local=connection.native_owner,

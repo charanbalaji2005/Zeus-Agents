@@ -1,10 +1,10 @@
-import type { ConnectionState } from '@hermes/shared'
+import type { ConnectionState } from '@zeus/shared'
 import { atom, computed } from 'nanostores'
 
 import { setApiRequestLocalMode } from '@/api/client'
 import { lastVisibleMessageIsUser } from '@/app/chat/thread-loading'
 import type { ContextSuggestion } from '@/app/types'
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { browserPageBasePath, readBrowserDefaultProjectDir } from '@/lib/browser-settings'
 import type { ChatMessage } from '@/lib/chat-messages'
 import {
@@ -24,7 +24,7 @@ import {
   storedString,
   writeJson
 } from '@/lib/storage'
-import type { SessionInfo, UsageStats } from '@/types/hermes'
+import type { SessionInfo, UsageStats } from '@/types/zeus'
 
 import { $removedSessionIds, isSessionRemovalPending, tombstoneRowIds } from './session-removal'
 import type { SessionOwnerRoute, SessionOwnerScope } from './session-request-router'
@@ -33,7 +33,7 @@ import { clearUnreadOnOpen } from './session-unread-remote'
 type Updater<T> = T | ((current: T) => T)
 export type ComposerModelSource = '' | 'default' | 'manual'
 
-const WORKSPACE_CWD_KEY = 'hermes.desktop.workspace-cwd'
+const WORKSPACE_CWD_KEY = 'zeus.desktop.workspace-cwd'
 
 // The composer's model/effort/fast is sticky UI state, NOT the profile default
 // (that lives in Settings → Model). Persisting it in localStorage makes a pick
@@ -41,12 +41,12 @@ const WORKSPACE_CWD_KEY = 'hermes.desktop.workspace-cwd'
 // Model/provider/source are scoped to the remote (connection, profile) owner so
 // a provider authenticated on one profile cannot contaminate another profile's
 // session.create. Local/single-backend users retain the historical bare keys.
-const COMPOSER_MODEL_KEY = 'hermes.desktop.composer.model'
-const COMPOSER_PROVIDER_KEY = 'hermes.desktop.composer.provider'
-const COMPOSER_MODEL_SOURCE_KEY = 'hermes.desktop.composer.model-source'
-const COMPOSER_EFFORT_KEY = 'hermes.desktop.composer.reasoning-effort'
-const COMPOSER_FAST_KEY = 'hermes.desktop.composer.fast'
-const COMPOSER_SERVICE_TIER_KEY = 'hermes.desktop.composer.service-tier'
+const COMPOSER_MODEL_KEY = 'zeus.desktop.composer.model'
+const COMPOSER_PROVIDER_KEY = 'zeus.desktop.composer.provider'
+const COMPOSER_MODEL_SOURCE_KEY = 'zeus.desktop.composer.model-source'
+const COMPOSER_EFFORT_KEY = 'zeus.desktop.composer.reasoning-effort'
+const COMPOSER_FAST_KEY = 'zeus.desktop.composer.fast'
+const COMPOSER_SERVICE_TIER_KEY = 'zeus.desktop.composer.service-tier'
 
 // Unlike presentation-oriented $connection, this scope is published from the
 // gateway activation coordinate before profile-change effects can reseed the
@@ -54,7 +54,7 @@ const COMPOSER_SERVICE_TIER_KEY = 'hermes.desktop.composer.service-tier'
 // paint, but must not be written through the previous backend's storage key.
 let composerSelectionScope: string | null = ''
 
-function composerScopeForConnection(connection: HermesConnection | null): string | null {
+function composerScopeForConnection(connection: ZeusConnection | null): string | null {
   if (!connection) {
     return null
   }
@@ -92,8 +92,8 @@ function storedComposerString(base: string): string | null {
 // discarded on first read to prevent cross-profile bleed — ownership of the old
 // global values is unknowable, and guessing the owning profile is exactly the
 // cross-profile corruption this storage boundary prevents (#67709).
-const LAST_SESSION_KEY = 'hermes.desktop.lastSessionId'
-const LAST_ROUTE_KEY = 'hermes.desktop.lastRoute'
+const LAST_SESSION_KEY = 'zeus.desktop.lastSessionId'
+const LAST_ROUTE_KEY = 'zeus.desktop.lastRoute'
 
 function profileNavigationKey(base: string, profile: string): string {
   const key = profile.trim() || 'default'
@@ -338,7 +338,7 @@ export function setRememberedRoute(path: null | string, profile: string): void {
 
 let configuredDefaultProjectDir = ''
 
-function workspaceCwdKey(connection: HermesConnection | null = $connection.get()): string {
+function workspaceCwdKey(connection: ZeusConnection | null = $connection.get()): string {
   const profile = connection?.profile?.trim() || 'default'
 
   if (connection?.mode !== 'remote') {
@@ -360,7 +360,7 @@ export type NewChatWorkspaceTarget = null | string | undefined
 export const getConfiguredDefaultProjectDir = (): string => configuredDefaultProjectDir
 
 export async function syncConfiguredDefaultProjectDir(shouldPublish: () => boolean = () => true): Promise<string> {
-  const settings = window.hermesDesktop?.settings?.getDefaultProjectDir
+  const settings = window.zeusDesktop?.settings?.getDefaultProjectDir
 
   if (!settings) {
     if (shouldPublish()) {
@@ -383,7 +383,7 @@ export async function syncConfiguredDefaultProjectDir(shouldPublish: () => boole
  *  packaged, optional Settings override). Clears stale install-dir paths that
  *  PR #37586's localStorage stickiness can preserve across the #37536 fix. */
 export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = () => true): Promise<void> {
-  const sanitize = window.hermesDesktop?.sanitizeWorkspaceCwd
+  const sanitize = window.zeusDesktop?.sanitizeWorkspaceCwd
 
   if (!sanitize || !shouldPublish()) {
     return
@@ -971,7 +971,7 @@ export function applySessionTitle(storedSessionId: string | null | undefined, ti
   setUnlistedSessionOwnerRows(patch)
 }
 
-export const $connection = atom<HermesConnection | null>(null)
+export const $connection = atom<ZeusConnection | null>(null)
 export const $gatewayState = atom<ConnectionState>('idle')
 export const $sessions = atom<SessionInfo[]>([])
 // Cron-job sessions (source === 'cron') are fetched as their own list so the
@@ -1211,7 +1211,7 @@ export const $sessionResumeRequest = atom<SessionResumeRequest | null>(null)
 // stays valid across restarts; forgetSessionOwnerHintsForConnection drops
 // them when a connection is removed from the registry.
 const SESSION_OWNER_HINT_LIMIT = 256
-const SESSION_OWNER_HINTS_KEY = 'hermes.desktop.sessionOwnerHints.v1'
+const SESSION_OWNER_HINTS_KEY = 'zeus.desktop.sessionOwnerHints.v1'
 const sessionOwnerHints = new Map<string, { id: string; route: SessionOwnerRoute }>()
 
 function sessionOwnerHintKey(sessionId: string, route: Pick<SessionOwnerRoute, 'connectionId' | 'profile'>): string {
@@ -1482,7 +1482,7 @@ function rescopeComposerSelection(nextScope: string | null): void {
 
 /** Publish an exact registry route before active-profile effects can persist a
  * forced default. A registry id is authority even while its descriptive
- * HermesConnection lookup is unavailable. */
+ * ZeusConnection lookup is unavailable. */
 export function setComposerSelectionOwner(connectionId: string, profile: string): void {
   rescopeComposerSelection(
     `.registry.${encodeURIComponent(connectionId)}.${encodeURIComponent(profile.trim() || 'default')}`
@@ -1494,7 +1494,7 @@ export function clearComposerSelectionOwner(): void {
   rescopeComposerSelection(null)
 }
 
-export const setConnection = (next: Updater<HermesConnection | null>) => {
+export const setConnection = (next: Updater<ZeusConnection | null>) => {
   updateAtom($connection, next)
   // Repoint connection-scoped persistence (pins, manual session order,
   // remembered navigation) at the new backend's storage scope before any
@@ -1778,7 +1778,7 @@ export const setCurrentReasoningEffort = (next: Updater<string>) => {
 
 /** The level the route actually sends for `$currentReasoningEffort`
  *  (`session.info.reasoning_effort_wire`): '' when unknown, equal when verbatim,
- *  weaker when the route clamps a Hermes-internal step such as `ultra`. Never
+ *  weaker when the route clamps a Zeus-internal step such as `ultra`. Never
  *  persisted — it describes the live route, not a user preference. */
 export const $currentReasoningEffortWire = atom('')
 
@@ -1789,7 +1789,7 @@ export const setCurrentReasoningEffortWire = (next: string) => {
 // The profile's `agent.reasoning_effort`, mirrored from config so surfaces that
 // need to render or apply "the default" resolve the user's configured level
 // instead of assuming DEFAULT_REASONING_EFFORT (lib/reasoning-effort). Empty
-// until config loads, and re-seeded on every profile switch by useHermesConfig.
+// until config loads, and re-seeded on every profile switch by useZeusConfig.
 export const $defaultReasoningEffort = atom('')
 
 export const setDefaultReasoningEffort = (next: string) => updateAtom($defaultReasoningEffort, next)

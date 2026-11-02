@@ -9,7 +9,7 @@ description: Local-first, file-native long-term memory with HTTP and embedded Re
 maintainer: agentscope-ai
 tier: community
 category: memory
-requires_hermes: '>=0.21'
+requires_zeus: '>=0.21'
 docs_url: https://github.com/agentscope-ai/ReMe/tree/main/integrations/hermes_agent
 capabilities:
   provides_tools: []

@@ -58,7 +58,7 @@ def may_settle(authority, actor, session_id, events) -> bool:
     profiles and ``_open`` is process-wide), *actor* holds ``session:respond`` there, and *actor* is
     attached to that session, the same set of connections the request frame was written to."""
     from gateway.session_contract import SessionRef
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     if not owned_by(authority, session_id, events):
         return False
     try:
@@ -202,7 +202,7 @@ def _ask(events, session_id, method, params, *, cancelled, timeout, qids=None, r
     # Settled by a viewer (a response frame or the last ``clarify.lock``): every OTHER viewer still
     # shows the card, and a classic CLI is parked inside its modal callback. Withdraw it everywhere
     # with ``reason: resolved`` (``RequestCancelReason``) so each renderer closes the matching card and
-    # the CLI's connection thread releases its modal (``hermes_cli.gateway_agent``). No answer rides it.
+    # the CLI's connection thread releases its modal (``zeus_cli.gateway_agent``). No answer rides it.
     with contextlib.suppress(Exception):
         events.publish(session_id, {"id": request_id, "method": method, "reason": "resolved"},
                        event_type="request.cancel")

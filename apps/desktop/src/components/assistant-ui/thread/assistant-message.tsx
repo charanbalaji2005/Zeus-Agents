@@ -917,21 +917,21 @@ const withHaptic = (fn: () => void) => () => {
   fn()
 }
 
-// The profile whose Hermes home this chat runs in (a Bot chat owns its own).
+// The profile whose Zeus home this chat runs in (a Bot chat owns its own).
 function useOwnerProfile(): string | null | undefined {
   const gatewayProfile = useStore($activeGatewayProfile)
 
   return useComposerScope().profile || gatewayProfile
 }
 
-// Open a folder under the profile's Hermes home in the OS file manager (via its logs root).
+// Open a folder under the profile's Zeus home in the OS file manager (via its logs root).
 async function openProfileDir(
   profile: string | null | undefined,
   resolve: (logsRoot: string) => string,
   failedMessage: string
 ): Promise<void> {
   try {
-    const root = await window.hermesDesktop?.logsRoot?.(normalizeProfileKey(profile))
+    const root = await window.zeusDesktop?.logsRoot?.(normalizeProfileKey(profile))
 
     if (!root) {
       notifyError(new Error('logs root unavailable'), failedMessage)
@@ -939,7 +939,7 @@ async function openProfileDir(
       return
     }
 
-    const result = await window.hermesDesktop?.openDir?.(resolve(root))
+    const result = await window.zeusDesktop?.openDir?.(resolve(root))
 
     if (result && !result.ok) {
       notifyError(new Error(result.error || 'open failed'), failedMessage)
@@ -1037,7 +1037,7 @@ const ErrorDetailsBlock: FC<{ errorText: string; hidden: boolean; id: string; su
           label={copy.errorDetailsCopy}
           text={diagnosticsText}
         />
-        {window.hermesDesktop?.logsRoot && (
+        {window.zeusDesktop?.logsRoot && (
           <button
             className="aui-error-details-link"
             onClick={() => void openProfileDir(ownerProfile, root => root, copy.errorOpenLogsFailed)}
@@ -1097,7 +1097,7 @@ const textButton = (className: string, onClick: () => void, label: ReactNode) =>
 
 // Out of credits runs the same recovery as the banner and toast: the failing provider's own
 // billing page (Nous → Settings → Billing). A plan limit is Nous billing. Without this chat's
-// billing descriptor Hermes doesn't know where a third-party provider bills, so no button.
+// billing descriptor Zeus doesn't know where a third-party provider bills, so no button.
 const sameProvider = (a?: string | null, b?: string | null) =>
   Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase())
 
@@ -1184,17 +1184,17 @@ const ERROR_ACTION_RENDERERS: Record<ErrorActionId, (ctx: ErrorActionContext) =>
   start_new_session: ({ className, copy, link }) =>
     textButton(className, requestFreshSession, link ? copy.errorStartNewChatLink : copy.errorStartNewSession),
   edit_message: ({ className, copy }) => <EditPreviousMessageAction className={className} label={copy.editMessage} />,
-  open_hermes_folder: ({ className, copy, ownerProfile }) =>
-    window.hermesDesktop?.logsRoot
+  open_zeus_folder: ({ className, copy, ownerProfile }) =>
+    window.zeusDesktop?.logsRoot
       ? textButton(
           className,
           () =>
             void openProfileDir(
               ownerProfile,
               root => root.replace(/[\\/]+logs[\\/]*$/, ''),
-              copy.errorOpenHermesFolderFailed
+              copy.errorOpenZeusFolderFailed
             ),
-          copy.errorOpenHermesFolder
+          copy.errorOpenZeusFolder
         )
       : null,
   continue: ({ className, copy, target }) =>

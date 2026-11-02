@@ -1,7 +1,7 @@
-"""#101789 on the real Windows hand-off script: a Desktop swap blocked by a program outside Hermes.
+"""#101789 on the real Windows hand-off script: a Desktop swap blocked by a program outside Zeus.
 
-A real ``windows.ps1`` drives a published launcher whose ``hermes update`` is a scripted stand-in
-printing exactly what ``hermes_cli.desktop_release_holders`` prints when Windows refused the
+A real ``windows.ps1`` drives a published launcher whose ``zeus update`` is a scripted stand-in
+printing exactly what ``zeus_cli.desktop_release_holders`` prints when Windows refused the
 promotion rename. The result the relaunched Desktop reads must name that program (message and a
 structured ``release_holders`` list), so the Desktop can offer to close exactly it, and the retry
 that click starts must run under the run id its consent is bound to.
@@ -18,7 +18,7 @@ import time
 import psutil
 import pytest
 
-from hermes_cli.desktop_release_holders import ReleaseHolder, take_consent
+from zeus_cli.desktop_release_holders import ReleaseHolder, take_consent
 from tests.installation_launcher_fixture import publish_fixture_launcher
 from tests.scripts.desktop_update.windows_handoff_support import MARKER, POWERSHELL, _creation_time
 from tests.waiting import wait_until
@@ -37,7 +37,7 @@ def main():
     if sys.argv[1:2] != ['update']:
         return 0
     if os.environ.get('CORRELATION_OUT'):   # the id update_receipt and take_consent read
-        Path(os.environ['CORRELATION_OUT']).write_text(os.environ.get('HERMES_UPDATE_CORRELATION_ID', ''))
+        Path(os.environ['CORRELATION_OUT']).write_text(os.environ.get('ZEUS_UPDATE_CORRELATION_ID', ''))
     print('  Desktop app folder held by: SogouCloud.exe (pid 4242, started 1761470000.125, EXE_PATH)', flush=True)
     print('  Desktop app folder held by: AVHelper.exe (pid 5151, started 1761470001.500, path unreadable)', flush=True)
     print('  Desktop app build owed: desktop app build failed', flush=True)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 def test_blocked_swap_result_names_the_holder_for_the_desktop(tmp_path: Path) -> None:
     install = tmp_path / 'checkout'
     publish_fixture_launcher(install, CLI)
-    (install / 'hermes_cli/desktop_update_verify.py').write_text('pass\n', encoding='utf-8')
+    (install / 'zeus_cli/desktop_update_verify.py').write_text('pass\n', encoding='utf-8')
     home = tmp_path / 'home'
     home.mkdir()
     # The consent the Desktop recorded for this retry; its swap is never reached (the build failed).
@@ -63,10 +63,10 @@ def test_blocked_swap_result_names_the_holder_for_the_desktop(tmp_path: Path) ->
         ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
          '-InstallRoot', str(install), '-NoUi', '-NoGateway'],
         check=False, cwd=tmp_path, capture_output=True, text=True, timeout=150,
-        env={**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(tmp_path / 'empty-store'),
+        env={**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(tmp_path / 'empty-store'),
              'PYTHONIOENCODING': 'utf-8'},
     )
-    result_path = home / '.hermes-update-result.json'
+    result_path = home / '.zeus-update-result.json'
     log = home / 'logs' / 'desktop-update-handoff.log'
     assert result_path.is_file(), (proc.stdout, log.read_text(encoding='utf-8', errors='replace') if log.is_file() else '')
     result = json.loads(result_path.read_text(encoding='utf-8-sig'))
@@ -78,7 +78,7 @@ def test_blocked_swap_result_names_the_holder_for_the_desktop(tmp_path: Path) ->
     ], result
     assert not consent.exists(), 'a consent the run never used ends with the run'
     assert 'SogouCloud.exe (pid 4242)' in result['message'], result
-    assert 'not part of Hermes' in result['message'], result
+    assert 'not part of Zeus' in result['message'], result
 
 
 # The Desktop that clicked "Close X and retry": it quits once the hand-off has adopted its bridge.
@@ -107,7 +107,7 @@ RELAUNCHED_DESKTOP = """
 using System; using System.IO; using System.Threading;
 public static class RelaunchedDesktop {
     public static int Main() {
-        string corr = Environment.GetEnvironmentVariable("HERMES_UPDATE_CORRELATION_ID");
+        string corr = Environment.GetEnvironmentVariable("ZEUS_UPDATE_CORRELATION_ID");
         File.AppendAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launches.txt"),
             System.Diagnostics.Process.GetCurrentProcess().Id + " " + (corr ?? "<unset>") + Environment.NewLine);
         Thread.Sleep(120000);
@@ -135,19 +135,19 @@ def _env_when_relaunching(proc: subprocess.Popen, launches: Path) -> dict[str, s
 @pytest.mark.platforms('windows')
 def test_close_and_retry_runs_under_its_own_run_even_from_a_relaunched_desktop(tmp_path: Path) -> None:
     # The Desktop clicking "Close X and retry" was itself relaunched by the previous hand-off's
-    # Start-Process rung, so it inherited that run's HERMES_UPDATE_CORRELATION_ID. Its retry binds
+    # Start-Process rung, so it inherited that run's ZEUS_UPDATE_CORRELATION_ID. Its retry binds
     # the consent to the NEW run (-HandoffRun); the update must look the consent up by that run, and
     # this hand-off's id must not reach the Desktop it relaunches in turn.
     install = tmp_path / 'checkout'
     publish_fixture_launcher(install, CLI)
-    (install / 'hermes_cli/desktop_update_verify.py').write_text('pass\n', encoding='utf-8')
+    (install / 'zeus_cli/desktop_update_verify.py').write_text('pass\n', encoding='utf-8')
     home = tmp_path / 'home'
     home.mkdir()
     source = tmp_path / 'desktop.cs'
     source.write_text(RELAUNCHED_DESKTOP, encoding='utf-8')
-    # Named apart from other tests' stand-in Hermes.exe: the explorer rung takes any fresh process of
+    # Named apart from other tests' stand-in Zeus.exe: the explorer rung takes any fresh process of
     # this name as its launch. A GUI-subsystem exe, so no console window satisfies the focus wait.
-    relaunch = tmp_path / 'release' / 'win-unpacked' / 'HermesRetryDesktop.exe'
+    relaunch = tmp_path / 'release' / 'win-unpacked' / 'ZeusRetryDesktop.exe'
     relaunch.parent.mkdir(parents=True)
     subprocess.run([POWERSHELL, '-NoProfile', '-Command',
                     f"Add-Type -Path '{source}' -OutputAssembly '{relaunch}' -OutputType WindowsApplication"],
@@ -169,8 +169,8 @@ def test_close_and_retry_runs_under_its_own_run_even_from_a_relaunched_desktop(t
                  '-InstallRoot', str(install), '-NoUi', '-NoGateway', '-DesktopPid', str(desktop.pid),
                  '-HandoffRun', run, '-RelaunchExe', str(relaunch)],
                 cwd=tmp_path, stdout=sink, stderr=subprocess.STDOUT, text=True,
-                env={**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(tmp_path / 'empty-store'),
-                     'PYTHONIOENCODING': 'utf-8', 'HERMES_UPDATE_CORRELATION_ID': 'desk-1-previous-run',
+                env={**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(tmp_path / 'empty-store'),
+                     'PYTHONIOENCODING': 'utf-8', 'ZEUS_UPDATE_CORRELATION_ID': 'desk-1-previous-run',
                      'CORRELATION_OUT': str(corr_out)},
             )
             handoff_env = _env_when_relaunching(proc, launches)
@@ -198,6 +198,6 @@ def test_close_and_retry_runs_under_its_own_run_even_from_a_relaunched_desktop(t
     assert (corr, covered) == (run, True), detail
     # Only the tethered Start-Process rung inherits the hand-off's environment, so check both ends:
     # what the hand-off itself carried while it relaunched, and what the Desktop it started saw.
-    leaked = {k: v for k, v in handoff_env.items() if k.upper() == 'HERMES_UPDATE_CORRELATION_ID'}
+    leaked = {k: v for k, v in handoff_env.items() if k.upper() == 'ZEUS_UPDATE_CORRELATION_ID'}
     assert leaked == {}, detail
     assert [line.split(' ', 1)[1] for line in launches.read_text(encoding='utf-8').splitlines()] == ['<unset>'], detail

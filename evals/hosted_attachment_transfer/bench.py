@@ -26,11 +26,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 for key in list(os.environ):
-    if key.startswith('HERMES_') or key.endswith(('_API_KEY', '_TOKEN')):
+    if key.startswith('ZEUS_') or key.endswith(('_API_KEY', '_TOKEN')):
         os.environ.pop(key, None)
 TMP = Path(tempfile.mkdtemp(prefix='hosted-attachment-bench-'))
 os.environ['HOME'] = str(TMP)
-os.environ['HERMES_HOME'] = str(TMP / '.hermes')
+os.environ['ZEUS_HOME'] = str(TMP / '.zeus')
 
 from pytest import MonkeyPatch
 
@@ -141,7 +141,7 @@ def run_case(size_bytes, monkeypatch):
     from gateway.session_hosted_service import CanonicalHostedRoomService
     from gateway.session_hosted_transport import (
         HostedRoomOwnerRPC, check_remote_hosted_admission, install_hosted_transport)
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
 
     runner, homes, loop, call = _mux(monkeypatch)
     meter = SourceMeter(monkeypatch)

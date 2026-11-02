@@ -2,8 +2,8 @@
 
 Failure class: a damaged checkout strands the fleet. A killed update or a sync tool can leave
 ``.git`` in place with ``HEAD`` gone; git then says "not a git repository" to every command.
-``hermes update`` pauses the running gateway before it fetches, so the fetch failure used to
-leave the gateway stopped with a promise that "the next `hermes` command restarts them", which no
+``zeus update`` pauses the running gateway before it fetches, so the fetch failure used to
+leave the gateway stopped with a promise that "the next `zeus` command restarts them", which no
 command kept while ``HEAD`` stayed unreadable. The user's way out is rerunning the installer, which
 moves the damaged checkout aside and clones fresh.
 """
@@ -54,7 +54,7 @@ def journey(tmp_path_factory):
 def test_update_names_the_damaged_checkout_and_its_repair(journey: Journey) -> None:
     m, run = journey.machine, journey["update"]
     assert run.returncode != 0 and "damaged" in run.stdout and "install.ps1" in run.stdout, fail_with(
-        m, f"hermes update on a checkout git rejects did not name the damage and the installer repair "
+        m, f"zeus update on a checkout git rejects did not name the damage and the installer repair "
            f"(rc={run.returncode})", run)
 
 
@@ -67,10 +67,10 @@ def test_paused_gateway_comes_back_when_the_update_cannot_fetch(journey: Journey
 
 def test_rerunning_the_installer_repairs_the_checkout(journey: Journey) -> None:
     m, reinstall = journey.machine, journey["reinstall"]
-    parked = list(m.hermes_home.glob("hermes-agent.broken-*"))
+    parked = list(m.zeus_home.glob("zeus-agents.broken-*"))
     head, update = journey["head_after_reinstall"], journey["update_after_reinstall"]
     assert reinstall.returncode == 0 and parked and len(head) == 40, fail_with(
         m, f"rerunning install.ps1 over the damaged checkout did not repair it (rc={reinstall.returncode}, "
            f"parked={[p.name for p in parked]}, head={head!r})", reinstall)
     assert update.returncode == 0, fail_with(
-        m, f"hermes update after the installer repair exited {update.returncode}", update)
+        m, f"zeus update after the installer repair exited {update.returncode}", update)

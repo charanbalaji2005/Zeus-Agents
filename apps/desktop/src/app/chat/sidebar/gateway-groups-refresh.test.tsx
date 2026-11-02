@@ -6,7 +6,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { setApiRequestConnection } from '@/api/client'
 import { useSessionListActions } from '@/app/session/hooks/use-session-list-actions'
 import { SidebarProvider } from '@/components/ui/sidebar'
-import type { SessionInfo, SidebarSessionsResponse } from '@/hermes'
+import type { SessionInfo, SidebarSessionsResponse } from '@/zeus'
 import { $connectionsRegistry } from '@/store/connection-registry-state'
 import { setSidebarGrouping } from '@/store/layout'
 import { $profiles, $showAllProfiles } from '@/store/profile'
@@ -20,7 +20,7 @@ import { ChatSidebar } from './index'
 
 const listSidebarSessions = vi.fn()
 
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getCronJobs: async () => [],
   listSidebarSessions: (...args: unknown[]) => listSidebarSessions(...args)

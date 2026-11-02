@@ -38,7 +38,7 @@ describe('recycleOwnedBackend', () => {
 
     expect(target).toBe('primary')
     // The attached gateway owns its own lifetime: dropping descriptors alone re-attached the
-    // same stale process (503 "Restart required" after `hermes update`), so it is restarted
+    // same stale process (503 "Restart required" after `zeus update`), so it is restarted
     // between the SSH teardown and the descriptor drop that forces the re-ensure.
     expect(events).toEqual(['ssh:', 'restart:default', 'primary', 'applied'])
   })

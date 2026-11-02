@@ -7,7 +7,7 @@ import asyncio
 import json
 from dataclasses import asdict, replace
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 def _rebind(authority, prepared, old, policy, **extra):
@@ -38,7 +38,7 @@ async def prepare_workspace(authority, live, payload, prepared):
     """Move to project: execution cwd and TERMINAL_CWD move together (restore_policy's invariant)."""
     import os
     from gateway.session_policy import restore_policy
-    from hermes_constants import translate_cwd_for_wsl_backend
+    from zeus_constants import translate_cwd_for_wsl_backend
     from tui_gateway import git_probe
     old = restore_policy(prepared['snapshot']['receipt']['policy'])
 

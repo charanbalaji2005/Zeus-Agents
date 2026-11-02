@@ -77,7 +77,7 @@ def _reset_cached_sudo_passwords() -> None:
 
 def _in_delegated_child_context() -> bool:
     """True while running inside a delegate_task child. Subagents run on parent-process worker
-    threads and inherit process-wide ``HERMES_INTERACTIVE=1``, which does NOT mean they can reach
+    threads and inherit process-wide ``ZEUS_INTERACTIVE=1``, which does NOT mean they can reach
     the user: a raw ``/dev/tty`` sudo prompt from a child races the TUI for the tty and blocks the
     child for the full timeout, so children are always headless for sudo prompting. The ContextVar
     is set by ``delegated_child_context()`` and propagates via ``copy_context``."""
@@ -93,12 +93,12 @@ _SUDO_HEADLESS_FAILURES = ("sudo: a password is required", "sudo: no tty present
 
 def _handle_sudo_failure(output: str, env_type: str) -> str:
     """Append a SUDO_PASSWORD tip when sudo failed in a headless context
-    (gateway session, delegate_task child or `hermes chat -q`); otherwise return *output* as is."""
-    is_gateway = env_var_enabled("HERMES_GATEWAY_SESSION")
+    (gateway session, delegate_task child or `zeus chat -q`); otherwise return *output* as is."""
+    is_gateway = env_var_enabled("ZEUS_GATEWAY_SESSION")
     no_user = _no_sudo_user()
     if not (is_gateway or no_user) or not any(f in output for f in _SUDO_HEADLESS_FAILURES):
         return output
-    from hermes_constants import display_hermes_home as _dhh
+    from zeus_constants import display_zeus_home as _dhh
     if no_user:
         return output + (
             "\n\n💡 Tip: This session cannot prompt for a sudo password. "
@@ -207,7 +207,7 @@ def _prompt_for_sudo_password(timeout_seconds: int = 45, *, command: str = "") -
 
         result = {"password": None, "done": False}
         try:
-            os.environ["HERMES_SPINNER_PAUSE"] = "1"
+            os.environ["ZEUS_SPINNER_PAUSE"] = "1"
             time.sleep(0.2)
             print("\n".join((
                 "",
@@ -251,7 +251,7 @@ def _prompt_for_sudo_password(timeout_seconds: int = 45, *, command: str = "") -
             human.outcome = "error"
             return ""
         finally:
-            os.environ.pop("HERMES_SPINNER_PAUSE", None)
+            os.environ.pop("ZEUS_SPINNER_PAUSE", None)
 
 
 def _looks_like_env_assignment(token: str) -> bool:
@@ -440,8 +440,8 @@ def _rewrite_compound_background(command: str) -> str:
 
 
 def _no_sudo_user() -> bool:
-    """A delegated child or a `hermes chat -q` run: nobody can answer a sudo prompt. Single-query only
-    (not _no_user_can_answer): cron strips HERMES_INTERACTIVE and unattended platforms register no sudo callback."""
+    """A delegated child or a `zeus chat -q` run: nobody can answer a sudo prompt. Single-query only
+    (not _no_user_can_answer): cron strips ZEUS_INTERACTIVE and unattended platforms register no sudo callback."""
     from tools.approval_context import _is_single_query_approval_context
     return _in_delegated_child_context() or _is_single_query_approval_context()
 
@@ -478,11 +478,11 @@ def _transform_sudo_command(
     has_configured_password = _configured_password is not None
     sudo_password = _configured_password if has_configured_password else _get_cached_sudo_password()
 
-    # delegate_task children and `hermes chat -q` inherit HERMES_INTERACTIVE=1 and (for -q) the CLI
+    # delegate_task children and `zeus chat -q` inherit ZEUS_INTERACTIVE=1 and (for -q) the CLI
     # panel callback, but have no user on the other side — always headless; configured password and
     # session cache still apply.
     should_prompt_for_sudo = (
-        env_var_enabled("HERMES_INTERACTIVE") or _get_sudo_password_callback() is not None
+        env_var_enabled("ZEUS_INTERACTIVE") or _get_sudo_password_callback() is not None
     ) and not _no_sudo_user()
     if not has_configured_password and not sudo_password and should_prompt_for_sudo:
         # sudoers NOPASSWD must not be forced through the prompt or the -S pipe. The probe is

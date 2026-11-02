@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Fetch a docs catalog URL the way Hermes Desktop does, and fail when a browser would block it.
+"""Fetch a docs catalog URL the way Zeus Desktop does, and fail when a browser would block it.
 
 The Desktop renderer fetches ``/docs/api/plugins.json`` cross-origin (a packaged build sends
 ``Origin: null``). A browser checks CORS on every response of a redirect chain, so the docs host's
 redirect to GitHub Pages needs ``Access-Control-Allow-Origin`` as much as the final response does
 (#136483). ``curl -L`` never checks it, which is why the skills-index watchdog stayed green while
-every ``hermes://plugin/install?catalog=`` link failed.
+every ``zeus://plugin/install?catalog=`` link failed.
 
 Exit 0: every hop allows the origin and the final body is a non-empty JSON array.
 Exit 1: a browser would reject the fetch (missing header, error status, unusable body).
@@ -23,7 +23,7 @@ import urllib.request
 from email.message import Message
 from urllib.parse import urljoin
 
-DEFAULT_URL = "https://hermes-agent.nousresearch.com/docs/api/plugins.json"
+DEFAULT_URL = "https://charanbalaji2005.github.io/Zeus-Agents/docs/api/plugins.json"
 ORIGIN = "null"
 MAX_HOPS = 5
 TIMEOUT_SECONDS = 20

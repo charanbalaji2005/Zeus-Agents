@@ -14,7 +14,7 @@ maintainer: Vsemagush
 tier: community
 category: desktop
 version: "0.1.0"
-requires_hermes: ">=0.22.2"
+requires_zeus: ">=0.22.2"
 docs_url: https://github.com/Vsemagush/hermes-profile-switcher#readme
 readme: true
 screenshots:

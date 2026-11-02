@@ -133,9 +133,9 @@ def compaction_config(*, extra: str = "", slow: bool = False, threshold_tokens: 
     return cfg
 
 
-def write_home(hermes_home: Path, base_url: str, extra_config: str) -> None:
-    hermes_home.mkdir(parents=True, exist_ok=True)
-    (hermes_home / "config.yaml").write_text(
+def write_home(zeus_home: Path, base_url: str, extra_config: str) -> None:
+    zeus_home.mkdir(parents=True, exist_ok=True)
+    (zeus_home / "config.yaml").write_text(
         "model:\n"
         "  provider: custom\n"
         f"  base_url: {base_url}\n"
@@ -148,7 +148,7 @@ def write_home(hermes_home: Path, base_url: str, extra_config: str) -> None:
         + extra_config,
         encoding="utf-8",
     )
-    (hermes_home / ".env").write_text("OPENAI_API_KEY=sk-fake-e2e\n", encoding="utf-8")
+    (zeus_home / ".env").write_text("OPENAI_API_KEY=sk-fake-e2e\n", encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -500,7 +500,7 @@ class TurnRecord:
 
 @dataclass
 class Scenario:
-    """One session: its own HERMES_HOME, state.db and agent against the shared provider."""
+    """One session: its own ZEUS_HOME, state.db and agent against the shared provider."""
 
     server: FakeLLMServer
     dispatch: Dispatch
@@ -545,7 +545,7 @@ class Scenario:
 
     # agent side ---------------------------------------------------------------------------------
     def build_agent(self) -> Any:
-        from hermes_state import SessionDB
+        from zeus_state import SessionDB
         from run_agent import AIAgent
 
         if self.db is None:

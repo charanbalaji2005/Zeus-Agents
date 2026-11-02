@@ -6,7 +6,7 @@ description: "One titlebar button, next to HUD mode, that opens and hides the bu
 maintainer: jcperdomoybarra
 tier: community
 category: desktop
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 version: "1.0.0"
 readme: true
 capabilities:

@@ -81,7 +81,7 @@ export interface HeldState {
 }
 
 export interface LiveMarkerProbeOptions {
-  hermesHome: string
+  zeusHome: string
   /** The script helper `reclaim`, or null when the checkout's script predates protocol 2. */
   reclaim: (() => Promise<MarkerHelperVerdict>) | null
   /**
@@ -245,9 +245,9 @@ interface AskedEntry {
   answered?: boolean
 }
 
-function statMarkerFile(hermesHome: string): fs.Stats | null {
+function statMarkerFile(zeusHome: string): fs.Stats | null {
   try {
-    return fs.statSync(markerPath(hermesHome))
+    return fs.statSync(markerPath(zeusHome))
   } catch {
     // Gone since the read: the body alone names it until the next poll.
     return null
@@ -334,7 +334,7 @@ interface HelperSubject {
 
 function helperSubject(
   inspection: MarkerInspection,
-  hermesHome: string,
+  zeusHome: string,
   checkoutLockMayBeHeld: (() => boolean) | undefined
 ): HelperSubject | null {
   if (inspection.state === 'absent') {
@@ -357,7 +357,7 @@ function helperSubject(
   }
 
   return {
-    holdId: markerHoldId(inspection.raw, statMarkerFile(hermesHome)),
+    holdId: markerHoldId(inspection.raw, statMarkerFile(zeusHome)),
     absent: false,
     label: 'dead update marker',
     ownerPid: inspection.marker?.pid ?? null,
@@ -382,13 +382,13 @@ function keepsGateShut(verdict: MarkerHelperVerdict, absent: boolean): boolean {
  * and a retry's marker starts after the old receipt, so a retry still waits
  * (V2: `latest.json` keeps reading `failed` until the retry finalizes).
  */
-async function failedAfterV1Start(hermesHome: string, marker: UpdateMarker | null): Promise<boolean> {
+async function failedAfterV1Start(zeusHome: string, marker: UpdateMarker | null): Promise<boolean> {
   if (!marker || marker.ct !== null || marker.delegate !== null) {
     return false
   }
 
   try {
-    const text = await fs.promises.readFile(path.join(hermesHome, 'logs', 'update_receipts', 'latest.json'), 'utf8')
+    const text = await fs.promises.readFile(path.join(zeusHome, 'logs', 'update_receipts', 'latest.json'), 'utf8')
     const receipt = JSON.parse(text.replace(/^\uFEFF/, ''))
     const finishedS = Date.parse(receipt?.finished_at) / 1000
 
@@ -401,7 +401,7 @@ async function failedAfterV1Start(hermesHome: string, marker: UpdateMarker | nul
 
 /** `hasLiveMarker` for one gate wait (create it per wait, never module-wide). */
 export function liveMarkerProbe({
-  hermesHome,
+  zeusHome,
   reclaim,
   checkoutLockMayBeHeld,
   createTime,
@@ -416,10 +416,10 @@ export function liveMarkerProbe({
   let finishedLogged = false
 
   return async () => {
-    const inspection = await inspectUpdateMarker(hermesHome, { createTime, now })
+    const inspection = await inspectUpdateMarker(zeusHome, { createTime, now })
 
     if (inspection.state === 'live') {
-      if (await failedAfterV1Start(hermesHome, inspection.marker)) {
+      if (await failedAfterV1Start(zeusHome, inspection.marker)) {
         if (!finishedLogged) {
           finishedLogged = true
           log?.(
@@ -435,7 +435,7 @@ export function liveMarkerProbe({
       return true
     }
 
-    const subject = reclaim ? helperSubject(inspection, hermesHome, checkoutLockMayBeHeld) : null
+    const subject = reclaim ? helperSubject(inspection, zeusHome, checkoutLockMayBeHeld) : null
 
     if (!subject || !reclaim) {
       return false
@@ -489,16 +489,16 @@ export function liveMarkerProbe({
 /** Boot-progress text while a dead marker's checkout is still held. */
 export function heldWaitMessage(state: HeldState): string {
   if (state.verdict === 'busy' || state.verdict === 'error') {
-    return 'Hermes could not verify update ownership yet — startup is paused while it retries. Details are in logs/update.log.'
+    return 'Zeus could not verify update ownership yet — startup is paused while it retries. Details are in logs/update.log.'
   }
 
   if (state.livePid !== null) {
-    return `An update is still finishing (process ${state.livePid}) — Hermes will start automatically when it completes…`
+    return `An update is still finishing (process ${state.livePid}) — Zeus will start automatically when it completes…`
   }
 
   const who = state.ownerPid ? `the update (process ${state.ownerPid}) exited, but a process` : 'a process'
 
-  return `An update is still finishing: ${who} it started still holds the Hermes install. Hermes will start when it lets go.`
+  return `An update is still finishing: ${who} it started still holds the Zeus install. Zeus will start when it lets go.`
 }
 
 /** The log line for a confirmed "Start anyway" (R8 D3). */

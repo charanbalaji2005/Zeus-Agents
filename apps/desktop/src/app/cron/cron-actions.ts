@@ -1,4 +1,4 @@
-import { type CronJob, getApiRequestConnection, getCronJobs, triggerCronJob } from '@/hermes'
+import { type CronJob, getApiRequestConnection, getCronJobs, triggerCronJob } from '@/zeus'
 import {
   beginCronJobsAction,
   beginCronJobsRequest,

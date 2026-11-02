@@ -1,4 +1,4 @@
-import { forceRedraw, type MouseTrackingMode } from '@hermes/ink'
+import { forceRedraw, type MouseTrackingMode } from '@zeus/ink'
 
 import { DASHBOARD_TUI_MODE, NO_CONFIRM_DESTRUCTIVE } from '../../../config/env.js'
 import { dailyFortune, randomFortune } from '../../../content/fortunes.js'
@@ -140,7 +140,7 @@ export const coreCommands: SlashCommand[] = [
 
   {
     aliases: ['exit'],
-    help: 'exit hermes',
+    help: 'exit zeus',
     name: 'quit',
     run: (_arg, ctx) => {
       // In the hosted dashboard chat there is no in-page restart path after
@@ -161,7 +161,7 @@ export const coreCommands: SlashCommand[] = [
   },
 
   {
-    help: 'update Hermes Agent to the latest version (exits TUI)',
+    help: 'update Zeus Agents to the latest version (exits TUI)',
     name: 'update',
     run: (_arg, ctx) => {
       if (DASHBOARD_TUI_MODE) {
@@ -171,7 +171,7 @@ export const coreCommands: SlashCommand[] = [
       }
 
       ctx.transcript.sys(t('slashCmd.core.update.exiting'))
-      // Exit code 42 signals the Python wrapper to exec `hermes update`.
+      // Exit code 42 signals the Python wrapper to exec `zeus update`.
       // Use dieWithCode for proper cleanup (gateway kill + Ink unmount).
       setTimeout(() => ctx.session.dieWithCode(42), 100)
     }
@@ -380,7 +380,7 @@ export const coreCommands: SlashCommand[] = [
 
       // T10: the owner's config.get `full` is the redacted presentation projection (display,
       // approvals, voice keybinding) — never provider/MCP/terminal config, which can hold secrets.
-      // The client renders it; the classic CLI's full dump stays `hermes config`.
+      // The client renders it; the classic CLI's full dump stays `zeus config`.
       ctx.gateway
         .rpc<ConfigFullResponse>('config.get', { key: 'full', ...(ctx.sid ? { session_id: ctx.sid } : {}) })
         .then(
@@ -628,7 +628,7 @@ export const coreCommands: SlashCommand[] = [
         const index = String(i + 1)
 
         const tag =
-          m.role === 'user' ? t('slashCmd.core.history.youTag', index) : t('slashCmd.core.history.hermesTag', index)
+          m.role === 'user' ? t('slashCmd.core.history.youTag', index) : t('slashCmd.core.history.zeusTag', index)
 
         const toolCount = m.tools?.length ?? 0
 
@@ -678,10 +678,10 @@ export const coreCommands: SlashCommand[] = [
         }
 
         const [format = 'json', filename] = parts
-        // The user's folder, fixed now: a local session's cwd, else the launch HERMES_CWD (a remote
+        // The user's folder, fixed now: a local session's cwd, else the launch ZEUS_CWD (a remote
         // session's folder names the gateway host's disk, not this one).
-        const remote = Boolean(process.env.HERMES_TUI_GATEWAY_URL?.trim())
-        const cwd = (remote ? process.env.HERMES_CWD : sessionCwd()) || process.cwd()
+        const remote = Boolean(process.env.ZEUS_TUI_GATEWAY_URL?.trim())
+        const cwd = (remote ? process.env.ZEUS_CWD : sessionCwd()) || process.cwd()
 
         // The write is the user's accepted request: it runs even when another slash has started
         // since (the stale-flight guard drops only the success notice; a failure always shows).

@@ -12,11 +12,11 @@ async def test_keyboard_interrupt_in_end_session_does_not_skip_close(tmp_path, m
     """Exercise owner execution and release its borrowed store despite Ctrl+C."""
     from gateway.session_contract import SessionRef
     from gateway.session_cron import current_execution, execute
-    from hermes_state_registry import acquire, release
+    from zeus_state_registry import acquire, release
 
     home = tmp_path / "owner"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     monkeypatch.setenv("HOME", str(tmp_path))
     (home / "config.yaml").write_text("model:\n  default: test/model\n  provider: custom\n")
     db = acquire(home / "state.db")
@@ -41,7 +41,7 @@ async def test_keyboard_interrupt_in_end_session_does_not_skip_close(tmp_path, m
         raise RuntimeError("boom")
 
     try:
-        with patch("hermes_cli.runtime_provider.resolve_runtime_provider", return_value=runtime), \
+        with patch("zeus_cli.runtime_provider.resolve_runtime_provider", return_value=runtime), \
              patch("run_agent.AIAgent") as agent_class, \
              patch.object(db, "end_session", side_effect=KeyboardInterrupt) as end_session, \
              patch.object(db, "close", wraps=db.close) as close:

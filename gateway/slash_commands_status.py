@@ -16,7 +16,7 @@ from agent.i18n import t
 from gateway.config import Platform
 from gateway.platforms.event import MessageEvent
 from gateway.session_transcript import TranscriptReadError
-from hermes_cli.status_report import build_status_fields
+from zeus_cli.status_report import build_status_fields
 
 # Log-record parity with gateway/run.py and the origin module.
 logger = logging.getLogger("gateway.run")
@@ -71,7 +71,7 @@ async def _quiet(call, default=None):
 # English source for the transcript-read-failure reply; callers render ``history_unreadable()``
 # (``gateway.shared.history_unreadable``) so the active language applies.
 HISTORY_UNREADABLE = ("⚠️ I can't read this conversation's history right now (your earlier messages "
-                      "exist but cannot be loaded). Run `hermes doctor --fix` on the host, or use /new "
+                      "exist but cannot be loaded). Run `zeus doctor --fix` on the host, or use /new "
                       "to start fresh.")
 
 
@@ -678,7 +678,7 @@ class GatewayStatusCommandsMixin:
                 days = int(flag) if flag.isdigit() else days
                 i += 1
         try:
-            from hermes_state_registry import acquire
+            from zeus_state_registry import acquire
             from agent.insights import InsightsEngine
 
             def _run_insights():
@@ -687,10 +687,10 @@ class GatewayStatusCommandsMixin:
                     engine = InsightsEngine(db)
                     return engine.format_gateway(engine.generate(days=days, source=source))
                 finally:
-                    from hermes_state_registry import release_or_close
+                    from zeus_state_registry import release_or_close
                     release_or_close(db)
 
-            # Not a bare hop: ``SessionDB()`` resolves ``get_hermes_home()`` at call time, a
+            # Not a bare hop: ``SessionDB()`` resolves ``get_zeus_home()`` at call time, a
             # contextvar set by ``_profile_runtime_scope``; a default-executor hop starts with an
             # EMPTY context and would read the DEFAULT profile's state.db.
             return await self._run_in_executor_with_context(_run_insights)

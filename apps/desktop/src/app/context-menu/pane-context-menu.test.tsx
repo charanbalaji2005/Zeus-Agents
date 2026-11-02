@@ -7,7 +7,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } 
 import { AppContextMenu } from './app-context-menu'
 import { $contextMenu } from './store'
 
-const desktopDescriptor = Object.getOwnPropertyDescriptor(window, 'hermesDesktop')
+const desktopDescriptor = Object.getOwnPropertyDescriptor(window, 'zeusDesktop')
 const editableDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'isContentEditable')
 
 function setup() {
@@ -20,7 +20,7 @@ function setup() {
       return !!host && host.getAttribute('contenteditable') !== 'false'
     }
   })
-  Object.defineProperty(window, 'hermesDesktop', {
+  Object.defineProperty(window, 'zeusDesktop', {
     configurable: true,
     value: { writeClipboard: vi.fn().mockResolvedValue(true) }
   })
@@ -77,9 +77,9 @@ function reset() {
   vi.restoreAllMocks()
 
   if (desktopDescriptor) {
-    Object.defineProperty(window, 'hermesDesktop', desktopDescriptor)
+    Object.defineProperty(window, 'zeusDesktop', desktopDescriptor)
   } else {
-    Reflect.deleteProperty(window, 'hermesDesktop')
+    Reflect.deleteProperty(window, 'zeusDesktop')
   }
 
   if (editableDescriptor) {
@@ -127,7 +127,7 @@ it('the pane fallback serves clicked content without taking explicit or unrelate
 
     if (copy && item) {
       fireEvent.click(item)
-      expect.soft(window.hermesDesktop.writeClipboard, context).toHaveBeenCalledWith('transcript words')
+      expect.soft(window.zeusDesktop.writeClipboard, context).toHaveBeenCalledWith('transcript words')
     }
 
     reset()

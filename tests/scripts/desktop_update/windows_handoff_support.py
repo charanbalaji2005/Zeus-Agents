@@ -14,7 +14,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 SCRIPT = ROOT / 'scripts/desktop-update/windows.ps1'
 MARKER_PS1 = ROOT / 'scripts/desktop-update/marker.ps1'
-MARKER = '.hermes-update-in-progress'
+MARKER = '.zeus-update-in-progress'
 POWERSHELL = os.path.join(os.environ.get('SystemRoot', r'C:\Windows'),
                           'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')
 HOLD_CLI = """
@@ -79,13 +79,13 @@ def _dead_pid() -> int:
 
 
 def _env(home: Path, **extra: str) -> dict[str, str]:
-    return {**os.environ, 'HERMES_HOME': str(home), 'HERMES_RUNTIME_DIR': str(home / 'empty-store'), **extra}
+    return {**os.environ, 'ZEUS_HOME': str(home), 'ZEUS_RUNTIME_DIR': str(home / 'empty-store'), **extra}
 
 
 def _script(home: Path, *args: str, install: Path | None = None, **env: str) -> subprocess.Popen:
     return subprocess.Popen(
         [POWERSHELL, '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
-         '-InstallRoot', str(install or home / 'hermes-agent'), '-NoUi', *args],
+         '-InstallRoot', str(install or home / 'zeus-agents'), '-NoUi', *args],
         cwd=home, env=_env(home, **env), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
 
@@ -102,7 +102,7 @@ def _finish(proc: subprocess.Popen, timeout: int = 120) -> tuple[int, str]:
 def _op(home: Path, *args: str) -> tuple[int, str, str]:
     proc = subprocess.run(
         [POWERSHELL, '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-File', str(SCRIPT),
-         '-InstallRoot', str(home / 'hermes-agent'), *args],
+         '-InstallRoot', str(home / 'zeus-agents'), *args],
         cwd=home, env=_env(home), capture_output=True, text=True, timeout=120, check=False)
     return proc.returncode, proc.stdout, proc.stderr
 

@@ -63,7 +63,7 @@ const parse = (raw: string | Buffer) => {
 test('a reply that commits between the reconnect replay and the resume renders in full', async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('reply-tail')
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
   const ws = recordWebSockets(page)
   const session: OracleTarget = { sessionId: '', expectUserMarkers: [] }

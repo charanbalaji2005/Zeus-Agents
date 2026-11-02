@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import type { SessionMessage } from '@/types/hermes'
+import type { SessionMessage } from '@/types/zeus'
 
 import { assistantTextPart, type ChatMessage, lastTextPartText, toChatMessages } from './chat-messages'
 import {

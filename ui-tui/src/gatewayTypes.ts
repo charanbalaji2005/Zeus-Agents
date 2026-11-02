@@ -1,4 +1,4 @@
-import type { UsageModelData } from '@hermes/shared/billing'
+import type { UsageModelData } from '@zeus/shared/billing'
 import type {
   ConnectionRequestPayload,
   GatewayEvent,
@@ -6,14 +6,14 @@ import type {
   InflightTurn,
   TranscriptMessage,
   Usage
-} from '@hermes/shared/gateway-events'
-import type { HermesSkin } from '@hermes/shared/skin'
+} from '@zeus/shared/gateway-events'
+import type { ZeusSkin } from '@zeus/shared/skin'
 
 import type { SessionInfo, SlashCategory } from './types.js'
 
-/** The cross-surface skin contract (canonical shape in `@hermes/shared`).
+/** The cross-surface skin contract (canonical shape in `@zeus/shared`).
  *  Includes the paired light_colors/dark_colors overlays from #20379. */
-export type GatewaySkin = HermesSkin
+export type GatewaySkin = ZeusSkin
 
 /** Generation-bound shared control published by a canonical gateway
  *  (`gateway/session_pending_controls.py::register` / `register_clarify`). Answered through
@@ -92,7 +92,7 @@ export interface SlashExecResponse {
 
 // ── Remote Spending (Phase 2b) ───────────────────────────────────────
 
-// Wire shapes now live in @hermes/shared for reuse by TypeScript clients.
+// Wire shapes now live in @zeus/shared for reuse by TypeScript clients.
 export type {
   BillingAutoReload,
   BillingBlock,
@@ -109,7 +109,7 @@ export type {
   SubscriptionUpgradeResponse,
   UsageBarData,
   UsageModelData
-} from '@hermes/shared/billing'
+} from '@zeus/shared/billing'
 
 // ── Config ───────────────────────────────────────────────────────────
 

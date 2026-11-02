@@ -40,7 +40,7 @@ const { WebSocketServer } = createRequire(import.meta.url)('ws') as {
 }
 
 const outPath = (file: string): string =>
-  process.env.HERMES_E2E_OUT ? path.join(process.env.HERMES_E2E_OUT, file) : test.info().outputPath(file)
+  process.env.ZEUS_E2E_OUT ? path.join(process.env.ZEUS_E2E_OUT, file) : test.info().outputPath(file)
 
 interface FakeGateway {
   url: string
@@ -184,7 +184,7 @@ test('client version label follows a switch to another connection', async () => 
     { encoding: 'utf8', mode: 0o600 }
   )
 
-  const { app, page } = await launchDesktop(buildAppEnv(sandbox, { HERMES_DESKTOP_DEV_SERVER: '' }))
+  const { app, page } = await launchDesktop(buildAppEnv(sandbox, { ZEUS_DESKTOP_DEV_SERVER: '' }))
 
   const dump = (tag: string) =>
     fs.writeFileSync(outPath(`${tag}.log`), [`A hits:`, ...a.hits, '', 'B hits:', ...b.hits].join('\n'))
@@ -192,7 +192,7 @@ test('client version label follows a switch to another connection', async () => 
   try {
     await expect.poll(() => clientLabel(page), { timeout: 90_000 }).toBe('0.21.5')
     await page.screenshot({ path: outPath('before-switch.png') })
-    const before = await page.evaluate(() => (window as any).hermesDesktop.getVersion())
+    const before = await page.evaluate(() => (window as any).zeusDesktop.getVersion())
     expect(before.appVersion, 'unscoped getVersion resolves the primary (A)').toBe('0.21.5')
 
     // Real user switch: click Gateway B's default profile square on the rail.
@@ -219,7 +219,7 @@ test('client version label follows a switch to another connection', async () => 
     } finally {
       await page.screenshot({ path: outPath('after-switch.png') })
       // The preload half of the fix: a scoped getVersion must reach main.
-      scopedVersion = (await page.evaluate(() => (window as any).hermesDesktop.getVersion({ connectionId: 'gw-b' })))
+      scopedVersion = (await page.evaluate(() => (window as any).zeusDesktop.getVersion({ connectionId: 'gw-b' })))
         .appVersion
       fs.writeFileSync(
         outPath('after-switch.txt'),

@@ -34,7 +34,7 @@ test('bundled launch paths come from build metadata without filesystem access', 
     toolsDir: 'binary-store',
     storePython: 'binary-store/custom-python/python',
     sitePackages: 'dependencies/lib/python3.14/site-packages',
-    commands: { hermes: 'commands/run-hermes', custom: 'commands/custom' }
+    commands: { zeus: 'commands/run-zeus', custom: 'commands/custom' }
   }
 
   const probe = vi.spyOn(fs, 'existsSync').mockImplementation(() => {
@@ -51,7 +51,7 @@ test('bundled launch paths come from build metadata without filesystem access', 
       assert.ok(result)
       assert.equal(result.storePython, path.join(resources, 'agent-payload', runtime.storePython))
       assert.equal(result.sitePackages, path.join(resources, 'agent-payload', runtime.sitePackages))
-      assert.equal(result.shim, result.commands.hermes)
+      assert.equal(result.shim, result.commands.zeus)
       assert.equal(result.commands.custom, path.join(resources, 'agent-payload', runtime.commands.custom))
     }
 
@@ -71,7 +71,7 @@ test('ticket minting runs the payload python, never the CLI shim', () => {
     storePython: '/p/tools/python',
     repoDir: '/p/repo',
     sitePackages: '/p/venv/site-packages',
-    shim: '/p/bin/hermes'
+    shim: '/p/bin/zeus'
   }
 
   const runtime = payloadTicketRuntime(payload)
@@ -84,21 +84,21 @@ test('ticket minting runs the payload python, never the CLI shim', () => {
 // ─── update channel helpers ─────────────────────────────────────────
 
 test('installIdForRoot matches the Python install id (sha16 of the canonical path)', () => {
-  // sha256('/home/u/.hermes/hermes-agent')[:16] — recomputed independently.
+  // sha256('/home/u/.zeus/zeus-agents')[:16] — recomputed independently.
   assert.equal(
-    installIdForRoot('/home/u/.hermes/hermes-agent'),
-    createHash('sha256').update('/home/u/.hermes/hermes-agent', 'utf8').digest('hex').slice(0, 16)
+    installIdForRoot('/home/u/.zeus/zeus-agents'),
+    createHash('sha256').update('/home/u/.zeus/zeus-agents', 'utf8').digest('hex').slice(0, 16)
   )
   // The canonicalizer output is what gets hashed (symlinked homes).
   assert.equal(
-    installIdForRoot('/link/hermes-agent', () => '/real/hermes-agent'),
-    installIdForRoot('/real/hermes-agent')
+    installIdForRoot('/link/zeus-agents', () => '/real/zeus-agents'),
+    installIdForRoot('/real/zeus-agents')
   )
 })
 
 test('bundled core code precedes the dependencies, as the bin launchers order them', () => {
   assert.equal(
-    payloadPythonPath({ repoDir: 'payload/hermes-agent', sitePackages: 'payload/venv/site-packages' }),
-    ['payload/hermes-agent', 'payload/venv/site-packages'].join(path.delimiter)
+    payloadPythonPath({ repoDir: 'payload/zeus-agents', sitePackages: 'payload/venv/site-packages' }),
+    ['payload/zeus-agents', 'payload/venv/site-packages'].join(path.delimiter)
   )
 })

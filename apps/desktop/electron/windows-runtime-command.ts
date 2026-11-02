@@ -1,9 +1,9 @@
-// The published launcher owns PM activation. A Python guessed beside bin/hermes.exe does not.
+// The published launcher owns PM activation. A Python guessed beside bin/zeus.exe does not.
 export interface WindowsRuntime {
   os?: string
   arch?: string
-  hermesHome: string
-  hermesPath: string
+  zeusHome: string
+  zeusPath: string
   python: string
   launcherPath?: string
   runtimeCommand?: string[]
@@ -12,7 +12,7 @@ export interface WindowsRuntime {
 // Helpers enter through the launcher's own module dispatch, which owns PM activation;
 // every caller then needs only the launcher path it already carries.
 export function windowsHelperArgv(runtime: WindowsRuntime, operation: string, args: string[] = []): string[] {
-  return [runtime.hermesPath, '--run-module', 'hermes_cli.windows_ssh_runtime', operation, ...args]
+  return [runtime.zeusPath, '--run-module', 'zeus_cli.windows_ssh_runtime', operation, ...args]
 }
 
 // Same ancestor/leaf guard as the existing platform and marker probes.

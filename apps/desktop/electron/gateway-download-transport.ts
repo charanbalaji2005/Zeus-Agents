@@ -11,13 +11,13 @@ export async function downloadViaTokenToFile(url, token, ctx, finalizeGatewayDow
   const parsed = new URL(url)
 
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    throw new Error(`Unsupported Hermes backend URL protocol: ${parsed.protocol}`)
+    throw new Error(`Unsupported Zeus backend URL protocol: ${parsed.protocol}`)
   }
 
   const res: http.IncomingMessage = await withRetry(async () => {
     const headers = options.gatewayDescriptor
       ? await nativeGatewayHttpHeaders(options.gatewayDescriptor, url)
-      : options.bearer ? { Authorization: `Bearer ${options.bearer}` } : { 'X-Hermes-Session-Token': token }
+      : options.bearer ? { Authorization: `Bearer ${options.bearer}` } : { 'X-Zeus-Session-Token': token }
 
     return new Promise<http.IncomingMessage>((resolve, reject) => {
       const client = parsed.protocol === 'https:' ? https : http
@@ -31,7 +31,7 @@ export async function downloadViaTokenToFile(url, token, ctx, finalizeGatewayDow
       })
 
       req.on('error', reject)
-      req.setTimeout(timeoutMs, () => req.destroy(new Error(`Timed out connecting to Hermes backend after ${timeoutMs}ms`)))
+      req.setTimeout(timeoutMs, () => req.destroy(new Error(`Timed out connecting to Zeus backend after ${timeoutMs}ms`)))
       req.end()
     })
   }, { method: 'GET' })

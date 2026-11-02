@@ -16,7 +16,7 @@ export function PreviewDocumentFrame({ srcDoc, sandbox, ...props }: PreviewDocum
 
   const send = useCallback(() => {
     if (browser) {
-      frame.current?.contentWindow?.postMessage({ type: 'hermes-preview-document', html: srcDoc, scripts }, '*')
+      frame.current?.contentWindow?.postMessage({ type: 'zeus-preview-document', html: srcDoc, scripts }, '*')
     }
   }, [browser, srcDoc, scripts])
 

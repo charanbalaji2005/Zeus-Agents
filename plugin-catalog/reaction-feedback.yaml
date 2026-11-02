@@ -13,7 +13,7 @@ description: >-
 maintainer: AhmetArif0
 tier: community
 category: general
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/AhmetArif0/hermes-reaction-feedback
 version: "1.0.2"
 image: https://raw.githubusercontent.com/AhmetArif0/hermes-reaction-feedback/14f339e250ccfac1961977276256745da72e6491/docs/card.png

@@ -1,5 +1,5 @@
-import type { ModelOptionsResult } from '@hermes/shared'
-import { fuzzyRank, modelSearchText } from '@hermes/shared'
+import type { ModelOptionsResult } from '@zeus/shared'
+import { fuzzyRank, modelSearchText } from '@zeus/shared'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactElement } from 'react'
@@ -9,7 +9,7 @@ import { I18nProvider } from '@/i18n'
 import { $localModelsEnabled } from '@/store/local-models-flag'
 import { localModelsKey, localModelsOwner } from '@/store/local-runtime-jobs'
 import { stubMenuDomApis, stubResizeObserver } from '@/test/jsdom'
-import type { LocalRuntimeJob } from '@/types/hermes'
+import type { LocalRuntimeJob } from '@/types/zeus'
 
 import { ModelPickerDialog } from './model-picker'
 
@@ -17,7 +17,7 @@ import { ModelPickerDialog } from './model-picker'
 // whatever the backend answers; answering with the seeded jobs keeps the two equal.
 const seededJobs: { current: readonly LocalRuntimeJob[] } = vi.hoisted(() => ({ current: [] }))
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getLocalModelsJobs: vi.fn(async () => ({ jobs: [...seededJobs.current] })),
   getLocalModelsStatus: vi.fn().mockResolvedValue({ loading: {} })
 }))
@@ -177,7 +177,7 @@ const WINDOW_USAGE = {
   top_tier_model_ids: ['example/model-b']
 }
 
-// The gateway's per-plan words, passed through by the backend (Hermes never computes them).
+// The gateway's per-plan words, passed through by the backend (Zeus never computes them).
 const WINDOW_LEVELS = {
   'example/model-d': 'medium',
   'example/model-b': 'top_tier',

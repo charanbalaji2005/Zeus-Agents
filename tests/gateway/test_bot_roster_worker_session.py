@@ -19,7 +19,7 @@ import pytest
 
 from gateway.session_contract import Principal
 from gateway.session_group_controls import _bot_sessions, _read_bot_sessions, _sibling_sessions
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 READER = Principal('uid:desk', 'alpha', frozenset({'session:operator'}), 'transport:test')
 

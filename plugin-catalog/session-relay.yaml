@@ -7,7 +7,7 @@ description: "Hands a long-running conversation over to a fresh session before t
 maintainer: ikuro4kin-dev
 tier: community
 category: desktop
-requires_hermes: ">=0.22.0"
+requires_zeus: ">=0.22.0"
 docs_url: https://github.com/ikuro4kin-dev/hermes-session-relay#readme
 readme: true
 platforms: []

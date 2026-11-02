@@ -1,6 +1,6 @@
 'use client'
 
-import type { SetupBeat } from '@hermes/shared'
+import type { SetupBeat } from '@zeus/shared'
 
 import { FIRST_RUN_LAYOUTS } from '@/components/assistant-ui/theme-picker/layout-picker-card'
 import { TypedAnswer } from '@/components/assistant-ui/typed-answer'

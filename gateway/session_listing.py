@@ -1,7 +1,7 @@
 """Read-only native picker history; enumeration never adopts a transcript."""
-from hermes_state_local_migration import validate_legacy_row
-from hermes_state_mutation_binding import authorize_history
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_local_migration import validate_legacy_row
+from zeus_state_mutation_binding import authorize_history
+from zeus_state_runtime import RuntimeStoreError
 
 from gateway.owner_identity import same_owner
 from gateway.session_route_recovery import _messaging_platform, mountable
@@ -14,7 +14,7 @@ def _excluded_sources():
     """Main's picker listed every source but the internal ones; the API transport has its own restore.
     Plugin platforms are ``Platform`` pseudo-members enum iteration never yields, so the query
     excludes rather than enumerates, and each messaging row is judged by the cold mount's own check."""
-    from hermes_state_sessions import INTERNAL_LISTING_SOURCES
+    from zeus_state_sessions import INTERNAL_LISTING_SOURCES
     return [*INTERNAL_LISTING_SOURCES, 'api_server']
 
 
@@ -112,8 +112,8 @@ def _closed_local_session(authority, actor, row, tip):
 def _stored_closed(authority, actor, owner):
     """Boot leaves an ended session unrestored and a listing never restores one (a worker thread): judge
     its stored receipt as ``authorize`` and ``closed_and_unviewed`` would after a restore. No viewer."""
-    from hermes_state_local import local_receipt
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_local import local_receipt
+    from zeus_state_runtime import list_session_admissions
     if actor.profile_id != authority.profile_id or 'session:read' not in actor.capabilities:
         return False
     try:

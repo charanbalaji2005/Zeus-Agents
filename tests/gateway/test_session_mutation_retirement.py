@@ -11,7 +11,7 @@ from tests.gateway.test_native_http_auth import daemon, ticket, headers
 
 async def create(home, descriptor):
     async with connect(descriptor['api_origin'].replace('http:', 'ws:') + '/api/ws',
-        subprotocols=['hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket(home, descriptor, 'interactive')]) as ws:
+        subprotocols=['zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket(home, descriptor, 'interactive')]) as ws:
         await ws.send(json.dumps({'id': 1, 'method': 'session.create', 'params': {
             'request_id': 'retirement', 'source': 'gui'}}))
         while True:
@@ -56,8 +56,8 @@ def test_native_delete_exact_retry_survives_owner_restart(tmp_path):
 def test_route_retirement_rolls_back_with_receipt_and_rejects_stale_mirror(tmp_path):
     from gateway.config import GatewayConfig, Platform
     from gateway.session import SessionStore, SessionSource
-    from hermes_state import SessionDB
-    import hermes_state_runtime as rt
+    from zeus_state import SessionDB
+    import zeus_state_runtime as rt
     with SessionDB(db_path=tmp_path / 'state.db') as db:
         store = SessionStore(tmp_path / 'sessions', GatewayConfig())
         store._db = db

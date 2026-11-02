@@ -21,7 +21,7 @@
  * and is never dropped.
  */
 
-import type { PersistedTurn } from '@hermes/shared'
+import type { PersistedTurn } from '@zeus/shared'
 
 import { isRowId, isTurnUserBubble, receiptUserRowIds } from '@/app/session/hooks/use-message-stream/receipt-user-rows'
 import { transcriptRowIds } from '@/app/session/hooks/use-session-actions/pending-turn-identity'

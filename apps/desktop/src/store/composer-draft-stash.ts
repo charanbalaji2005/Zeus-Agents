@@ -33,7 +33,7 @@
  * receipt is never adopted.
  */
 
-export const DRAFT_STASH_STORAGE_KEY = 'hermes:composer-drafts:v4'
+export const DRAFT_STASH_STORAGE_KEY = 'zeus:composer-drafts:v4'
 
 /** `text: null` marks a draft cleared at `at` (sent, emptied). */
 export interface StashEntry {
@@ -54,7 +54,7 @@ interface StoredStash {
 // the cap bounds a long session's sends.
 const CLEARED_MARKER_TTL_MS = 10 * 60_000
 const MAX_CLEARED_MARKERS = 200
-const MIRROR_RECEIPT_PREFIX = 'hermes:composer-drafts:v3-mirror:'
+const MIRROR_RECEIPT_PREFIX = 'zeus:composer-drafts:v3-mirror:'
 const MAX_MIRROR_RECEIPTS = 32
 
 /** a wins over b: saved later, or (same millisecond) by a fixed order so every window agrees. */

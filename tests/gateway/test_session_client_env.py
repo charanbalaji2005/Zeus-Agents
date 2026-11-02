@@ -1,4 +1,4 @@
-"""LC-8: a shell-launched client's allowlisted ``HERMES_*`` behaviour values ride ``session.create``
+"""LC-8: a shell-launched client's allowlisted ``ZEUS_*`` behaviour values ride ``session.create``
 (``client_env``) and apply to that session only; an auto-started gateway stops inheriting them from
 whichever client started it."""
 import json
@@ -17,8 +17,8 @@ async def _owner(home, monkeypatch):
     from gateway.session import SessionStore
     from gateway.session_authority import initialize_session_authority
     from gateway.session_controls import AuthorityConnection
-    monkeypatch.setattr(run, '_hermes_home', home)
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setattr(run, '_zeus_home', home)
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     store = SessionStore(home / 'sessions', GatewayConfig())
     runner = SimpleNamespace(session_store=store, _session_db=store._db, adapters={}, _draining=False,
                              _cached_agent_for=lambda route: None, _adapter_for_source=lambda source: None,
@@ -37,7 +37,7 @@ def _home(tmp_path, config=_CONFIG):
 def _create(owner, actor, home, request_id, **extra):
     from gateway.session_local import create_local_session
     from gateway.session_policy import restore_policy
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     # A shell client attached through the gateway's own ticket (the gateway's proof it is on this host).
     ref = create_local_session(owner, actor, {'request_id': request_id, 'source': 'cli', 'cwd': str(home),
                                               'toolsets': [], **extra}, client_local=True)
@@ -56,11 +56,11 @@ def _turn_prompt(owner, policy):
 async def test_each_session_runs_its_own_clients_ephemeral_prompt(tmp_path, monkeypatch):
     home = _home(tmp_path)
     # The first client started the daemon, so its export is the daemon's environment.
-    monkeypatch.setenv('HERMES_EPHEMERAL_SYSTEM_PROMPT', 'FIRST')
+    monkeypatch.setenv('ZEUS_EPHEMERAL_SYSTEM_PROMPT', 'FIRST')
     owner, connection = await _owner(home, monkeypatch)
     try:
-        _, first = _create(owner, connection.actor, home, 'a', client_env={'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'FIRST'})
-        _, second = _create(owner, connection.actor, home, 'b', client_env={'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'SECOND'})
+        _, first = _create(owner, connection.actor, home, 'a', client_env={'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'FIRST'})
+        _, second = _create(owner, connection.actor, home, 'b', client_env={'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'SECOND'})
         _, bare = _create(owner, connection.actor, home, 'c', client_env={})  # a shell that exported nothing
         assert _turn_prompt(owner, first) == 'FIRST'
         assert _turn_prompt(owner, second) == 'SECOND'
@@ -88,11 +88,11 @@ async def test_each_session_reads_its_own_clients_prefill_file(tmp_path, monkeyp
     home = _home(tmp_path)
     (home / 'one.json').write_text(json.dumps([{'role': 'user', 'content': 'ONE'}]))
     (home / 'two.json').write_text(json.dumps([{'role': 'user', 'content': 'TWO'}]))
-    monkeypatch.setenv('HERMES_PREFILL_MESSAGES_FILE', str(home / 'one.json'))
+    monkeypatch.setenv('ZEUS_PREFILL_MESSAGES_FILE', str(home / 'one.json'))
     owner, connection = await _owner(home, monkeypatch)
     try:
         ref, policy = _create(owner, connection.actor, home, 'p2',
-                              client_env={'HERMES_PREFILL_MESSAGES_FILE': str(home / 'two.json')})
+                              client_env={'ZEUS_PREFILL_MESSAGES_FILE': str(home / 'two.json')})
         assert session_prefill(owner, policy, ref.session_id) == [{'role': 'user', 'content': 'TWO'}]
         ref, policy = _create(owner, connection.actor, home, 'p0', client_env={})
         assert session_prefill(owner, policy, ref.session_id) is None
@@ -104,12 +104,12 @@ async def test_each_session_reads_its_own_clients_prefill_file(tmp_path, monkeyp
 @pytest.mark.asyncio
 async def test_each_session_resolves_its_own_clients_provider_request(tmp_path, monkeypatch):
     from gateway.session_policy import policy_scope
-    from hermes_cli.runtime_provider import resolve_requested_provider
+    from zeus_cli.runtime_provider import resolve_requested_provider
     home = _home(tmp_path, 'platform_toolsets: {cli: []}\nmodel: {default: m}\n')
-    monkeypatch.setenv('HERMES_INFERENCE_PROVIDER', 'nous')
+    monkeypatch.setenv('ZEUS_INFERENCE_PROVIDER', 'nous')
     owner, connection = await _owner(home, monkeypatch)
     try:
-        _, mine = _create(owner, connection.actor, home, 'r1', client_env={'HERMES_INFERENCE_PROVIDER': 'openrouter'})
+        _, mine = _create(owner, connection.actor, home, 'r1', client_env={'ZEUS_INFERENCE_PROVIDER': 'openrouter'})
         _, bare = _create(owner, connection.actor, home, 'r2', client_env={})
         with policy_scope(mine, authority=owner):
             assert resolve_requested_provider() == 'openrouter'
@@ -123,14 +123,14 @@ async def test_each_session_resolves_its_own_clients_provider_request(tmp_path, 
 
 @pytest.mark.asyncio
 async def test_client_env_is_filtered_validated_and_never_echoed(tmp_path, monkeypatch):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path)
     owner, connection = await _owner(home, monkeypatch)
     try:
         _, policy = _create(owner, connection.actor, home, 'f1', client_env={
-            'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P', 'OPENAI_API_KEY': 'sk-leak', 'HERMES_YOLO_MODE': '1',
+            'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P', 'OPENAI_API_KEY': 'sk-leak', 'ZEUS_YOLO_MODE': '1',
             'NODE_CREDS': 'c', 'CONDA_DSN': 'postgres://u:p@h/db', 'NVM_DIR': '/client/.nvm'})
-        assert policy.client_env() == {'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P', 'NVM_DIR': '/client/.nvm'}
+        assert policy.client_env() == {'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P', 'NVM_DIR': '/client/.nvm'}
         assert 'client_env' not in json.loads(policy.request_json)  # launch_request stays value-free
         for bad in ('PATH=/x', {'PATH': 1}, {1: 'x'}):
             with pytest.raises(RuntimeStoreError) as exc:
@@ -143,7 +143,7 @@ async def test_client_env_is_filtered_validated_and_never_echoed(tmp_path, monke
 
 def _strip_new_policy_fields(db_path, session_id):
     """Rewrite a receipt into the exact shape a gateway before this change committed."""
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     conn = sqlite3.connect(db_path)
     try:
         key = POLICY_PREFIX + session_id
@@ -158,8 +158,8 @@ def _strip_new_policy_fields(db_path, session_id):
 @pytest.mark.asyncio
 async def test_exact_retry_of_a_session_created_before_client_env(tmp_path, monkeypatch):
     from gateway.session_local import create_local_session
-    from hermes_state_local import local_receipt
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_local import local_receipt
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path)
     owner, connection = await _owner(home, monkeypatch)
     params = {'request_id': 'old', 'source': 'cli', 'cwd': str(home), 'toolsets': []}
@@ -172,11 +172,11 @@ async def test_exact_retry_of_a_session_created_before_client_env(tmp_path, monk
         # A retry is the same request: a client environment it never carried is a different one.
         with pytest.raises(RuntimeStoreError):
             create_local_session(owner, connection.actor, {**params, 'client_env': {}})
-        new = {**params, 'request_id': 'new', 'client_env': {'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'A'}}
+        new = {**params, 'request_id': 'new', 'client_env': {'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'A'}}
         ref = create_local_session(owner, connection.actor, dict(new))
         assert create_local_session(owner, connection.actor, dict(new)) == ref
         with pytest.raises(RuntimeStoreError):
-            create_local_session(owner, connection.actor, {**new, 'client_env': {'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'B'}})
+            create_local_session(owner, connection.actor, {**new, 'client_env': {'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'B'}})
     finally:
         await connection.close()
         owner.db.close()
@@ -185,8 +185,8 @@ async def test_exact_retry_of_a_session_created_before_client_env(tmp_path, monk
 @pytest.mark.asyncio
 async def test_exact_retry_is_judged_by_the_committed_map_not_the_current_allowlist(tmp_path, monkeypatch):
     from gateway.session_local import create_local_session
-    from hermes_state_local import local_receipt
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_local import local_receipt
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path, _CONFIG + 'terminal: {client_env_passthrough: [GEM_HOME]}\n')
     owner, connection = await _owner(home, monkeypatch)
     env = {'GEM_HOME': '/gems', 'BUNDLE_PATH': '/bundle', 'PATH': '/client/bin'}
@@ -218,7 +218,7 @@ async def test_exact_retry_compares_the_complete_map_under_its_committed_rules(t
     must equal the committed map: a name those rules keep added, a stored one dropped or a value changed
     is a different request; a name they would have dropped is ignored, whatever the rules are now."""
     from gateway.session_local import create_local_session
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path, _CONFIG + 'terminal: {client_env_passthrough: [GEM_HOME]}\n')
     owner, connection = await _owner(home, monkeypatch)
     base = {'source': 'cli', 'cwd': str(home), 'toolsets': []}
@@ -229,10 +229,10 @@ async def test_exact_retry_compares_the_complete_map_under_its_committed_rules(t
     env = {'GEM_HOME': '/gems', 'PATH': '/client/bin'}
     try:
         ref, empty = create('x', env), create('e', {})
-        remote = create('r', {'PATH': '/a', 'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P'}, local=False)
+        remote = create('r', {'PATH': '/a', 'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P'}, local=False)
         (home / 'config.yaml').write_text(_CONFIG + 'terminal: {client_env_passthrough: [BUNDLE_PATH]}\n')
-        assert create('x', {**env, 'BUNDLE_PATH': '/b', 'NODE_AUTH_TOKEN': 't', 'HERMES_YOLO_MODE': '1'}) == ref
-        for added in ({'VIRTUAL_ENV': '/venv'}, {'NVM_DIR': '/nvm'}, {'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P'}):
+        assert create('x', {**env, 'BUNDLE_PATH': '/b', 'NODE_AUTH_TOKEN': 't', 'ZEUS_YOLO_MODE': '1'}) == ref
+        for added in ({'VIRTUAL_ENV': '/venv'}, {'NVM_DIR': '/nvm'}, {'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P'}):
             with pytest.raises(RuntimeStoreError):
                 create('x', {**env, **added})
         assert create('e', {'BUNDLE_PATH': '/b'}) == empty  # not allowlisted when 'e' committed
@@ -240,9 +240,9 @@ async def test_exact_retry_compares_the_complete_map_under_its_committed_rules(t
             with pytest.raises(RuntimeStoreError):
                 create('e', sent)
         # Committed without the gateway's proof of locality: host values were dropped then, so they are now.
-        assert create('r', {'PATH': '/b', 'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P'}) == remote
+        assert create('r', {'PATH': '/b', 'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P'}) == remote
         with pytest.raises(RuntimeStoreError):
-            create('r', {'PATH': '/a', 'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'Q'})
+            create('r', {'PATH': '/a', 'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'Q'})
     finally:
         await connection.close()
         owner.db.close()
@@ -253,8 +253,8 @@ async def test_overlapping_retries_across_an_allowlist_change_agree_with_sequent
     """Two creates of one request_id staged on either side of an allowlist edit: the transactional commit
     judges the loser by the winner's committed rules, exactly as a sequential retry would be."""
     from gateway.session_local import stage_local_session
-    from hermes_state_local import commit_local_session, local_receipt
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_local import commit_local_session, local_receipt
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path, _CONFIG + 'terminal: {client_env_passthrough: [GEM_HOME]}\n')
     owner, connection = await _owner(home, monkeypatch)
     env = {'GEM_HOME': '/gems', 'BUNDLE_PATH': '/bundle', 'PATH': '/client/bin'}
@@ -283,8 +283,8 @@ async def test_a_copied_staged_receipt_is_never_judged_by_its_own_filtered_map(t
     """An overlapping create's own ``client_env`` is owner memory on its staged receipt. A plain copy has lost
     it, and its filtered map (an allowlist edit dropped GEM_HOME) equals the winner's: the commit refuses it."""
     from gateway.session_local import stage_local_session
-    from hermes_state_local import commit_local_session
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_local import commit_local_session
+    from zeus_state_runtime import RuntimeStoreError
     home = _home(tmp_path, _CONFIG + 'terminal: {client_env_passthrough: [GEM_HOME]}\n')
     owner, connection = await _owner(home, monkeypatch)
 
@@ -351,25 +351,25 @@ async def test_host_values_apply_only_over_a_gateway_proven_local_attach(tmp_pat
     from gateway.session_local_recovery import restore_local_session
     from gateway.session_policy import policy_scope, restore_policy
     from gateway.session_worker_construct import session_prefill
-    from hermes_cli.runtime_provider import resolve_requested_provider
-    from hermes_state_local import local_receipt
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_cli.runtime_provider import resolve_requested_provider
+    from zeus_state_local import local_receipt
+    from zeus_state_runtime import RuntimeStoreError
     from tools.environments.local import _make_run_env
     home = _home(tmp_path, 'platform_toolsets: {cli: []}\nmodel: {default: m}\n')  # no configured provider
     repo = tmp_path / 'repo'
-    (repo / '.hermes' / 'plugins' / 'mine').mkdir(parents=True)
+    (repo / '.zeus' / 'plugins' / 'mine').mkdir(parents=True)
     for name in ('gateway', 'client'):
         (home / f'{name}.json').write_text(json.dumps([{'role': 'user', 'content': name}]))
-    monkeypatch.setenv('HERMES_PREFILL_MESSAGES_FILE', str(home / 'gateway.json'))
+    monkeypatch.setenv('ZEUS_PREFILL_MESSAGES_FILE', str(home / 'gateway.json'))
     monkeypatch.setenv('PATH', '/daemon/bin:/usr/bin:/bin')
     monkeypatch.delenv('NVM_DIR', raising=False)
     owner, remote = await _owner(home, monkeypatch)  # an attach without the gateway's own ticket
     local = AuthorityConnection(owner, object(), {'user_id': 'owner', 'native_bootstrap': True})
     monkeypatch.setattr(session_policy, 'policy_for_source', lambda runner, source: restore_policy(
         local_receipt(owner.db, source.chat_id)['policy']))
-    sent = {'PATH': '/client/bin:/usr/bin', 'NVM_DIR': '/client/nvm', 'HERMES_ENABLE_PROJECT_PLUGINS': '1',
-            'HERMES_PREFILL_MESSAGES_FILE': str(home / 'client.json'),
-            'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P', 'HERMES_INFERENCE_PROVIDER': 'openrouter'}
+    sent = {'PATH': '/client/bin:/usr/bin', 'NVM_DIR': '/client/nvm', 'ZEUS_ENABLE_PROJECT_PLUGINS': '1',
+            'ZEUS_PREFILL_MESSAGES_FILE': str(home / 'client.json'),
+            'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P', 'ZEUS_INFERENCE_PROVIDER': 'openrouter'}
 
     async def create(connection, request_id):
         snapshot = await connection.create(None, {'request_id': request_id, 'source': 'cli', 'cwd': str(repo),
@@ -388,7 +388,7 @@ async def test_host_values_apply_only_over_a_gateway_proven_local_attach(tmp_pat
         assert prefill == [{'role': 'user', 'content': 'client'}]
         assert 'project plugins' in info['config_warning']
         policy, seen, prefill, info = await create(remote, 'there')
-        assert policy.client_env() == {'HERMES_EPHEMERAL_SYSTEM_PROMPT': 'P', 'HERMES_INFERENCE_PROVIDER': 'openrouter'}
+        assert policy.client_env() == {'ZEUS_EPHEMERAL_SYSTEM_PROMPT': 'P', 'ZEUS_INFERENCE_PROVIDER': 'openrouter'}
         assert seen == ('/daemon/bin', None, 'P', 'openrouter')
         assert prefill == [{'role': 'user', 'content': 'gateway'}]
         assert 'not attached to this gateway locally' in info['config_warning']
@@ -415,7 +415,7 @@ async def test_runtime_describe_lists_client_env(tmp_path, monkeypatch):
 
 
 def test_auto_started_gateway_does_not_inherit_client_behaviour_env(tmp_path, monkeypatch):
-    from hermes_cli import gateway_runtime_start
+    from zeus_cli import gateway_runtime_start
     home = tmp_path / 'home'
     home.mkdir()
     captured = {}
@@ -424,8 +424,8 @@ def test_auto_started_gateway_does_not_inherit_client_behaviour_env(tmp_path, mo
         captured.update(kwargs['env'])
         return SimpleNamespace(pid=1)
     monkeypatch.setattr(gateway_runtime_start.subprocess, 'Popen', popen)
-    for name in ('HERMES_EPHEMERAL_SYSTEM_PROMPT', 'HERMES_PREFILL_MESSAGES_FILE', 'HERMES_INFERENCE_PROVIDER',
-                 'HERMES_ENABLE_PROJECT_PLUGINS', 'HERMES_TUI_CLIENT_ENV'):
+    for name in ('ZEUS_EPHEMERAL_SYSTEM_PROMPT', 'ZEUS_PREFILL_MESSAGES_FILE', 'ZEUS_INFERENCE_PROVIDER',
+                 'ZEUS_ENABLE_PROJECT_PLUGINS', 'ZEUS_TUI_CLIENT_ENV'):
         monkeypatch.setenv(name, 'from-the-first-client')
     monkeypatch.setenv('PATH', '/client/bin:/usr/bin')
     gateway_runtime_start.spawn_unmanaged_gateway(home, deadline=time.monotonic() + 30)

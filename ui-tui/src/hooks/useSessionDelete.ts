@@ -1,4 +1,4 @@
-import type { SessionListRow } from '@hermes/shared/gateway-events'
+import type { SessionListRow } from '@zeus/shared/gateway-events'
 import { useCallback, useRef, useState } from 'react'
 
 import { mutateCanonical } from '../app/slash/canonicalSessionControls.js'

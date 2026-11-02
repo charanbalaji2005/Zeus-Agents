@@ -25,9 +25,9 @@ _DB_UNPINNED = object()
 # Self-documenting sentinel written first into sessions.json; "_" keys are skipped on load.
 _SESSIONS_JSON_README = (
     "LEGACY MIRROR of the gateway routing index (the primary copy lives in the gateway_routing "
-    "table in ~/.hermes/state.db). Maps messaging session keys (agent:main:<platform>:...) to "
+    "table in ~/.zeus/state.db). Maps messaging session keys (agent:main:<platform>:...) to "
     "active session IDs. This is NOT the session list. ALL sessions (CLI, TUI, and gateway) live "
-    "in ~/.hermes/state.db and are shown by `hermes sessions list` and `/sessions`. Disable this "
+    "in ~/.zeus/state.db and are shown by `zeus sessions list` and `/sessions`. Disable this "
     "file with `gateway.write_sessions_json: false` in config.yaml."
 )
 
@@ -71,7 +71,7 @@ class SessionPersistenceMixin:
         sessions_file = self.sessions_dir / "sessions.json"
         if db is None or not sessions_file.exists():
             return
-        from hermes_state_mutation_retirement import route_retired
+        from zeus_state_mutation_retirement import route_retired
         targets = None if session_ids is None else set(session_ids)
         with self._lazy("_save_lock", threading.Lock):  # never interleaves with a full save's write
             with open(sessions_file, "r", encoding="utf-8-sig") as f:
@@ -89,15 +89,15 @@ class SessionPersistenceMixin:
 
     def _open_session_db_for_active_scope(self, db_path: Optional[Path] = None):
         """SessionDB for the active profile scope. ``db_path`` pins the store; otherwise
-        ``_default_db_path()`` follows the context-local HERMES_HOME (resolved per call so
+        ``_default_db_path()`` follows the context-local ZEUS_HOME (resolved per call so
         multiplexed profiles reach their own store). Handles are cached per path; failed opens enter
         a bounded backoff during which callers keep using the JSONL fallback.
 
         Resolving here rather than once in ``__init__`` is the whole fix for #88532: it lets the scoping
         that the multiplexed inbound path already performs actually reach session storage.
         """
-        from hermes_state import _default_db_path
-        from hermes_state_registry import acquire
+        from zeus_state import _default_db_path
+        from zeus_state_registry import acquire
 
         path = Path(db_path) if db_path is not None else Path(_default_db_path())
 
@@ -162,7 +162,7 @@ class SessionPersistenceMixin:
         return None if not profile or profile == "default" else profile
 
     def _profile_home_for_key(self, session_key: Optional[str]) -> Optional[Path]:
-        """HERMES_HOME of the profile owning *session_key*, or None (no named owner or
+        """ZEUS_HOME of the profile owning *session_key*, or None (no named owner or
         unresolvable)."""
         profile = self._named_profile_for_key(session_key)
         if profile is None:
@@ -172,7 +172,7 @@ class SessionPersistenceMixin:
             return cache[profile]
         home: Optional[Path] = None
         try:
-            from hermes_cli.profiles import get_profile_dir, profile_exists
+            from zeus_cli.profiles import get_profile_dir, profile_exists
             if profile_exists(profile):
                 home = Path(get_profile_dir(profile))
         except Exception as exc:
@@ -186,7 +186,7 @@ class SessionPersistenceMixin:
 
     def _db_for_key(self, session_key: Optional[str]):
         """The SessionDB holding *session_key*'s rows, whatever scope is active (the owning profile
-        is encoded in the key). ``_db`` follows the ambient HERMES_HOME that only the inbound message
+        is encoded in the key). ``_db`` follows the ambient ZEUS_HOME that only the inbound message
         path installs; unscoped background work (expiry watcher) would otherwise write profile rows
         into the ROOT store until the stale-route self-heal drops a live conversation.
 
@@ -250,7 +250,7 @@ class SessionPersistenceMixin:
         would strand secondary profiles' handles with their WAL lock held ('database is locked' on
         restart). Drained under the lock, closed outside it; a pinned handle is the pinner's."""
         def _close(db) -> None:
-            from hermes_state_registry import release_or_close  # shared instances no-op on close()
+            from zeus_state_registry import release_or_close  # shared instances no-op on close()
             try:
                 release_or_close(db)
             except Exception as exc:
@@ -395,7 +395,7 @@ class SessionPersistenceMixin:
                         type(entry_data).__name__)
                     continue
                 try:
-                    from hermes_state_mutation_retirement import route_retired
+                    from zeus_state_mutation_retirement import route_retired
                     db = self._routing_db
                     if db is not None and route_retired(db, key, json.dumps(
                             {'session_id': entry_data['session_id']})):

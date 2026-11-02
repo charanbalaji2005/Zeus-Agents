@@ -38,7 +38,7 @@ description: >-
 maintainer: dyiapanis
 tier: community
 category: tools
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/dyiapanis/tabella#readme
 version: "2.0.2"
 readme: true

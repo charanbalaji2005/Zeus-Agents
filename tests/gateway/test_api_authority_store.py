@@ -8,13 +8,13 @@ from aiohttp.test_utils import TestClient, TestServer
 from gateway.config import PlatformConfig
 from gateway.platforms.api_server import APIServerAdapter
 from gateway.session_authority import SessionAuthority
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 
 
 @pytest.fixture
 def owned_api(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db = SessionDB(tmp_path / 'state.db')
     runner = SimpleNamespace(_draining=False)
     runner.session_authority = SessionAuthority(
@@ -52,13 +52,13 @@ async def test_bound_api_borrows_selected_authority_store(owned_api):
 async def test_bound_api_never_opens_unserved_home(owned_api, tmp_path, monkeypatch):
     adapter, db = owned_api
     other = tmp_path / 'unserved'
-    monkeypatch.setenv('HERMES_HOME', str(other))
+    monkeypatch.setenv('ZEUS_HOME', str(other))
     # Even an explicit legacy override cannot bypass runtime profile selection.
     adapter._session_db = db
     assert adapter._ensure_session_db() is None
     assert await adapter._ensure_session_db_async() is None
     assert not (other / 'state.db').exists()
     adapter.gateway_runner.session_authority = None
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     assert adapter._ensure_session_db() is None
     assert await adapter._ensure_session_db_async() is None

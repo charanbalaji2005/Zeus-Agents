@@ -156,7 +156,7 @@ def _generate_pyproject(plugin_dirs: list[Path] | Mapping[Path, Path], root: Pat
 
         document = tomllib.loads(core_text)
         uv_policy = document.setdefault("tool", {}).setdefault("uv", {})
-        # Release age is checked when Hermes locks; users trust that lock (#135589).
+        # Release age is checked when Zeus locks; users trust that lock (#135589).
         uv_policy.pop("exclude-newer", None)
         uv_policy.pop("exclude-newer-package", None)
         uv_policy["workspace"] = {"members": sorted(members)}
@@ -175,7 +175,7 @@ def _without_release_age(text: str) -> str:
     """Drop ``[tool.uv] exclude-newer`` from a generated root's pyproject text.
 
     The lock already holds checked versions; on the user's machine the cutoff only gates the
-    build tools uv fetches for source builds (setuptools for Hermes itself), and a mirror that
+    build tools uv fetches for source builds (setuptools for Zeus itself), and a mirror that
     serves no upload times rejects all of them (#135589). Text-level so the pre-3.11 bootstrap
     python, which has no tomllib, can run it.
     """
@@ -258,7 +258,7 @@ def enabled_plugin_dirs(*, proposed_home=None, enabled=None, disabled=None,
 def enabled_member_dirs(*, proposed_home=None, enabled=None, disabled=None) -> list[Path]:
     """Keep every selected member or refuse an incompatible selection.
 
-    A member whose requires_hermes rejects the running version sits out instead: the
+    A member whose requires_zeus rejects the running version sits out instead: the
     verdict is only as good as our version identity (an untagged source checkout reads
     as an older release), the loader skips that plugin anyway, and the member rejoins
     as soon as the verdict flips. Enabling one is still refused at admission.
@@ -268,10 +268,10 @@ def enabled_member_dirs(*, proposed_home=None, enabled=None, disabled=None) -> l
     members = []
     for path in selected:
         # Per plugin: with none selected, PM must not import the application's manifest module.
-        from hermes_cli.plugins_manifest import requires_hermes_error
+        from zeus_cli.plugins_manifest import requires_zeus_error
 
         declaration = read_python_declaration(path)
-        if requires_hermes_error(declaration.manifest):
+        if requires_zeus_error(declaration.manifest):
             continue
         reason = manifest_version_error(declaration.manifest, path.name)
         if reason:
@@ -284,7 +284,7 @@ def enabled_member_dirs(*, proposed_home=None, enabled=None, disabled=None) -> l
 def _member_key(identity: Path) -> str:
     """``<plugin dir name>-<sha256(path)[:16]>``: the hash keeps two same-named plugins from
     different homes apart; the name is what a user sees in uv's conflict text
-    (``hermes-plugin-<key> depends on …``) — a bare hash told them nothing to disable."""
+    (``zeus-plugin-<key> depends on …``) — a bare hash told them nothing to disable."""
     import re
 
     digest = hashlib.sha256(str(identity.resolve()).encode()).hexdigest()[:16]
@@ -329,7 +329,7 @@ def _workspace_member(plugin_dir: Path, root: Path, *, identity: Path) -> Path:
                 spec["path"] = (identity / relative).resolve().as_posix()
                 changed = True
         if virtual:
-            document.setdefault("project", {})["name"] = f"hermes-plugin-{key}"
+            document.setdefault("project", {})["name"] = f"zeus-plugin-{key}"
         project = document.get("project")
         # uv rejects any [project] table whose version is neither set nor dynamic, at
         # parse time and for buildable members too, so a version-less member would abort
@@ -348,7 +348,7 @@ def _workspace_member(plugin_dir: Path, root: Path, *, identity: Path) -> Path:
     member = root / "plugin-deps" / key
     member.mkdir(parents=True)
     (member / "pyproject.toml").write_text(
-        f'[project]\nname = "hermes-plugin-{key}"\nversion = "0.0.0"\n'
+        f'[project]\nname = "zeus-plugin-{key}"\nversion = "0.0.0"\n'
         'requires-python = ">=3.11"\n'
         f'dependencies = {json.dumps(specs)}\n[tool.uv]\npackage = false\n',
         encoding="utf-8",
@@ -375,7 +375,7 @@ def install_node_sidecar(
 
     # Tool availability does not authorize mutation of the sidecar itself.
     if not explicit and not lazy_installs_allowed():
-        return "lazy installs are disabled — run `hermes plugins install` and approve Node dependencies"
+        return "lazy installs are disabled — run `zeus plugins install` and approve Node dependencies"
 
     # a lockfile means reproducible `npm ci`; plain `npm install` otherwise
     install_cmd = ["ci"] if (plugin_dir / "package-lock.json").is_file() else ["install"]

@@ -50,7 +50,7 @@ class CanonicalCreateParams(ProfileParams):
     run_budget: float | None = None
     # The classic CLI's `-v`: the session agent's status lines are not quieted.
     verbose: bool = False
-    # A shell-launched client's allowlisted environment (HERMES_* behaviour values, toolchain PATH/venv),
+    # A shell-launched client's allowlisted environment (ZEUS_* behaviour values, toolchain PATH/venv),
     # applied to this session only; never echoed in ``launch_request``.
     client_env: dict[str, str] | None = None
 
@@ -110,7 +110,7 @@ class CanonicalPendingPrompt(Result):
 
 
 class CanonicalSnapshotInfo(SessionInventoryFields):
-    desktop_protocol: Literal['hermes-gateway-v1']
+    desktop_protocol: Literal['zeus-gateway-v1']
     source: str | None = None
     model: str | None = None
     lazy: bool | None = None

@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 from datetime import datetime, timezone, UTC
 
-from hermes_cli.release_channels import (
+from zeus_cli.release_channels import (
     ChannelError, build_prefix, canonical_json, validate_identity,
 )
 from scripts.bundles.channel_artifacts import assemble
@@ -42,8 +42,8 @@ def select_channel(publisher: ChannelPublisher, policy: str) -> str:
 
 def product_identity(tag: str, run=subprocess.check_output) -> dict:
     """Consume the packager's identity, not a Python copy of its naming rules."""
-    env = dict(os.environ, HERMES_DESKTOP_VARIANT="bundled", HERMES_PAYLOAD_TAG=tag)
-    for key in ("HERMES_BUILD_COMMIT", "_HERMES_CHANNEL_REQUEST_JSON"):
+    env = dict(os.environ, ZEUS_DESKTOP_VARIANT="bundled", ZEUS_PAYLOAD_TAG=tag)
+    for key in ("ZEUS_BUILD_COMMIT", "_ZEUS_CHANNEL_REQUEST_JSON"):
         env.pop(key, None)
     raw = run(["node", "-e", "console.log(JSON.stringify(require('./apps/desktop/product-identity.cjs')))"],
               env=env, text=True, encoding="utf-8", timeout=30)
@@ -136,7 +136,7 @@ def match_accepted_packages(manifest: dict, accepted: dict) -> None:
 
 
 def canary_windows_version(tag: str) -> str:
-    from hermes_cli.update_channel import canary_timestamp
+    from zeus_cli.update_channel import canary_timestamp
 
     stamp = canary_timestamp(tag)
     if stamp is None:
@@ -149,8 +149,8 @@ def admit_transaction(policy: str, env: dict, *, require_published: bool = False
                       run=stable.output) -> tuple[str, str]:
     """A callable CLI is not permission to bypass the existing workflow gate."""
     from scripts.releases.semver import is_release_version
-    from hermes_cli.release_channels import require_commit, validate_repository
-    from hermes_cli.update_channel import is_canary_tag
+    from zeus_cli.release_channels import require_commit, validate_repository
+    from zeus_cli.update_channel import is_canary_tag
 
     repository = validate_repository(env.get("GITHUB_REPOSITORY"))
     tag = env.get("RELEASE_TAG", "")
@@ -221,7 +221,7 @@ def admit_transaction(policy: str, env: dict, *, require_published: bool = False
 def accepted_stable(publisher: ChannelPublisher, env: dict, tag: str, commit: str,
                     release_epoch: int, *, lanes: frozenset[str]) -> dict:
     """Read the accepted candidate from the attempt-scoped release archive."""
-    from hermes_cli.release_channels import decode_json, require_sha256
+    from zeus_cli.release_channels import decode_json, require_sha256
 
     parsed = parse_attempt_ref(tag)
     payload_tag = f"v{parsed[0]}" if parsed else tag
@@ -291,11 +291,11 @@ def promote_stable_feeds(candidate: dict, root: Path, public_base: str) -> None:
 
 def verify_bootstrap(request: dict, manifest: dict, base: str, repository: str) -> bool:
     """Bootstrap from published release outputs, never caller attestations."""
-    from hermes_cli.release_channels import ChannelReader, decode_json
+    from zeus_cli.release_channels import ChannelReader, decode_json
     tag = request.get("releaseTag", "")
     if not tag or manifest.get("request") != request:
         raise ChannelError("Bootstrap requires published release metadata")
-    from hermes_cli.update_channel import is_canary_tag
+    from zeus_cli.update_channel import is_canary_tag
     canary = is_canary_tag(tag)
     reader = ChannelReader(base, repository)
     payload_tag = tag

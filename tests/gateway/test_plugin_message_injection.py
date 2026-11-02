@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import hermes_yaml as yaml
+import zeus_yaml as yaml
 
 from gateway.config import GatewayConfig, Platform
 from gateway.platforms.base import (
@@ -16,7 +16,7 @@ from gateway.platforms.base import (
 from gateway.platforms.event import MessageEvent, MessageType
 from gateway.run import GatewayRunner
 from gateway.session import SessionEntry, SessionSource, SessionStore, build_session_key
-from hermes_cli.plugins import PluginContext, PluginManager, PluginManifest
+from zeus_cli.plugins import PluginContext, PluginManager, PluginManifest
 
 
 def _entry(*, origin=True) -> SessionEntry:
@@ -78,14 +78,14 @@ async def test_plugin_context_routes_through_live_gateway_to_existing_session(
     tmp_path,
     monkeypatch,
 ):
-    hermes_home = tmp_path / "hermes"
-    hermes_home.mkdir()
-    (hermes_home / "config.yaml").write_text(
+    zeus_home = tmp_path / "zeus"
+    zeus_home.mkdir()
+    (zeus_home / "config.yaml").write_text(
         yaml.safe_dump({
             "plugins": {"entries": {"notify-plugin": {"allow_gateway_injection": True}}}
         })
     )
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
 
     store = SessionStore(sessions_dir=tmp_path / "sessions", config=GatewayConfig())
     source = _entry().origin
@@ -122,7 +122,7 @@ async def test_plugin_context_routes_through_live_gateway_to_existing_session(
 
     # The runner publishes process-wide; expose this standalone manager through the legacy slot so
     # the real publisher stamps it while this integration test still exercises the scheduler.
-    with patch("hermes_cli.plugins._plugin_manager", manager):
+    with patch("zeus_cli.plugins._plugin_manager", manager):
         runner._install_plugin_message_injector()
         assert (
             context.inject_message(
@@ -175,8 +175,8 @@ async def test_dispatch_uses_stored_origin_and_adapter_message_path():
         allow_adapter_delegation=False,
     )
     assert event.metadata == {
-        "hermes_plugin_id": "notify-plugin",
-        "hermes_plugin_injection": True,
+        "zeus_plugin_id": "notify-plugin",
+        "zeus_plugin_injection": True,
         "gateway_session_key": entry.session_key,
         "gateway_session_id": entry.session_id,
         "gateway_session_strict": True,
@@ -438,7 +438,7 @@ def test_install_and_clear_gateway_injector_preserves_newer_owner():
     manager = PluginManager()
 
     # The runner publishes process-wide; expose this standalone manager through the legacy slot.
-    with patch("hermes_cli.plugins._plugin_manager", manager):
+    with patch("zeus_cli.plugins._plugin_manager", manager):
         runner._install_plugin_message_injector()
         assert manager.has_gateway_message_injector is True
 
@@ -463,7 +463,7 @@ async def test_under_a_session_authority_injection_enters_the_durable_fifo(monke
     admission into the session's FIFO; it never runs on the in-process adapter lane, and a
     refused admission is reported as not routed instead of falling back to that lane."""
     import gateway.session_authorities as authorities
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
 
     adapter = SimpleNamespace(handle_message=AsyncMock())
     entry = _entry()

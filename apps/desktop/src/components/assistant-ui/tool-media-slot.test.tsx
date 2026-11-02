@@ -18,8 +18,8 @@ import { createdAt, stubThreadEnvironment, ThreadRuntime, userMessage } from './
 
 // A real transcript: one turn where the probe plugin's tool and core TTS each
 // produced an audio file, and the reply delivers both with MEDIA: lines.
-const SFX_PATH = '/home/u/.hermes/cache/generated/audio/boom.mp3'
-const TTS_PATH = '/home/u/.hermes/cache/audio/tts_reply.ogg'
+const SFX_PATH = '/home/u/.zeus/cache/generated/audio/boom.mp3'
+const TTS_PATH = '/home/u/.zeus/cache/audio/tts_reply.ogg'
 const UPLOAD_PATH = '/home/u/Music/upload.mp3'
 
 function turn(bridged = false): ThreadMessage[] {

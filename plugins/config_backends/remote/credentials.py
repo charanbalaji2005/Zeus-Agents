@@ -23,11 +23,11 @@ _IDP_KEYS = ("token_url", "client_id", "client_secret", "scope")
 
 PLANE_CREDENTIAL_ENV_NAMES = frozenset({
     # which backend, which plane, which agent record
-    "HERMES_CONFIG_BACKEND", "HERMES_CONFIG_REMOTE_URL", "HERMES_CONFIG_INSTANCE_ID",
+    "ZEUS_CONFIG_BACKEND", "ZEUS_CONFIG_REMOTE_URL", "ZEUS_CONFIG_INSTANCE_ID",
     # on-prem workload identity
     *(IDP_ENV_PREFIX + k.upper() for k in _IDP_KEYS),
     # Cloud: where auth.json lives and where its refresh token is sent
-    "HERMES_SHARED_AUTH_DIR", "HERMES_PORTAL_BASE_URL", "NOUS_PORTAL_BASE_URL",
+    "ZEUS_SHARED_AUTH_DIR", "ZEUS_PORTAL_BASE_URL", "NOUS_PORTAL_BASE_URL",
 })
 
 _HTTP_TIMEOUT_S = 15.0
@@ -60,13 +60,13 @@ def plane_token(home: Path) -> str:
 
 
 def _nous_token(home: Path) -> str:
-    from hermes_constants import reset_hermes_home_override, set_hermes_home_override
+    from zeus_constants import reset_zeus_home_override, set_zeus_home_override
 
     try:
-        from hermes_cli.auth import resolve_nous_access_token
+        from zeus_cli.auth import resolve_nous_access_token
     except Exception as exc:
         raise PlaneCredentialError(f"cannot load the Nous auth module: {exc}", retryable=False) from exc
-    token = set_hermes_home_override(home)  # auth.json is per profile home
+    token = set_zeus_home_override(home)  # auth.json is per profile home
     try:
         return resolve_nous_access_token()
     except Exception as exc:
@@ -75,7 +75,7 @@ def _nous_token(home: Path) -> str:
         raise PlaneCredentialError(
             f"no Nous access token for {home} (auth.json): {exc}", retryable=not fatal) from exc
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
 
 def _idp_token() -> str:

@@ -25,7 +25,7 @@ LINTERS = {
     '.rs': 'rustfmt --check {file} 2>&1',
 }
 
-# Node linters Hermes runs on the host (local backend) under its PM-managed Node,
+# Node linters Zeus runs on the host (local backend) under its PM-managed Node,
 # never the user's: the terminal PATH puts the user's dirs first, and ``npx tsc``
 # re-execs ``env node`` through that PATH.
 _MANAGED_NODE_LINTERS = {'.js': ('node', '--check'), '.ts': ('npx', 'tsc', '--noEmit')}
@@ -178,7 +178,7 @@ class LintMixin:
             base_cmd = _MANAGED_NODE_LINTERS[ext][0]
             result = self._run_managed_node_linter(ext, path)
             if result is None:
-                return LintResult(skipped=True, message=f"{base_cmd} not available (Hermes-managed Node not installed)")
+                return LintResult(skipped=True, message=f"{base_cmd} not available (Zeus-managed Node not installed)")
         else:
             linter_cmd = LINTERS[ext]
             base_cmd = linter_cmd.split()[0]
@@ -199,12 +199,12 @@ class LintMixin:
         import shutil
         import subprocess
 
-        from hermes_cli._subprocess_compat import windows_hide_flags
-        from hermes_constants import with_hermes_node_path
-        from tools.environments.local import _IS_WINDOWS, _msys_to_windows_path, hermes_subprocess_env
+        from zeus_cli._subprocess_compat import windows_hide_flags
+        from zeus_constants import with_zeus_node_path
+        from tools.environments.local import _IS_WINDOWS, _msys_to_windows_path, zeus_subprocess_env
 
         tool, *args = _MANAGED_NODE_LINTERS[ext]
-        executable = shutil.which(tool, path=with_hermes_node_path({"PATH": ""})["PATH"])
+        executable = shutil.which(tool, path=with_zeus_node_path({"PATH": ""})["PATH"])
         if executable is None:
             return None
         cwd = getattr(self.env, "cwd", None) or self.cwd
@@ -212,7 +212,7 @@ class LintMixin:
             path, cwd = _msys_to_windows_path(path), cwd and _msys_to_windows_path(cwd)
         try:
             proc = subprocess.run(
-                [executable, *args, path], cwd=cwd or None, env=with_hermes_node_path(hermes_subprocess_env()),
+                [executable, *args, path], cwd=cwd or None, env=with_zeus_node_path(zeus_subprocess_env()),
                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding="utf-8", errors="replace", timeout=30, creationflags=windows_hide_flags(), check=False)
         except subprocess.TimeoutExpired:
@@ -257,7 +257,7 @@ class LintMixin:
             return False
         from agent.lsp.manager import parse_trusted_workspaces
         from agent.lsp.workspace import is_trusted_workspace, operator_workspace_roots
-        from hermes_cli.config import load_config_readonly
+        from zeus_cli.config import load_config_readonly
         lsp_cfg = load_config_readonly().get("lsp")
         trusted = parse_trusted_workspaces(lsp_cfg.get("trusted_workspaces") if isinstance(lsp_cfg, dict) else None)
         return not is_trusted_workspace(getattr(self.env, "cwd", None) or self.cwd, trusted, operator_workspace_roots())

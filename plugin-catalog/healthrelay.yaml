@@ -5,7 +5,7 @@ description: "Read-only access to your own Apple Health data through a self-host
 maintainer: mwdearing
 tier: community
 category: tools
-requires_hermes: '>=0.20'
+requires_zeus: '>=0.20'
 docs_url: https://github.com/mwdearing/hermes-healthrelay#readme
 version: 0.4.4
 platforms: []

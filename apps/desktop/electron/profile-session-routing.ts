@@ -625,7 +625,7 @@ export function spliceRegistrySessionRows(
 }
 
 /** Which backend each side of a unified session list read, for counting each backend once.
- *  Identities are the gateway `install_id` (`hermes_cli/install_identity.py`), never a row tag:
+ *  Identities are the gateway `install_id` (`zeus_cli/install_identity.py`), never a row tag:
  *  production primary rows carry no `connection_id`, so a row can't say which backend served it. */
 export interface RegistryBackendIdentity {
   /** install_id of the backend the primary aggregate read; absent when unknown. */
@@ -849,7 +849,7 @@ export function pathWithRemoteOwnerScope(path: string, scope: string): string {
     return path
   }
 
-  const url = new URL(path, 'http://hermes.local')
+  const url = new URL(path, 'http://zeus.local')
   url.searchParams.set('profile', scoped)
 
   return `${url.pathname}${url.search}${url.hash}`
@@ -874,7 +874,7 @@ export async function fetchRemoteProfileSessions(
 ): Promise<SessionListResponse> {
   const params = new URLSearchParams(searchParams)
   // #64999: a per-profile override can point at a MULTI-profile backend — one
-  // `hermes serve` hosting several profiles — and an unscoped /api/sessions
+  // `zeus serve` hosting several profiles — and an unscoped /api/sessions
   // reads whichever profile the backend process was launched under. Name the
   // scope so the rows provably belong to it; the remote's own stamps then
   // carry the authoritative identity (main.ts no longer relabels).

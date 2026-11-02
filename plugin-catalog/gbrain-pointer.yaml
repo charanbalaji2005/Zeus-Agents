@@ -7,7 +7,7 @@ description: "Read-only memory.provider for GBrain (garrytan/gbrain, MIT; not af
 maintainer: praggybuilds
 tier: community
 category: memory
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/praggybuilds/hermes-gbrain-pointer#readme
 platforms: []
 capabilities:

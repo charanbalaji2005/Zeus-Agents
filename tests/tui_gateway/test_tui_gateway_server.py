@@ -14,9 +14,9 @@ from unittest.mock import Mock, patch
 import pytest
 
 from gateway.owner_identity import host_owner_subject as _owner
-from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-from hermes_cli.active_sessions import active_session_registry_snapshot
-from hermes_cli.browser_connect import ChromeDebugLaunch
+from zeus_constants import reset_zeus_home_override, set_zeus_home_override
+from zeus_cli.active_sessions import active_session_registry_snapshot
+from zeus_cli.browser_connect import ChromeDebugLaunch
 from tools import async_delegation as ad
 from tui_gateway import server
 from tui_gateway.transport import bind_transport, reset_transport
@@ -95,10 +95,10 @@ def _reap_leaked_notification_pollers():
 
 
 def test_session_slot_is_claimed_on_first_turn_not_on_create(monkeypatch, tmp_path):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
     (home / "config.yaml").write_text("max_concurrent_sessions: 1\n", encoding="utf-8")
-    token = set_hermes_home_override(home)
+    token = set_zeus_home_override(home)
 
     def _clear_server_sessions():
         for session in list(server._sessions.values()):
@@ -143,7 +143,7 @@ def test_session_slot_is_claimed_on_first_turn_not_on_create(monkeypatch, tmp_pa
         server._cfg_cache = None
         server._cfg_sig = None
         server._cfg_path = None
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
 
 def test_session_context_uses_session_cwd(monkeypatch, tmp_path):
@@ -422,7 +422,7 @@ def test_compute_host_turn_end_updates_metadata_mirror(monkeypatch):
     # background update-check thread happens to finish. This test compares two
     # snapshots taken at different times, so pin the value to keep it
     # deterministic regardless of how long the preceding tests ran.
-    import hermes_cli.banner as _banner
+    import zeus_cli.banner as _banner
 
     monkeypatch.setattr(_banner, "get_update_result", lambda timeout=0.5: None)
     session = _session(
@@ -762,7 +762,7 @@ def test_session_context_explicit_cwd_for_ephemeral_task(monkeypatch, tmp_path):
 
 
 def _write_profile_cfg(home: Path, cwd: str | None) -> Path:
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     home.mkdir(parents=True, exist_ok=True)
     cfg = {"terminal": {"cwd": cwd}} if cwd is not None else {}
@@ -771,9 +771,9 @@ def _write_profile_cfg(home: Path, cwd: str | None) -> Path:
 
 
 def test_profile_scoped_mcp_discovery_uses_target_home(monkeypatch, tmp_path):
-    """MCP discovery must start under the selected profile's HERMES_HOME."""
-    from hermes_cli import mcp_startup
-    from hermes_constants import get_hermes_home
+    """MCP discovery must start under the selected profile's ZEUS_HOME."""
+    from zeus_cli import mcp_startup
+    from zeus_constants import get_zeus_home
     from tui_gateway import entry
 
     profile_home = tmp_path / "profiles" / "sheepyr"
@@ -786,8 +786,8 @@ def test_profile_scoped_mcp_discovery_uses_target_home(monkeypatch, tmp_path):
         encoding="utf-8",
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "default"))
-    token = set_hermes_home_override(str(profile_home))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "default"))
+    token = set_zeus_home_override(str(profile_home))
 
     seen = []
 
@@ -799,7 +799,7 @@ def test_profile_scoped_mcp_discovery_uses_target_home(monkeypatch, tmp_path):
     monkeypatch.setattr(
         mcp_startup,
         "_discover_mcp_tools_without_interactive_oauth",
-        lambda: seen.append(str(get_hermes_home())),
+        lambda: seen.append(str(get_zeus_home())),
     )
 
     try:
@@ -808,7 +808,7 @@ def test_profile_scoped_mcp_discovery_uses_target_home(monkeypatch, tmp_path):
         assert thread is not None
         thread.join(timeout=2)
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
     assert seen == [str(profile_home)]
 
@@ -820,12 +820,12 @@ def test_profile_scoped_agent_build_starts_mcp_discovery_in_profile_home(
     import threading
     import uuid
 
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     profile_home = tmp_path / "profiles" / "sheepyr"
     profile_home.mkdir(parents=True)
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "default"))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "default"))
 
     seen = []
     built = threading.Event()
@@ -838,7 +838,7 @@ def test_profile_scoped_agent_build_starts_mcp_discovery_in_profile_home(
     )
     monkeypatch.setattr(
         "tui_gateway.entry.ensure_mcp_discovery_started",
-        lambda: seen.append(str(get_hermes_home())),
+        lambda: seen.append(str(get_zeus_home())),
     )
     monkeypatch.setattr(server, "_wire_callbacks", lambda _sid: None)
     monkeypatch.setattr(server, "_SlashWorker", lambda *args: None)
@@ -888,7 +888,7 @@ def test_profile_scoped_agent_build_installs_secret_scope(monkeypatch, tmp_path)
         "PROXMOX_TOKEN=grace-secret\n", encoding="utf-8"
     )
 
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "default"))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "default"))
 
     scopes = []
     built = threading.Event()
@@ -961,7 +961,7 @@ def test_completion_cwd_prefers_profile_over_stale_env(monkeypatch, tmp_path):
     stale.mkdir()
 
     monkeypatch.setenv("TERMINAL_CWD", str(stale))
-    monkeypatch.setattr(server, "_hermes_home", tmp_path / "launch-home")
+    monkeypatch.setattr(server, "_zeus_home", tmp_path / "launch-home")
     monkeypatch.setattr(server, "_profile_home", lambda name: home if name else None)
 
     assert server._completion_cwd({"profile": "ef-design"}) == str(profile_b)
@@ -980,12 +980,12 @@ def test_completion_cwd_prefers_launch_config_over_stale_env(monkeypatch, tmp_pa
     """
     configured = tmp_path / "omni"
     configured.mkdir()
-    stale = tmp_path / "hermes-agent"
+    stale = tmp_path / "zeus-agents"
     stale.mkdir()
     launch_home = _write_profile_cfg(tmp_path / "launch-home", str(configured))
 
     monkeypatch.setenv("TERMINAL_CWD", str(stale))
-    monkeypatch.setattr(server, "_hermes_home", launch_home)
+    monkeypatch.setattr(server, "_zeus_home", launch_home)
     monkeypatch.setattr(server, "_profile_home", lambda _name: None)
 
     assert server._completion_cwd({}) == str(configured)
@@ -1002,7 +1002,7 @@ def test_default_session_cwd_prefers_launch_config(monkeypatch, tmp_path):
     launch_home = _write_profile_cfg(tmp_path / "launch-home", str(configured))
 
     monkeypatch.setenv("TERMINAL_CWD", str(stale))
-    monkeypatch.setattr(server, "_hermes_home", launch_home)
+    monkeypatch.setattr(server, "_zeus_home", launch_home)
 
     assert server._default_session_cwd() == str(configured)
 
@@ -1720,12 +1720,12 @@ def test_voice_toggle_returns_configured_record_key(monkeypatch):
             check_voice_requirements=lambda: {"available": True, "details": ""}
         ),
     )
-    # ``voice.toggle`` action=on mutates ``os.environ["HERMES_VOICE"]``
+    # ``voice.toggle`` action=on mutates ``os.environ["ZEUS_VOICE"]``
     # directly (CLI parity, runtime-only flag). Take monkeypatch
     # ownership of the var so the change is reverted at teardown and
     # later tests don't inherit a stale ON state (Copilot round-5
     # review on #19835).
-    monkeypatch.setenv("HERMES_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
 
     on_resp = _dispatch_sync(
         {"id": "voice-on", "method": "voice.toggle", "params": {"action": "on"}}
@@ -1807,12 +1807,12 @@ def test_voice_record_start_handles_non_dict_voice_cfg(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=fake_start_continuous, stop_continuous=lambda: None
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
 
     for bad in (True, "cmd+b", None, 42, ["ctrl+b"], {"silence_threshold": "loud"}):
         captured.clear()
@@ -1884,7 +1884,7 @@ def test_prompt_submit_typed_stop_phrase_ends_voice_chat(monkeypatch):
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             stop_continuous=lambda force_transcribe=False: calls.__setitem__(
                 "stop_continuous", calls["stop_continuous"] + 1
@@ -1892,8 +1892,8 @@ def test_prompt_submit_typed_stop_phrase_ends_voice_chat(monkeypatch):
         ),
     )
     monkeypatch.setattr(server, "_tts_stream_stop", lambda user_barge=False: None)
-    monkeypatch.setenv("HERMES_VOICE", "1")
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
 
     resp = server.dispatch(
         {
@@ -1904,8 +1904,8 @@ def test_prompt_submit_typed_stop_phrase_ends_voice_chat(monkeypatch):
     )
 
     assert resp["result"] == {"voice_stopped": True}
-    assert os.environ["HERMES_VOICE"] == "0"
-    assert os.environ["HERMES_VOICE_TTS"] == "0"
+    assert os.environ["ZEUS_VOICE"] == "0"
+    assert os.environ["ZEUS_VOICE_TTS"] == "0"
     assert calls["stop_continuous"] == 1
     assert ("voice.transcript", {"stop_phrase": True, "typed": True}) in emitted
 
@@ -1922,7 +1922,7 @@ def test_prompt_submit_typed_stop_passes_through_when_voice_off(monkeypatch):
             )
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
 
     resp = server.dispatch(
         {
@@ -1977,13 +1977,13 @@ def test_wake_owner_is_sticky_and_routes_detection_to_first_transport(monkeypatc
 
     monkeypatch.setattr(wake_word, "load_wake_word_config", lambda: {
         "enabled": True,
-        "phrase": "hey hermes",
+        "phrase": "hey zeus",
         "surface": "auto",
         "start_new_session": True,
     })
     monkeypatch.setattr(wake_word, "check_wake_word_requirements", lambda _cfg: {
         "available": True,
-        "phrase": "hey hermes",
+        "phrase": "hey zeus",
         "provider": "test",
         "hint": "",
     })
@@ -2003,13 +2003,13 @@ def test_wake_owner_is_sticky_and_routes_detection_to_first_transport(monkeypatc
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=start_continuous,
             stop_continuous=lambda **_kwargs: None,
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
 
     first = types.SimpleNamespace(_closed=False)
     second = types.SimpleNamespace(_closed=False)
@@ -2065,7 +2065,7 @@ def test_wake_owner_is_sticky_and_routes_detection_to_first_transport(monkeypatc
         assert emitted == [(
             "wake.detected",
             "first-session",
-            {"phrase": "hey hermes", "profile": None, "start_new_session": True},
+            {"phrase": "hey zeus", "profile": None, "start_new_session": True},
             first,
         )]
         assert state["paused"] is True
@@ -2102,7 +2102,7 @@ def test_wake_owner_is_sticky_and_routes_detection_to_first_transport(monkeypatc
         assert emitted[-1] == (
             "wake.detected",
             "second-session",
-            {"phrase": "hey hermes", "profile": None, "start_new_session": True},
+            {"phrase": "hey zeus", "profile": None, "start_new_session": True},
             second,
         )
 
@@ -2125,7 +2125,7 @@ def test_wake_toggle_persists_enabled_flag_only_on_explicit_gesture(monkeypatch)
     """The ear toggle / /wake on|off write wake_word.enabled; auto-arm never does."""
     from tools import wake_word
 
-    config = {"enabled": False, "phrase": "hey hermes", "surface": "auto",
+    config = {"enabled": False, "phrase": "hey zeus", "surface": "auto",
               "start_new_session": True}
     persisted = []
 
@@ -2138,7 +2138,7 @@ def test_wake_toggle_persists_enabled_flag_only_on_explicit_gesture(monkeypatch)
     monkeypatch.setattr(wake_word, "load_wake_word_config", lambda: dict(config))
     monkeypatch.setattr(wake_word, "check_wake_word_requirements", lambda _cfg: {
         "available": True,
-        "phrase": "hey hermes",
+        "phrase": "hey zeus",
         "provider": "test",
         "hint": "",
     })
@@ -2218,12 +2218,12 @@ def test_voice_record_start_forwards_max_recording_seconds(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=fake_start_continuous, stop_continuous=lambda: None
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
 
     for cfg, expected in (
         ({"max_recording_seconds": 45}, 45),        # explicit cap forwarded as-is
@@ -2269,7 +2269,7 @@ def test_voice_record_start_cuts_inflight_tts(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=fake_start_continuous, stop_continuous=lambda **_kwargs: None
         ),
@@ -2278,7 +2278,7 @@ def test_voice_record_start_cuts_inflight_tts(monkeypatch):
     monkeypatch.setattr(
         server, "_tts_stream_stop", lambda user_barge=True: tts_calls.append(user_barge)
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
 
     resp = _dispatch_sync(
         {
@@ -2301,7 +2301,7 @@ def test_voice_record_stop_forces_transcription(monkeypatch):
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=lambda **_kwargs: None,
             stop_continuous=fake_stop_continuous,
@@ -2323,7 +2323,7 @@ def test_voice_record_stop_forces_transcription(monkeypatch):
 def test_voice_record_stop_updates_event_session_id(monkeypatch):
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=lambda **_kwargs: True,
             stop_continuous=lambda **_kwargs: None,
@@ -2346,13 +2346,13 @@ def test_voice_record_stop_updates_event_session_id(monkeypatch):
 def test_voice_record_start_reports_busy_when_stop_is_in_progress(monkeypatch):
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             start_continuous=lambda **_kwargs: False,
             stop_continuous=lambda **_kwargs: None,
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
     monkeypatch.setattr(server, "_load_cfg", lambda: {"voice": {}})
 
     resp = _dispatch_sync(
@@ -2387,11 +2387,11 @@ def test_voice_toggle_tts_branch_also_carries_record_key(monkeypatch):
             check_voice_requirements=lambda: {"available": True, "details": ""}
         ),
     )
-    monkeypatch.setenv("HERMES_VOICE", "1")
-    # setenv (not delenv) — the handler writes HERMES_VOICE_TTS directly, and
+    monkeypatch.setenv("ZEUS_VOICE", "1")
+    # setenv (not delenv) — the handler writes ZEUS_VOICE_TTS directly, and
     # delenv on an absent var registers no teardown, leaking TTS=1 into every
     # later test in the file (which now spins up the streaming TTS pipeline).
-    monkeypatch.setenv("HERMES_VOICE_TTS", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "0")
 
     tts_resp = _dispatch_sync(
         {"id": "voice-tts", "method": "voice.toggle", "params": {"action": "tts"}}
@@ -2402,16 +2402,16 @@ def test_voice_toggle_tts_branch_also_carries_record_key(monkeypatch):
 
 
 def test_load_enabled_toolsets_prefers_tui_env(monkeypatch):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "web, terminal, ,memory")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "web, terminal, ,memory")
 
     assert server._load_enabled_toolsets() == ["web", "terminal", "memory"]
 
 
 def test_load_enabled_toolsets_filters_invalid_tui_env(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "web, nope")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "web, nope")
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
@@ -2420,7 +2420,7 @@ def test_load_enabled_toolsets_filters_invalid_tui_env(monkeypatch, capsys):
 
 
 def test_load_enabled_toolsets_accepts_plugin_env_after_discovery(monkeypatch):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "plugin_demo")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "plugin_demo")
 
     import toolsets
 
@@ -2433,7 +2433,7 @@ def test_load_enabled_toolsets_accepts_plugin_env_after_discovery(monkeypatch):
     monkeypatch.setattr(toolsets, "validate_toolset", fake_validate)
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(
             discover_plugins=lambda: discovered.update({"ready": True})
         ),
@@ -2446,7 +2446,7 @@ def test_load_enabled_toolsets_folds_project_into_focus_posture(monkeypatch):
     # Focus-mode coding posture returns before the config fallback, but it's
     # still a GUI-only resolver — `project` must come along so the desktop keeps
     # the project tools while sitting in a repo.
-    monkeypatch.delenv("HERMES_TUI_TOOLSETS", raising=False)
+    monkeypatch.delenv("ZEUS_TUI_TOOLSETS", raising=False)
 
     import agent.coding_context as cc
 
@@ -2457,7 +2457,7 @@ def test_load_enabled_toolsets_folds_project_into_focus_posture(monkeypatch):
 
 def test_load_enabled_toolsets_honors_disabled_project_on_focus_path(monkeypatch):
     """#54433: focus/coding posture must not re-add `project` when disabled."""
-    monkeypatch.delenv("HERMES_TUI_TOOLSETS", raising=False)
+    monkeypatch.delenv("ZEUS_TUI_TOOLSETS", raising=False)
 
     import agent.coding_context as cc
 
@@ -2473,10 +2473,10 @@ def test_load_enabled_toolsets_honors_disabled_project_on_configured_fallback(
     monkeypatch,
 ):
     """#54433: configured/fallback path must not re-add disabled `project`."""
-    monkeypatch.delenv("HERMES_TUI_TOOLSETS", raising=False)
+    monkeypatch.delenv("ZEUS_TUI_TOOLSETS", raising=False)
 
     import agent.coding_context as cc
-    import hermes_cli.tools_config as tools_config_mod
+    import zeus_cli.tools_config as tools_config_mod
 
     monkeypatch.setattr(cc, "coding_selection", lambda **_: None)
     monkeypatch.setattr(
@@ -2503,14 +2503,14 @@ def test_with_session_toolsets_keeps_desktop_ui_when_project_disabled(monkeypatc
 
 
 def test_load_enabled_toolsets_rejects_disabled_mcp_env(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "mcp-off")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "mcp-off")
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod,
@@ -2526,7 +2526,7 @@ def test_load_enabled_toolsets_rejects_disabled_mcp_env(monkeypatch, capsys):
     # _load_enabled_toolsets. Toolsets inside their first release
     # (_RECENTLY_SHIPPED_TOOLSETS) are back-filled onto saved lists that never
     # offered them — allow those too.
-    from hermes_cli.tools_config import _RECENTLY_SHIPPED_TOOLSETS
+    from zeus_cli.tools_config import _RECENTLY_SHIPPED_TOOLSETS
 
     result = server._load_enabled_toolsets()
     assert result is not None
@@ -2538,20 +2538,20 @@ def test_load_enabled_toolsets_rejects_disabled_mcp_env(monkeypatch, capsys):
 
 
 def test_load_enabled_toolsets_falls_back_when_tui_env_invalid(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "nope")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "nope")
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod, "load_config", lambda: {"platform_toolsets": {"cli": ["memory"]}}
     )
 
-    from hermes_cli.tools_config import _RECENTLY_SHIPPED_TOOLSETS
+    from zeus_cli.tools_config import _RECENTLY_SHIPPED_TOOLSETS
 
     result = server._load_enabled_toolsets()
     assert result is not None
@@ -2562,14 +2562,14 @@ def test_load_enabled_toolsets_falls_back_when_tui_env_invalid(monkeypatch, caps
 
 
 def test_load_enabled_toolsets_warns_when_config_fallback_fails(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "nope")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "nope")
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod, "load_config", lambda: (_ for _ in ()).throw(RuntimeError("boom"))
@@ -2580,9 +2580,9 @@ def test_load_enabled_toolsets_warns_when_config_fallback_fails(monkeypatch, cap
 
 
 def test_load_enabled_toolsets_honors_builtin_env_if_config_fails(monkeypatch):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "web")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "web")
 
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod, "load_config", lambda: (_ for _ in ()).throw(RuntimeError("boom"))
@@ -2592,13 +2592,13 @@ def test_load_enabled_toolsets_honors_builtin_env_if_config_fails(monkeypatch):
 
 
 def test_load_enabled_toolsets_all_env_means_all(monkeypatch):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "all")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "all")
 
     assert server._load_enabled_toolsets() is None
 
 
 def test_load_disabled_toolsets_reads_agent_config(monkeypatch):
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod,
@@ -2610,7 +2610,7 @@ def test_load_disabled_toolsets_reads_agent_config(monkeypatch):
 
 
 def test_load_disabled_toolsets_none_when_unset_or_config_fails(monkeypatch):
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(config_mod, "load_config", lambda: {"agent": {"disabled_toolsets": []}})
     assert server._load_disabled_toolsets() is None
@@ -2625,14 +2625,14 @@ def test_load_disabled_toolsets_none_when_unset_or_config_fails(monkeypatch):
 
 
 def test_load_enabled_toolsets_reports_disabled_mcp_separately(monkeypatch, capsys):
-    monkeypatch.setenv("HERMES_TUI_TOOLSETS", "web,mcp-off,nope")
+    monkeypatch.setenv("ZEUS_TUI_TOOLSETS", "web,mcp-off,nope")
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.plugins",
+        "zeus_cli.plugins",
         types.SimpleNamespace(discover_plugins=lambda: None),
     )
 
-    import hermes_cli.config as config_mod
+    import zeus_cli.config as config_mod
 
     monkeypatch.setattr(
         config_mod,
@@ -2692,7 +2692,7 @@ def test_history_to_messages_types_the_failed_turn_boundary_for_resume():
         {"role": "user", "content": "b"},
         {"role": "assistant", "content": PARTIAL_FAILED_TURN_NOTICE},  # legacy untyped row
         {"role": "user", "content": "c"},
-        {"role": "assistant", "content": f"Quoting Hermes: {FAILED_TURN_NOTICE}"},  # a real reply
+        {"role": "assistant", "content": f"Quoting Zeus: {FAILED_TURN_NOTICE}"},  # a real reply
     ]
 
     assert [m.get("display_kind") for m in server._history_to_messages(history)] == [
@@ -3079,17 +3079,17 @@ def _two_repo_project_skill_sessions(tmp_path, monkeypatch) -> tuple[Path, Path]
     def repo(name: str, skill: str) -> Path:
         r = tmp_path / name
         (r / ".git").mkdir(parents=True)
-        (r / ".hermes" / "skills" / skill).mkdir(parents=True)
-        (r / ".hermes" / "skills" / skill / "SKILL.md").write_text(
+        (r / ".zeus" / "skills" / skill).mkdir(parents=True)
+        (r / ".zeus" / "skills" / skill / "SKILL.md").write_text(
             f"---\nname: {skill}\ndescription: from {name}\n---\n\n# {skill}\n\nBODY OF {skill.upper()}\n")
         return r
 
     repo_a, repo_b = repo("proj-a", "alpha-skill"), repo("proj-b", "beta-skill")
-    home = tmp_path / "hermes-home"
+    home = tmp_path / "zeus-home"
     (home / "skills").mkdir(parents=True)
     (home / "config.yaml").write_text(
         f"skills:\n  external_dirs: []\n  trusted_project_dirs: ['{repo_a}', '{repo_b}']\n")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     monkeypatch.setattr(skills_tool, "SKILLS_DIR", home / "skills")
     monkeypatch.setattr(skill_utils, "_skills_cfg", lambda: {
         "external_dirs": [], "trusted_project_dirs": [str(repo_a), str(repo_b)]})
@@ -3138,7 +3138,7 @@ def test_command_dispatch_reviews_staged_skill_writes(tmp_path, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()
     (home / "config.yaml").write_text("skills:\n  write_approval: true\n", encoding="utf-8")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     rec = wa.stage_write(
         wa.SKILLS,
         {"action": "create", "name": "demo-review",
@@ -3176,7 +3176,7 @@ def test_command_dispatch_skills_gate_off_answers_instead_of_refusing(tmp_path, 
     home = tmp_path / "home"
     home.mkdir()
     (home / "config.yaml").write_text("skills:\n  write_approval: false\n", encoding="utf-8")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     server._sessions["sid-wa"] = _session(profile_home=str(home))
     try:
         res = server._methods["command.dispatch"](
@@ -3195,7 +3195,7 @@ def test_command_dispatch_memory_pending_reviews_staged_writes(tmp_path, monkeyp
     home = tmp_path / "home"
     home.mkdir()
     (home / "config.yaml").write_text("memory:\n  write_approval: true\n", encoding="utf-8")
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
     wa.stage_write(wa.MEMORY, {"action": "add", "target": "memory", "content": "dispatched fact"},
                    summary="add dispatched fact", origin="foreground")
     server._sessions["sid-wa"] = _session(profile_home=str(home))
@@ -3436,7 +3436,7 @@ def test_reconcile_display_with_live_trusts_db_when_tail_absent():
 def test_live_visible_history_keeps_an_unflushed_repeat_of_the_last_turn_real_db(tmp_path):
     """The live tail is anchored on the last DB row's durable id, not its text: sending the same words again
     ("ok" -> "done") before the flush must not fold the new turn into the persisted one."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     db.create_session("s1", source="tui")
@@ -3465,7 +3465,7 @@ def test_live_visible_history_matches_eager_resume_with_real_db(tmp_path):
     projection — both keeping the candidate — so switching to a live session
     shows the same substantive answer a cold resume would.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     db.create_session("s1", source="tui")
@@ -3497,7 +3497,7 @@ def test_live_visible_history_matches_eager_resume_with_real_db(tmp_path):
 def test_live_visible_history_keeps_candidate_and_new_flushed_turn_real_db(tmp_path):
     """Real-DB variant of the combined case: a candidate from turn 1 AND a
     fully-flushed turn 2 both appear once."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     db.create_session("s1", source="tui")
@@ -3533,7 +3533,7 @@ def test_live_session_payload_reads_profile_db_not_launch_db(monkeypatch, tmp_pa
     fell back to collapsed in-memory model history — while eager
     ``session.resume`` against the same profile still showed them.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     launch_home = tmp_path / "launch"
     profile_home = tmp_path / "profile"
@@ -3587,7 +3587,7 @@ def test_lazy_child_watch_resume_serves_candidate_inclusive_display(monkeypatch,
     verbatim display projection so a persisted verification candidate is not
     collapsed out of the watch window (#65919 sibling of the warm-payload fix).
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     db.create_session("child1", source="tui")
@@ -3853,7 +3853,7 @@ def test_session_resume_follows_compression_tip(monkeypatch, tmp_path):
     the response generated after compression. session.resume must follow the
     compression tip via resolve_resume_session_id.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     base = int(time.time()) - 10_000
@@ -4038,7 +4038,7 @@ def test_session_resume_profile_uses_profile_db_cwd(monkeypatch, tmp_path):
 
     monkeypatch.setenv("TERMINAL_CWD", str(launch_cwd))
     monkeypatch.setattr(server, "_profile_home", lambda _profile: profile_home)
-    monkeypatch.setattr("hermes_state_registry.acquire", lambda db_path=None: profile_db)
+    monkeypatch.setattr("zeus_state_registry.acquire", lambda db_path=None: profile_db)
     monkeypatch.setattr(server, "_get_db", lambda: launch_db)
     monkeypatch.setattr(server, "_enable_gateway_prompts", lambda: None)
     monkeypatch.setattr(
@@ -4108,7 +4108,7 @@ def test_session_cwd_set_profile_session_updates_profile_db(monkeypatch, tmp_pat
 
     from tools import terminal_tool_lifecycle
 
-    monkeypatch.setattr("hermes_state_registry.acquire", lambda db_path=None: profile_db)
+    monkeypatch.setattr("zeus_state_registry.acquire", lambda db_path=None: profile_db)
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
     monkeypatch.setattr(terminal_tool_lifecycle, "cleanup_vm", lambda _key: None)
     monkeypatch.setattr(server, "_register_session_cwd", lambda _session: None)
@@ -4157,10 +4157,10 @@ def test_stored_session_runtime_overrides_skips_bare_billing_provider(monkeypatc
             }
         ]
     }
-    import hermes_cli.runtime_provider as rp
+    import zeus_cli.runtime_provider as rp
 
     monkeypatch.setattr(rp, "load_config", lambda: cfg)
-    monkeypatch.setattr("hermes_cli.config.load_config", lambda: cfg)
+    monkeypatch.setattr("zeus_cli.config.load_config", lambda: cfg)
     ov = server._stored_session_runtime_overrides(
         {"model": "m", "billing_provider": "custom", "model_config": {"provider": "custom:myendpoint"}}
     )
@@ -4302,20 +4302,20 @@ def test_status_callback_accepts_single_message_argument():
 
 
 def test_resolve_model_uses_inference_model_env(monkeypatch):
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.setenv("HERMES_INFERENCE_MODEL", " anthropic/claude-sonnet-4.6\n")
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.setenv("ZEUS_INFERENCE_MODEL", " anthropic/claude-sonnet-4.6\n")
 
     assert server._resolve_model() == "anthropic/claude-sonnet-4.6"
 
 
 def test_resolve_model_strips_config_model(monkeypatch):
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
     monkeypatch.setattr(
-        server, "_load_cfg", lambda: {"model": {"default": " nous/hermes-test "}}
+        server, "_load_cfg", lambda: {"model": {"default": " nous/zeus-test "}}
     )
 
-    assert server._resolve_model() == "nous/hermes-test"
+    assert server._resolve_model() == "nous/zeus-test"
 
 
 def _sync_test_session(**extra):
@@ -4328,8 +4328,8 @@ def _sync_test_session(**extra):
 
 
 def _patch_config_model(monkeypatch, model, provider=""):
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
     cfg_model = {"default": model}
     if provider:
         cfg_model["provider"] = provider
@@ -4458,10 +4458,10 @@ def test_config_sync_failure_emits_error_once_per_edit(monkeypatch):
 
 
 def test_config_sync_config_wins_over_env_seed(monkeypatch):
-    # Hosted instances set HERMES_INFERENCE_MODEL as a provision-time seed;
+    # Hosted instances set ZEUS_INFERENCE_MODEL as a provision-time seed;
     # the per-turn sync must follow config.yaml edits, not stay pinned to it.
-    monkeypatch.setenv("HERMES_INFERENCE_MODEL", "seed/model")
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
+    monkeypatch.setenv("ZEUS_INFERENCE_MODEL", "seed/model")
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {"default": "new/model"}})
     session = _sync_test_session(config_model_seen=("seed/model", ""))
     calls = []
@@ -4478,14 +4478,14 @@ def test_config_sync_config_wins_over_env_seed(monkeypatch):
 
 
 def test_config_sync_ignores_env_seed_without_config_model(monkeypatch):
-    # `hermes --tui -m <model>` sets HERMES_MODEL/HERMES_INFERENCE_MODEL as a
+    # `zeus --tui -m <model>` sets ZEUS_MODEL/ZEUS_INFERENCE_MODEL as a
     # launch-scoped seed. When config.yaml has NO model.default (typical
     # custom-provider-only setup), the sync must NOT adopt the env seed as a
     # config target — doing so replayed the -m flag as a /model switch and
     # (with persist_switch_by_default=True) wrote it into config.yaml
     # permanently.
-    monkeypatch.setenv("HERMES_MODEL", "one-shot/model")
-    monkeypatch.setenv("HERMES_INFERENCE_MODEL", "one-shot/model")
+    monkeypatch.setenv("ZEUS_MODEL", "one-shot/model")
+    monkeypatch.setenv("ZEUS_INFERENCE_MODEL", "one-shot/model")
     monkeypatch.setattr(
         server, "_load_cfg", lambda: {"model": {"provider": "custom:mylocal"}}
     )
@@ -4517,18 +4517,18 @@ def test_apply_model_switch_persist_override_false_never_persists(monkeypatch):
         error_message="",
     )
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model", lambda **kw: result
+        "zeus_cli.model_switch.switch_model", lambda **kw: result
     )
     monkeypatch.setattr(
-        "hermes_cli.model_switch.resolve_persist_behavior",
+        "zeus_cli.model_switch.resolve_persist_behavior",
         lambda *a: pytest.fail("persist_override must bypass resolve_persist_behavior"),
     )
     monkeypatch.setattr(
-        "hermes_cli.model_switch.persist_model_selection",
+        "zeus_cli.model_switch.persist_model_selection",
         lambda _r: pytest.fail("persist_override=False must not persist"),
     )
     monkeypatch.setattr(
-        "hermes_cli.model_cost_guard.expensive_model_warning",
+        "zeus_cli.model_cost_guard.expensive_model_warning",
         lambda *a, **k: None,
     )
     session = {"agent": None}
@@ -4542,27 +4542,27 @@ def test_apply_model_switch_persist_override_false_never_persists(monkeypatch):
 
 
 def test_startup_runtime_uses_tui_provider_env(monkeypatch):
-    monkeypatch.setenv("HERMES_MODEL", "nous/hermes-test")
-    monkeypatch.setenv("HERMES_TUI_PROVIDER", "nous")
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.setenv("ZEUS_MODEL", "nous/zeus-test")
+    monkeypatch.setenv("ZEUS_TUI_PROVIDER", "nous")
+    monkeypatch.delenv("ZEUS_INFERENCE_PROVIDER", raising=False)
 
-    assert server._resolve_startup_runtime() == ("nous/hermes-test", "nous")
+    assert server._resolve_startup_runtime() == ("nous/zeus-test", "nous")
 
 
 def test_startup_runtime_does_not_treat_inference_provider_as_explicit(monkeypatch):
-    monkeypatch.setenv("HERMES_MODEL", "nous/hermes-test")
-    monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
-    monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "nous")
+    monkeypatch.setenv("ZEUS_MODEL", "nous/zeus-test")
+    monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
+    monkeypatch.setenv("ZEUS_INFERENCE_PROVIDER", "nous")
     monkeypatch.setattr(
-        "hermes_cli.models.detect_static_provider_for_model",
+        "zeus_cli.models.detect_static_provider_for_model",
         lambda model, provider: None,
     )
 
-    assert server._resolve_startup_runtime() == ("nous/hermes-test", None)
+    assert server._resolve_startup_runtime() == ("nous/zeus-test", None)
 
 
 def test_load_fallback_model_merges_chain_providers_first(monkeypatch):
-    # Parity with HermesCLI / gateway: fallback_providers stays first and keeps
+    # Parity with ZeusCLI / gateway: fallback_providers stays first and keeps
     # its order, with any distinct legacy fallback_model entry merged in after
     # (deduped on provider/model/base_url).
     fallback_chain = [
@@ -4595,11 +4595,11 @@ def test_make_agent_passes_configured_fallback_chain(monkeypatch):
         captured.update(kwargs)
         return types.SimpleNamespace(model=kwargs.get("model"))
 
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
-    monkeypatch.delenv("HERMES_DESKTOP", raising=False)
-    monkeypatch.delenv("HERMES_DESKTOP_TERMINAL", raising=False)
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP_TERMINAL", raising=False)
     monkeypatch.setattr(
         server,
         "_load_cfg",
@@ -4609,7 +4609,7 @@ def test_make_agent_passes_configured_fallback_chain(monkeypatch):
         },
     )
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, target_model=None: {
             "provider": "openai-codex",
             "base_url": "https://chatgpt.com/backend-api/codex",
@@ -4631,7 +4631,7 @@ def test_make_agent_passes_configured_fallback_chain(monkeypatch):
 
 def test_make_agent_forwards_agent_disabled_toolsets(monkeypatch):
     """``agent.disabled_toolsets`` must reach AIAgent in gateway sessions too: only the AIAgent
-    filter strips a toolset out of composite defaults (``hermes-cli``), which the gateway's
+    filter strips a toolset out of composite defaults (``zeus-cli``), which the gateway's
     enabled-list resolver can't reach into (#44499)."""
     captured = _capture_make_agent_kwargs(monkeypatch)
     monkeypatch.setattr(server, "_load_enabled_toolsets", lambda *_a, **_kw: ["file"])
@@ -4864,12 +4864,12 @@ def test_background_agent_kwargs_falls_back_to_config_disabled_toolsets(monkeypa
 
 
 def test_startup_runtime_resolves_short_alias_without_network(monkeypatch):
-    monkeypatch.setenv("HERMES_MODEL", "sonnet")
-    monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.setenv("ZEUS_MODEL", "sonnet")
+    monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_PROVIDER", raising=False)
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {"provider": "auto"}})
     monkeypatch.setattr(
-        "hermes_cli.models.fetch_openrouter_models",
+        "zeus_cli.models.fetch_openrouter_models",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             AssertionError("network lookup should not run")
         ),
@@ -4882,12 +4882,12 @@ def test_startup_runtime_resolves_short_alias_without_network(monkeypatch):
 
 
 def test_startup_runtime_does_not_call_network_detector(monkeypatch):
-    monkeypatch.setenv("HERMES_MODEL", "sonnet")
-    monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.setenv("ZEUS_MODEL", "sonnet")
+    monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_PROVIDER", raising=False)
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {"provider": "auto"}})
     monkeypatch.setattr(
-        "hermes_cli.models.detect_provider_for_model",
+        "zeus_cli.models.detect_provider_for_model",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             AssertionError("network detector called")
         ),
@@ -8248,8 +8248,8 @@ def test_ensure_session_db_row_persists_explicit_cwd(monkeypatch, tmp_path):
 
     monkeypatch.setattr(server, "_get_db", lambda: _FakeDB())
     monkeypatch.setattr(server, "_resolve_model", lambda: "test-model")
-    monkeypatch.delenv("HERMES_DESKTOP", raising=False)
-    monkeypatch.delenv("HERMES_DESKTOP_TERMINAL", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP_TERMINAL", raising=False)
 
     server._ensure_session_db_row({"session_key": "k1", "cwd": str(tmp_path), "explicit_cwd": True})
 
@@ -8280,7 +8280,7 @@ def test_ensure_session_db_row_persists_session_source(monkeypatch):
 def test_ensure_session_db_row_records_a_terminal_workspace(monkeypatch, tmp_path):
     """A terminal session's directory IS its workspace, so the row records it.
 
-    The user cd'd there before running hermes. Leaving it null stranded the row
+    The user cd'd there before running zeus. Leaving it null stranded the row
     with no cwd and no git_repo_root, so the sidebar could never place the
     session under its project.
     """
@@ -8294,8 +8294,8 @@ def test_ensure_session_db_row_records_a_terminal_workspace(monkeypatch, tmp_pat
 
     monkeypatch.setattr(server, "_get_db", lambda: _FakeDB())
     monkeypatch.setattr(server, "_resolve_model", lambda: "test-model")
-    monkeypatch.delenv("HERMES_DESKTOP", raising=False)
-    monkeypatch.delenv("HERMES_DESKTOP_TERMINAL", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP", raising=False)
+    monkeypatch.delenv("ZEUS_DESKTOP_TERMINAL", raising=False)
 
     server._ensure_session_db_row({"session_key": "k1", "cwd": str(tmp_path)})
 
@@ -8398,7 +8398,7 @@ def test_ensure_session_db_row_stamps_profile_name(monkeypatch, tmp_path):
         def close(self):
             pass
 
-    monkeypatch.setattr("hermes_state_registry.acquire", _ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", _ProfileDB)
     monkeypatch.setattr(server, "_resolve_model", lambda: "test-model")
 
     server._ensure_session_db_row(
@@ -8750,8 +8750,8 @@ def test_config_set_yolo_toggles_session_scope():
 
 def test_config_set_yolo_stale_session_id_is_refused_not_process_scoped(monkeypatch):
     """A runtime id the backend no longer holds must answer 4001 so the client resumes, not flip
-    the process HERMES_YOLO_MODE that every child spawned afterwards inherits."""
-    monkeypatch.setenv("HERMES_YOLO_MODE", "0")  # setenv, not delenv: undo must also drop a leaked "1"
+    the process ZEUS_YOLO_MODE that every child spawned afterwards inherits."""
+    monkeypatch.setenv("ZEUS_YOLO_MODE", "0")  # setenv, not delenv: undo must also drop a leaked "1"
 
     with patch.dict(server._sessions, {}, clear=True):
         resp = server.handle_request(
@@ -8763,16 +8763,16 @@ def test_config_set_yolo_stale_session_id_is_refused_not_process_scoped(monkeypa
         )
 
     assert resp.get("error", {}).get("code") == 4001, resp
-    assert os.environ["HERMES_YOLO_MODE"] == "0"
+    assert os.environ["ZEUS_YOLO_MODE"] == "0"
 
 
 def test_config_set_yolo_global_scope_writes_approvals_mode(tmp_path, monkeypatch):
     """Shift+click the desktop zap -> scope="global" flips persistent approvals.mode."""
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.safe_dump({"approvals": {"mode": "manual"}}), encoding="utf-8")
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp_on = server.handle_request(
         {
@@ -8799,13 +8799,13 @@ def test_config_set_yolo_global_scope_writes_approvals_mode(tmp_path, monkeypatc
 def test_config_get_approval_mode_uses_smart_default_when_key_is_missing(
     tmp_path, monkeypatch
 ):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
-    # Point the canonical resolver (load_config → env HERMES_HOME) at the
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
+    # Point the canonical resolver (load_config → env ZEUS_HOME) at the
     # temp home too, so the smart default is asserted against THIS config
-    # rather than whatever the developer's real ~/.hermes happens to hold.
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # rather than whatever the developer's real ~/.zeus happens to hold.
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(
         yaml.safe_dump({"approvals": {"timeout": 15}})
     )
@@ -8819,14 +8819,14 @@ def test_config_get_approval_mode_uses_smart_default_when_key_is_missing(
 def test_config_get_approval_mode_fails_safe_to_manual_for_invalid_explicit_value(
     tmp_path, monkeypatch
 ):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     # _load_approval_mode delegates to the canonical resolver in
-    # tools.approval, which reads via hermes_cli.config.load_config —
-    # that path resolves HERMES_HOME from the environment, not
-    # server._hermes_home.
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # tools.approval, which reads via zeus_cli.config.load_config —
+    # that path resolves ZEUS_HOME from the environment, not
+    # server._zeus_home.
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(
         yaml.safe_dump({"approvals": {"mode": "sometimes"}})
     )
@@ -8838,12 +8838,12 @@ def test_config_get_approval_mode_fails_safe_to_manual_for_invalid_explicit_valu
 
 
 def test_config_get_approval_mode_normalizes_yaml_off(tmp_path, monkeypatch):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     # See fail-safe test above: the canonical resolver reads via
-    # load_config, which resolves HERMES_HOME from the environment.
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # load_config, which resolves ZEUS_HOME from the environment.
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(
         yaml.safe_dump({"approvals": {"mode": False}})
     )
@@ -8857,13 +8857,13 @@ def test_config_get_approval_mode_normalizes_yaml_off(tmp_path, monkeypatch):
 def test_config_set_approval_mode_persists_three_way_value_and_emits_live_status(
     tmp_path, monkeypatch
 ):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
-    # config.set writes via server._hermes_home, but the post-write
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
+    # config.set writes via server._zeus_home, but the post-write
     # session.info emit resolves the effective mode through the canonical
-    # tools.approval resolver (load_config → env HERMES_HOME).
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    # tools.approval resolver (load_config → env ZEUS_HOME).
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     emitted = []
     monkeypatch.setattr(server, "_emit", lambda *args: emitted.append(args))
     server._sessions["sid"] = {"agent": object(), "session_key": "profile-session"}
@@ -8892,10 +8892,10 @@ def test_pet_gallery_quoted_false_enabled_reports_disabled(tmp_path, monkeypatch
     quoted YAML value kept the petdex mascot enabled against the operator's
     explicit intent.
     """
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     (tmp_path / "config.yaml").write_text(
         yaml.safe_dump({"display": {"pet": {"enabled": "false"}}})
     )
@@ -8969,11 +8969,11 @@ def test_config_set_approval_mode_rejects_unknown_value():
 
 def test_config_set_yolo_global_scope_honors_explicit_value(tmp_path, monkeypatch):
     """An explicit value pins global approvals.mode regardless of prior state."""
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.safe_dump({"approvals": {"mode": "manual"}}), encoding="utf-8")
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp = server.handle_request(
         {
@@ -9019,7 +9019,7 @@ def test_config_set_fast_updates_live_agent_session_scoped(monkeypatch):
     monkeypatch.setattr(server, "_session_info", lambda _agent, *a: {"model": "x"})
     monkeypatch.setattr(server, "_emit", lambda *args: emits.append(args))
     monkeypatch.setattr(
-        "hermes_cli.models.resolve_fast_mode_overrides",
+        "zeus_cli.models.resolve_fast_mode_overrides",
         lambda _model_id, **_route: {"service_tier": "priority"},
     )
 
@@ -9098,7 +9098,7 @@ def test_config_set_fast_rejects_unsupported_model(monkeypatch):
         server, "_write_config_key", lambda path, value: writes.append((path, value))
     )
     monkeypatch.setattr(
-        "hermes_cli.models.resolve_fast_mode_overrides",
+        "zeus_cli.models.resolve_fast_mode_overrides",
         lambda _model_id, **_route: None,
     )
 
@@ -9176,7 +9176,7 @@ def test_config_busy_get_and_set(monkeypatch):
 
 
 def test_config_set_yolo_process_scope_treats_false_like_env_as_disabled(monkeypatch):
-    monkeypatch.setenv("HERMES_YOLO_MODE", "false")
+    monkeypatch.setenv("ZEUS_YOLO_MODE", "false")
 
     resp = server.handle_request(
         {
@@ -9187,7 +9187,7 @@ def test_config_set_yolo_process_scope_treats_false_like_env_as_disabled(monkeyp
     )
 
     assert resp["result"]["value"] == "1"
-    assert os.environ.get("HERMES_YOLO_MODE") == "1"
+    assert os.environ.get("ZEUS_YOLO_MODE") == "1"
 
 
 def test_config_get_statusbar_survives_non_dict_display(monkeypatch):
@@ -9211,11 +9211,11 @@ def test_config_get_busy_survives_non_dict_display(monkeypatch):
 
 
 def test_config_set_statusbar_survives_non_dict_display(tmp_path, monkeypatch):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(yaml.safe_dump({"display": "broken"}), encoding="utf-8")
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp = server.handle_request(
         {
@@ -9231,7 +9231,7 @@ def test_config_set_statusbar_survives_non_dict_display(tmp_path, monkeypatch):
 
 
 def test_config_set_details_mode_pins_all_sections(tmp_path, monkeypatch):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(
@@ -9239,7 +9239,7 @@ def test_config_set_details_mode_pins_all_sections(tmp_path, monkeypatch):
             {"display": {"sections": {"tools": "expanded", "activity": "hidden"}}}
         )
     )
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp = server.handle_request(
         {
@@ -9261,10 +9261,10 @@ def test_config_set_details_mode_pins_all_sections(tmp_path, monkeypatch):
 
 
 def test_config_set_section_writes_per_section_override(tmp_path, monkeypatch):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp = server.handle_request(
         {
@@ -9280,7 +9280,7 @@ def test_config_set_section_writes_per_section_override(tmp_path, monkeypatch):
 
 
 def test_config_set_section_clears_override_on_empty_value(tmp_path, monkeypatch):
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text(
@@ -9288,7 +9288,7 @@ def test_config_set_section_clears_override_on_empty_value(tmp_path, monkeypatch
             {"display": {"sections": {"activity": "hidden", "tools": "expanded"}}}
         )
     )
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     resp = server.handle_request(
         {
@@ -9304,7 +9304,7 @@ def test_config_set_section_clears_override_on_empty_value(tmp_path, monkeypatch
 
 
 def test_config_set_section_rejects_unknown_section_or_mode(tmp_path, monkeypatch):
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     bad_section = server.handle_request(
         {
@@ -9405,25 +9405,25 @@ def test_config_mouse_accepts_preset_strings_and_aliases(monkeypatch):
 
 
 def test_enable_gateway_prompts_sets_gateway_env(monkeypatch):
-    monkeypatch.delenv("HERMES_EXEC_ASK", raising=False)
-    monkeypatch.delenv("HERMES_GATEWAY_SESSION", raising=False)
-    monkeypatch.delenv("HERMES_INTERACTIVE", raising=False)
+    monkeypatch.delenv("ZEUS_EXEC_ASK", raising=False)
+    monkeypatch.delenv("ZEUS_GATEWAY_SESSION", raising=False)
+    monkeypatch.delenv("ZEUS_INTERACTIVE", raising=False)
 
     server._enable_gateway_prompts()
 
-    assert server.os.environ["HERMES_GATEWAY_SESSION"] == "1"
-    assert server.os.environ["HERMES_EXEC_ASK"] == "1"
-    assert server.os.environ["HERMES_INTERACTIVE"] == "1"
+    assert server.os.environ["ZEUS_GATEWAY_SESSION"] == "1"
+    assert server.os.environ["ZEUS_EXEC_ASK"] == "1"
+    assert server.os.environ["ZEUS_INTERACTIVE"] == "1"
 
 
 def test_setup_status_answers_from_the_bootstrap_record_once_it_exists(monkeypatch):
-    """Under ``hermes serve`` the boot bootstrap records who carries inference; ``setup.status``
+    """Under ``zeus serve`` the boot bootstrap records who carries inference; ``setup.status``
     reports its record (blocking for it while it is in flight) instead of re-probing, so a client's
     first poll sees the boot's answer rather than racing it."""
     import threading
-    from hermes_cli import free_tier_bootstrap as fb
+    from zeus_cli import free_tier_bootstrap as fb
     fb.reset_for_tests()
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured",
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured",
                         lambda **_kw: pytest.fail("setup.status must read the record, not re-probe"))
     release = threading.Event()
 
@@ -9472,13 +9472,13 @@ def test_probe_credentials_allows_keyless_custom_runtime():
 
 
 def test_setup_runtime_check_rejects_empty_runtime_key(monkeypatch):
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("openrouter/test-model", None))
     # No pin anywhere (startup pin None, config model pin absent): the failure keeps naming the
     # resolved route's provider.
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {}})
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **_kw: {
             "provider": "openrouter",
             "api_key": "",
@@ -9501,11 +9501,11 @@ def test_setup_runtime_check_failure_names_the_configured_pin_not_the_chain_tail
     fallback chain. When the chain only resolves at its tail (BWS secrets not yet hydrated at
     boot), the runtime stops on the tail provider and the failure used to blame it — pointing
     the user at a provider they never pinned. The failure must name the pin."""
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("glm-5.3", None))
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {"provider": "zai"}})
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **_kw: {
             "provider": "openrouter",  # the chain tail that "resolved"
             "api_key": "",
@@ -9523,12 +9523,12 @@ def test_setup_runtime_check_failure_names_the_configured_pin_not_the_chain_tail
 
 
 def test_setup_runtime_check_failure_names_startup_env_pin(monkeypatch):
-    """The startup env pin (HERMES_TUI_PROVIDER) outranks the config model pin."""
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    """The startup env pin (ZEUS_TUI_PROVIDER) outranks the config model pin."""
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("glm-5.3", "zai"))
     monkeypatch.setattr(server, "_load_cfg", lambda: {"model": {"provider": "openai-api"}})
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **_kw: {
             "provider": "openrouter",
             "api_key": "",
@@ -9544,9 +9544,9 @@ def test_setup_runtime_check_failure_names_startup_env_pin(monkeypatch):
 
 
 def test_setup_runtime_check_allows_no_key_custom_runtime(monkeypatch):
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **_kw: {
             "provider": "custom",
             "api_key": "no-key-required",
@@ -9561,10 +9561,10 @@ def test_setup_runtime_check_allows_no_key_custom_runtime(monkeypatch):
 
 
 def test_setup_runtime_check_rejects_implicit_bedrock_when_unconfigured(monkeypatch):
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: False)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: False)
     monkeypatch.setattr(server, "_load_cfg", dict)
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **_kw: {
             "provider": "bedrock",
             "api_key": "aws-sdk",
@@ -9580,7 +9580,7 @@ def test_setup_runtime_check_rejects_implicit_bedrock_when_unconfigured(monkeypa
 
 def test_setup_runtime_check_honors_requested_provider(monkeypatch):
     """Onboarding must be able to validate the provider the user just connected."""
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_load_cfg", dict)
 
     def fake_resolve(requested=None, **kwargs):
@@ -9597,7 +9597,7 @@ def test_setup_runtime_check_honors_requested_provider(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         fake_resolve,
     )
 
@@ -9616,8 +9616,8 @@ def test_setup_runtime_check_agrees_with_session_fallback_chain(monkeypatch):
     """#111775: with the primary blocked and a complete fallback entry, the probe answers what
     ``_make_agent`` would build (fallback provider + model); an explicit ``provider`` stays strict
     so another provider's fallback cannot mask a failed connection."""
-    from hermes_cli.auth import AuthError
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    from zeus_cli.auth import AuthError
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("claude-sonnet-4-5", None))
     monkeypatch.setattr(server, "_load_fallback_model",
                         lambda: [{"provider": "openrouter", "model": "openai/gpt-4.1-mini", "api_key": "sk-or-fb"}])
@@ -9627,7 +9627,7 @@ def test_setup_runtime_check_agrees_with_session_fallback_chain(monkeypatch):
             return {"provider": "openrouter", "api_key": explicit_api_key, "source": "explicit"}
         raise AuthError("No Anthropic credentials found.", provider="anthropic")
 
-    monkeypatch.setattr("hermes_cli.runtime_provider.resolve_runtime_provider", fake_resolve)
+    monkeypatch.setattr("zeus_cli.runtime_provider.resolve_runtime_provider", fake_resolve)
 
     default = server.handle_request({"id": "1", "method": "setup.runtime_check", "params": {}})
     assert default["result"]["ok"] is True
@@ -9641,10 +9641,10 @@ def test_setup_runtime_check_agrees_with_session_fallback_chain(monkeypatch):
 
 def test_setup_runtime_check_reports_target_model_on_credential_failure(monkeypatch):
     """#111775: the probe names the model session creation would use, never ``model: null``."""
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("z-ai/glm-5.2", None))
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda *, requested=None, target_model=None: {
             "provider": "zai", "api_key": "", "source": "env/config"
         },
@@ -9660,12 +9660,12 @@ def test_setup_runtime_check_scopes_launch_profile_in_multiplex_backend(monkeypa
     from agent import secret_scope
     from tui_gateway import launch_profile_policy
 
-    launch_home = tmp_path / ".hermes"
+    launch_home = tmp_path / ".zeus"
     launch_home.mkdir()
-    monkeypatch.setenv("HERMES_CODEX_BASE_URL", "https://codex.launch.test/v1")
-    monkeypatch.setattr(server, "_hermes_home", launch_home)
+    monkeypatch.setenv("ZEUS_CODEX_BASE_URL", "https://codex.launch.test/v1")
+    monkeypatch.setattr(server, "_zeus_home", launch_home)
     monkeypatch.setattr(launch_profile_policy, "_snapshot", None)
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(server, "_resolve_startup_runtime", lambda: ("gpt-5.3-codex", None))
 
     def resolve_codex(requested=None, **_kwargs):
@@ -9673,11 +9673,11 @@ def test_setup_runtime_check_scopes_launch_profile_in_multiplex_backend(monkeypa
         return {
             "provider": "openai-codex",
             "api_key": "codex-oauth-token",
-            "base_url": secret_scope.get_secret("HERMES_CODEX_BASE_URL"),
+            "base_url": secret_scope.get_secret("ZEUS_CODEX_BASE_URL"),
             "source": "credential-pool",
         }
 
-    monkeypatch.setattr("hermes_cli.runtime_provider.resolve_runtime_provider", resolve_codex)
+    monkeypatch.setattr("zeus_cli.runtime_provider.resolve_runtime_provider", resolve_codex)
     secret_scope.set_multiplex_active(True)
     try:
         response = server.handle_request(
@@ -9701,21 +9701,21 @@ def test_setup_readiness_scopes_to_requested_profile(monkeypatch, tmp_path):
     credentials must not make an unconfigured bot look ready, and the bot's
     own .env must be what the strict check sees."""
     from agent import secret_scope
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     bot_home = tmp_path / "profiles" / "bot"
     bot_home.mkdir(parents=True)
     monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-launch-profile-secret-0000")
-    monkeypatch.setattr("hermes_cli.profiles.profile_exists", lambda name: name == "bot")
+    monkeypatch.setattr("zeus_cli.profiles.profile_exists", lambda name: name == "bot")
     monkeypatch.setattr(server, "_profile_home", lambda profile: bot_home if profile == "bot" else None)
     seen = {}
 
     def fake_resolve(requested=None, **kwargs):
-        seen["home"] = Path(str(get_hermes_home())).resolve()
+        seen["home"] = Path(str(get_zeus_home())).resolve()
         seen["secret"] = secret_scope.get_secret("OPENROUTER_API_KEY")
         return {"provider": "openrouter", "api_key": seen["secret"] or "", "source": "env"}
 
-    monkeypatch.setattr("hermes_cli.runtime_provider.resolve_runtime_provider", fake_resolve)
+    monkeypatch.setattr("zeus_cli.runtime_provider.resolve_runtime_provider", fake_resolve)
 
     secret_scope.set_multiplex_active(True)
     try:
@@ -9738,16 +9738,16 @@ def test_setup_readiness_scopes_to_requested_profile(monkeypatch, tmp_path):
     assert runtime["result"]["ok"] is True
     assert runtime["result"]["profile"] == "bot"
     assert seen == {"home": bot_home.resolve(), "secret": "sk-or-bot-profile-secret-00001"}
-    assert Path(str(get_hermes_home())).resolve() != bot_home.resolve()
+    assert Path(str(get_zeus_home())).resolve() != bot_home.resolve()
 
 
 def test_setup_readiness_unknown_profile_never_answers_for_launch_profile(monkeypatch):
-    monkeypatch.setattr("hermes_cli.main._has_any_provider_configured", lambda **_kw: True)
+    monkeypatch.setattr("zeus_cli.main._has_any_provider_configured", lambda **_kw: True)
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, **kw: {"provider": "openrouter", "api_key": "sk-or-launch-0000000000", "source": "env"},
     )
-    monkeypatch.setattr("hermes_cli.profiles.profile_exists", lambda name: False)
+    monkeypatch.setattr("zeus_cli.profiles.profile_exists", lambda name: False)
 
     for method in ("setup.status", "setup.runtime_check"):
         resp = server.handle_request({"id": "1", "method": method, "params": {"profile": "ghost"}})
@@ -9886,7 +9886,7 @@ def test_complete_slash_leaves_argument_stages_alone(monkeypatch):
 def test_config_get_reasoning_renders_dict_form_custom_tier(tmp_path, monkeypatch):
     """`agent.reasoning_effort: {enabled: true, effort: thinking}` (a provider's bespoke tier)
     must read back as the tier name, not `str(dict)`."""
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     (tmp_path / "config.yaml").write_text(
         "agent:\n  reasoning_effort:\n    enabled: true\n    effort: thinking\n", encoding="utf-8"
     )
@@ -9897,7 +9897,7 @@ def test_config_get_reasoning_renders_dict_form_custom_tier(tmp_path, monkeypatc
 
 
 def test_config_set_reasoning_updates_live_session_and_agent(tmp_path, monkeypatch):
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     (tmp_path / "config.yaml").write_text("agent:\n  reasoning_effort: medium\n", encoding="utf-8")
     agent = types.SimpleNamespace(reasoning_config=None)
     server._sessions["sid"] = _session(agent=agent)
@@ -9994,7 +9994,7 @@ def test_config_set_reasoning_updates_live_session_and_agent(tmp_path, monkeypat
 
 
 def test_config_set_reasoning_global_scope_clears_session_override(tmp_path, monkeypatch):
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     (tmp_path / "config.yaml").write_text("agent:\n  reasoning_effort: medium\n", encoding="utf-8")
     agent = types.SimpleNamespace(reasoning_config=None)
     server._sessions["sid"] = _session(agent=agent)
@@ -10024,7 +10024,7 @@ def test_config_set_reasoning_global_scope_clears_session_override(tmp_path, mon
 
 
 def test_config_set_verbose_updates_session_mode_and_agent(tmp_path, monkeypatch):
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     agent = types.SimpleNamespace(verbose_logging=False)
     server._sessions["sid"] = _session(agent=agent)
 
@@ -10112,7 +10112,7 @@ def test_config_set_model_requires_confirmation_for_expensive_model(monkeypatch)
     agent = _Agent()
     server._sessions["sid"] = _session(agent=agent)
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model", lambda **_kwargs: result
+        "zeus_cli.model_switch.switch_model", lambda **_kwargs: result
     )
     monkeypatch.setattr(server, "_restart_slash_worker", lambda sid, session: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
@@ -10151,7 +10151,7 @@ def test_config_set_model_requires_confirmation_for_expensive_model(monkeypatch)
 
 
 def test_config_set_model_global_persists(monkeypatch):
-    from hermes_cli.config import get_config_path, read_user_config_raw
+    from zeus_cli.config import get_config_path, read_user_config_raw
 
     class _Agent:
         provider = "openrouter"
@@ -10175,7 +10175,7 @@ def test_config_set_model_global_persists(monkeypatch):
     config_path = get_config_path()
 
     server._sessions["sid"] = _session(agent=_Agent())
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", switch)
+    monkeypatch.setattr("zeus_cli.model_switch.switch_model", switch)
     monkeypatch.setattr(server, "_restart_slash_worker", lambda sid, session: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
     config_path.write_text("model:\n  model_slots:\n    fast: keep\n", encoding="utf-8")
@@ -10224,7 +10224,7 @@ def test_config_set_model_explicit_provider_skips_broken_default_init(monkeypatc
             }
         raise RuntimeError(f"unexpected provider {requested}")
 
-    monkeypatch.setattr("hermes_cli.runtime_provider.resolve_runtime_provider", fake_runtime_provider)
+    monkeypatch.setattr("zeus_cli.runtime_provider.resolve_runtime_provider", fake_runtime_provider)
 
     try:
         resp = server.handle_request(
@@ -10265,7 +10265,7 @@ def test_config_set_model_recovers_failed_profile_resume_after_build_completes(
     boundary. Provider resolution is the only model-switch leaf replaced.
     """
     from agent.secret_scope import current_secret_scope
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     launch_url = "https://launch.example/v1"
     profile_url = "https://profile.example/v1"
@@ -10299,9 +10299,9 @@ def test_config_set_model_recovers_failed_profile_resume_after_build_completes(
     (profile_home / ".env").write_text(
         "PROFILE_API_KEY=profile-secret\n", encoding="utf-8"
     )
-    monkeypatch.setenv("HERMES_HOME", str(launch_home))
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
+    monkeypatch.setenv("ZEUS_HOME", str(launch_home))
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
 
     class ControlledReady:
         def __init__(self):
@@ -10345,7 +10345,7 @@ def test_config_set_model_recovers_failed_profile_resume_after_build_completes(
         secrets = dict(current_secret_scope() or {})
         api_key = secrets[provider["key_env"]]
         seen["switch"] = {
-            "home": get_hermes_home(),
+            "home": get_zeus_home(),
             "secrets": secrets,
             "base_url": provider["base_url"],
             "api_key": api_key,
@@ -10391,7 +10391,7 @@ def test_config_set_model_recovers_failed_profile_resume_after_build_completes(
             raise RuntimeError(failure_text)
         override = kwargs["model_override"]
         seen["build"] = {
-            "home": get_hermes_home(),
+            "home": get_zeus_home(),
             "secrets": dict(current_secret_scope() or {}),
             "overrides": kwargs,
         }
@@ -10414,12 +10414,12 @@ def test_config_set_model_recovers_failed_profile_resume_after_build_completes(
             assert release_old_finally.wait(timeout=10)
         return real_transfer(agent, db)
 
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", fake_switch_model)
+    monkeypatch.setattr("zeus_cli.model_switch.switch_model", fake_switch_model)
     monkeypatch.setattr(
-        "hermes_cli.model_selection_guards.combined_selection_warning",
+        "zeus_cli.model_selection_guards.combined_selection_warning",
         lambda *args, **kwargs: None,
     )
-    monkeypatch.setattr("hermes_state_registry.acquire", FakeDb)
+    monkeypatch.setattr("zeus_state_registry.acquire", FakeDb)
     monkeypatch.setattr(server, "_make_agent", fake_make_agent)
     monkeypatch.setattr(server, "_transfer_db_to_agent", barrier_transfer)
     monkeypatch.setattr(
@@ -10535,7 +10535,7 @@ def test_config_set_model_explicit_provider_surfaces_selected_provider_errors(mo
             raise RuntimeError("missing anthropic API key")
         raise RuntimeError(f"unexpected provider {requested}")
 
-    monkeypatch.setattr("hermes_cli.runtime_provider.resolve_runtime_provider", fake_runtime_provider)
+    monkeypatch.setattr("zeus_cli.runtime_provider.resolve_runtime_provider", fake_runtime_provider)
 
     try:
         resp = server.handle_request(
@@ -10562,7 +10562,7 @@ def test_config_set_model_explicit_provider_surfaces_selected_provider_errors(mo
 def test_config_set_model_does_not_leak_inference_provider_env(monkeypatch):
     """A /model switch must NOT mutate process-global env vars. The desktop /
     dashboard tui_gateway backend hosts every same-profile session in one
-    process; writing HERMES_INFERENCE_PROVIDER on a switch leaked the new
+    process; writing ZEUS_INFERENCE_PROVIDER on a switch leaked the new
     provider into every other live session's next agent rebuild. The switch
     must instead record a per-session override and leave shared env untouched.
 
@@ -10591,9 +10591,9 @@ def test_config_set_model_does_not_leak_inference_provider_env(monkeypatch):
 
     session = _session(agent=_Agent())
     server._sessions["sid"] = session
-    monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "openrouter")
+    monkeypatch.setenv("ZEUS_INFERENCE_PROVIDER", "openrouter")
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model", lambda **_kwargs: result
+        "zeus_cli.model_switch.switch_model", lambda **_kwargs: result
     )
     monkeypatch.setattr(server, "_restart_slash_worker", lambda sid, session: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
@@ -10612,7 +10612,7 @@ def test_config_set_model_does_not_leak_inference_provider_env(monkeypatch):
         )
 
         # Shared process env is UNCHANGED (the contamination vector is gone).
-        assert os.environ["HERMES_INFERENCE_PROVIDER"] == "openrouter"
+        assert os.environ["ZEUS_INFERENCE_PROVIDER"] == "openrouter"
         # The switch was recorded as a per-session override instead.
         assert session["model_override"]["provider"] == "anthropic"
         assert session["model_override"]["model"] == "claude-sonnet-4.6"
@@ -10651,10 +10651,10 @@ def test_config_set_model_records_per_session_override_not_env(monkeypatch):
 
     session = _session(agent=_Agent())
     server._sessions["sid"] = session
-    monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_PROVIDER", raising=False)
+    monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_PROVIDER", raising=False)
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model", lambda **_kwargs: result
+        "zeus_cli.model_switch.switch_model", lambda **_kwargs: result
     )
     monkeypatch.setattr(server, "_restart_slash_worker", lambda sid, session: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
@@ -10673,8 +10673,8 @@ def test_config_set_model_records_per_session_override_not_env(monkeypatch):
         )
 
         # No process-global env mutation.
-        assert "HERMES_TUI_PROVIDER" not in os.environ
-        assert "HERMES_INFERENCE_PROVIDER" not in os.environ
+        assert "ZEUS_TUI_PROVIDER" not in os.environ
+        assert "ZEUS_INFERENCE_PROVIDER" not in os.environ
         # The user's explicit provider + resolved endpoint live on the session,
         # carried into the next /new rebuild by _make_agent.
         override = session["model_override"]
@@ -10689,7 +10689,7 @@ def test_config_set_model_records_per_session_override_not_env(monkeypatch):
 
 def test_config_set_model_switches_agent_without_touching_env(monkeypatch):
     """A /model switch mutates the target session's agent in place and records
-    a per-session override; it does NOT write HERMES_MODEL / HERMES_TUI_PROVIDER
+    a per-session override; it does NOT write ZEUS_MODEL / ZEUS_TUI_PROVIDER
     etc. into the shared process environment.
 
     (Was test_config_set_model_syncs_tui_provider_env.)
@@ -10738,9 +10738,9 @@ def test_config_set_model_switches_agent_without_touching_env(monkeypatch):
     agent._session_db = db
     session = _session(agent=agent)
     server._sessions["sid"] = session
-    monkeypatch.setenv("HERMES_TUI_PROVIDER", "openai-codex")
-    monkeypatch.delenv("HERMES_MODEL", raising=False)
-    monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
+    monkeypatch.setenv("ZEUS_TUI_PROVIDER", "openai-codex")
+    monkeypatch.delenv("ZEUS_MODEL", raising=False)
+    monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
     monkeypatch.setattr(server, "_restart_slash_worker", lambda sid, session: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
 
@@ -10755,7 +10755,7 @@ def test_config_set_model_switches_agent_without_touching_env(monkeypatch):
             warning_message="",
         )
 
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", fake_switch_model)
+    monkeypatch.setattr("zeus_cli.model_switch.switch_model", fake_switch_model)
 
     try:
         resp = server.handle_request(
@@ -10796,9 +10796,9 @@ def test_config_set_model_switches_agent_without_touching_env(monkeypatch):
             "content": session["history"][-1]["content"],
         }
         # ...and the shared process env was NOT touched.
-        assert os.environ["HERMES_TUI_PROVIDER"] == "openai-codex"
-        assert "HERMES_MODEL" not in os.environ
-        assert "HERMES_INFERENCE_MODEL" not in os.environ
+        assert os.environ["ZEUS_TUI_PROVIDER"] == "openai-codex"
+        assert "ZEUS_MODEL" not in os.environ
+        assert "ZEUS_INFERENCE_MODEL" not in os.environ
     finally:
         server._sessions.clear()
 
@@ -10831,10 +10831,10 @@ def test_config_set_model_once_keeps_env_and_records_restore(monkeypatch):
     agent = Agent()
     session = _session(agent=agent)
     server._sessions["sid"] = session
-    monkeypatch.setenv("HERMES_INFERENCE_PROVIDER", "openrouter")
-    monkeypatch.setenv("HERMES_MODEL", "old/model")
+    monkeypatch.setenv("ZEUS_INFERENCE_PROVIDER", "openrouter")
+    monkeypatch.setenv("ZEUS_MODEL", "old/model")
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "zeus_cli.model_switch.switch_model",
         lambda **kwargs: seen.update(kwargs) or result,
     )
     monkeypatch.setattr(server, "_restart_slash_worker", lambda *args, **kwargs: None)
@@ -10857,15 +10857,15 @@ def test_config_set_model_once_keeps_env_and_records_restore(monkeypatch):
         assert seen["is_global"] is False
         assert agent.model == "claude-sonnet-4.6"
         assert session["one_turn_model_restore"]["model"] == "old/model"
-        assert os.environ["HERMES_INFERENCE_PROVIDER"] == "openrouter"
-        assert os.environ["HERMES_MODEL"] == "old/model"
+        assert os.environ["ZEUS_INFERENCE_PROVIDER"] == "openrouter"
+        assert os.environ["ZEUS_MODEL"] == "old/model"
     finally:
         server._sessions.clear()
 
 
 def test_config_set_model_once_requires_live_session(monkeypatch):
     monkeypatch.setattr(
-        "hermes_cli.model_switch.switch_model",
+        "zeus_cli.model_switch.switch_model",
         lambda **_: (_ for _ in ()).throw(AssertionError("switch should not run")),
     )
 
@@ -10965,7 +10965,7 @@ def test_config_set_model_session_switch_clears_pending_once_restore(monkeypatch
     session = _session(agent=Agent())
     session["one_turn_model_restore"] = {"model": "old/model"}
     server._sessions["sid"] = session
-    monkeypatch.setattr("hermes_cli.model_switch.switch_model", lambda **_kwargs: result)
+    monkeypatch.setattr("zeus_cli.model_switch.switch_model", lambda **_kwargs: result)
     monkeypatch.setattr(server, "_restart_slash_worker", lambda *args, **kwargs: None)
     monkeypatch.setattr(server, "_emit", lambda *args, **kwargs: None)
 
@@ -11060,9 +11060,9 @@ def test_config_set_personality_preserves_history_and_returns_info(monkeypatch):
         server, "_session_info", lambda agent, *a: {"model": getattr(agent, "model", "?")}
     )
     monkeypatch.setattr(server, "_emit", lambda *args: emits.append(args))
-    # Persistence now flows through the single owner (hermes_cli.personality),
+    # Persistence now flows through the single owner (zeus_cli.personality),
     # never _write_config_key / agent.system_prompt.
-    import hermes_cli.personality as personality_mod
+    import zeus_cli.personality as personality_mod
 
     monkeypatch.setattr(
         personality_mod,
@@ -11824,7 +11824,7 @@ def test_file_attach_uses_in_workspace_file_without_copying(monkeypatch, tmp_pat
         assert resp["result"]["ref_text"] == "@file:data/exam.csv"
         # No copy: nothing staged under desktop-attachments or the home
         # attachments dir.
-        assert not (workspace / ".hermes" / "desktop-attachments").exists()
+        assert not (workspace / ".zeus" / "desktop-attachments").exists()
         assert not (tmp_path / "home" / "attachments").exists()
     finally:
         server._sessions.pop("sid", None)
@@ -11892,7 +11892,7 @@ def test_file_attach_quotes_ref_with_spaces(monkeypatch, tmp_path):
 def test_file_attach_workspace_storage_follows_the_owning_profiles_config(monkeypatch, tmp_path):
     """``attachments.storage: workspace`` is read from the SESSION's profile config.
 
-    Opt-in profiles stage under ``<workspace>/.hermes/attachments`` (inside the
+    Opt-in profiles stage under ``<workspace>/.zeus/attachments`` (inside the
     allowed ref root, #110662); a profile without the opt-in keeps the
     bind-mounted ``<profile home>/attachments`` — one serve process, two homes,
     each session follows its own profile's config.
@@ -11928,17 +11928,17 @@ def test_file_attach_workspace_storage_follows_the_owning_profiles_config(monkey
             },
         )
 
-        staged_a = workspace_a / ".hermes" / "attachments" / "report.txt"
+        staged_a = workspace_a / ".zeus" / "attachments" / "report.txt"
         assert resp["result"]["attached"] is True
         assert resp["result"]["path"] == str(staged_a)
         assert staged_a.read_text(encoding="utf-8") == "hello"
         # Workspace staging lands inside the allowed ref root: the ref is
         # workspace-relative, not an absolute out-of-workspace path.
-        assert resp["result"]["ref_text"] == "@file:.hermes/attachments/report.txt"
+        assert resp["result"]["ref_text"] == "@file:.zeus/attachments/report.txt"
         assert not (home_a / "attachments").exists()
 
         # Same serve process, second profile WITHOUT the opt-in: staging stays
-        # on that profile's hermes-home attachments dir.
+        # on that profile's zeus-home attachments dir.
         workspace_b = tmp_path / "work-b"
         workspace_b.mkdir()
         home_b = tmp_path / "home-b"
@@ -11956,7 +11956,7 @@ def test_file_attach_workspace_storage_follows_the_owning_profiles_config(monkey
         staged_b = home_b / "attachments" / "report.txt"
         assert resp["result"]["path"] == str(staged_b)
         assert staged_b.read_text(encoding="utf-8") == "hello"
-        assert not (workspace_b / ".hermes").exists()
+        assert not (workspace_b / ".zeus").exists()
     finally:
         server._sessions.pop("sid-a", None)
         server._sessions.pop("sid-b", None)
@@ -12162,7 +12162,7 @@ def test_commands_catalog_includes_desktop_meta_without_skills():
 
 def test_commands_catalog_includes_plugin_commands(monkeypatch):
     monkeypatch.setattr(
-        "hermes_cli.plugins.get_plugin_commands",
+        "zeus_cli.plugins.get_plugin_commands",
         lambda: {
             "lcm": {
                 "description": "Latent consistency",
@@ -12190,17 +12190,17 @@ def test_commands_catalog_includes_plugin_commands(monkeypatch):
 
 def test_plugin_slash_command_runs_under_the_session_env(monkeypatch):
     # TUI/Desktop sibling of #108698: command.dispatch and slash.exec ran plugin handlers on the RPC
-    # thread with no HERMES_SESSION_* binding, so a handler reading get_session_env() saw "" (or the
+    # thread with no ZEUS_SESSION_* binding, so a handler reading get_session_env() saw "" (or the
     # launch process's inherited values) instead of the session it was invoked from.
     from gateway.session_context import get_session_env
 
     seen = {}
 
     def handler(arg):
-        seen["key"] = get_session_env("HERMES_SESSION_KEY")
+        seen["key"] = get_session_env("ZEUS_SESSION_KEY")
         return f"ok:{arg}"
 
-    monkeypatch.setattr("hermes_cli.plugins.get_plugin_command_handler",
+    monkeypatch.setattr("zeus_cli.plugins.get_plugin_command_handler",
                         lambda name: handler if name == "whoami" else None)
     monkeypatch.setattr(server, "_sessions", {"sid-p": {"session_key": "agent:tui:key-p", "cwd": ""}})
 
@@ -12209,7 +12209,7 @@ def test_plugin_slash_command_runs_under_the_session_env(monkeypatch):
     assert res["result"] == {"type": "plugin", "output": "ok:x"}
     assert seen["key"] == "agent:tui:key-p"
     # Nothing leaks past the RPC.
-    assert get_session_env("HERMES_SESSION_KEY") in ("", None)
+    assert get_session_env("ZEUS_SESSION_KEY") in ("", None)
 
 
 def test_session_status_reads_live_gateway_agent(monkeypatch):
@@ -12583,7 +12583,7 @@ def test_rollback_restore_preserves_composite_carrier_scaffold(monkeypatch, tmp_
         SUMMARY_PREFIX,
         _SUMMARY_END_MARKER,
     )
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     class _Mgr:
         enabled = True
@@ -15621,7 +15621,7 @@ def test_session_create_no_race_keeps_worker_alive(monkeypatch):
 
 
 def test_get_db_degrades_cleanly_when_sessiondb_init_fails(monkeypatch):
-    fake_mod = types.ModuleType("hermes_state")
+    fake_mod = types.ModuleType("zeus_state")
 
     class _BrokenSessionDB:
         def __init__(self):
@@ -15632,10 +15632,10 @@ def test_get_db_degrades_cleanly_when_sessiondb_init_fails(monkeypatch):
     def _broken_shared(_db_path=None):
         raise RuntimeError("locking protocol")
 
-    monkeypatch.setitem(sys.modules, "hermes_state", fake_mod)
-    fake_registry = types.ModuleType("hermes_state_registry")
+    monkeypatch.setitem(sys.modules, "zeus_state", fake_mod)
+    fake_registry = types.ModuleType("zeus_state_registry")
     fake_registry.acquire = _broken_shared
-    monkeypatch.setitem(sys.modules, "hermes_state_registry", fake_registry)
+    monkeypatch.setitem(sys.modules, "zeus_state_registry", fake_registry)
     monkeypatch.setattr(server, "_db", None)
     monkeypatch.setattr(server, "_db_error", None)
 
@@ -15646,7 +15646,7 @@ def test_get_db_degrades_cleanly_when_sessiondb_init_fails(monkeypatch):
 def test_ensure_session_db_row_false_when_store_unavailable(monkeypatch):
     """Store unavailable → False, so prompt.submit can fail the send loudly
     instead of streaming into a store that will never save it (#98924)."""
-    fake_mod = types.ModuleType("hermes_state")
+    fake_mod = types.ModuleType("zeus_state")
 
     class _BrokenSessionDB:
         def __init__(self):
@@ -15657,10 +15657,10 @@ def test_ensure_session_db_row_false_when_store_unavailable(monkeypatch):
     def _broken_shared(_db_path=None):
         raise RuntimeError("utf-8 boom")
 
-    monkeypatch.setitem(sys.modules, "hermes_state", fake_mod)
-    fake_registry = types.ModuleType("hermes_state_registry")
+    monkeypatch.setitem(sys.modules, "zeus_state", fake_mod)
+    fake_registry = types.ModuleType("zeus_state_registry")
     fake_registry.acquire = _broken_shared
-    monkeypatch.setitem(sys.modules, "hermes_state_registry", fake_registry)
+    monkeypatch.setitem(sys.modules, "zeus_state_registry", fake_registry)
     monkeypatch.setattr(server, "_db", None)
     monkeypatch.setattr(server, "_db_error", None)
 
@@ -15866,7 +15866,7 @@ def test_session_list_honors_params_profile_opens_profile_db(monkeypatch, tmp_pa
     monkeypatch.setattr(server, "_profile_home", lambda p: profile_home if p == "mlperf" else None)
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
     monkeypatch.setattr(
-        "hermes_cli.web_server_sessions._open_session_db_at_path",
+        "zeus_cli.web_server_sessions._open_session_db_at_path",
         lambda db_path, *, read_only: ProfileDB(db_path=db_path),
     )
 
@@ -15910,7 +15910,7 @@ def test_session_most_recent_honors_params_profile(monkeypatch, tmp_path):
     monkeypatch.setattr(server, "_profile_home", lambda p: profile_home if p == "mlperf" else None)
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
     monkeypatch.setattr(
-        "hermes_cli.web_server_sessions._open_session_db_at_path",
+        "zeus_cli.web_server_sessions._open_session_db_at_path",
         lambda db_path, *, read_only: ProfileDB2(db_path=db_path),
     )
 
@@ -15929,7 +15929,7 @@ def test_handoff_request_uses_session_profile_home(monkeypatch, tmp_path):
     import contextlib
 
     from gateway.config import GatewayConfig, HomeChannel, Platform, PlatformConfig
-    from hermes_cli.config import get_hermes_home
+    from zeus_cli.config import get_zeus_home
     from tui_gateway import methods_session
 
     methods_session.register(server)
@@ -15938,7 +15938,7 @@ def test_handoff_request_uses_session_profile_home(monkeypatch, tmp_path):
     seen_homes = []
 
     def load_config():
-        home = get_hermes_home()
+        home = get_zeus_home()
         seen_homes.append(home)
         config = GatewayConfig()
         if home == profile_home:
@@ -15947,7 +15947,7 @@ def test_handoff_request_uses_session_profile_home(monkeypatch, tmp_path):
                 home_channel=HomeChannel(
                     platform=Platform.DISCORD,
                     chat_id="discord-home",
-                    name="Hermes / #chat-coding",
+                    name="Zeus / #chat-coding",
                 ),
             )
         return config
@@ -15988,7 +15988,7 @@ def test_handoff_request_uses_session_profile_home(monkeypatch, tmp_path):
     assert "result" in resp, resp
     assert resp["result"]["queued"] is True
     assert seen_homes == [profile_home]
-    assert get_hermes_home() != profile_home
+    assert get_zeus_home() != profile_home
 
 
 def test_session_create_reports_requested_profile_name(monkeypatch, tmp_path):
@@ -16070,7 +16070,7 @@ def test_session_title_uses_session_profile_db_not_launch(monkeypatch, tmp_path)
         "last_active": 1.0,
     }
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     try:
         set_resp = server.handle_request(
             {
@@ -16127,7 +16127,7 @@ def test_session_history_uses_session_profile_db(monkeypatch, tmp_path):
         "last_active": 1.0,
     }
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     try:
         resp = server.handle_request(
             {"id": "1", "method": "session.history", "params": {"session_id": "sid"}}
@@ -16210,7 +16210,7 @@ def test_session_status_uses_session_profile_db(monkeypatch, tmp_path):
         "last_active": 1.0,
     }
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     try:
         resp = server.handle_request(
             {"id": "1", "method": "session.status", "params": {"session_id": "sid"}}
@@ -16252,7 +16252,7 @@ def test_teardown_ends_session_in_profile_db(monkeypatch, tmp_path):
             seen["closed"] = True
 
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     session = {
         "session_key": "ml-sess",
         "profile_home": str(profile_home),
@@ -16271,7 +16271,7 @@ def test_session_branch_writes_to_parent_profile_db(monkeypatch, tmp_path):
     """session.branch must copy history into the parent's profile state.db."""
     profile_home = tmp_path / "profiles" / "mlperf"
     profile_home.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     seen: dict = {"msgs": []}
 
     class LaunchDB:
@@ -16346,7 +16346,7 @@ def test_session_branch_writes_to_parent_profile_db(monkeypatch, tmp_path):
     }
     server._sessions["parent"] = parent
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     monkeypatch.setattr(server, "_claim_active_session_slot", lambda *a, **k: (None, None))
 
     def _fake_make_agent(*a, **k):
@@ -16759,7 +16759,7 @@ def test_session_create_without_parent_still_defers_row(monkeypatch):
 def test_session_branch_installs_parent_profile_secret_scope(monkeypatch, tmp_path):
     """The branched agent must be built under the parent profile's secrets.
 
-    session.branch already binds the parent's HERMES_HOME and state.db, but the
+    session.branch already binds the parent's ZEUS_HOME and state.db, but the
     secret scope is what makes get_secret() resolve that profile's .env. Without
     it the build falls through to process os.environ — the LAUNCH profile's
     credentials — which is exactly the cross-profile resolution #67605 fixed for
@@ -16771,7 +16771,7 @@ def test_session_branch_installs_parent_profile_secret_scope(monkeypatch, tmp_pa
 
     profile_home = tmp_path / "profiles" / "mlperf"
     profile_home.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     (profile_home / ".env").write_text(
         "PROXMOX_TOKEN=mlperf-secret\n", encoding="utf-8"
     )
@@ -16830,7 +16830,7 @@ def test_session_branch_installs_parent_profile_secret_scope(monkeypatch, tmp_pa
     }
     server._sessions["parent"] = parent
     monkeypatch.setattr(server, "_get_db", lambda: ProfileDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     monkeypatch.setattr(server, "_claim_active_session_slot", lambda *a, **k: (None, None))
 
     def _fake_make_agent(*a, **k):
@@ -16864,7 +16864,7 @@ def test_session_branch_uses_persisted_display_history_after_compaction(monkeypa
     """A live branch must copy the complete visible transcript, not the compacted model tail."""
     profile_home = tmp_path / "profiles" / "mlperf"
     profile_home.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     seen: dict = {"msgs": []}
 
     display_history = [
@@ -16952,7 +16952,7 @@ def test_session_branch_uses_persisted_display_history_after_compaction(monkeypa
     }
     server._sessions["parent"] = parent
     monkeypatch.setattr(server, "_get_db", lambda: LaunchDB())
-    monkeypatch.setattr("hermes_state_registry.acquire", ProfileDB)
+    monkeypatch.setattr("zeus_state_registry.acquire", ProfileDB)
     monkeypatch.setattr(server, "_claim_active_session_slot", lambda *args, **kwargs: (None, None))
     monkeypatch.setattr(server, "_make_agent", lambda *args, **kwargs: FakeAgent())
     monkeypatch.setattr(server, "_set_session_context", lambda *args, **kwargs: {})
@@ -16991,13 +16991,13 @@ def test_session_branch_uses_persisted_display_history_after_compaction(monkeypa
 
 
 # --------------------------------------------------------------------------
-# model.options — curated-list parity with `hermes model` and classic /model
+# model.options — curated-list parity with `zeus model` and classic /model
 # --------------------------------------------------------------------------
 
 
 def test_model_options_does_not_overwrite_curated_models(monkeypatch):
     """The TUI model.options handler must surface the same curated model
-    list as `hermes model` and the classic CLI /model picker.
+    list as `zeus model` and the classic CLI /model picker.
 
     Regression: earlier versions of this handler unconditionally replaced
     each provider's curated ``models`` field with ``provider_model_ids()``
@@ -17024,13 +17024,13 @@ def test_model_options_does_not_overwrite_curated_models(monkeypatch):
     )
 
     with patch(
-        "hermes_cli.model_switch.list_authenticated_providers",
+        "zeus_cli.model_switch.list_authenticated_providers",
         return_value=curated_providers,
     ):
         # If provider_model_ids gets called at all, the handler is still
         # overwriting curated with live — that's the regression we're
         # guarding against.
-        with patch("hermes_cli.models.provider_model_ids") as live_fetch:
+        with patch("zeus_cli.models.provider_model_ids") as live_fetch:
             resp = server._methods["model.options"](99, {"session_id": ""})
 
     assert "result" in resp, resp
@@ -17055,7 +17055,7 @@ def test_model_options_propagates_list_exception(monkeypatch):
         lambda: {"providers": {}, "custom_providers": []},
     )
     with patch(
-        "hermes_cli.model_switch.list_authenticated_providers",
+        "zeus_cli.model_switch.list_authenticated_providers",
         side_effect=RuntimeError("catalog blew up"),
     ):
         resp = server._methods["model.options"](77, {"session_id": ""})
@@ -17065,7 +17065,7 @@ def test_model_options_propagates_list_exception(monkeypatch):
 
 
 def test_model_options_preserves_canonical_custom_row_after_agent_init(monkeypatch):
-    from hermes_cli.inventory import ConfigContext
+    from zeus_cli.inventory import ConfigContext
 
     class _Agent:
         provider = "custom"
@@ -17075,7 +17075,7 @@ def test_model_options_preserves_canonical_custom_row_after_agent_init(monkeypat
     server._sessions["custom-session"] = _session(agent=_Agent())
     monkeypatch.setattr(server, "_resolve_model", lambda: "")
     monkeypatch.setattr(
-        "hermes_cli.inventory.load_picker_context",
+        "zeus_cli.inventory.load_picker_context",
         lambda: ConfigContext(
             current_provider="custom:local-ollama",
             current_model="qwen3.6:35b-65k",
@@ -17086,11 +17086,11 @@ def test_model_options_preserves_canonical_custom_row_after_agent_init(monkeypat
     )
     canonical = Mock(return_value="custom:local-ollama")
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.canonical_custom_identity",
+        "zeus_cli.runtime_provider.canonical_custom_identity",
         canonical,
     )
     monkeypatch.setattr(
-        "hermes_cli.model_switch.list_authenticated_providers",
+        "zeus_cli.model_switch.list_authenticated_providers",
         lambda **_kwargs: [
             {
                 "slug": "custom:local-ollama",
@@ -17111,13 +17111,13 @@ def test_model_options_preserves_canonical_custom_row_after_agent_init(monkeypat
         ],
     )
     monkeypatch.setattr(
-        "hermes_cli.auth.is_provider_explicitly_configured",
+        "zeus_cli.auth.is_provider_explicitly_configured",
         lambda _slug: False,
     )
     # A host signed in to Claude Code / Anthropic OAuth would otherwise keep the anthropic row.
-    monkeypatch.setattr("hermes_cli.inventory._anthropic_oauth_credentials_present", lambda: False)
-    monkeypatch.setattr("hermes_cli.inventory._apply_pricing", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr("hermes_cli.inventory._apply_capabilities", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("zeus_cli.inventory._anthropic_oauth_credentials_present", lambda: False)
+    monkeypatch.setattr("zeus_cli.inventory._apply_pricing", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr("zeus_cli.inventory._apply_capabilities", lambda *_args, **_kwargs: None)
 
     resp = server._methods["model.options"](
         102,
@@ -17143,7 +17143,7 @@ def test_model_save_key_uses_credential_lifecycle_and_picker_context(monkeypatch
     }
     server._sessions["save-key-session"] = _session(agent=agent)
     monkeypatch.setattr(
-        "hermes_cli.auth.PROVIDER_REGISTRY",
+        "zeus_cli.auth.PROVIDER_REGISTRY",
         {
             "test-provider": types.SimpleNamespace(
                 name="Test Provider",
@@ -17152,17 +17152,17 @@ def test_model_save_key_uses_credential_lifecycle_and_picker_context(monkeypatch
             )
         },
     )
-    monkeypatch.setattr("hermes_cli.config.is_managed", lambda: False)
+    monkeypatch.setattr("zeus_cli.config.is_managed", lambda: False)
     save_credential = Mock()
     monkeypatch.setattr(
-        "hermes_cli.credential_lifecycle.save_provider_env_credential",
+        "zeus_cli.credential_lifecycle.save_provider_env_credential",
         save_credential,
     )
     picker_context = Mock(return_value=picker_ctx)
     monkeypatch.setattr(server, "_model_picker_context", picker_context)
     build_payload = Mock(return_value={"providers": [provider]})
     monkeypatch.setattr(
-        "hermes_cli.inventory.build_models_payload",
+        "zeus_cli.inventory.build_models_payload",
         build_payload,
     )
     monkeypatch.setenv(env_var, "previous-value")
@@ -17186,13 +17186,13 @@ def test_model_save_key_reconciles_the_launch_profiles_stale_setup_record(monkey
     """The gated picker's own chat waits on ``setup.status``, which answers from the boot record:
     a key saved for the launch profile must flip a ``False`` record (+ ``setup.ready``) at once;
     a key saved for another profile (``profile`` param) must leave the launch record alone."""
-    from hermes_cli import free_tier_bootstrap as fb
+    from zeus_cli import free_tier_bootstrap as fb
 
-    monkeypatch.setattr("hermes_cli.auth.PROVIDER_REGISTRY", {"test-provider": types.SimpleNamespace(
+    monkeypatch.setattr("zeus_cli.auth.PROVIDER_REGISTRY", {"test-provider": types.SimpleNamespace(
         name="Test Provider", auth_type="api_key", api_key_env_vars=("TEST_PROVIDER_API_KEY",))})
-    monkeypatch.setattr("hermes_cli.config.is_managed", lambda: False)
-    monkeypatch.setattr("hermes_cli.credential_lifecycle.save_provider_env_credential", Mock())
-    monkeypatch.setattr("hermes_cli.inventory.build_models_payload", Mock(return_value={"providers": []}))
+    monkeypatch.setattr("zeus_cli.config.is_managed", lambda: False)
+    monkeypatch.setattr("zeus_cli.credential_lifecycle.save_provider_env_credential", Mock())
+    monkeypatch.setattr("zeus_cli.inventory.build_models_payload", Mock(return_value={"providers": []}))
     monkeypatch.setenv("TEST_PROVIDER_API_KEY", "previous-value")  # save_key exports the new key
     monkeypatch.setattr(fb, "_inventory_other_providers", lambda: True)
     monkeypatch.setattr(fb, "_resolve_inference", lambda: "test-provider")
@@ -17253,7 +17253,7 @@ def test_prompt_submit_releases_old_history_before_heap_trim(monkeypatch, tmp_pa
     session = _session(agent=_Agent())
     profile_home = tmp_path / "profiles" / "worker"
     profile_home.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
     session["profile_home"] = str(profile_home)
     session["history"] = [old]
     del old
@@ -17263,10 +17263,10 @@ def test_prompt_submit_releases_old_history_before_heap_trim(monkeypatch, tmp_pa
         monkeypatch.setattr(server, "_get_usage", lambda _a: {})
         monkeypatch.setattr(server, "render_message", lambda _t, _c: "")
         monkeypatch.setattr(server, "_emit", lambda *a: None)
-        monkeypatch.setattr(server, "set_hermes_home_override", lambda _home: object())
-        monkeypatch.setattr(server, "reset_hermes_home_override", lambda _token: order.append("reset_home"))
+        monkeypatch.setattr(server, "set_zeus_home_override", lambda _home: object())
+        monkeypatch.setattr(server, "reset_zeus_home_override", lambda _token: order.append("reset_home"))
         monkeypatch.setattr(server, "_session_profile_runtime_scope", lambda _session, **_kw: contextlib.nullcontext())
-        monkeypatch.setattr("hermes_cli.mem_trim.trim_memory", _trim)
+        monkeypatch.setattr("zeus_cli.mem_trim.trim_memory", _trim)
 
         resp = server.handle_request(
             {"id": "1", "method": "prompt.submit", "params": {"session_id": "sid_trim", "text": "hi"}})
@@ -17507,7 +17507,7 @@ def test_session_active_list_excludes_finalized_sessions(monkeypatch):
     that window ``session.active_list`` would otherwise still report the dead
     session, which is exactly the footer "N sessions" count that only ever grew
     until a gateway restart. A live session on the real stdio transport (the
-    standalone ``hermes --tui`` case) must still be reported.
+    standalone ``zeus --tui`` case) must still be reported.
     """
     class _DB:
         def get_session_title(self, key):
@@ -17850,11 +17850,11 @@ def test_session_most_recent_handles_db_unavailable(monkeypatch):
 
 
 def test_verification_status_returns_recorded_evidence(tmp_path, monkeypatch):
-    monkeypatch.setenv("HERMES_VERIFY_ON_STOP", "1")  # ledger is inert when the guard is off
+    monkeypatch.setenv("ZEUS_VERIFY_ON_STOP", "1")  # ledger is inert when the guard is off
     profile_home = tmp_path / "profiles" / "verify"
     profile_home.mkdir(parents=True)
     monkeypatch.setattr(server, "_profile_home", lambda p: profile_home if p == "verify" else None)
-    token = set_hermes_home_override(profile_home)
+    token = set_zeus_home_override(profile_home)
     project = tmp_path / "project"
     project.mkdir()
     (project / ".git").mkdir()
@@ -17882,7 +17882,7 @@ def test_verification_status_returns_recorded_evidence(tmp_path, monkeypatch):
             }
         )
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
     verification = resp["result"]["verification"]
     assert verification["status"] == "passed"
@@ -17891,7 +17891,7 @@ def test_verification_status_returns_recorded_evidence(tmp_path, monkeypatch):
 
 
 def test_verification_status_outside_workspace_is_not_applicable(monkeypatch, tmp_path):
-    monkeypatch.setenv("HERMES_VERIFY_ON_STOP", "1")  # ledger is inert when the guard is off
+    monkeypatch.setenv("ZEUS_VERIFY_ON_STOP", "1")  # ledger is inert when the guard is off
     # A cwd with no project facts (outside any code workspace) must report
     # not_applicable. Force the "no facts" precondition rather than relying on
     # tmp_path's ancestors being pristine — a stray marker file in a shared
@@ -17902,9 +17902,9 @@ def test_verification_status_outside_workspace_is_not_applicable(monkeypatch, tm
 
     monkeypatch.setattr(coding_context, "project_facts_for", lambda _cwd=None: None)
 
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
-    token = set_hermes_home_override(home)
+    token = set_zeus_home_override(home)
     try:
         resp = server.handle_request(
             {
@@ -17914,7 +17914,7 @@ def test_verification_status_outside_workspace_is_not_applicable(monkeypatch, tm
             }
         )
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
     assert resp["result"]["verification"]["status"] == "not_applicable"
 
@@ -17978,7 +17978,7 @@ def test_reload_env_rpc_surfaces_errors(monkeypatch):
         raise RuntimeError("env path locked")
 
     fake = types.SimpleNamespace(reload_env=_broken)
-    with patch.dict(sys.modules, {"hermes_cli.config": fake}):
+    with patch.dict(sys.modules, {"zeus_cli.config": fake}):
         resp = server.handle_request({"id": "1", "method": "reload.env", "params": {}})
 
     assert "error" in resp
@@ -17994,7 +17994,7 @@ def _setup_make_agent_mocks(monkeypatch, cfg):
         server, "_resolve_startup_runtime", lambda: ("test-model", None)
     )
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         lambda requested=None, target_model=None: {
             "provider": None,
             "base_url": None,
@@ -18051,7 +18051,7 @@ def test_make_agent_uses_session_runtime_overrides(monkeypatch):
         }
 
     monkeypatch.setattr(
-        "hermes_cli.runtime_provider.resolve_runtime_provider",
+        "zeus_cli.runtime_provider.resolve_runtime_provider",
         fake_resolve_runtime_provider,
     )
 
@@ -18350,18 +18350,18 @@ def test_notification_poller_requeues_when_busy(monkeypatch):
             process_registry.completion_queue.get_nowait()
 
 
-def test_session_save_writes_under_hermes_home_with_system_prompt(monkeypatch, tmp_path):
-    """TUI /save (session.save RPC) must snapshot under the Hermes profile
+def test_session_save_writes_under_zeus_home_with_system_prompt(monkeypatch, tmp_path):
+    """TUI /save (session.save RPC) must snapshot under the Zeus profile
     home — not the project/workspace CWD — and include the system prompt,
     mirroring the classic CLI /save and the dashboard save export.
 
-    Regression: the gateway handler wrote ``hermes_conversation_*.json`` to
+    Regression: the gateway handler wrote ``zeus_conversation_*.json`` to
     ``os.path.abspath(...)`` (the workspace CWD) and only exported ``model``
     and ``messages``, so ``system_prompt`` was missing.
     """
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
 
     # Run from a different CWD to prove the snapshot does NOT leak there.
     work = tmp_path / "workspace"
@@ -18370,10 +18370,10 @@ def test_session_save_writes_under_hermes_home_with_system_prompt(monkeypatch, t
 
     sid = "save-sid"
     agent = types.SimpleNamespace(
-        model="hermes-test",
+        model="zeus-test",
         session_id="20260101_120000_abc123",
         session_start=datetime(2026, 1, 1, 12, 0, 0),
-        _cached_system_prompt="You are Hermes.",
+        _cached_system_prompt="You are Zeus.",
     )
     history = [
         {"role": "user", "content": "hi"},
@@ -18395,35 +18395,35 @@ def test_session_save_writes_under_hermes_home_with_system_prompt(monkeypatch, t
     saved_file = Path(resp["result"]["file"])
 
     # Must NOT leak into the workspace/project CWD.
-    assert not list(work.glob("hermes_conversation_*.json"))
+    assert not list(work.glob("zeus_conversation_*.json"))
 
     saved_dir = home / "sessions" / "saved"
     assert saved_file.parent == saved_dir
     assert saved_file.exists()
 
     payload = json.loads(saved_file.read_text(encoding="utf-8-sig"))
-    assert payload["model"] == "hermes-test"
+    assert payload["model"] == "zeus-test"
     assert payload["id"] == "20260101_120000_abc123"  # importable: import_sessions keys on raw["id"]
     assert payload["started_at"] == datetime(2026, 1, 1, 12, 0, 0).timestamp()
-    assert payload["system_prompt"] == "You are Hermes."
+    assert payload["system_prompt"] == "You are Zeus."
     assert payload["messages"] == history
 
 
 def test_session_save_lands_in_the_sessions_own_profile_a_b_a(monkeypatch, tmp_path):
     """/save writes under the SESSION's profile home, launch -> secondary -> launch under multiplexing:
-    the RPC runs unscoped, so get_hermes_home() alone names the launch profile (#125241)."""
+    the RPC runs unscoped, so get_zeus_home() alone names the launch profile (#125241)."""
     from agent.secret_scope import set_multiplex_active
-    launch_home = tmp_path / ".hermes"
+    launch_home = tmp_path / ".zeus"
     work_home = launch_home / "profiles" / "s6probe-work"
     work_home.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(launch_home))
+    monkeypatch.setenv("ZEUS_HOME", str(launch_home))
     set_multiplex_active(True)
     parents = []
     try:
         for i, home in enumerate((None, work_home, None)):
             sid = f"save-profile-sid-{i}"
             server._sessions[sid] = {
-                "agent": types.SimpleNamespace(model="hermes-test", session_id="s1", session_start=None,
+                "agent": types.SimpleNamespace(model="zeus-test", session_id="s1", session_start=None,
                                                _cached_system_prompt=""),
                 "session_key": sid, "profile_home": str(home) if home else None,
                 "history": [{"role": "user", "content": "hi"}], "history_lock": threading.Lock(),
@@ -18439,7 +18439,7 @@ def test_session_save_lands_in_the_sessions_own_profile_a_b_a(monkeypatch, tmp_p
 
     saved = launch_home / "sessions" / "saved"
     assert parents == [saved, work_home / "sessions" / "saved", saved]
-    assert len(list((work_home / "sessions" / "saved").glob("hermes_conversation_*.json"))) == 1
+    assert len(list((work_home / "sessions" / "saved").glob("zeus_conversation_*.json"))) == 1
 
 
 def test_session_save_proxies_to_compute_host_history(monkeypatch):
@@ -18575,7 +18575,7 @@ def _attach_bytes_cli(monkeypatch):
 def test_image_attach_bytes_writes_to_gateway_dir(monkeypatch, tmp_path):
     """Remote client uploads base64 bytes; gateway writes them to its own disk."""
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     server._sessions["abx"] = _session()
 
     resp = server.handle_request(
@@ -18602,7 +18602,7 @@ def test_image_attach_bytes_writes_to_gateway_dir(monkeypatch, tmp_path):
 
 def test_image_attach_bytes_accepts_data_url_prefix(monkeypatch, tmp_path):
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     server._sessions["abx2"] = _session()
 
     resp = server.handle_request(
@@ -18621,7 +18621,7 @@ def test_image_attach_bytes_accepts_data_url_prefix(monkeypatch, tmp_path):
 def test_image_attach_bytes_data_alias_and_magic_sniff(monkeypatch, tmp_path):
     """Older desktop builds send `data` (not content_base64); ext sniffed from bytes."""
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     server._sessions["abx3"] = _session()
 
     resp = server.handle_request(
@@ -18638,7 +18638,7 @@ def test_image_attach_bytes_data_alias_and_magic_sniff(monkeypatch, tmp_path):
 
 def test_image_attach_bytes_rejects_invalid_base64(monkeypatch, tmp_path):
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     server._sessions["abx4"] = _session()
 
     resp = server.handle_request(
@@ -18656,7 +18656,7 @@ def test_image_attach_bytes_rejects_oversize(monkeypatch, tmp_path):
     import base64 as _b64
 
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     monkeypatch.setattr(server, "_ATTACH_BYTES_MAX_BYTES", 10)
     server._sessions["abx5"] = _session()
 
@@ -18674,7 +18674,7 @@ def test_image_attach_bytes_rejects_oversize(monkeypatch, tmp_path):
 
 def test_image_attach_bytes_rejects_unsupported_extension(monkeypatch, tmp_path):
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     server._sessions["abx6"] = _session()
 
     # filename hint forces a non-image extension; magic sniff is bypassed by hint
@@ -18696,7 +18696,7 @@ def test_image_attach_bytes_rejects_unsupported_extension(monkeypatch, tmp_path)
 def test_pdf_attach_requires_poppler(monkeypatch, tmp_path):
     """Without pdftoppm on PATH, pdf.attach returns a clear 5028."""
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     monkeypatch.setattr("shutil.which", lambda _name: None)
     server._sessions["pdf1"] = _session()
 
@@ -18715,7 +18715,7 @@ def test_pdf_attach_rejects_non_pdf_bytes(monkeypatch, tmp_path):
     import base64 as _b64
 
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     monkeypatch.setattr("shutil.which", lambda _name: "/usr/bin/pdftoppm")
     server._sessions["pdf2"] = _session()
 
@@ -18733,7 +18733,7 @@ def test_pdf_attach_rejects_non_pdf_bytes(monkeypatch, tmp_path):
 
 def test_pdf_attach_requires_path_or_bytes(monkeypatch, tmp_path):
     _attach_bytes_cli(monkeypatch)
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
     monkeypatch.setattr("shutil.which", lambda _name: "/usr/bin/pdftoppm")
     server._sessions["pdf3"] = _session()
 
@@ -19161,7 +19161,7 @@ def test_reap_idle_sessions_closes_only_evictable(monkeypatch):
 
 def _periodic_trim_calls(monkeypatch):
     """Stub the reaper's side effects and capture trim_memory calls (delayed import → patch the module attr)."""
-    from hermes_cli import mem_trim
+    from zeus_cli import mem_trim
 
     calls = []
     monkeypatch.setattr(server, "_session_pending_kind", lambda sid: "")
@@ -19226,7 +19226,7 @@ def test_turn_completion_trim_skips_while_another_session_is_running(monkeypatch
 
 
 def test_reap_idle_sessions_logs_trim_failure(monkeypatch, caplog):
-    from hermes_cli import mem_trim
+    from zeus_cli import mem_trim
 
     _periodic_trim_calls(monkeypatch)
     monkeypatch.setattr(mem_trim, "trim_memory", lambda **_kw: (_ for _ in ()).throw(RuntimeError("boom")))
@@ -19596,7 +19596,7 @@ class _BillingHeaders:
 def test_billing_error_serialization_preserves_server_code(
     status, error, retry_after
 ):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     headers = _BillingHeaders({"Retry-After": str(retry_after)}) if retry_after else None
     with pytest.raises(nb.BillingTransient) as ei:
@@ -19610,7 +19610,7 @@ def test_billing_error_serialization_preserves_server_code(
 
 
 def test_billing_rate_limit_without_error_defaults_wire_code():
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     exc = nb.BillingRateLimited("slow down", status=429, retry_after=10)
 
@@ -19629,7 +19629,7 @@ def _sub_rpc(method, params):
 
 
 def test_subscription_preview_serializes_quote(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     monkeypatch.setattr(
         nb,
@@ -19661,7 +19661,7 @@ def test_subscription_preview_requires_tier():
 
 
 def test_subscription_preview_scope_error_maps_to_step_up(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     def _raise(subscription_type_id):
         raise nb.BillingScopeRequired("billing:manage required")
@@ -19673,7 +19673,7 @@ def test_subscription_preview_scope_error_maps_to_step_up(monkeypatch):
 
 
 def test_subscription_change_cancellation(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     seen = {}
 
@@ -19690,7 +19690,7 @@ def test_subscription_change_cancellation(monkeypatch):
 
 
 def test_subscription_change_tier_downgrade(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     seen = {}
 
@@ -19712,7 +19712,7 @@ def test_subscription_change_requires_tier_or_cancel():
 
 
 def test_subscription_upgrade_echoes_status_and_idempotency(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     seen = {}
 
@@ -19730,7 +19730,7 @@ def test_subscription_upgrade_echoes_status_and_idempotency(monkeypatch):
 
 
 def test_subscription_upgrade_requires_action_surfaces_recovery(monkeypatch):
-    import hermes_cli.nous_billing as nb
+    import zeus_cli.nous_billing as nb
 
     monkeypatch.setattr(
         nb,
@@ -19839,7 +19839,7 @@ class TestResolveRuntimeWithFallback:
         """When primary resolve succeeds, return its result directly."""
         expected = {"provider": "openai", "api_key": "tok"}
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             lambda **kw: expected,
         )
         resolution = server._resolve_runtime_with_fallback(
@@ -19851,7 +19851,7 @@ class TestResolveRuntimeWithFallback:
 
     def test_auth_error_tries_fallback_chain(self, monkeypatch):
         """On AuthError from primary, walk fallback_providers chain."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         fallback_runtime = {"provider": "deepseek", "api_key": "fb-tok"}
 
@@ -19861,7 +19861,7 @@ class TestResolveRuntimeWithFallback:
             return fallback_runtime
 
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr(
@@ -19879,7 +19879,7 @@ class TestResolveRuntimeWithFallback:
 
     def test_auth_error_skips_provider_only_fallback(self, monkeypatch):
         """Auth fallback requires one complete provider/model pair."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         requested = []
         fallback_runtime = {"provider": "openrouter", "api_key": "fb-tok"}
@@ -19891,7 +19891,7 @@ class TestResolveRuntimeWithFallback:
             return fallback_runtime
 
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr(
@@ -19915,7 +19915,7 @@ class TestResolveRuntimeWithFallback:
     def test_fallback_entry_key_env_resolves_api_key(self, monkeypatch):
         """A fallback entry naming its key via key_env passes the resolved
         env value as explicit_api_key (#43861, @VrtxOmega)."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         monkeypatch.setenv("FB_TEST_KEY", "env-resolved-key")
         captured = {}
@@ -19928,7 +19928,7 @@ class TestResolveRuntimeWithFallback:
             return fallback_runtime
 
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr(
@@ -19950,13 +19950,13 @@ class TestResolveRuntimeWithFallback:
 
     def test_auth_error_all_fallbacks_fail_raises(self, monkeypatch):
         """When all fallbacks also fail, re-raise the original AuthError."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         def fake_resolve(**kwargs):
             raise AuthError("No credentials for " + str(kwargs.get("requested")))
 
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr(
@@ -19973,7 +19973,7 @@ class TestResolveRuntimeWithFallback:
 
     def test_auth_error_skips_non_dict_entries(self, monkeypatch):
         """Fallback chain entries that are not dicts are skipped."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         fallback_runtime = {"provider": "anthropic", "api_key": "ant-tok"}
 
@@ -19983,7 +19983,7 @@ class TestResolveRuntimeWithFallback:
             return fallback_runtime
 
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr(
@@ -20006,7 +20006,7 @@ class TestResolveRuntimeWithFallback:
         provider when the primary provider raises AuthError."""
         import types
 
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         captured = {}
         fallback_runtime = {
@@ -20024,9 +20024,9 @@ class TestResolveRuntimeWithFallback:
             captured.update(kwargs)
             return types.SimpleNamespace(model=kwargs.get("model"))
 
-        monkeypatch.delenv("HERMES_MODEL", raising=False)
-        monkeypatch.delenv("HERMES_INFERENCE_MODEL", raising=False)
-        monkeypatch.delenv("HERMES_TUI_PROVIDER", raising=False)
+        monkeypatch.delenv("ZEUS_MODEL", raising=False)
+        monkeypatch.delenv("ZEUS_INFERENCE_MODEL", raising=False)
+        monkeypatch.delenv("ZEUS_TUI_PROVIDER", raising=False)
         monkeypatch.setattr(
             server,
             "_load_cfg",
@@ -20038,7 +20038,7 @@ class TestResolveRuntimeWithFallback:
             },
         )
         monkeypatch.setattr(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             fake_resolve,
         )
         monkeypatch.setattr("run_agent.AIAgent", fake_agent)
@@ -20171,20 +20171,20 @@ def _fake_tts_modules(monkeypatch, *, requirements=True, playback_stops=None, li
 
 
 def test_tts_stream_begin_requires_voice_tts(monkeypatch):
-    monkeypatch.setenv("HERMES_VOICE_TTS", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "0")
     assert server._tts_stream_begin() is None
 
 
 def test_tts_stream_begin_requires_working_provider(monkeypatch):
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
     _fake_tts_modules(monkeypatch, requirements=False)
     assert server._tts_stream_begin() is None
 
 
 def test_tts_stream_begin_and_stop_lifecycle(monkeypatch):
     """begin() spawns the consumer; stop() cuts it and clears the slot."""
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
-    monkeypatch.setenv("HERMES_VOICE", "0")  # no barge-in monitor (no mic)
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "0")  # no barge-in monitor (no mic)
     playback_stops: list = []
     started = _fake_tts_modules(monkeypatch, playback_stops=playback_stops)
 
@@ -20205,8 +20205,8 @@ def test_tts_stream_begin_and_stop_lifecycle(monkeypatch):
 
 def test_tts_stream_begin_barges_in_on_previous_pipeline(monkeypatch):
     """A new turn's pipeline stops the previous turn's speech (one speaker)."""
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
-    monkeypatch.setenv("HERMES_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
     _fake_tts_modules(monkeypatch)
 
     server._tts_stream_begin()
@@ -20223,8 +20223,8 @@ def test_tts_stream_stop_latches_interruption_for_next_turn(monkeypatch):
     import tools.tts_streaming as ts
 
     ts._interrupted_at = None
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
-    monkeypatch.setenv("HERMES_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
     _fake_tts_modules(monkeypatch)
 
     server._tts_stream_begin()
@@ -20241,8 +20241,8 @@ def test_tts_stream_stop_after_natural_finish_does_not_latch(monkeypatch):
     import tools.tts_streaming as ts
 
     ts._interrupted_at = None
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
-    monkeypatch.setenv("HERMES_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
     _fake_tts_modules(monkeypatch)
 
     server._tts_stream_begin()
@@ -20261,8 +20261,8 @@ def test_tts_stream_vad_barge_in_cuts_pipeline_and_submits_capture(monkeypatch, 
     import tools.tts_streaming as ts
 
     ts._interrupted_at = None
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
     monkeypatch.setattr(server, "_load_cfg", lambda: {"voice": {"barge_in": True}})
     events: list = []
     monkeypatch.setattr(
@@ -20301,8 +20301,8 @@ def test_full_duplex_generation_phase_interrupts_running_turn(monkeypatch, tmp_p
     import tools.tts_streaming as ts
 
     ts._interrupted_at = None
-    monkeypatch.setenv("HERMES_VOICE", "1")
-    monkeypatch.setenv("HERMES_VOICE_TTS", "0")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "0")
     monkeypatch.setattr(server, "_load_cfg", lambda: {"voice": {"barge_in": True}})
     events: list = []
     monkeypatch.setattr(
@@ -20342,7 +20342,7 @@ def test_full_duplex_generation_phase_interrupts_running_turn(monkeypatch, tmp_p
 def test_full_duplex_stop_phrase_mid_generation_ends_voice_chat(monkeypatch, tmp_path):
     """Bare 'stop' during generation = interrupt the turn AND end the voice
     chat ('stop everything'), emitted as the explicit stop_phrase signal."""
-    monkeypatch.setenv("HERMES_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
     monkeypatch.setattr(server, "_load_cfg", lambda: {"voice": {"barge_in": True}})
     events: list = []
     monkeypatch.setattr(
@@ -20373,7 +20373,7 @@ def test_full_duplex_stop_phrase_mid_generation_ends_voice_chat(monkeypatch, tmp
     )
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(stop_continuous=lambda **_kw: None, speak_text=lambda *a, **k: None),
     )
 
@@ -20384,7 +20384,7 @@ def test_full_duplex_stop_phrase_mid_generation_ends_voice_chat(monkeypatch, tmp
         time.sleep(0.01)
     assert interrupted.is_set()
     assert ("voice.transcript", {"stop_phrase": True, "text": "stop"}) in events
-    assert os.environ.get("HERMES_VOICE") == "0"  # voice chat ended
+    assert os.environ.get("ZEUS_VOICE") == "0"  # voice chat ended
 
 
 def test_speak_text_with_barge_arms_monitor_and_cuts_playback(monkeypatch, tmp_path):
@@ -20396,8 +20396,8 @@ def test_speak_text_with_barge_arms_monitor_and_cuts_playback(monkeypatch, tmp_p
     import tools.tts_streaming as ts
 
     ts._interrupted_at = None
-    monkeypatch.setenv("HERMES_VOICE", "1")
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "1")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
     monkeypatch.setattr(
         server,
         "_load_cfg",
@@ -20423,7 +20423,7 @@ def test_speak_text_with_barge_arms_monitor_and_cuts_playback(monkeypatch, tmp_p
 
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(speak_text=fake_speak_text),
     )
 
@@ -20457,8 +20457,8 @@ def test_speak_text_with_barge_arms_monitor_and_cuts_playback(monkeypatch, tmp_p
 
 def test_speak_text_with_barge_no_monitor_when_voice_mode_off(monkeypatch):
     """Auto-speak with voice mode off (no mic loop) must not open the mic."""
-    monkeypatch.setenv("HERMES_VOICE", "0")
-    monkeypatch.setenv("HERMES_VOICE_TTS", "1")
+    monkeypatch.setenv("ZEUS_VOICE", "0")
+    monkeypatch.setenv("ZEUS_VOICE_TTS", "1")
     monkeypatch.setattr(server, "_load_cfg", lambda: {"voice": {"barge_in": True}})
 
     listened = threading.Event()
@@ -20469,7 +20469,7 @@ def test_speak_text_with_barge_no_monitor_when_voice_mode_off(monkeypatch):
     done_speaking = threading.Event()
     monkeypatch.setitem(
         sys.modules,
-        "hermes_cli.voice",
+        "zeus_cli.voice",
         types.SimpleNamespace(
             speak_text=lambda text, stop_event=None: done_speaking.set()
         ),
@@ -20569,7 +20569,7 @@ def test_build_persist_message_quotes_paths_containing_spaces(tmp_path):
     with a space parses as a truncated ref with the tail left as loose text.
     Desktop composer images live in the app's userData dir, which on macOS is
     ``~/Library/Application Support/...`` — a space every time."""
-    img_dir = tmp_path / "Application Support" / "Hermes" / "composer-images"
+    img_dir = tmp_path / "Application Support" / "Zeus" / "composer-images"
     img_dir.mkdir(parents=True)
     img = img_dir / "cat.png"
     img.write_bytes(b"png")
@@ -20797,7 +20797,7 @@ def test_persist_branch_seed_keeps_reasoning_fields(monkeypatch, tmp_path):
     branch resuming without the parent's reasoning, preserved thinking blocks or
     Codex encrypted-reasoning/message-item continuation state.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     session = _session(
@@ -20834,7 +20834,7 @@ def test_session_branch_keeps_reasoning_fields(monkeypatch, tmp_path):
     Same drop as the seed path: the copy loop wrote only role/content, so the
     new session row replayed without the reasoning context the parent had.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     server._sessions["sid"] = _session(history=_branch_history())
@@ -20880,7 +20880,7 @@ def test_session_branch_keeps_reasoning_fields(monkeypatch, tmp_path):
 #
 # Until ~mid-2026 _save_cfg used yaml.safe_dump on a deep-loaded config dict.
 # Every /personality (or /reasoning, /details_mode, /prompt, ...) write
-# silently rewrote ~/.hermes/config.yaml top-to-bottom — top-level keys
+# silently rewrote ~/.zeus/config.yaml top-to-bottom — top-level keys
 # reordered alphabetically, comments stripped, kaomoji/Chinese in stored
 # personality prompts mangled to \uXXXX escapes. These tests pin the
 # user-visible behavior of the comment-preserving replacement so we don't
@@ -20899,7 +20899,7 @@ def test_save_cfg_preserves_user_comments(tmp_path, monkeypatch):
         "  skin: default  # trailing skin note\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     server._save_cfg(
         {
@@ -20913,7 +20913,7 @@ def test_save_cfg_preserves_user_comments(tmp_path, monkeypatch):
     assert "# provider rationale" in text
     assert "# trailing skin note" in text
 
-    import hermes_yaml as _yaml
+    import zeus_yaml as _yaml
 
     parsed = _yaml.safe_load(text)
     assert parsed["display"]["skin"] == "mono"
@@ -20927,14 +20927,14 @@ def test_save_cfg_preserves_top_level_key_order(tmp_path, monkeypatch):
         "model:\n"
         "  default: claude-opus-4-7\n"
         "toolsets:\n"
-        "  - hermes-cli\n"
+        "  - zeus-cli\n"
         "agent:\n"
         "  max_turns: 90\n"
         "display:\n"
         "  skin: default\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     # Caller's dict iteration order is intentionally alphabetical to confirm
     # the helper consults disk order, not caller order.
@@ -20943,7 +20943,7 @@ def test_save_cfg_preserves_top_level_key_order(tmp_path, monkeypatch):
             "agent": {"max_turns": 90},
             "display": {"skin": "mono"},
             "model": {"default": "claude-opus-4-7"},
-            "toolsets": ["hermes-cli"],
+            "toolsets": ["zeus-cli"],
         }
     )
 
@@ -20969,7 +20969,7 @@ def test_save_cfg_keeps_unicode_personalities_readable(tmp_path, monkeypatch):
         "  skin: default\n",
         encoding="utf-8",
     )
-    monkeypatch.setattr(server, "_hermes_home", tmp_path)
+    monkeypatch.setattr(server, "_zeus_home", tmp_path)
 
     # Simulate an unrelated /skin write — must not corrupt the catgirl
     # personality string sitting in agent.personalities.
@@ -21117,7 +21117,7 @@ def test_prompt_submit_truncation_archives_instead_of_deleting(monkeypatch):
     the FTS entry goes with them. Guarding the *aim* of a rewind still leaves
     every other way of aiming it wrong terminal, so the write itself has to
     stop destroying. The storage-layer contract this relies on is pinned in
-    tests/hermes_state/test_replace_messages_archive_siblings.py.
+    tests/zeus_state/test_replace_messages_archive_siblings.py.
     """
 
     captured = {}
@@ -21370,7 +21370,7 @@ def test_prompt_submit_row_id_real_sessiondb_resolve_without_memory_stamps(
     No hand-seeded ids and no MagicMock state manager — the contract that
     #82766 review said unit fixtures must exercise.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-trunc.db")
     session_key = "real-db-row-trunc"
@@ -21438,7 +21438,7 @@ def test_prompt_submit_row_id_real_sessiondb_unknown_refuses_despite_ordinal(
     """#82959 fail-closed: unknown row_id + valid ordinal must not truncate
     real SessionDB (the mass-delete class when durable id cannot resolve).
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-refuse.db")
     session_key = "real-db-row-refuse"
@@ -21496,7 +21496,7 @@ def test_prompt_submit_row_id_misaligned_memory_refuses_content_swap(
     must refuse (4018), not zip-stamp durable ids positionally and cut the
     wrong turn. Probe 4a from the PR #83202 review.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-misalign-content.db")
     session_key = "real-db-row-misalign-content"
@@ -21567,7 +21567,7 @@ def test_prompt_submit_row_id_misaligned_memory_role_shift_targets_real_turn(
     addressed user turn, never a positionally mis-aimed one. Probe 4b from
     the PR #83202 review.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-misalign-role.db")
     session_key = "real-db-row-misalign-role"
@@ -21732,7 +21732,7 @@ def test_prompt_submit_consecutive_rewinds_with_returned_survivor_row_ids(
     the first rewind. The submit response must return the fresh survivor ids,
     and a second rewind using them must succeed where the stale id fail-closes.
     """
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-consec.db")
     session_key = "real-db-consec-rewind"
@@ -21841,7 +21841,7 @@ def test_prompt_submit_rebind_map_clears_active_row_hidden_by_sequence_repair(
     monkeypatch, tmp_path
 ):
     """The bounded map classifies physical active IDs before user;user repair."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "rowid-repaired-wedge.db")
     session_key = "real-db-rowid-repaired-wedge"
@@ -21976,7 +21976,7 @@ def test_prompt_submit_unconfirmed_truncation_refuses_before_target_resolution(
 
 def test_persist_live_session_system_prompt_uses_profile_home(monkeypatch, tmp_path):
     """Issue #50233: _persist_live_session_system_prompt must re-bind
-    HERMES_HOME to the session's profile before rebuilding the system
+    ZEUS_HOME to the session's profile before rebuilding the system
     prompt.  Without this, a /model switch rebuilds the prompt with the
     root profile's SOUL.md and skills instead of the session's profile.
     """
@@ -21995,8 +21995,8 @@ def test_persist_live_session_system_prompt_uses_profile_home(monkeypatch, tmp_p
         _session_db = None
 
         def _build_system_prompt(self, system_message=None):
-            from hermes_constants import get_hermes_home
-            home = get_hermes_home()
+            from zeus_constants import get_zeus_home
+            home = get_zeus_home()
             built_homes.append(str(home))
             soul = (
                 (home / "SOUL.md").read_text(encoding="utf-8-sig")
@@ -22020,7 +22020,7 @@ def test_persist_live_session_system_prompt_uses_profile_home(monkeypatch, tmp_p
     server._persist_live_session_system_prompt(session)
 
     # The system prompt must have been built while the override pointed
-    # to the profile home, not the root ~/.hermes.
+    # to the profile home, not the root ~/.zeus.
     assert len(built_homes) == 1, f"expected 1 build, got {built_homes}"
     assert str(profile_home) in built_homes[0], (
         f"system prompt built with wrong home: {built_homes[0]}"
@@ -22028,8 +22028,8 @@ def test_persist_live_session_system_prompt_uses_profile_home(monkeypatch, tmp_p
     assert "Work persona" in agent._cached_system_prompt
 
     # The override must have been reset after the call.
-    from hermes_constants import get_hermes_home_override
-    assert get_hermes_home_override() is None
+    from zeus_constants import get_zeus_home_override
+    assert get_zeus_home_override() is None
 
 
 def test_persist_live_session_system_prompt_no_profile_is_unchanged(monkeypatch):
@@ -22061,11 +22061,11 @@ def test_persist_live_session_system_prompt_no_profile_is_unchanged(monkeypatch)
 
 
 def test_persist_live_session_system_prompt_restores_pre_existing_override(tmp_path):
-    """reset_hermes_home_override() restores the previous ContextVar state,
+    """reset_zeus_home_override() restores the previous ContextVar state,
     not just the unset case: when a caller already holds an override, the
     persist call must scope to the session's profile and then hand the
     caller's override back, rather than clearing it to None."""
-    from hermes_constants import get_hermes_home_override
+    from zeus_constants import get_zeus_home_override
 
     outer_home = tmp_path / "profile-outer"
     outer_home.mkdir()
@@ -22084,8 +22084,8 @@ def test_persist_live_session_system_prompt_restores_pre_existing_override(tmp_p
         _session_db = None
 
         def _build_system_prompt(self, system_message=None):
-            from hermes_constants import get_hermes_home
-            built_homes.append(str(get_hermes_home()))
+            from zeus_constants import get_zeus_home
+            built_homes.append(str(get_zeus_home()))
             return "inner prompt"
 
     class FakeDB:
@@ -22100,7 +22100,7 @@ def test_persist_live_session_system_prompt_restores_pre_existing_override(tmp_p
         "profile_home": str(inner_home),
     }
 
-    outer_token = set_hermes_home_override(outer_home)
+    outer_token = set_zeus_home_override(outer_home)
     try:
         server._persist_live_session_system_prompt(session)
 
@@ -22108,10 +22108,10 @@ def test_persist_live_session_system_prompt_restores_pre_existing_override(tmp_p
         assert built_homes == [str(inner_home)]
         # The caller's pre-existing override survived, instead of being reset
         # to None.
-        assert get_hermes_home_override() == str(outer_home)
+        assert get_zeus_home_override() == str(outer_home)
     finally:
-        reset_hermes_home_override(outer_token)
-    assert get_hermes_home_override() is None
+        reset_zeus_home_override(outer_token)
+    assert get_zeus_home_override() is None
 
 
 def test_persist_live_session_system_prompt_binds_session_cwd(monkeypatch, tmp_path):
@@ -22309,7 +22309,7 @@ def test_ssh_named_profile_cwd_beats_launch_terminal_cwd(monkeypatch, tmp_path, 
     it even when that path does not exist on this host and the process
     TERMINAL_CWD still names the launch profile."""
     remote = "/home/kali"
-    launch = "/home/ubuntu/hermes_sync"
+    launch = "/home/ubuntu/zeus_sync"
     assert not os.path.isdir(remote)
     home = tmp_path / "hunter"
     home.mkdir()

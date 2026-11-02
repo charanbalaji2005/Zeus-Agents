@@ -1,4 +1,4 @@
-import type { ConnectorCatalogRow } from '@hermes/shared'
+import type { ConnectorCatalogRow } from '@zeus/shared'
 import { describe, expect, it } from 'vitest'
 
 import type { AccountRow } from '../types'

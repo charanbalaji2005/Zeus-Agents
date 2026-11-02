@@ -4,8 +4,8 @@ Which providers and models actually **read** the reasoning that a client replays
 earlier assistant turns? A `200 OK` only shows a field was accepted. The gateway may drop it,
 and so may the chat template (for example, Qwen3 templates discard reasoning from earlier turns).
 This harness measures consumption on the wire. It uses only the standard library's HTTP client
-and has no Hermes runtime dependency, so it tests what a provider does with a request, not what
-Hermes sends.
+and has no Zeus runtime dependency, so it tests what a provider does with a request, not what
+Zeus sends.
 
 ## Method
 
@@ -102,11 +102,11 @@ python evals/reasoning_replay/harness.py report --out $OUT   # writes matrix.md 
 ```
 
 **Credentials** are read at call time and never written to disk or printed.
-- The Nous Portal key comes from `~/.hermes/auth.json` (`providers.nous.agent_key`, falling
+- The Nous Portal key comes from `~/.zeus/auth.json` (`providers.nous.agent_key`, falling
   back to `access_token`). On a 401 the file is re-read once, waiting 15 s if the key has not
   changed yet.
 - Every other route reads its key from the process environment first, then from
-  `~/.hermes/.env`.
+  `~/.zeus/.env`.
 - Named routes are listed in `ROUTES`. For anything else, use `--route custom` with
   `--base-url` and `--key-env`.
 

@@ -49,7 +49,7 @@ afterEach(() => {
 })
 
 function tmpHome(tag: string) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `hermes-marker-${tag}-`))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `zeus-marker-${tag}-`))
   homes.push(dir)
 
   return dir
@@ -281,7 +281,7 @@ test('a dead owner with a LIVE delegate keeps the marker live (C1 rule 6)', asyn
 
   const live = await readLiveUpdateMarker(home)
 
-  assert.ok(live, 'a killed hand-off script must not hide a still-running hermes update')
+  assert.ok(live, 'a killed hand-off script must not hide a still-running zeus update')
   assert.equal(live!.pid, delegate.pid)
   delegate.kill('SIGKILL')
   await new Promise(resolve => delegate.once('exit', resolve))
@@ -399,7 +399,7 @@ test('a fresh 0-byte marker reads LIVE and survives; a stale one reads dead and 
 
 test('claims publish by hard link and leave no tmp litter; a dead writer tmp is reclaimed (A3)', async () => {
   const home = tmpHome('link')
-  const deadTmp = path.join(home, `.hermes-update-in-progress.${await deadPid()}.tmp`)
+  const deadTmp = path.join(home, `.zeus-update-in-progress.${await deadPid()}.tmp`)
   fs.writeFileSync(deadTmp, 'half')
 
   const claim = await claimBridgeMarker(home, { startedAt: 7 })
@@ -407,7 +407,7 @@ test('claims publish by hard link and leave no tmp litter; a dead writer tmp is 
   assert.ok(claim.ok)
   assert.equal(fs.readFileSync(markerPath(home), 'utf8'), claim.body)
   assert.deepEqual(
-    fs.readdirSync(home).filter(name => name !== '.hermes-update-in-progress'),
+    fs.readdirSync(home).filter(name => name !== '.zeus-update-in-progress'),
     [],
     'no tmp sibling survives the claim'
   )
@@ -434,7 +434,7 @@ test('the hand-off counts as started only when a real legacy script process take
   const startedAt = Math.floor(Date.now() / 1000)
 
   // A real old-style "script": waits, then claims the marker in its own name,
-  // echoing HERMES_UPDATE_STARTED_AT on line 2.
+  // echoing ZEUS_UPDATE_STARTED_AT on line 2.
   const script = spawn(
     process.execPath,
     [

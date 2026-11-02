@@ -169,7 +169,7 @@ function DirectoryBody({ onContinue, owner, returnRoute, suggested = NO_SUGGESTI
     if (retryable(open)) {
       actions.retry(card, open)
     } else if (url) {
-      void window.hermesDesktop?.openExternal?.(url)
+      void window.zeusDesktop?.openExternal?.(url)
     }
   }
 

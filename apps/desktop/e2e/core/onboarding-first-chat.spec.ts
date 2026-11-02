@@ -49,7 +49,7 @@ test('onboarding (custom endpoint) then first chat renders exactly once', async 
   // provider is configured it starts it on that provider at the next launch (#137522, #137807). This
   // spec covers the provider setup a user without the trial gets, then plain chats: no guest trial,
   // onboarding recorded as done.
-  fs.writeFileSync(path.join(sandbox.hermesHome, 'config.yaml'), 'nous:\n  guest: false\nonboarding:\n  run: false\n')
+  fs.writeFileSync(path.join(sandbox.zeusHome, 'config.yaml'), 'nous:\n  guest: false\nonboarding:\n  run: false\n')
   const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
   const ws = recordWebSockets(page)
 
@@ -87,7 +87,7 @@ test('onboarding (custom endpoint) then first chat renders exactly once', async 
     })
 
     await test.step('the persisted assignment is what the user entered', async () => {
-      const config = fs.readFileSync(path.join(sandbox.hermesHome, 'config.yaml'), 'utf8')
+      const config = fs.readFileSync(path.join(sandbox.zeusHome, 'config.yaml'), 'utf8')
       expect(config).toMatch(/provider:\s*['"]?custom/)
       expect(config).toContain(`127.0.0.1:${new URL(provider.url).port}`)
     })

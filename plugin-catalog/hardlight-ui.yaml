@@ -31,4 +31,4 @@ capabilities:
   provides_hooks: []
   provides_middleware: []
   requires_env: []
-requires_hermes: ">=0.21.0"
+requires_zeus: ">=0.21.0"

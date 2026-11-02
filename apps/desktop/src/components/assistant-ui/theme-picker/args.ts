@@ -1,5 +1,5 @@
 import type { ToolCallMessagePart } from '@assistant-ui/react'
-import type { ThemePicker } from '@hermes/shared'
+import type { ThemePicker } from '@zeus/shared'
 
 import { recordOf } from '@/lib/connector-tools'
 

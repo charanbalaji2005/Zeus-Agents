@@ -1,4 +1,4 @@
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 
 import type { UiPreferencesBridge, UiPreferencesSnapshot } from './ui-preferences/sync'
 
@@ -11,7 +11,7 @@ const POLL_MS = 10_000
  * that machine arrive by a cheap poll while this tab is visible, and at once
  * when the tab regains focus.
  */
-export function createBrowserUiPreferences(api: <T>(request: HermesApiRequest) => Promise<T>): UiPreferencesBridge {
+export function createBrowserUiPreferences(api: <T>(request: ZeusApiRequest) => Promise<T>): UiPreferencesBridge {
   const read = () => api<UiPreferencesSnapshot>({ path: PATH, timeoutMs: 10_000 })
 
   return {

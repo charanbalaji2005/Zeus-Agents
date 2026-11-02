@@ -11,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 
 from gateway.session_policy import build_policy, rebind_launch_key
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 _CFG = {'platform_toolsets': {'cli': ['terminal']}}
 
@@ -74,7 +74,7 @@ def test_an_invalid_toolset_name_reports_that_name(tmp_path):
 
 @pytest.mark.parametrize('name', ['deadserver', 'mcp-deadserver'])
 def test_an_explicit_pick_of_a_configured_mcp_server_builds_before_it_connects(tmp_path, name):
-    """`hermes chat -t terminal,<server>` names a configured MCP server whose toolset registers only
+    """`zeus chat -t terminal,<server>` names a configured MCP server whose toolset registers only
     after its first connect; an offline server is inactive, not a typo (#138748, #139154). The gateway
     accepts what the CLI's own validator accepts, and either spelling selects that server alone."""
     servers = {'deadserver': {'command': str(tmp_path / 'absent')}, 'other': {'command': str(tmp_path / 'absent')}}
@@ -123,8 +123,8 @@ async def test_the_frame_carries_the_field_and_the_gateway_logs_it(tmp_path, cap
     """What a report can quote: the JSON-RPC ``error.data`` and one gateway log line."""
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch
 
     detail = "unknown or invalid toolset name: 'gone_plugin'"
     db = SessionDB(db_path=tmp_path / 'state.db')
@@ -156,8 +156,8 @@ async def test_a_bare_refusal_does_not_warn(tmp_path, caplog):
     """A retrying client must not be able to flood the log: only a named refusal is a warning."""
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch
 
     db = SessionDB(db_path=tmp_path / 'state.db')
     try:
@@ -184,8 +184,8 @@ async def test_a_bare_refusal_does_not_warn(tmp_path, caplog):
 
 def test_the_cli_copy_names_the_field_a_user_reads():
     """The panel line said ``invalid_params`` alone; it now carries the check (#138748)."""
-    from hermes_cli.cli_chat_error_copy import agent_init_failure_message
-    from hermes_cli.gateway_client import GatewayRPCError
+    from zeus_cli.cli_chat_error_copy import agent_init_failure_message
+    from zeus_cli.gateway_client import GatewayRPCError
 
     exc = GatewayRPCError('invalid_params', 4001, {
         'reason': 'invalid_params', 'field': 'toolsets',
@@ -196,8 +196,8 @@ def test_the_cli_copy_names_the_field_a_user_reads():
 
 def test_a_refusal_without_a_named_field_reads_exactly_as_before():
     """Refusals raised elsewhere keep their copy: no empty parentheses on the panel."""
-    from hermes_cli.cli_chat_error_copy import agent_init_failure_message
-    from hermes_cli.gateway_client import GatewayRPCError
+    from zeus_cli.cli_chat_error_copy import agent_init_failure_message
+    from zeus_cli.gateway_client import GatewayRPCError
 
     message = agent_init_failure_message(GatewayRPCError('storage_unavailable', 5001,
                                                          {'reason': 'storage_unavailable'}))
@@ -246,7 +246,7 @@ def test_an_unusable_server_spec_never_echoes_its_values(tmp_path):
 def test_a_bypass_launch_never_reads_profile_plugin_state(tmp_path, monkeypatch):
     def _profile_read(_config):
         raise AssertionError('a bypass launch read the profile toolset resolver')
-    monkeypatch.setattr('hermes_cli.toolset_validation.saved_toolset_resolver', _profile_read)
+    monkeypatch.setattr('zeus_cli.toolset_validation.saved_toolset_resolver', _profile_read)
     policy = build_policy({'source': 'cli', 'cwd': str(tmp_path), 'ignore_user_config': True, 'model': 'fixture',
                            'toolsets': ['terminal']}, dict(_CFG))
     assert 'terminal' in policy.toolsets

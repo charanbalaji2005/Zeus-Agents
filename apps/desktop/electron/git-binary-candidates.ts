@@ -19,8 +19,8 @@ const UGIT_DIR = 'UGit'
 const UGIT_APP_PREFIX = 'app-'
 /** Where the UGit-bundled Git-for-Windows puts git.exe inside an app dir. */
 const UGIT_GIT_REL = path.join('resources', 'app', 'git', 'cmd', 'git.exe')
-/** PM-managed Git tool directories under the Hermes local application root. */
-const HERMES_TOOLS_DIR = path.join('hermes', 'tools')
+/** PM-managed Git tool directories under the Zeus local application root. */
+const ZEUS_TOOLS_DIR = path.join('zeus', 'tools')
 const MANAGED_GIT_PREFIX = 'git-'
 
 /**
@@ -57,12 +57,12 @@ export function ugitGitBinaries(localAppData: string, fs: GitCandidateFs): strin
 
 
 /**
- * Find Git installed by Hermes PM under `%LOCALAPPDATA%\hermes\tools`.
+ * Find Git installed by Zeus PM under `%LOCALAPPDATA%\zeus\tools`.
  * PM versions the tool directory, so resolve the newest available executable
  * rather than assuming a particular Git release.
  */
 export function managedGitBinaries(localAppData: string, fs: GitCandidateFs): string[] {
-  const toolsRoot = path.join(localAppData, HERMES_TOOLS_DIR)
+  const toolsRoot = path.join(localAppData, ZEUS_TOOLS_DIR)
 
   let entries: string[]
 
@@ -81,7 +81,7 @@ export function managedGitBinaries(localAppData: string, fs: GitCandidateFs): st
 
 /**
  * resolveGitBinary's fixed Windows candidate list, in preference order:
- * the Hermes-bundled PortableGit first, then UGit's bundled copies, then the
+ * the Zeus-bundled PortableGit first, then UGit's bundled copies, then the
  * standard Git-for-Windows locations.
  */
 export function windowsGitCandidates(env: WindowsGitEnv, fs: GitCandidateFs): string[] {
@@ -89,8 +89,8 @@ export function windowsGitCandidates(env: WindowsGitEnv, fs: GitCandidateFs): st
 
   if (env.localAppData) {
     candidates.push(...managedGitBinaries(env.localAppData, fs))
-    candidates.push(path.join(env.localAppData, 'hermes', 'git', 'cmd', 'git.exe'))
-    candidates.push(path.join(env.localAppData, 'hermes', 'git', 'bin', 'git.exe'))
+    candidates.push(path.join(env.localAppData, 'zeus', 'git', 'cmd', 'git.exe'))
+    candidates.push(path.join(env.localAppData, 'zeus', 'git', 'bin', 'git.exe'))
     candidates.push(...ugitGitBinaries(env.localAppData, fs))
   }
 

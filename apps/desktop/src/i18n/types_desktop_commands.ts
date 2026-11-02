@@ -25,7 +25,7 @@ export interface DesktopCommandNotices {
   historyHeader: (count: string) => string
   historyEmpty: string
   historyYou: string
-  historyHermes: string
+  historyZeus: string
   saveUsage: string
   saveLegacyRefused: string
   savedOnHost: (path: string) => string

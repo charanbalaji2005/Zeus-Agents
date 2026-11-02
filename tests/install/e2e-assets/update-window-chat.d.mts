@@ -3,8 +3,8 @@ import type { ElectronApplication, Page } from '@playwright/test'
 import type { BackendProcess } from '../../../tests-js/scripts/desktop-smoke-process.ts'
 
 export interface UpdateWindowIdentity {
-  hermesRoot: string
-  hermesHome?: string
+  zeusRoot: string
+  zeusHome?: string
 }
 
 export interface UpdateWindowChatOptions {

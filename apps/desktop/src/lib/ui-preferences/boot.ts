@@ -35,7 +35,7 @@ async function browserSnapshot(): Promise<null | UiPreferencesSnapshot> {
 export async function bootRenderer<T>(loadApp: () => Promise<T>): Promise<T> {
   if (typeof window !== 'undefined') {
     captureOwnPreferences()
-    hydrateFromSnapshot(window.hermesDesktop?.uiPreferences?.snapshot ?? (await browserSnapshot()))
+    hydrateFromSnapshot(window.zeusDesktop?.uiPreferences?.snapshot ?? (await browserSnapshot()))
   }
 
   return loadApp()

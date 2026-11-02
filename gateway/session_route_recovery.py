@@ -149,7 +149,7 @@ def handed_off_ref(authority, session_id):
     authority mounts. Its title stays the conversation's, so ``/resume <title>`` and the Bots roster's
     registry lookup open it on that lane (#143286). None for any other row."""
     from gateway.session_contract import SessionRef
-    from hermes_state_local_migration import LEGACY_LOCAL_SOURCES
+    from zeus_state_local_migration import LEGACY_LOCAL_SOURCES
     ref = messaging_owner_ref(authority, SessionRef(authority.profile_id, session_id))
     row = authority.db.get_session(ref.session_id) or {}
     if row.get('created_source') not in LEGACY_LOCAL_SOURCES or not mountable(authority, ref.session_id):
@@ -170,11 +170,11 @@ def superseded_hand_off(authority, ref):
 async def conversation_head(runner, session_id):
     """``(authority, local owner or None, row id)`` a repoint of *session_id* onto a messaging lane
     carries (``/handoff``, a platform ``/resume``): a local conversation's current head
-    (``hermes_state_local.handoff_head``), never an earlier ``/new`` segment, which would move that
+    (``zeus_state_local.handoff_head``), never an earlier ``/new`` segment, which would move that
     history onto the lane while the live conversation stays local, its receipt released (#143286)."""
     import asyncio
     from gateway.session_authorities import active_authority
-    from hermes_state_local import handoff_head
+    from zeus_state_local import handoff_head
     authority = active_authority(runner)
     db = authority.db if authority is not None else getattr(runner._session_db, '_db', runner._session_db)
     if db is None:

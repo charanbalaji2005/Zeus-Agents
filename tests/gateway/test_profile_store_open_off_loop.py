@@ -12,21 +12,21 @@ from tests.gateway.test_session_authorities_multiplex import _reserve_homes, _ru
 
 @pytest.mark.asyncio
 async def test_secondary_store_opens_run_off_the_loop_in_their_own_scope(tmp_path, monkeypatch):
-    import hermes_state_registry
+    import zeus_state_registry
     from gateway.run_runtime import initialize_gateway_runtime
     from gateway.runtime_ownership import process_ownership
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
     root, homes = _reserve_homes(tmp_path, monkeypatch)
     process_ownership.reserve([home for _, home in homes])
     opens = []
-    real_open = hermes_state_registry._open_session_db
+    real_open = zeus_state_registry._open_session_db
 
     def spy(path):
-        opens.append((path.parent.resolve(), threading.get_ident(), get_hermes_home().resolve()))
+        opens.append((path.parent.resolve(), threading.get_ident(), get_zeus_home().resolve()))
         return real_open(path)
 
-    monkeypatch.setattr(hermes_state_registry, "_open_session_db", spy)
+    monkeypatch.setattr(zeus_state_registry, "_open_session_db", spy)
     loop_thread = threading.get_ident()
     runner = None
     try:

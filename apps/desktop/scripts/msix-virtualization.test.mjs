@@ -1,4 +1,4 @@
-// Hermes shares %LOCALAPPDATA% and HKCU state with the unpackaged CLI/gateway,
+// Zeus shares %LOCALAPPDATA% and HKCU state with the unpackaged CLI/gateway,
 // so every MSIX the repo produces must opt out of write virtualisation and the
 // builder must request the restricted capability that permits it.
 import { execFileSync } from 'node:child_process'
@@ -28,8 +28,8 @@ function taggedApp(tag) {
   const app = path.join(root, 'apps', 'desktop')
   fs.mkdirSync(path.join(app, 'assets'), { recursive: true })
   fs.copyFileSync(path.join(desktop, 'assets/msix-manifest.xml'), path.join(app, 'assets/msix-manifest.xml'))
-  fs.writeFileSync(path.join(app, 'product-identity.cjs'), "module.exports={store:true,artifactNamePascal:'HermesBundled'}\n")
-  fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify({ name: 'hermes', version: '0.27.1' }))
+  fs.writeFileSync(path.join(app, 'product-identity.cjs'), "module.exports={store:true,artifactNamePascal:'ZeusBundled'}\n")
+  fs.writeFileSync(path.join(app, 'package.json'), JSON.stringify({ name: 'zeus', version: '0.27.1' }))
   const env = { ...process.env, GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.invalid',
     GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.invalid',
     GIT_AUTHOR_DATE: '2026-09-07T00:18:00Z', GIT_COMMITTER_DATE: '2026-09-07T00:18:00Z' }
@@ -47,7 +47,7 @@ function channelApp() {
   fs.mkdirSync(path.join(app, 'assets'))
   fs.mkdirSync(path.join(app, 'build/agent-payload'), { recursive: true })
   fs.copyFileSync(path.join(desktop, 'assets/msix-manifest.xml'), path.join(app, 'assets/msix-manifest.xml'))
-  fs.writeFileSync(path.join(app, 'build/agent-payload/manifest.json'), JSON.stringify({ launchers: ['hermes'] }))
+  fs.writeFileSync(path.join(app, 'build/agent-payload/manifest.json'), JSON.stringify({ launchers: ['zeus'] }))
   fs.writeFileSync(path.join(app, 'build/msix-extensions.xml'), '<Extensions />')
   fs.symlinkSync(path.join(desktop, 'scripts'), path.join(app, 'scripts'), 'junction')
   return app
@@ -60,7 +60,7 @@ test('store, release, canary and channel MSIX manifests keep write virtualisatio
   fs.copyFileSync(path.join(canary, 'assets/msix-manifest.xml'), path.join(canary, 'build/msix-manifest.xml'))
   const channel = channelApp()
   stageChannelManifest(channel, {
-    windowsVersion: '0.0.7.0', identity: { appNamePascal: 'HermesChannelab12', displayName: 'Hermes preview' }
+    windowsVersion: '0.0.7.0', identity: { appNamePascal: 'ZeusChannelab12', displayName: 'Zeus preview' }
   })
   const manifests = {
     store: stageStoreManifest(store, 'v0.27.1'),

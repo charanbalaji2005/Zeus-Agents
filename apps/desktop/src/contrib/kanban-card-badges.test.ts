@@ -11,7 +11,7 @@ import {
   type KanbanCard,
   type KanbanCardBadgeContribution,
   type KanbanCardBoard
-} from '@hermes/plugin-sdk'
+} from '@zeus/plugin-sdk'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { resolveKanbanCardBadges } from './kanban-card-badges'

@@ -1,4 +1,4 @@
-import type { FreeTierClaimNudgeResult } from '@hermes/shared'
+import type { FreeTierClaimNudgeResult } from '@zeus/shared'
 import { atom } from 'nanostores'
 
 import { invalidateAllConnectors } from '@/app/capabilities/connectors/data/keys'
@@ -10,10 +10,10 @@ import {
   pollOAuthSession,
   type ProfileScope,
   startOAuthLogin
-} from '@/hermes'
+} from '@/zeus'
 import { LONG_POLL_MIN_GAP_MS, pause, restOfLongPollGap } from '@/lib/long-poll'
 import { gatewayActivationEpoch } from '@/store/gateway'
-import type { AppHandoffStatus, FreeTierStatus, OAuthPollResponse } from '@/types/hermes'
+import type { AppHandoffStatus, FreeTierStatus, OAuthPollResponse } from '@/types/zeus'
 
 import { type FreeTierRequester, NOUS_PROVIDER_ID, refreshFreeTierStatus } from './free-tier'
 import { $localModelOfferPending } from './local-model-offer'
@@ -266,7 +266,7 @@ export function closeFreeTierSignIn() {
 
 // The reasons the backend names on a non-approved terminal poll: an expired
 // code, and the account service's `anon_*` verdicts when it was busy,
-// unreachable or refused mid sign-in (`hermes_cli/anon_sign_in.py`). Anything
+// unreachable or refused mid sign-in (`zeus_cli/anon_sign_in.py`). Anything
 // else falls through to the generic error screen, which shows the backend's
 // own message.
 const FAILURE_BY_REASON: Record<string, FreeTierSignInFailure> = {
@@ -289,9 +289,9 @@ export function signInFailureKind(reason: null | string | undefined): FreeTierSi
 // when the bridge isn't there (dev preview, tests) so the flow never strands in
 // a waiting state. Same contract as the onboarding store's opener.
 async function openSignInUrl(url: string) {
-  if (window.hermesDesktop?.openExternal) {
+  if (window.zeusDesktop?.openExternal) {
     try {
-      await window.hermesDesktop.openExternal(url)
+      await window.zeusDesktop.openExternal(url)
 
       return
     } catch {
@@ -303,7 +303,7 @@ async function openSignInUrl(url: string) {
 }
 
 /**
- * Drive one sign-in attempt end to end: resolve what identity this Hermes is
+ * Drive one sign-in attempt end to end: resolve what identity this Zeus is
  * on, start the device-code sign-in, open its page, then long-poll until it
  * resolves. Safe to call again from a "Try again" button — it clears any
  * previous timers first.

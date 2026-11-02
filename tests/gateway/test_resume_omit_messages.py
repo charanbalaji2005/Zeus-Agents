@@ -21,7 +21,7 @@ async def _local_session(tmp_path, monkeypatch):
     from gateway.session import SessionStore
     from gateway.session_authority import initialize_session_authority
     from gateway.session_contract import Principal
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     monkeypatch.setattr(run, '_load_gateway_config', dict)
     monkeypatch.setattr(session_local, 'local_session_info', lambda *a: {})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
@@ -115,7 +115,7 @@ async def test_omitted_resume_reply_passes_the_wire_contract(tmp_path, monkeypat
     from gateway.session_controls import AuthorityConnection
     from gateway import session_local
     authority, actor, ref, physical = await _local_session(tmp_path, monkeypatch)
-    monkeypatch.setattr(session_local, 'local_session_info', lambda *a: {'desktop_protocol': 'hermes-gateway-v1'})
+    monkeypatch.setattr(session_local, 'local_session_info', lambda *a: {'desktop_protocol': 'zeus-gateway-v1'})
     _seed_compacted(authority.db, physical)
     conn = AuthorityConnection(authority, object(), {'user_id': 'owner'})
     conn.actor = actor

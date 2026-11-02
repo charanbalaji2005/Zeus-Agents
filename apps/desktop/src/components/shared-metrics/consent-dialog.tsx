@@ -41,7 +41,7 @@ interface SharedMetricsConsentDialogProps {
 const CHOICE_ORDER: readonly SharedMetricsChoice[] = ['share', 'off']
 
 /**
- * Owner of the one-time shared-metrics question, the Desktop twin of `hermes
+ * Owner of the one-time shared-metrics question, the Desktop twin of `zeus
  * setup`'s Shared Metrics section. It reads the focused profile's answer once
  * first-run onboarding is out of the way; an unanswered profile gets an OFFER in
  * the composer status stack (`SharedMetricsConsentStrip`), never a modal — a

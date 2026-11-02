@@ -2,7 +2,7 @@
  * desktop-uninstall.ts
  *
  * Pure, electron-free helpers for the desktop Chat GUI uninstaller. These map
- * the three user-facing uninstall modes to the `hermes uninstall` CLI flags,
+ * the three user-facing uninstall modes to the `zeus uninstall` CLI flags,
  * resolve the running app bundle/exe so a detached cleanup script can remove
  * it after the app quits, and build that cleanup script for each OS.
  *
@@ -11,14 +11,14 @@
  *
  * The three modes mirror the CLI's options exactly:
  *   - 'gui'  → remove ONLY the Chat GUI, keep the agent + all user data.
- *              `hermes uninstall --gui --yes`
+ *              `zeus uninstall --gui --yes`
  *   - 'lite' → remove the GUI + agent code, KEEP user data (config / sessions
- *              / .env) for a future reinstall. `hermes uninstall --yes`
+ *              / .env) for a future reinstall. `zeus uninstall --yes`
  *   - 'full' → remove everything: GUI + agent + all user data.
- *              `hermes uninstall --full --yes`
+ *              `zeus uninstall --full --yes`
  *
  * Why a detached cleanup script: 'lite'/'full' delete the very venv the
- * `hermes` command runs from, and every mode may need to delete the running
+ * `zeus` command runs from, and every mode may need to delete the running
  * app bundle (locked on macOS/Windows while the process is alive). So we hand
  * the work to a detached child that waits for this app's PID to exit, runs the
  * Python uninstall, then removes the app bundle — then the app quits. Same
@@ -31,7 +31,7 @@ import type { InstallStamp } from './install-stamp'
 import { ownAppImage } from './relaunch-target'
 
 export interface UninstallSummaryDetails {
-  hermes_home: string
+  zeus_home: string
   agent_installed: boolean
   gui_installed: boolean
   source_built_artifacts: string[]
@@ -82,7 +82,7 @@ export function registerDesktopUninstallIpc({
   const kind: InstallKind = resolveInstallKind(stamp ?? {})
   const codeRemovalAllowed: boolean = installKindAllowsCodeRemoval(kind)
 
-  ipcMain.handle('hermes:uninstall:summary', async (): Promise<DesktopUninstallSummary> => {
+  ipcMain.handle('zeus:uninstall:summary', async (): Promise<DesktopUninstallSummary> => {
     const summary: UninstallSummaryDetails = codeRemovalAllowed ? await probeSummary() : fallbackSummary()
 
     // The local artifact owns this decision, not the Python summary. When
@@ -96,7 +96,7 @@ export function registerDesktopUninstallIpc({
         : nativeRemovalInstructions(kind, summary.platform, removableAppPath())
     }
   })
-  ipcMain.handle('hermes:uninstall:openAppsSettings', async (): Promise<void> => {
+  ipcMain.handle('zeus:uninstall:openAppsSettings', async (): Promise<void> => {
     // The generic openExternal bridge admits web schemes only; this one
     // deep link is fixed here so the renderer cannot pass a URL.
     if (!codeRemovalAllowed && process.platform === 'win32') {
@@ -104,7 +104,7 @@ export function registerDesktopUninstallIpc({
     }
   })
   ipcMain.handle(
-    'hermes:uninstall:run',
+    'zeus:uninstall:run',
     async (_event: unknown, payload?: unknown): Promise<DesktopUninstallResult> => {
       // Every cleanup mode can remove the bundle, including a hidden data request.
       if (!codeRemovalAllowed) {
@@ -136,7 +136,7 @@ const UNINSTALL_MODES: string[] = ['gui', 'lite', 'full', 'data']
 //   'bundled'  — a bundled or light artifact. The OS owns app removal.
 //   'external' — another package manager owns updates and removal.
 //   'standard' — everything else: the git-clone install the desktop
-//                installer bootstraps, or a `hermes desktop` source build.
+//                installer bootstraps, or a `zeus desktop` source build.
 //                The classic script flow (venv python + rm the bundle) works.
 //
 // Only 'standard' installs may use the desktop cleanup script.
@@ -197,15 +197,15 @@ function allowedUninstallModes(kind: InstallKind): string[] {
 function nativeRemovalInstructions(kind, platform, appPath = null) {
   if (kind === 'nix') {
     return (
-      'This Hermes desktop app was installed by Nix. Uninstall it the same way you installed it: ' +
-      'remove hermes-agent from your flake or profile, then rebuild.'
+      'This Zeus desktop app was installed by Nix. Uninstall it the same way you installed it: ' +
+      'remove zeus-agents from your flake or profile, then rebuild.'
     )
   }
 
   if (kind === 'external') {
     // Deleting a package manager's files by hand leaves the package registered with missing files.
     return (
-      'Another package manager installed this Hermes desktop app. ' +
+      'Another package manager installed this Zeus desktop app. ' +
       'Uninstall it with that package manager, the same way you installed it.'
     )
   }
@@ -216,7 +216,7 @@ function nativeRemovalInstructions(kind, platform, appPath = null) {
 
   if (platform === 'darwin') {
     // Name the running bundle: channel builds ship under different .app names.
-    const bundle = appPath ? path.posix.basename(String(appPath)) : 'the Hermes app'
+    const bundle = appPath ? path.posix.basename(String(appPath)) : 'the Zeus app'
     const folder = appPath ? path.posix.dirname(String(appPath)) : 'Applications'
 
     return `Quit the app and drag ${bundle} from ${folder} to the Trash.`
@@ -230,13 +230,13 @@ function nativeRemovalInstructions(kind, platform, appPath = null) {
     return `Delete the app directory at ${appPath}.`
   }
 
-  return 'Delete the Hermes AppImage (or app directory) from wherever you saved it.'
+  return 'Delete the Zeus AppImage (or app directory) from wherever you saved it.'
 }
 
 /**
- * Map an uninstall mode to the `python -m hermes_cli.uninstall` argv (after the
+ * Map an uninstall mode to the `python -m zeus_cli.uninstall` argv (after the
  * python executable). Uses the dedicated lightweight module entrypoint (not
- * `hermes_cli.main`) so it can run under a system Python OUTSIDE the venv that
+ * `zeus_cli.main`) so it can run under a system Python OUTSIDE the venv that
  * lite/full delete — see the Finding-3 note in buildWindowsCleanupScript.
  * Throws on an unknown mode so a typo can't silently become a full wipe.
  */
@@ -245,7 +245,7 @@ function uninstallArgsForMode(mode: string) {
     throw new Error(`Unknown uninstall mode: ${mode}`)
   }
 
-  return ['-m', 'hermes_cli.uninstall', '--mode', mode]
+  return ['-m', 'zeus_cli.uninstall', '--mode', mode]
 }
 
 /** True when `mode` removes the agent code (lite/full), false otherwise. */
@@ -262,8 +262,8 @@ function modeRemovesUserData(mode: string) {
  * Resolve the on-disk app bundle/dir to remove for the running desktop app,
  * given the path to the running executable (`process.execPath`) and platform.
  *
- *   macOS:   …/Hermes.app/Contents/MacOS/Hermes  → …/Hermes.app
- *   Windows: …\Hermes\Hermes.exe                 → …\Hermes  (install dir)
+ *   macOS:   …/Zeus.app/Contents/MacOS/Zeus  → …/Zeus.app
+ *   Windows: …\Zeus\Zeus.exe                 → …\Zeus  (install dir)
  *   Linux:   AppImage → APPIMAGE when we run from it; unpacked → the *-unpacked dir
  *
  * Returns null when we can't confidently identify a removable bundle (e.g.
@@ -282,10 +282,10 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
   const p = platform === 'win32' ? path.win32 : path.posix
 
   if (platform === 'darwin') {
-    // …/Hermes.app/Contents/MacOS/Hermes → strip 3 segments to the .app
+    // …/Zeus.app/Contents/MacOS/Zeus → strip 3 segments to the .app
     const macOsDir = p.dirname(exe) // …/Contents/MacOS
     const contents = p.dirname(macOsDir) // …/Contents
-    const appBundle = p.dirname(contents) // …/Hermes.app
+    const appBundle = p.dirname(contents) // …/Zeus.app
 
     if (appBundle.endsWith('.app')) {
       return appBundle
@@ -295,10 +295,10 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
   }
 
   if (platform === 'win32') {
-    // NSIS per-user installs Hermes.exe directly in the install dir.
+    // NSIS per-user installs Zeus.exe directly in the install dir.
     const dir = p.dirname(exe)
 
-    if (/[\\/]Hermes$/i.test(dir) || /[\\/]hermes-desktop$/i.test(dir)) {
+    if (/[\\/]Zeus$/i.test(dir) || /[\\/]zeus-desktop$/i.test(dir)) {
       return dir
     }
 
@@ -313,7 +313,7 @@ function resolveRemovableAppPath(execPath, platform, env: any = {}) {
     return appImage
   }
 
-  // Unpacked electron-builder tree: …/linux-unpacked/hermes
+  // Unpacked electron-builder tree: …/linux-unpacked/zeus
   const dir = p.dirname(exe)
 
   if (/-unpacked$/.test(dir)) {
@@ -340,11 +340,11 @@ function shouldRemoveAppBundle(isPackaged, appPath) {
  *   3. removes the app bundle if one was resolved.
  *
  * `pythonExe` should be a Python OUTSIDE the venv for lite/full (the venv is
- * being deleted); `pythonPath` is prepended to PYTHONPATH so `import hermes_cli`
+ * being deleted); `pythonPath` is prepended to PYTHONPATH so `import zeus_cli`
  * resolves from the agent source. `q()` single-quote-escapes for the shell
  * (closes-escapes-reopens any embedded apostrophe), defending against spaces.
  */
-function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, hermesHome }) {
+function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot, uninstallArgs, appPath, zeusHome }) {
   const q = s => `'${String(s).replace(/'/g, `'\\''`)}'`
 
   const lines = [
@@ -359,7 +359,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
     '    sleep 0.5',
     '  done',
     'fi',
-    `export HERMES_HOME=${q(hermesHome)}`
+    `export ZEUS_HOME=${q(zeusHome)}`
   ]
 
   if (pythonPath) {
@@ -386,7 +386,7 @@ function buildPosixCleanupScript({ desktopPid, pythonExe, pythonPath, agentRoot,
  * the venv that contains `python.exe`. A running .exe is mandatory-locked on
  * Windows, so running the uninstall from the venv's OWN python half-fails. The
  * desktop passes a system Python (findSystemPython) as `pythonExe` for those
- * modes + `pythonPath`=agentRoot so `import hermes_cli` resolves from source
+ * modes + `pythonPath`=agentRoot so `import zeus_cli` resolves from source
  * while the venv is torn down. gui-only doesn't touch the venv, so it can use
  * either interpreter.
  *
@@ -404,18 +404,18 @@ function buildWindowsCleanupScript({
   agentRoot,
   uninstallArgs,
   appPath,
-  hermesHome
+  zeusHome
 }) {
   const pid = Number(desktopPid) || 0
   // cmd.exe has no string escaping inside quotes; strip embedded quotes (paths
   // under %LOCALAPPDATA% never contain them). `&`/`^` in a path would still be
-  // a problem, but Hermes install paths don't use them.
+  // a problem, but Zeus install paths don't use them.
   const q = s => `"${String(s).replace(/"/g, '')}"`
 
   const lines = [
     '@echo off',
     'setlocal enableextensions',
-    `set "HERMES_HOME=${String(hermesHome).replace(/"/g, '')}"`,
+    `set "ZEUS_HOME=${String(zeusHome).replace(/"/g, '')}"`,
     `set "PID=${pid}"`
   ]
 

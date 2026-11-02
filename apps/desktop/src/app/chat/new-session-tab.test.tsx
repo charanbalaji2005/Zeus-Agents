@@ -139,7 +139,7 @@ beforeEach(async () => {
   tree.declareDefaultTree(model.group(['workspace'], { active: 'workspace', id: 'main' }))
   $activeGatewayProfile.set('old-profile')
   $projectScope.set(ALL_PROJECTS)
-  window.hermesDesktop = { profile: { setDefault: async (route: DesktopProfileRoute) => route } } as never
+  window.zeusDesktop = { profile: { setDefault: async (route: DesktopProfileRoute) => route } } as never
   vi.mocked(requestGatewayForAgent).mockReset()
   await setDefaultProfile(OLD)
   // Main shows a loaded conversation, so the "+" has no blank main to front.

@@ -12,7 +12,7 @@ ROUTE = "agent:main:telegram:dm:42"  # unmultiplexed / legacy route: identical i
 @pytest.fixture()
 def two_profiles(tmp_path, monkeypatch):
     from agent import secret_scope
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from tools import delegate_tool_registry as reg
     from tools.process_registry import process_registry
     from tui_gateway import launch_profile_policy, server
@@ -20,11 +20,11 @@ def two_profiles(tmp_path, monkeypatch):
     launch = tmp_path / "launch-home"
     bot2 = launch / "profiles" / "bot2"
     bot2.mkdir(parents=True)
-    monkeypatch.setenv("HERMES_HOME", str(launch))
+    monkeypatch.setenv("ZEUS_HOME", str(launch))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     monkeypatch.setattr(secret_scope, "_MULTIPLEX_ACTIVE", False)
     monkeypatch.setattr(launch_profile_policy, "_snapshot", None)
-    monkeypatch.setattr(server, "_hermes_home", launch)
+    monkeypatch.setattr(server, "_zeus_home", launch)
     monkeypatch.setattr(server, "_served_profile_homes", set())
 
     launch_db = SessionDB(db_path=launch / "state.db")

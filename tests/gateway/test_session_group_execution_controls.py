@@ -4,8 +4,8 @@ import json
 from types import SimpleNamespace
 
 from gateway.session_controls import AuthorityConnection
-from hermes_state import SessionDB
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state import SessionDB
+from zeus_state_runtime import RuntimeStoreError
 
 
 class RoomService:
@@ -61,7 +61,7 @@ class RoomService:
 
 
 def test_execution_controls_preserve_native_wire_and_exact_task_identity(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     # The control boundary validates the roster before any service sees it: helper is a destination.
     helper = (tmp_path / 'profiles' / 'helper').resolve()
     (tmp_path / 'config.yaml').write_text(json.dumps({'hosted_rooms': {'profiles': {'helper': str(helper)}}}))
@@ -115,7 +115,7 @@ def test_execution_controls_preserve_native_wire_and_exact_task_identity(tmp_pat
 
 
 def test_execution_controls_reject_foreign_actor_profile_room_and_unready_service(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     with SessionDB(tmp_path / 'state.db') as db:
         authority = SimpleNamespace(profile_id=str(tmp_path), instance_id='owner', db=db, events={})
         owner = AuthorityConnection(authority, object(), {'user_id': 'alice'})

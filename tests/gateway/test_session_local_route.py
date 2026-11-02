@@ -13,21 +13,21 @@ import pytest
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
-    hermes_home = tmp_path / ".hermes"
-    hermes_home.mkdir()
+    zeus_home = tmp_path / ".zeus"
+    zeus_home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(hermes_home))
+    monkeypatch.setenv("ZEUS_HOME", str(zeus_home))
     monkeypatch.setenv("ALIAS_HOST_KEY", "sk-alias-env-secret")
-    (hermes_home / "config.yaml").write_text(
+    (zeus_home / "config.yaml").write_text(
         "model:\n  provider: custom\n  base_url: http://127.0.0.1:1/v1\n  default: model-main\n"
         "providers:\n  named-host:\n    base_url: http://127.0.0.1:2/v1\n    model: model-named\n"
         "model_aliases:\n"
         "  alias-host: {model: model-alias, provider: custom, base_url: http://127.0.0.1:3/v1, api_key: sk-alias-literal}\n"
         "  alias-env: {model: model-alias-env, provider: custom, base_url: http://127.0.0.1:3/v1, key_env: ALIAS_HOST_KEY}\n",
         encoding="utf-8")
-    from hermes_cli import model_switch
+    from zeus_cli import model_switch
     model_switch.DIRECT_ALIASES.clear()
-    return hermes_home
+    return zeus_home
 
 
 def _config():

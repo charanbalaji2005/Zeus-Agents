@@ -15,7 +15,7 @@ import { shortSocketTmpDir } from './local-gateway.test-helpers'
 
 const ORIGIN = 'http://127.0.0.1:1234'
 const LINK = process.platform === 'win32' ? 'junction' : 'dir'
-const PYTHON = process.env.HERMES_TEST_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
+const PYTHON = process.env.ZEUS_TEST_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
 
 const endpointFor = (profile_id: string): GatewayEndpoint => ({
   profile_id, instance_id: 'owner', authority_epoch: 1, runtime_protocol: 1, api_origin: ORIGIN,
@@ -90,7 +90,7 @@ test.skipIf(process.platform === 'win32')('a linked profile mints for the home t
 
   try {
     expect(await nativeGatewayHttpHeaders(descriptor, `${ORIGIN}/api/sessions?profile=work`))
-      .toEqual({ 'X-Hermes-Gateway-Ticket': 'grant-1' })
+      .toEqual({ 'X-Zeus-Gateway-Ticket': 'grant-1' })
     await expect(mintLocalGatewayTicket(endpointFor(path.join(links, 'home')), 'native-http')).rejects.toThrow('Noncanonical gateway profile')
     await expect(mintLocalGatewayTicket({ ...endpointFor(root), control_home: path.join(links, 'home') }, 'native-http')).rejects.toThrow('Noncanonical gateway profile')
     const gone = await nativeGatewayHttpHeaders(descriptor, `${ORIGIN}/api/sessions?profile=gone`).catch(error => error)

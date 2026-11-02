@@ -2,11 +2,11 @@ import { useStore } from '@nanostores/react'
 import { useEffect, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { getMemoryStatus } from '@/hermes'
+import { getMemoryStatus } from '@/zeus'
 import { useI18n } from '@/i18n'
 import type { MemoryLayersTranslations } from '@/i18n/types_memory_layers'
 import { $memoryStatusRevision } from '@/store/memory-status'
-import type { MemoryProviderStatus, MemoryStatusResponse } from '@/types/hermes'
+import type { MemoryProviderStatus, MemoryStatusResponse } from '@/types/zeus'
 
 import { isExternalMemoryProvider } from '../helpers'
 import { ListRow, Pill } from '../primitives'

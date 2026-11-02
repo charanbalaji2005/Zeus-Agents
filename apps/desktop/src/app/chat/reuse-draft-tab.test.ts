@@ -8,7 +8,7 @@ import { registry } from '@/contrib/registry'
 import { clearSessionDraft, freshDraftScope, onComposerDraftSyncRequest, stashSessionDraft } from '@/store/composer'
 import * as session from '@/store/session'
 import * as states from '@/store/session-states'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { $workspaceIsPage } from '../routes'
 

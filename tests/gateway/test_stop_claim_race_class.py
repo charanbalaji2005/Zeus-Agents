@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from hermes_state_runtime import claim_session_input, list_session_admissions
+from zeus_state_runtime import claim_session_input, list_session_admissions
 
 
 def _claim_after_read(authority, session_id):
@@ -39,9 +39,9 @@ def _cron(hosted_owner, tmp_path, monkeypatch):
     from gateway import session_cron
     from gateway.session_authority import LiveSession, SessionAuthority
     from gateway.session_contract import Principal
-    from hermes_state import SessionDB
-    from hermes_state_runtime import admit_session_input, begin_runtime_epoch
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    from zeus_state import SessionDB
+    from zeus_state_runtime import admit_session_input, begin_runtime_epoch
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db = SessionDB(tmp_path / 'cron.db')
     db.create_session('s', source='cron')
     authority = SessionAuthority(SimpleNamespace(_draining=False), profile_id='p', instance_id='t', db=db,

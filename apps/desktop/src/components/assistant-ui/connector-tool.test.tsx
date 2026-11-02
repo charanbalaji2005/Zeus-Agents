@@ -127,7 +127,7 @@ function Where() {
 }
 
 describe('ConnectorOffer named-account notice', () => {
-  it('says which name Hermes chose once the account connected, and Rename opens that account (by id) on the Connectors tab', () => {
+  it('says which name Zeus chose once the account connected, and Rename opens that account (by id) on the Connectors tab', () => {
     const request = {
       ...REQUEST,
       settled: true,
@@ -146,7 +146,7 @@ describe('ConnectorOffer named-account notice', () => {
       </I18nProvider>
     )
 
-    expect(screen.getAllByText('Hermes named this Gmail account work.')).toHaveLength(1)
+    expect(screen.getAllByText('Zeus named this Gmail account work.')).toHaveLength(1)
 
     fireEvent.click(screen.getByRole('button', { name: 'Rename' }))
 
@@ -181,7 +181,7 @@ describe('ConnectorTool operation card', () => {
     $gateway.set({ request } as never)
     const openExternal = vi.fn()
     // SAFETY: the card reads only `openExternal` from the preload bridge.
-    window.hermesDesktop = { openExternal } as never
+    window.zeusDesktop = { openExternal } as never
 
     renderConnector({ ...REQUEST, targets: [{ ...GMAIL, state: 'initiated' }] })
 
@@ -196,7 +196,7 @@ describe('ConnectorTool operation card', () => {
   it('Try again mints a fresh link on the open operation and never opens a browser by itself', async () => {
     const openExternal = vi.fn()
     // SAFETY: the card reads only `openExternal` from the preload bridge.
-    window.hermesDesktop = { openExternal } as never
+    window.zeusDesktop = { openExternal } as never
 
     const request = vi.fn().mockResolvedValue({
       targets: [{ connect_url: 'https://connect.example/gmail-2', name: 'gmail', state: 'initiated' }]

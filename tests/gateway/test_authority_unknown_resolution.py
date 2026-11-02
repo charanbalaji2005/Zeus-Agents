@@ -10,7 +10,7 @@ from gateway.session import SessionSource, SessionStore
 from gateway.session_authority import LiveSession, initialize_session_authority
 from gateway.session_contract import SessionRef, Submission
 from gateway.session_controls import AuthorityConnection
-from hermes_state_runtime import RuntimeStoreError, claim_session_input, list_session_admissions
+from zeus_state_runtime import RuntimeStoreError, claim_session_input, list_session_admissions
 from tests.waiting import async_wait_until
 
 
@@ -25,7 +25,7 @@ class Peer:
 
 async def _restarted_owner_with_unknown_head(tmp_path, monkeypatch, executed):
     """Real authority + SQLite: a started turn interrupted by an owner epoch change plus a queued follower."""
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     db = store._db
 
@@ -167,7 +167,7 @@ async def test_discarded_lost_turn_is_closed_and_never_merged_into_the_follower_
     from agent.turn_failure_copy import FAILED_TURN_DISPLAY_KIND, PARTIAL_FAILED_TURN_NOTICE
     from run_agent import AIAgent
     from tests.acp_adapter.test_failed_turn_closure import _LoopbackProvider
-    monkeypatch.setenv('HERMES_DISABLE_PLUGINS', '1')
+    monkeypatch.setenv('ZEUS_DISABLE_PLUGINS', '1')
     monkeypatch.setenv('NO_PROXY', '127.0.0.1,localhost')
     store, authority, _ref, unknown, _follower = await _restarted_owner_with_unknown_head(tmp_path, monkeypatch, [])
     db = authority.db

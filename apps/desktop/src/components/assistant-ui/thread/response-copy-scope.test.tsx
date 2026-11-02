@@ -10,7 +10,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { toChatMessages } from '@/lib/chat-messages'
 import { toRuntimeMessage } from '@/lib/chat-runtime'
 import { $touchPointer } from '@/lib/touch-interaction'
-import type { SessionMessage } from '@/types/hermes'
+import type { SessionMessage } from '@/types/zeus'
 
 import { stubThreadEnvironment, ThreadRuntime } from '../test-utils'
 

@@ -5,7 +5,7 @@ import type { WindowsRuntime } from './windows-runtime-command'
 // The runtime helper reads through the install's own root and profile predicate;
 // it opens no configs, credentials or sessions and never creates a home or identity.
 async function readInventory(ssh: any, runtime: WindowsRuntime): Promise<any> {
-  await assertWindowsRemoteInstallUpdateClear(ssh, runtime.hermesHome, runtime.python)
+  await assertWindowsRemoteInstallUpdateClear(ssh, runtime.zeusHome, runtime.python)
 
   const parsed = await helper(ssh, runtime, 'inventory')
 

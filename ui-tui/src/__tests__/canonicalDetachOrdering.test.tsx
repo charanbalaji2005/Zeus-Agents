@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 
-import { renderSync, Text } from '@hermes/ink'
+import { renderSync, Text } from '@zeus/ink'
 import React from 'react'
 import { expect, it, vi } from 'vitest'
 
@@ -15,7 +15,7 @@ type AttachmentAction = 'resumeById' | 'activateLiveSession'
 
 function fixture() {
   const home = mkdtempSync(join(tmpdir(), 'ink-detach-order-'))
-  vi.stubEnv('HERMES_HOME', home)
+  vi.stubEnv('ZEUS_HOME', home)
   resetUiState()
   const subscriptions = new Map<string, string>()
   const pending: Array<{ resolve: () => void; reject: () => void; invalid: () => void }> = []

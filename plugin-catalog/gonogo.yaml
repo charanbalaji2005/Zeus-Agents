@@ -1,4 +1,4 @@
-# Submitted to NousResearch/hermes-agent as plugin-catalog/gonogo.yaml.
+# Submitted to charanbalaji2005/Zeus-Agents as plugin-catalog/gonogo.yaml.
 # Kept here so the reviewed pin sits next to the code it pins; the copy in
 # plugin-catalog/ is the one that installs.
 name: gonogo
@@ -8,7 +8,7 @@ description: "Turn a pilot-scale eval score into a deployment decision — Wilso
 maintainer: keppy
 tier: community
 category: tools
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 version: "0.3.0"
 docs_url: https://github.com/keppy/hermes-plugin-gonogo#readme
 capabilities:

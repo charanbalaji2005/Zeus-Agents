@@ -1,6 +1,6 @@
 """Local-viewer turn events the classic CLI renders through its own callbacks (CALLMAP W1).
 
-On the session authority the agent runs in the gateway, so every callback main's HermesCLI
+On the session authority the agent runs in the gateway, so every callback main's ZeusCLI
 passed to its in-process AIAgent must reach the viewer as an execution event: the reply-box
 segment boundary, the tool-generating line, every ``_print_fn`` status line and the tool
 duration. A messaging route must not see any of it.
@@ -614,7 +614,7 @@ def test_subagent_roster_retains_running_child_after_fallback_evicts_parent():
         # Ancestry is walked backward from the live session on the real store, so an orphaned closed sibling under a compressed parent never hides the evicted parent's children.
         import tempfile
         from pathlib import Path
-        from hermes_state import SessionDB
+        from zeus_state import SessionDB
         with tempfile.TemporaryDirectory() as tmp:
             real_db = SessionDB(db_path=Path(tmp) / 'state.db')
             with real_db:

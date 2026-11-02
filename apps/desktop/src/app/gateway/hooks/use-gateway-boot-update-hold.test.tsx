@@ -77,7 +77,7 @@ function Harness() {
     handleServerRequest: () => false,
     onConnectionReady: () => undefined,
     onGatewayReady: () => undefined,
-    refreshHermesConfig: async () => undefined,
+    refreshZeusConfig: async () => undefined,
     refreshSessions: async () => undefined
   })
 
@@ -124,7 +124,7 @@ afterEach(() => {
   $connection.set(null)
   vi.useRealTimers()
   ;(globalThis as { WebSocket: unknown }).WebSocket = originalWebSocket
-  delete (window as { hermesDesktop?: unknown }).hermesDesktop
+  delete (window as { zeusDesktop?: unknown }).zeusDesktop
 })
 
 async function flushAsync() {
@@ -136,7 +136,7 @@ async function flushAsync() {
 it('a hold published after boot (a pool/profile backend) still reaches the blocked screen (R8 M6)', async () => {
   const desktop = fakeDesktop()
 
-  ;(window as { hermesDesktop?: unknown }).hermesDesktop = desktop
+  ;(window as { zeusDesktop?: unknown }).zeusDesktop = desktop
   render(<Harness />)
   await flushAsync()
   expect($gatewayState.get()).toBe('open')
@@ -153,7 +153,7 @@ it('a hold published after boot (a pool/profile backend) still reaches the block
   const progress = {
     error: null,
     fakeMode: false,
-    message: 'Hermes is ready',
+    message: 'Zeus is ready',
     phase: 'backend.ready',
     progress: 100,
     retryable: false,

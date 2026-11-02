@@ -57,8 +57,8 @@ class ResponseStore:
         if db_path is None:
             db_path = ":memory:"
             with suppress(Exception):
-                from hermes_cli.config import get_hermes_home
-                db_path = str(get_hermes_home() / "response_store.db")
+                from zeus_cli.config import get_zeus_home
+                db_path = str(get_zeus_home() / "response_store.db")
         self._db_path: Optional[str] = db_path if db_path != ":memory:" else None
         try:
             self._conn = sqlite3.connect(db_path, check_same_thread=False)
@@ -66,7 +66,7 @@ class ResponseStore:
             self._conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._db_path = None
         # Shared WAL-fallback so response_store.db degrades gracefully on NFS/SMB/FUSE homes.
-        from hermes_state_wal import apply_wal_with_fallback
+        from zeus_state_wal import apply_wal_with_fallback
         apply_wal_with_fallback(self._conn, db_label="response_store.db")
         self._conn.execute(
             "CREATE TABLE IF NOT EXISTS responses ("
@@ -83,7 +83,7 @@ class ResponseStore:
         self._conn.execute('CREATE TABLE IF NOT EXISTS response_output_order '
             '(request_key TEXT NOT NULL, item_id TEXT NOT NULL, output_index INTEGER NOT NULL, '
             'PRIMARY KEY(request_key,item_id), UNIQUE(request_key,output_index))')
-        from hermes_cli.sqlite_util import add_column_if_missing
+        from zeus_cli.sqlite_util import add_column_if_missing
         add_column_if_missing(self._conn, 'response_keys', 'model_json', 'model_json TEXT')
         add_column_if_missing(self._conn, 'response_keys', 'settled_at', 'settled_at REAL')
         add_column_if_missing(self._conn, 'response_keys', 'response_id', 'response_id TEXT')
@@ -179,8 +179,8 @@ class ResponseStore:
         state_db = Path(self._db_path).parent / 'state.db'
         if not pending or not state_db.is_file():
             return
-        from hermes_state_holders import read_only_db_uri
-        from hermes_state_terminal import ADMISSION_PREFIX
+        from zeus_state_holders import read_only_db_uri
+        from zeus_state_terminal import ADMISSION_PREFIX
         terminal = []
         ids = list(pending)
         try:
@@ -296,7 +296,7 @@ class ResponseStore:
 
     @_locked
     def bind_request_admission(self, key: str, admission_id: str) -> None:
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         with self._conn:
             self._conn.execute('INSERT OR IGNORE INTO response_admissions VALUES (?,?)', (key, admission_id))
             if self.request_admission(key) != admission_id:

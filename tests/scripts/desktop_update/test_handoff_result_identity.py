@@ -27,8 +27,8 @@ def test_powershell_result_keeps_identity_after_actual_heartbeat(tmp_path: Path,
     harness.write_text(r'''
 param([string]$HandoffPath, [string]$Install, [string]$Run)
 $started = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds() - 10
-$env:HERMES_UPDATE_STARTED_AT = [string]$started
-$marker = Join-Path $env:HERMES_HOME '.hermes-update-in-progress'
+$env:ZEUS_UPDATE_STARTED_AT = [string]$started
+$marker = Join-Path $env:ZEUS_HOME '.zeus-update-in-progress'
 $invoke = @{ InstallRoot = $Install; NoUi = $true }
 if ($Run) {
     $ct = [DateTimeOffset]::new([Diagnostics.Process]::GetCurrentProcess().StartTime.ToUniversalTime()).ToUnixTimeMilliseconds() / 1000.0
@@ -51,12 +51,12 @@ Remove-PSBreakpoint $breakpoint
         [POWERSHELL, "-NoProfile", "-NonInteractive", "-File", str(harness),
          "-HandoffPath", str(ROOT / "scripts/desktop-update/windows.ps1"),
          "-Install", str(install), "-Run", run_id],
-        env={**os.environ, "HOME": str(home), "HERMES_HOME": str(home),
+        env={**os.environ, "HOME": str(home), "ZEUS_HOME": str(home),
              "TEMP": str(tmp_path), "TMP": str(tmp_path)},
         capture_output=True, text=True, timeout=60,
         check=False,
     )
-    receipt = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8"))
+    receipt = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8"))
     assert receipt["ok"] is False, (receipt, result.stdout, result.stderr)
     # Native Windows reaches the missing-launcher refusal. PowerShell on POSIX
     # cannot call the Win32 console APIs, but its real finally writer still runs.
@@ -64,10 +64,10 @@ Remove-PSBreakpoint $breakpoint
         assert receipt["exit_code"] == 3, (receipt, result.stdout, result.stderr)
     else:
         assert receipt["exit_code"] == 1 and "DisableQuickEdit" in result.stderr
-    lines = (home / ".hermes-update-in-progress.observed").read_text().splitlines()
+    lines = (home / ".zeus-update-in-progress.observed").read_text().splitlines()
     assert int(lines[1]) > receipt["started_at"], "actual heartbeat must change line 2"
     assert receipt.get("run_id"), receipt
     assert f"run:{receipt['run_id']}" in lines
     if run_id:
         assert receipt["run_id"] == run_id
-    assert not (home / ".hermes-update-in-progress").exists(), "normal release still runs"
+    assert not (home / ".zeus-update-in-progress").exists(), "normal release still runs"

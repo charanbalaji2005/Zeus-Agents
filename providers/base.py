@@ -26,17 +26,17 @@ OMIT_TEMPERATURE = object()
 
 
 def _profile_user_agent() -> str:
-    """Return a ``hermes-cli/<version>`` UA string, with a stable fallback.
+    """Return a ``zeus-cli/<version>`` UA string, with a stable fallback.
 
     Used by ``ProviderProfile.fetch_models`` so the catalog probe is not
     served the default ``Python-urllib/<ver>`` UA — some providers
     (OpenCode Zen, etc.) sit behind a WAF that returns 403 for that.
     """
     try:
-        from hermes_cli.version_info import get_version_info  # lazy: avoid layer cycle at import time
-        return f"hermes-cli/{get_version_info().base_version}"
+        from zeus_cli.version_info import get_version_info  # lazy: avoid layer cycle at import time
+        return f"zeus-cli/{get_version_info().base_version}"
     except Exception:
-        return "hermes-cli"
+        return "zeus-cli"
 
 
 _RESOLVE_LOCK = threading.RLock()  # re-entrant: a callback may read another LazyHeaders
@@ -46,7 +46,7 @@ class LazyHeaders(dict[str, str]):
     """``default_headers`` whose callable values (a User-Agent carrying the release) run on first read.
 
     A source checkout resolves the release from git, and every CLI start imports all provider plugins
-    (``hermes_cli.config`` lists their env vars), so headers built at import made every command pay git
+    (``zeus_cli.config`` lists their env vars), so headers built at import made every command pay git
     subprocesses for a request it may never send. Keys are stored up front, so ``in``/``len`` stay lazy,
     and the class stays a real ``dict``: plugins copy, merge, mutate and serialize ``default_headers``.
 
@@ -155,7 +155,7 @@ class ProviderProfile:
     # True when the provider is pre-release / not for public listing. Discovery surfaces (provider
     # pickers, the setup provider list, the dashboard accounts tab) skip it unless ``listed()``
     # says otherwise; resolution by name is untouched, so an explicit ``model.provider`` /
-    # ``hermes auth add <name>`` keeps working.
+    # ``zeus auth add <name>`` keeps working.
     hidden: bool = False
 
     # ── Auth & endpoints ─────────────────────────────────────
@@ -171,11 +171,11 @@ class ProviderProfile:
     supports_model_listing: bool = True
 
     # ── Provider-owned auth (optional; non-api-key plugins) ──────────
-    # ``auth_handler(action, args) -> bool``: ``hermes auth add|status|logout|refresh <name>`` calls it
+    # ``auth_handler(action, args) -> bool``: ``zeus auth add|status|logout|refresh <name>`` calls it
     # FIRST with the parsed CLI namespace; truthy = the plugin owned the action, falsy = built-in path.
     # ``refresh_credential(entry) -> Mapping | None``: the credential pool's refresh of a pooled OAuth
     # row — return the rotated fields (``access_token``, ``refresh_token``, ``expires_at_ms`` …) or raise.
-    # Both own their own token endpoints; Hermes passes no secrets beyond the pooled row itself.
+    # Both own their own token endpoints; Zeus passes no secrets beyond the pooled row itself.
     # ``classify_api_error(error, *, status_code, error_code, message, body, model) -> Mapping | None``:
     # consulted by ``agent.error_classifier.classify_api_error`` for THIS provider's failures only, after
     # the generic ``transform_api_error_classification`` plugin hooks and before the built-in pipeline.
@@ -213,7 +213,7 @@ class ProviderProfile:
 
     # ── External-process providers (auth_type="external_process") ──
     # An agent CLI driven over stdio (ACP) rather than an HTTP endpoint. These
-    # describe how to launch it; hermes_cli/auth.py's
+    # describe how to launch it; zeus_cli/auth.py's
     # resolve_external_process_provider_credentials() reads them instead of
     # hardcoding one vendor's binary. Env vars are checked in order and win
     # over the static defaults, so an operator can point at a custom build.
@@ -271,7 +271,7 @@ class ProviderProfile:
     start_device_login: Callable[[], Any] | None = None
     poll_device_login: Callable[[Any], Any] | None = None
     save_device_login: Callable[[Any], None] | None = None
-    # ``model_setup_flow(config, current_model, args)``: this provider's own ``hermes model`` step
+    # ``model_setup_flow(config, current_model, args)``: this provider's own ``zeus model`` step
     # (credential prompt, catalog, persist); None = the generic flow for its auth_type.
     model_setup_flow: Callable[[Any, str, Any], Any] | None = None
     # ``setup_reasoning_efforts(model) -> tuple | None``: levels the setup effort picker offers for
@@ -478,12 +478,12 @@ class ProviderProfile:
         """Whether discovery surfaces may offer this provider.
 
         Every non-``hidden`` profile is listed. A ``hidden`` (pre-release) one surfaces once the user
-        opted in by name (``hermes auth add <name>`` put a row in its credential pool), so the
+        opted in by name (``zeus auth add <name>`` put a row in its credential pool), so the
         pickers can then offer it. Reads auth.json only: it runs on every picker build.
         """
         if not self.hidden:
             return True
-        from hermes_cli.auth import read_credential_pool  # lazy: providers/ must not import hermes_cli at load
+        from zeus_cli.auth import read_credential_pool  # lazy: providers/ must not import zeus_cli at load
         return bool(read_credential_pool(self.name))
 
     def create_client(self, **client_kwargs: Any) -> Any | None:
@@ -505,7 +505,7 @@ class ProviderProfile:
         through to its existing construction path.
 
         This is the hook that lets a provider ship *outside* this tree: with it,
-        a profile registered from ``~/.hermes/plugins/model-providers/`` or a
+        a profile registered from ``~/.zeus/plugins/model-providers/`` or a
         pip entry point can supply its own transport without any core edit. See
         ``website/docs/developer-guide/model-provider-plugin.md``.
         """
@@ -573,7 +573,7 @@ class ProviderProfile:
         import json
         import urllib.request
 
-        from hermes_cli.urllib_security import open_credentialed_url
+        from zeus_cli.urllib_security import open_credentialed_url
 
         req = urllib.request.Request(url)
         if api_key:
@@ -581,7 +581,7 @@ class ProviderProfile:
         req.add_header("Accept", "application/json")
         # Some providers (e.g. OpenCode Zen) sit behind a WAF that blocks
         # the default ``Python-urllib/<ver>`` User-Agent.  Set a generic
-        # hermes-cli UA so the catalog endpoint is reachable.
+        # zeus-cli UA so the catalog endpoint is reachable.
         req.add_header("User-Agent", _profile_user_agent())
         for k, v in self.default_headers.items():
             req.add_header(k, v)
@@ -590,7 +590,7 @@ class ProviderProfile:
             with open_credentialed_url(req, timeout=timeout) as resp:
                 data = json.loads(resp.read().decode())
             items = data if isinstance(data, list) else data.get("data", [])
-            from hermes_cli.chat_catalog import chat_catalog_ids
+            from zeus_cli.chat_catalog import chat_catalog_ids
 
             return chat_catalog_ids(items)
         except Exception as exc:
@@ -638,13 +638,13 @@ class ProviderProfile:
     def seed_pool_credentials(self, *, suppressed_sources: frozenset[str],
                               explicitly_configured: bool) -> list[dict] | None:
         """Pool rows ``{source, access_token, base_url, label}`` this provider seeds itself; skip any source in
-        ``suppressed_sources`` (``hermes auth remove``). Plain data, so it crosses ``plugins.isolation: host``.
+        ``suppressed_sources`` (``zeus auth remove``). Plain data, so it crosses ``plugins.isolation: host``.
         Overriding it replaces generic env seeding (that loop would overwrite exchanged tokens with the raw env
         value), so an override returns ``[]`` for none; only the base implementation keeps generic env seeding."""
         return None
 
     def remove_credential_source(self, source: str) -> tuple[tuple[str, ...], tuple[str, ...]] | None:
-        """``hermes auth remove`` of *source*: ``(sources_to_suppress, hints)``; None = generic removal."""
+        """``zeus auth remove`` of *source*: ``(sources_to_suppress, hints)``; None = generic removal."""
         return None
 
     def refresh_runtime_credentials(self, *, reason: str) -> tuple[str, str | None] | None:
@@ -730,13 +730,13 @@ class ProviderProfile:
     picker_group: tuple = ()  # (group_id, label, description): fold with same-group rows in interactive pickers
     catalog_aliases: bool = False  # ``aliases`` also normalize in the model catalog (``/model``, pickers)
     aggregator: bool = False  # catalog re-exposes many vendors' models (vendor/family ids, alias resolution)
-    # HermesOverlay fields (transport, auth_type, extra_env_vars, base_url_override, base_url_env_var) for
+    # ZeusOverlay fields (transport, auth_type, extra_env_vars, base_url_override, base_url_env_var) for
     # the provider's models.dev-keyed definition, keyed by ``models_dev_id`` or ``name``; {} = none.
     provider_overlay: dict = field(default_factory=dict)
     # Extra names that normalize to the ``provider_overlay`` definition (its id, else ``name``); () = none.
     overlay_aliases: tuple = ()
 
-    # --- I2-auth: hermes-auth registry row mirrored from this profile (hermes_cli/auth_plugin_providers.py) ---
+    # --- I2-auth: zeus-auth registry row mirrored from this profile (zeus_cli/auth_plugin_providers.py) ---
     # auth_type of the registry row when credential resolution differs from the setup flow ``auth_type`` names
     # (an env-token provider with its own login); "" = ``auth_type``.
     registry_auth_type: str = ""

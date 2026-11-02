@@ -5,7 +5,7 @@ description: "One board, three views, and each answers a different question: Lis
 maintainer: e-is
 tier: community
 category: desktop
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 docs_url: https://github.com/e-is/hermes-kanban-gantt
 version: "1.7.3"
 image: https://raw.githubusercontent.com/e-is/hermes-kanban-gantt/94a042dea2e229ba8275e82aad24eb4b684ce5d4/docs/catalog-card.png

@@ -3,7 +3,7 @@ import { expect, it, vi } from 'vitest'
 
 const active = vi.hoisted(() => ({ locale: 'en' }))
 
-vi.mock('@hermes/plugin-sdk', () => ({
+vi.mock('@zeus/plugin-sdk', () => ({
   useI18n: () => ({ t: TRANSLATIONS[active.locale as keyof typeof TRANSLATIONS] }),
   usePluginI18n: () => (key: string) =>
     key
@@ -13,10 +13,10 @@ vi.mock('@hermes/plugin-sdk', () => ({
         BOTS_LOCALES[active.locale as keyof typeof TRANSLATIONS]
       )
 }))
-vi.mock('../plugins/hermes-bots/shared', () => ({ getPluginCtx: () => null }))
+vi.mock('../plugins/zeus-bots/shared', () => ({ getPluginCtx: () => null }))
 
-import { useCanonicalGroupLabels } from '../plugins/hermes-bots/canonical-group-labels'
-import { BOTS_LOCALES } from '../plugins/hermes-bots/i18n'
+import { useCanonicalGroupLabels } from '../plugins/zeus-bots/canonical-group-labels'
+import { BOTS_LOCALES } from '../plugins/zeus-bots/i18n'
 
 import { TRANSLATIONS } from './catalog'
 

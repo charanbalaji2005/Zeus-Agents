@@ -30,7 +30,7 @@ const message = (id: string, text: string, role: 'assistant' | 'user' = 'assista
 
 afterEach(() => {
   cleanup()
-  delete (window as { hermesDesktop?: unknown }).hermesDesktop
+  delete (window as { zeusDesktop?: unknown }).zeusDesktop
   vi.doUnmock('@/lib/voice-playback')
   vi.resetModules()
 })
@@ -107,7 +107,7 @@ async function openWindow(name: string, plays: string[]) {
 it('reads the final reply once, in the window that read the progress update, after that clip ends', async () => {
   const owns = createAmbientClaimArbiter()
 
-  ;(window as { hermesDesktop?: unknown }).hermesDesktop = { claimAmbientCue: async (key: string) => owns(key) }
+  ;(window as { zeusDesktop?: unknown }).zeusDesktop = { claimAmbientCue: async (key: string) => owns(key) }
 
   const plays: string[] = []
   const a = await openWindow('A', plays)

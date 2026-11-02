@@ -18,9 +18,9 @@ import sqlite3
 import stat
 import tempfile
 import threading
-from hermes_dir_acl import make_user_dir
+from zeus_dir_acl import make_user_dir
 
-from hermes_state_runtime import ADMITTED_REQUEST_CONFLICT, RuntimeStoreError
+from zeus_state_runtime import ADMITTED_REQUEST_CONFLICT, RuntimeStoreError
 from utils import fsync_directory
 
 logger = logging.getLogger(__name__)
@@ -100,7 +100,7 @@ async def release_abandoned_capture(scope):
 
 def native_inputs_store():
     """The store's path as the profile names it, unresolved. The one value ``make_user_dir`` gets:
-    ``resolve()`` erases a link planted below the Hermes home (``cache/documents`` -> elsewhere),
+    ``resolve()`` erases a link planted below the Zeus home (``cache/documents`` -> elsewhere),
     and an elevated grant on the resolved path would land outside the home with no home fence."""
     from gateway.platforms.base import get_document_cache_dir
     return get_document_cache_dir() / 'native-inputs'
@@ -437,7 +437,7 @@ def release_admission_media(db, admission_id):
     files can collect independently; physical aliases and uncertain stat results
     retain conservatively. A shared hardlink can consequently retain an extra old alias.
     """
-    from hermes_state_runtime import get_session_admission
+    from zeus_state_runtime import get_session_admission
     row = get_session_admission(db, admission_id=admission_id)
     if row is None or row['status'] != 'terminal':
         return 0
@@ -496,8 +496,8 @@ def collect_unheld_api_images(db):
     Candidates are enumerated from the ACTIVE home's media root while ownership is decided by
     ``db``: a sweep whose database belongs to another profile would see every image here as
     unowned, so it collects nothing."""
-    from hermes_constants import get_hermes_home
-    if Path(db.db_path).resolve().parent != get_hermes_home().resolve():
+    from zeus_constants import get_zeus_home
+    if Path(db.db_path).resolve().parent != get_zeus_home().resolve():
         logger.warning(
             'Skipped retained API image collection: %s is not the active profile store', db.db_path)
         return 0

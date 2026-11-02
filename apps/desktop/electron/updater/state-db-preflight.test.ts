@@ -12,8 +12,8 @@ import { preflightStateDb, stateDbPreflightTimeoutMs } from './state-db-prefligh
 
 test('the desktop preflight publishes committed WAL rows before its caller can stop the backend', async (): Promise<void> => {
   const home: string = fs.mkdtempSync(path.join(os.tmpdir(), 'desktop-db-'))
-  const python: string = process.env.HERMES_PYTHON || 'python3'
-  const script: string = fileURLToPath(new URL('../../../../hermes_cli/backup_sqlite.py', import.meta.url))
+  const python: string = process.env.ZEUS_PYTHON || 'python3'
+  const script: string = fileURLToPath(new URL('../../../../zeus_cli/backup_sqlite.py', import.meta.url))
 
   const child = spawn(
     python,
@@ -90,13 +90,13 @@ with sqlite3.connect(sys.argv[1]) as c:
 test('a managed installation runs the snapshot through the installation launcher', async (): Promise<void> => {
   const home: string = fs.mkdtempSync(path.join(os.tmpdir(), 'managed-preflight-'))
   const shims: string = fs.mkdtempSync(path.join(os.tmpdir(), 'launcher-shim-'))
-  const python: string = process.env.HERMES_PYTHON || 'python3'
-  const script: string = fileURLToPath(new URL('../../../../hermes_cli/backup_sqlite.py', import.meta.url))
+  const python: string = process.env.ZEUS_PYTHON || 'python3'
+  const script: string = fileURLToPath(new URL('../../../../zeus_cli/backup_sqlite.py', import.meta.url))
 
-  // Stand-in for the installation launcher under `.hermes/bin`: it must accept
-  // exactly what the runtime passes it — `--run-module hermes_cli.backup_sqlite
+  // Stand-in for the installation launcher under `.zeus/bin`: it must accept
+  // exactly what the runtime passes it — `--run-module zeus_cli.backup_sqlite
   // <home>` — and publish the snapshot like the real launcher does.
-  const shim: string = path.join(shims, process.platform === 'win32' ? 'hermes.cmd' : 'hermes')
+  const shim: string = path.join(shims, process.platform === 'win32' ? 'zeus.cmd' : 'zeus')
   fs.writeFileSync(
     shim,
     process.platform === 'win32'
@@ -150,8 +150,8 @@ test('an older selected checkout without the snapshot helper refuses before back
   try {
     await assert.rejects(async (): Promise<void> => {
       await preflightStateDb({
-        python: process.env.HERMES_PYTHON || 'python3',
-        script: path.join(oldRoot, 'hermes_cli', 'backup_sqlite.py'),
+        python: process.env.ZEUS_PYTHON || 'python3',
+        script: path.join(oldRoot, 'zeus_cli', 'backup_sqlite.py'),
         home: oldRoot,
         log: (): void => {}
       })
@@ -204,7 +204,7 @@ print('snapshot finished')
   const timer = setTimeout(() => fs.writeFileSync(path.join(home, 'release'), ''), 100)
 
   try {
-    await preflightStateDb({ python: process.env.HERMES_PYTHON || 'python3', script, home, log: (): void => {} })
+    await preflightStateDb({ python: process.env.ZEUS_PYTHON || 'python3', script, home, log: (): void => {} })
   } finally {
     clearTimeout(timer)
     fs.rmSync(home, { recursive: true, force: true })

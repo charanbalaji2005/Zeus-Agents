@@ -27,7 +27,7 @@ export function cleanupMarkerFixtures(): void {
 }
 
 export function tmpHome(tag: string): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `hermes-marker-${tag}-`))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `zeus-marker-${tag}-`))
   homes.push(dir)
 
   return dir

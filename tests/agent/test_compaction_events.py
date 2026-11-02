@@ -1,4 +1,4 @@
-"""``hermes.compaction`` v1 records: one content-free record per history rewrite, on every path.
+"""``zeus.compaction`` v1 records: one content-free record per history rewrite, on every path.
 
 The record is the contract a Relay consumer reads, so these tests pin the field set, the closed enums,
 the ``compaction`` vs ``compaction.attempt`` name rule, and that publishing can never change what a
@@ -112,7 +112,7 @@ def test_committed_summary_publishes_one_compaction_mark_with_the_v1_shape(publi
     [(session_id, name, payload)] = published
     assert (session_id, name) == ("session-events-test", "compaction")
     assert set(payload) == V1_FIELDS
-    assert payload["harness"] == "hermes"
+    assert payload["harness"] == "zeus"
     assert (payload["kind"], payload["scope"], payload["official"]) == ("summarize", "history", True)
     assert (payload["method"], payload["outcome"], payload["failure_class"]) == ("llm_summary", "committed", "none")
     assert (payload["trigger"], payload["trigger_class"]) == ("pre_api", "auto")
@@ -239,8 +239,8 @@ def _codex_agent(result, auto_mode):
     ("auto_mode", "force", "result", "name", "outcome"),
     [
         ("native", False, TurnResult(thread_id="t1"), "compaction.attempt", "skipped"),
-        ("hermes", True, TurnResult(thread_id="t1", turn_id="c1"), "compaction", "committed"),
-        ("hermes", True, TurnResult(thread_id="t1", error="boom"), "compaction.attempt", "failed"),
+        ("zeus", True, TurnResult(thread_id="t1", turn_id="c1"), "compaction", "committed"),
+        ("zeus", True, TurnResult(thread_id="t1", error="boom"), "compaction.attempt", "failed"),
     ],
 )
 def test_codex_route_publishes_one_provider_record_per_exit(published, auto_mode, force, result, name, outcome):
@@ -256,13 +256,13 @@ def _raising_codex_agent():
     def _compact_thread():
         raise RuntimeError(f"boom {SECRET}")
 
-    agent = _codex_agent(None, "hermes")
+    agent = _codex_agent(None, "zeus")
     agent._codex_session = SimpleNamespace(compact_thread=_compact_thread, close=lambda: None)
     return agent
 
 
 def _checkpoint_required_codex_agent():
-    agent = _codex_agent(TurnResult(thread_id="t1"), "hermes")
+    agent = _codex_agent(TurnResult(thread_id="t1"), "zeus")
     agent.compression_checkpoint_required = True
     return agent
 
@@ -284,7 +284,7 @@ def test_codex_route_that_raises_publishes_one_failed_attempt_mark(published, ma
     assert SECRET not in json.dumps(payload) and "boom" not in json.dumps(payload)
 
 
-def test_codex_native_compaction_observed_by_hermes_is_an_unofficial_provider_compaction(published):
+def test_codex_native_compaction_observed_by_zeus_is_an_unofficial_provider_compaction(published):
     from agent.codex_runtime import _record_codex_app_server_compaction
 
     agent = _codex_agent(None, "native")
@@ -395,7 +395,7 @@ def test_an_attempt_aborted_after_a_commit_marks_only_its_own_attempt(published)
 def test_rotation_publishes_after_the_split_with_the_attempts_own_session(published):
     """A rotating commit re-points the agent at a child session and its memory flush resets the compressor's
     telemetry; the record is still built from this attempt's telemetry and names the session it started in."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from run_agent import AIAgent
 
     with tempfile.TemporaryDirectory() as tmpdir, patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
@@ -422,7 +422,7 @@ def test_rotation_publishes_after_the_split_with_the_attempts_own_session(publis
 def test_a_split_that_fails_after_rewriting_history_is_still_a_compaction(published):
     """The in-place commit stored the compacted transcript, then a later bookkeeping write failed: the model
     sees the compacted history next, so Relay must reset freshness, and the record says what failed."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from run_agent import AIAgent
 
     with tempfile.TemporaryDirectory() as tmpdir, patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
@@ -451,7 +451,7 @@ def test_a_split_that_fails_after_rewriting_history_is_still_a_compaction(publis
 def test_an_in_place_engine_whose_split_fails_after_the_archive_is_still_a_compaction(published):
     """An engine may compact its input list in place, so the returned list IS the input. After the atomic
     archive stored it, a later bookkeeping failure must still mark a compaction (freshness reset)."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     from run_agent import AIAgent
 
     def _in_place(msgs, **_kwargs):

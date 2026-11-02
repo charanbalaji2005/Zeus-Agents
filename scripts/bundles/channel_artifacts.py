@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 
 
-from hermes_cli.release_channels import ChannelError, build_prefix, canonical_json, validate_manifest
+from zeus_cli.release_channels import ChannelError, build_prefix, canonical_json, validate_manifest
 from scripts.bundles.release_artifacts import single, validate_windows_bundle, write_appinstaller
 
 
@@ -15,7 +15,7 @@ ALL_TARGETS = tuple((platform, arch) for platform in ("macos", "windows") for ar
 
 def _leg_sha512(root: Path, files: dict, arch: str) -> dict[str, str]:
     """sha512 per artifact from the receipt-bound per-arch electron feed (``<arch>-*-mac.yml``)."""
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
 
     leg = single(name for name in files if name.startswith(f"{arch}-") and name.endswith("-mac.yml"))
     if not (root / leg).is_file():
@@ -87,7 +87,7 @@ def assemble(request: dict, native: dict, root: Path, *, artifact_prefix: str,
     if all(row.get("receiverProtocol") == 1 for row in rows):
         manifest["receiverProtocol"] = 1
     tag = request.get("releaseTag", "")
-    from hermes_cli.update_channel import is_canary_tag
+    from zeus_cli.update_channel import is_canary_tag
     record = {"name": request["channel"], "repository": request["repository"], "identity": request["identity"],
               "policy": ("canary-release" if is_canary_tag(tag) else "stable-release") if tag else "preview", "head": None}
     validate_manifest(manifest, record, base)

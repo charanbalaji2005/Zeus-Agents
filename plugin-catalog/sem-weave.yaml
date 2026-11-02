@@ -9,7 +9,7 @@ description: >-
 maintainer: rs545837
 tier: community
 category: tools
-requires_hermes: ">=0.21.6"
+requires_zeus: ">=0.21.6"
 docs_url: https://github.com/Ataraxy-Labs/sem/tree/631138c691817f2aa11cecdde3c400e6a0b910aa/integrations/agent-plugin
 version: "0.1.0"
 platforms: [linux, macos]

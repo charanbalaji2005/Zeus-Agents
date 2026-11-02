@@ -1,6 +1,6 @@
 """A connector-stamped ``source.profile`` is a route, on single-profile and multiplexed gateways.
 
-The connector (Team Gateway per-scope profile routing) stamps the Hermes profile that serves an
+The connector (Team Gateway per-scope profile routing) stamps the Zeus profile that serves an
 inbound event. A single-profile gateway serves it from its one profile (the stamp is not a route
 there, as before shared session authority, and never reaches durable state); a multiplexed gateway admits it into that profile's
 own ledger. Neither may acknowledge the frame and drop it. An unserved stamped profile is refused
@@ -75,11 +75,11 @@ async def _relay(runner, platforms=('telegram',), port=0):
 
 def _stub_turns(runner, monkeypatch):
     """Record each executed turn's (text, runtime home, session key) instead of calling a model."""
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     turns = []
 
     async def turn(event, *_args, **_kwargs):
-        turns.append((event.text, Path(get_hermes_home()).resolve(),
+        turns.append((event.text, Path(get_zeus_home()).resolve(),
                       runner._session_key_for_source(event.source)))
         execution_result.get()['result'] = {'final_response': 'reply ' + event.text, 'messages': []}
         return 'reply ' + event.text
@@ -98,7 +98,7 @@ def _replies(outgoing, chat_id):
 
 
 def _requests(authority):
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
     rows = []
     for sid in list(authority.sessions):
         rows += list_session_admissions(authority.db, session_id=sid, pending_only=False)
@@ -108,8 +108,8 @@ def _requests(authority):
 @pytest.mark.asyncio
 async def test_single_profile_gateway_serves_a_connector_stamped_profile(tmp_path, monkeypatch):
     from gateway.session_authority import initialize_session_authority
-    from hermes_constants import get_hermes_home
-    launch = Path(get_hermes_home()).resolve()
+    from zeus_constants import get_zeus_home
+    launch = Path(get_zeus_home()).resolve()
     # A profile of the stamped name exists on disk: the single-profile gateway must still not use it.
     (launch / 'profiles' / 'work').mkdir(parents=True, exist_ok=True)
     runner = GatewayRunner(GatewayConfig(sessions_dir=tmp_path / 'sessions'))
@@ -148,12 +148,12 @@ async def test_single_profile_gateway_serves_a_connector_stamped_profile(tmp_pat
 
 
 def _reserve_homes(tmp_path, monkeypatch, names):
-    root = tmp_path / '.hermes'
+    root = tmp_path / '.zeus'
     root.mkdir(mode=0o700)
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
-    monkeypatch.setenv('HERMES_HOME', str(root))
-    import hermes_state
-    monkeypatch.setattr(hermes_state, 'DEFAULT_DB_PATH', hermes_state._IMPORT_DEFAULT_DB_PATH)
+    monkeypatch.setenv('ZEUS_HOME', str(root))
+    import zeus_state
+    monkeypatch.setattr(zeus_state, 'DEFAULT_DB_PATH', zeus_state._IMPORT_DEFAULT_DB_PATH)
     homes = [('default', root)]
     for name in names:
         home = root / 'profiles' / name
@@ -168,7 +168,7 @@ async def test_multiplexed_gateway_admits_a_connector_stamped_profile_into_its_o
     from gateway.run_runtime import initialize_gateway_runtime
     from gateway.runtime_ownership import process_ownership
     from gateway.session_envelope import restore_native
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
 
     root, homes = _reserve_homes(tmp_path, monkeypatch, names=('work',))
     work = homes[1][1]
@@ -275,8 +275,8 @@ def _discord_modal(profile):
 @pytest.mark.asyncio
 async def test_single_profile_gateway_serves_stamped_commands_and_discord_interactions(tmp_path, monkeypatch):
     from gateway.session_authority import initialize_session_authority
-    from hermes_constants import get_hermes_home
-    launch = Path(get_hermes_home()).resolve()
+    from zeus_constants import get_zeus_home
+    launch = Path(get_zeus_home()).resolve()
     (launch / 'profiles' / 'work').mkdir(parents=True, exist_ok=True)
     runner = GatewayRunner(GatewayConfig(sessions_dir=tmp_path / 'sessions'))
     turns = _stub_turns(runner, monkeypatch)

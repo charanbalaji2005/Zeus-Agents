@@ -8,14 +8,14 @@ import pytest
 
 
 def _reserve_homes(tmp_path, monkeypatch, names=('alpha', 'beta')):
-    root = tmp_path / '.hermes'
+    root = tmp_path / '.zeus'
     root.mkdir(mode=0o700)
     monkeypatch.setattr(Path, 'home', lambda: tmp_path)
-    monkeypatch.setenv('HERMES_HOME', str(root))
-    # The autouse isolation fixture pins hermes_state.DEFAULT_DB_PATH to its own fake home once
-    # hermes_state is imported; per-home stores must follow the scoped HERMES_HOME here.
-    import hermes_state
-    monkeypatch.setattr(hermes_state, 'DEFAULT_DB_PATH', hermes_state._IMPORT_DEFAULT_DB_PATH)
+    monkeypatch.setenv('ZEUS_HOME', str(root))
+    # The autouse isolation fixture pins zeus_state.DEFAULT_DB_PATH to its own fake home once
+    # zeus_state is imported; per-home stores must follow the scoped ZEUS_HOME here.
+    import zeus_state
+    monkeypatch.setattr(zeus_state, 'DEFAULT_DB_PATH', zeus_state._IMPORT_DEFAULT_DB_PATH)
     homes = [('default', root)]
     for name in names:
         home = root / 'profiles' / name
@@ -39,7 +39,7 @@ def _runner(root, homes):
 async def test_multiplex_builds_one_authority_per_reserved_home(tmp_path, monkeypatch):
     from gateway.run_runtime import initialize_gateway_runtime
     from gateway.runtime_ownership import process_ownership
-    from hermes_constants import hermes_home_key
+    from zeus_constants import zeus_home_key
     root, homes = _reserve_homes(tmp_path, monkeypatch)
     process_ownership.reserve([home for _, home in homes])
     try:
@@ -54,7 +54,7 @@ async def test_multiplex_builds_one_authority_per_reserved_home(tmp_path, monkey
             assert authority is not None
             assert Path(authority.db.db_path).resolve().parent == home.resolve()
             assert (home / 'state.db').exists()
-        epochs = {hermes_home_key(h): registry.for_home(h).epoch for _, h in homes}
+        epochs = {zeus_home_key(h): registry.for_home(h).epoch for _, h in homes}
         assert all(epoch >= 1 for epoch in epochs.values())
         # Descriptor + ticket store carry the whole served set.
         served = {entry['home'] for entry in runner.session_runtime_descriptor['served_profiles']}

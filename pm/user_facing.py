@@ -1,9 +1,9 @@
-"""The terminal's PATH: the user's own tools first, Hermes's after them.
+"""The terminal's PATH: the user's own tools first, Zeus's after them.
 
-Hermes's process puts its store's tool dirs first (``pm.install.activate``), so Hermes's own
+Zeus's process puts its store's tool dirs first (``pm.install.activate``), so Zeus's own
 code resolves the pinned binaries. Terminal commands belong to the user and the agent, so they
-run the tools the user installed, and Hermes's tools are the fallback for a machine without
-them. Hermes's own operations must not depend on this PATH: they resolve pinned tools
+run the tools the user installed, and Zeus's tools are the fallback for a machine without
+them. Zeus's own operations must not depend on this PATH: they resolve pinned tools
 through PM (``pm.env_for``, ``pm.installed_package``).
 
 A sealed Windows payload's store sits under ``WindowsApps``. In the process tree that the
@@ -131,10 +131,10 @@ def _python_dirs() -> list[str]:
 
 
 def user_facing_path(path: str) -> str:
-    """*path* with Hermes's store tool dirs (their writable copies, see :func:`copies`) moved
+    """*path* with Zeus's store tool dirs (their writable copies, see :func:`copies`) moved
     behind the user's own entries.
 
-    Hermes's Python stops just before the app-alias dir that holds the Store stub, so a
+    Zeus's Python stops just before the app-alias dir that holds the Store stub, so a
     machine without Python still runs a real one.
     """
     from pm.install import _store_path_dirs

@@ -6,7 +6,7 @@ maintainer: PriceDotWin
 tier: community
 category: tools
 version: "0.2.0"
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/PriceDotWin/pricewin-hermes-plugin#readme
 screenshots:
 - https://raw.githubusercontent.com/PriceDotWin/pricewin-hermes-plugin/c3644c21a02fc995791d5056cc4cc8ec9e859b54/docs/hotel-cards.png

@@ -678,13 +678,13 @@ describe('useComposerSubmit busy-turn routing', () => {
 describe('useComposerSubmit keyboard after send', () => {
   beforeEach(() => {
     // Touch handling is the browser-hosted Desktop's.
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   })
 
   afterEach(() => {
     cleanup()
     window.document.body.replaceChildren()
-    delete window.document.documentElement.dataset.hermesDesktopHost
+    delete window.document.documentElement.dataset.zeusDesktopHost
     vi.unstubAllGlobals()
   })
 

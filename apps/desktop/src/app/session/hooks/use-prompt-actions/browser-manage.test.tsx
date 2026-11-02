@@ -6,7 +6,7 @@ import { $connection, setSessions } from '@/store/session'
 import { actRender, Harness, type HarnessHandle, RUNTIME_SESSION_ID, sessionInfo } from './index-test-utils'
 import { clearSingleFlightSessionResumeState } from './single-flight-resume'
 
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getLatestSessionMessages: vi.fn(async () => ({ messages: [], session_id: 'session' })),
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   getSession: vi.fn(),
@@ -59,7 +59,7 @@ describe('usePromptActions /browser connect|disconnect|status', () => {
   // `status` only reads the gateway's CDP state, so unlike connect/disconnect it runs on
   // remote backends too.
   it('/browser status on a remote connection is sent as browser.manage', async () => {
-    $connection.set({ connectionId: 'hermes01', mode: 'remote' } as never)
+    $connection.set({ connectionId: 'zeus01', mode: 'remote' } as never)
     const requestGateway = vi.fn(async () => ({ connected: false }) as never)
 
     let handle: HarnessHandle | null = null

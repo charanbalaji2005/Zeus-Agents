@@ -1,8 +1,8 @@
-"""A killed or failed ``hermes update`` never strands — or wrongly starts — a paused gateway.
+"""A killed or failed ``zeus update`` never strands — or wrongly starts — a paused gateway.
 
-Failure class: Windows pause durability. ``hermes update`` stops every running gateway before it
+Failure class: Windows pause durability. ``zeus update`` stops every running gateway before it
 touches the checkout. Cell (a): the updater is killed (``taskkill /F /T`` — console closed, Desktop
-kill) right after the pause; the next plain ``hermes`` command must bring the gateway back.
+kill) right after the pause; the next plain ``zeus`` command must bring the gateway back.
 Cell (c): a successful update brings the paused gateway back and it outlives the updater (the
 record is discharged). Cell (b): the pull fails half-way (a held file makes git's fast-forward die
 after writing part of the tree). Either the tree stays torn (no in-updater restore): the gateway
@@ -33,9 +33,9 @@ pytestmark = [pytest.mark.platforms("windows"), pytest.mark.integration,
               pytest.mark.live_system_guard_bypass, REQUIRES_OPT_IN]
 
 _PAUSED = "Paused gateway profile"
-_RECORD_STEM = ".hermes-update-paused-gateways"  # <stem>.<checkout key>.json, plus <record>.<pid>.<nonce>.claim
+_RECORD_STEM = ".zeus-update-paused-gateways"  # <stem>.<checkout key>.json, plus <record>.<pid>.<nonce>.claim
 _EARLY, _HELD = "AGENTS.md", "website/package.json"  # checkout order: the early file is written first
-_PULL_MARKER = "hermes-update-pull"  # hermes_cli._early_recovery.INTERRUPTED_PULL_MARKER, in the git dir
+_PULL_MARKER = "zeus-update-pull"  # zeus_cli._early_recovery.INTERRUPTED_PULL_MARKER, in the git dir
 _RESTORED = "Checkout restored"  # the updater's own in-place restore of git's half-written files
 
 
@@ -48,7 +48,7 @@ def _alive(pid: int) -> bool:
 
 def _record_held(machine) -> bool:
     """The paused set is still on disk (the record or a recovering launch's claim)."""
-    return any(p.suffix in (".json", ".claim") for p in machine.hermes_home.glob(_RECORD_STEM + "*"))
+    return any(p.suffix in (".json", ".claim") for p in machine.zeus_home.glob(_RECORD_STEM + "*"))
 
 
 def _running_gateway(machine, not_pid: int, timeout: float) -> dict | None:
@@ -59,9 +59,9 @@ def _running_gateway(machine, not_pid: int, timeout: float) -> dict | None:
 
 
 def _update_killed_after_pause(machine) -> tuple[bool, str]:
-    """Start ``hermes update`` and ``taskkill /F /T`` it the moment it reports the pause."""
+    """Start ``zeus update`` and ``taskkill /F /T`` it the moment it reports the pause."""
     log = machine.logs / "update-killed.log"
-    proc = subprocess.Popen([str(machine.hermes_exe), "update", "--yes"], cwd=machine.profile,
+    proc = subprocess.Popen([str(machine.zeus_exe), "update", "--yes"], cwd=machine.profile,
                             env=machine.env(), stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT)
     seen = threading.Event()
@@ -91,8 +91,8 @@ def _mint_two_file_change(machine) -> str:
     """A target commit on top of the installed HEAD that rewrites two existing tracked files."""
     base = machine.installed_head()
     index = machine.root / "torn.index"
-    env = {"GIT_INDEX_FILE": str(index), "GIT_AUTHOR_NAME": "Hermes E2E", "GIT_AUTHOR_EMAIL": "e2e@hermes.invalid",
-           "GIT_COMMITTER_NAME": "Hermes E2E", "GIT_COMMITTER_EMAIL": "e2e@hermes.invalid"}
+    env = {"GIT_INDEX_FILE": str(index), "GIT_AUTHOR_NAME": "Zeus E2E", "GIT_AUTHOR_EMAIL": "e2e@zeus.invalid",
+           "GIT_COMMITTER_NAME": "Zeus E2E", "GIT_COMMITTER_EMAIL": "e2e@zeus.invalid"}
     harness_git("-C", str(machine.serve), "read-tree", base, env=env)
     for path in (_EARLY, _HELD):
         src = machine.root / ("torn-" + path.replace("/", "_"))
@@ -123,7 +123,7 @@ def journey(tmp_path_factory):
                 out["a_paused"], out["a_tail"] = _update_killed_after_pause(machine)
                 out["a_old_stopped"] = not _alive(old)
                 out["a_record"] = _record_held(machine)
-                out["a_launch"] = machine.hermes("gateway", "status", label="next-launch")
+                out["a_launch"] = machine.zeus("gateway", "status", label="next-launch")
                 out["a_after"] = _running_gateway(machine, old, 120)
                 machine.kill_owned()
 
@@ -131,7 +131,7 @@ def journey(tmp_path_factory):
                 machine.spawn_gateway()
                 old = int(machine.wait_gateway_running().get("pid") or 0)
                 out["c_pre"] = machine.installed_head()
-                out["c_update"] = machine.hermes("update", "--yes", label="update-ok", timeout=900)
+                out["c_update"] = machine.zeus("update", "--yes", label="update-ok", timeout=900)
                 out["c_head"] = machine.installed_head()
                 after = _running_gateway(machine, old, 120)
                 time.sleep(30)
@@ -145,7 +145,7 @@ def journey(tmp_path_factory):
                 old = int(machine.wait_gateway_running().get("pid") or 0)
                 out["b_pre"] = _mint_two_file_change(machine)
                 with (machine.install_dir / _HELD).open("rb"):  # no FILE_SHARE_DELETE: git cannot replace it
-                    out["b_update"] = machine.hermes("update", "--yes", label="update-torn", timeout=900)
+                    out["b_update"] = machine.zeus("update", "--yes", label="update-torn", timeout=900)
                 out["b_head"] = machine.installed_head()
                 out["b_status"] = harness_git("-C", str(machine.install_dir), "status", "--porcelain",
                                               "--untracked-files=no")
@@ -167,7 +167,7 @@ def test_killed_updater_gateway_resumed_by_next_launch(journey) -> None:
     assert journey["a_paused"] and journey["a_old_stopped"], fail_with(
         m, f"premise: the update never paused the gateway before the kill\n{journey['a_tail']}")
     assert journey["a_after"] is not None, fail_with(
-        m, "after `taskkill /F` of an updater that paused the gateway, the next `hermes` launch left it "
+        m, "after `taskkill /F` of an updater that paused the gateway, the next `zeus` launch left it "
            f"stopped (pause record present after kill: {journey['a_record']})", journey["a_launch"])
 
 
@@ -177,7 +177,7 @@ def test_successful_update_gateway_outlives_the_updater(journey) -> None:
         m, f"premise: the update did not complete (rc={run.returncode}, HEAD {journey['c_pre']} -> {journey['c_head']})", run)
     assert journey["c_after"] is not None, fail_with(m, "the paused gateway was not restarted by a successful update", run)
     assert journey["c_alive_30s"], fail_with(
-        m, f"the restarted gateway (pid {journey['c_after'].get('pid')}) died after `hermes update` exited", run)
+        m, f"the restarted gateway (pid {journey['c_after'].get('pid')}) died after `zeus update` exited", run)
     assert not journey["c_record"], fail_with(m, "a fully resumed pause left its record behind", run)
 
 
@@ -204,5 +204,5 @@ def test_failed_pull_does_not_start_gateway_on_torn_tree(journey) -> None:
     assert journey["b_after"] is not None, fail_with(
         m, f"the updater restored the pre-update tree but left the paused gateway stopped ({state})", run)
     assert journey["b_alive_15s"], fail_with(
-        m, f"the gateway restarted on the restored tree (pid {pid}) died after `hermes update` exited", run)
+        m, f"the gateway restarted on the restored tree (pid {pid}) died after `zeus update` exited", run)
     assert not journey["b_record"], fail_with(m, "a fully resumed pause left its record behind", run)

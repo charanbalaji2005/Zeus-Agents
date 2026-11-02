@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 
-from hermes_cli import gateway_runtime
-import hermes_constants
+from zeus_cli import gateway_runtime
+import zeus_constants
 
 
 _SCRIPT = Path(__file__).resolve().parents[2] / "ui-tui" / "scripts" / "gateway_bootstrap.py"
@@ -36,7 +36,7 @@ def test_served_secondary_uses_multiplexer_control_home(monkeypatch, tmp_path):
     )
     receipt = SimpleNamespace(state="ready", endpoint=endpoint, reason_code=None)
 
-    monkeypatch.setattr(hermes_constants, "get_hermes_home", lambda: secondary)
+    monkeypatch.setattr(zeus_constants, "get_zeus_home", lambda: secondary)
     monkeypatch.setattr(gateway_runtime, "discover_gateway_endpoint", lambda home, timeout=5: receipt)
 
     seen = {}
@@ -59,7 +59,7 @@ def test_served_secondary_uses_multiplexer_control_home(monkeypatch, tmp_path):
 
         monkeypatch.setattr(windows_bootstrap, "query_runtime_control", query_runtime_control)
     else:
-        import hermes_cli.gateway_runtime_discovery as discovery
+        import zeus_cli.gateway_runtime_discovery as discovery
 
         class FakeStream:
             def __enter__(self):

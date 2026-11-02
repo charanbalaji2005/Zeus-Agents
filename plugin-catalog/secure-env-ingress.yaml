@@ -7,7 +7,7 @@ maintainer: web3blind
 tier: community
 category: tools
 version: "0.8.3"
-requires_hermes: ">=0.22.2"
+requires_zeus: ">=0.22.2"
 docs_url: https://github.com/web3blind/hermes-secure-env-plugin/blob/a6c306299f5ad324ccd48e87195ec7150cf9be12/README.md
 platforms: [linux]
 capabilities:

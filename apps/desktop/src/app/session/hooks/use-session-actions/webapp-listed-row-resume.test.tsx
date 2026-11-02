@@ -2,7 +2,7 @@ import { act, cleanup, render } from '@testing-library/react'
 import { useEffect, useRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { getLatestSessionMessages, type SessionInfo } from '@/hermes'
+import { getLatestSessionMessages, type SessionInfo } from '@/zeus'
 import { installBrowserDesktopBridge } from '@/lib/browser-desktop-bridge'
 import { createClientSessionState } from '@/lib/chat-runtime'
 import * as gateways from '@/store/gateway'
@@ -19,10 +19,10 @@ import { useSessionActions } from './index'
 const sockets: unknown[] = []
 
 vi.mock('@/app/contrib/hooks/use-background-sync', () => ({ resetLiveRuntimeTracking: vi.fn() }))
-vi.mock('@/hermes', async importOriginal => ({
+vi.mock('@/zeus', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   getLatestSessionMessages: vi.fn(async () => ({ messages: [], session_id: 'work-chat' })),
-  HermesGateway: class {
+  ZeusGateway: class {
     connectionState = 'closed'
     connect = vi.fn(async () => {
       this.connectionState = 'open'
@@ -38,7 +38,7 @@ vi.mock('@/hermes', async importOriginal => ({
   }
 }))
 
-type ServedWindow = Window & { __HERMES_DASHBOARD_PROFILE__?: string; hermesDesktop?: Window['hermesDesktop'] }
+type ServedWindow = Window & { __ZEUS_DASHBOARD_PROFILE__?: string; zeusDesktop?: Window['zeusDesktop'] }
 
 const win = window as unknown as ServedWindow
 
@@ -124,10 +124,10 @@ describe('a Webapp tab resuming a row its sidebar listed', () => {
     setSessions([])
     clearAllSessionStates()
     _resetSessionOwnerHintsForTests()
-    delete win.__HERMES_DASHBOARD_PROFILE__
+    delete win.__ZEUS_DASHBOARD_PROFILE__
     clearWebappSession()
-    Reflect.deleteProperty(win, 'hermesDesktop')
-    document.documentElement.removeAttribute('data-hermes-desktop-host')
+    Reflect.deleteProperty(win, 'zeusDesktop')
+    document.documentElement.removeAttribute('data-zeus-desktop-host')
     sockets.length = 0
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -135,10 +135,10 @@ describe('a Webapp tab resuming a row its sidebar listed', () => {
 
   it("opens that profile's session on the tab's own socket, routed by the row's gateway", async () => {
     stubGateway()
-    win.__HERMES_DASHBOARD_PROFILE__ = 'default'
+    win.__ZEUS_DASHBOARD_PROFILE__ = 'default'
     seedWebappSession('served-token')
     expect(installBrowserDesktopBridge()).toBe(true)
-    const desktop = win.hermesDesktop!
+    const desktop = win.zeusDesktop!
     await desktop.getProfileRoutes?.(['default', 'work'])
 
     // The tab's socket, published the way boot does: the tab's connection on its own profile.

@@ -5,7 +5,7 @@ description: "FXMacroData macro and FX research: official-source economic releas
 maintainer: fxmacrodata
 tier: community
 category: tools
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/fxmacrodata/hermes-fxmacrodata#readme
 version: "0.2.0"
 platforms: []

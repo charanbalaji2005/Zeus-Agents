@@ -51,8 +51,8 @@ DEFAULT_WEBHOOK_PATH = "/bluebubbles-webhook"
 MAX_TEXT_LENGTH = 4000
 
 # iMessage has no stable bot mention identity (unlike <@U...>/@botname/MXID), so
-# `require_mention: true` without custom aliases uses Hermes wake words.
-DEFAULT_MENTION_PATTERNS = [r"(?<![\w@])@?hermes\s+agent\b[,:\-]?", r"(?<![\w@])@?hermes\b[,:\-]?"]
+# `require_mention: true` without custom aliases uses Zeus wake words.
+DEFAULT_MENTION_PATTERNS = [r"(?<![\w@])@?zeus\s+agent\b[,:\-]?", r"(?<![\w@])@?zeus\b[,:\-]?"]
 
 # Tapback associatedMessageType codes: 2000-2005 added, 3000-3005 removed (love, like, dislike, ...).
 _TAPBACK_CODES = {*range(2000, 2006), *range(3000, 3006)}
@@ -141,7 +141,7 @@ class BlueBubblesAdapter(BasePlatformAdapter):
     @staticmethod
     def _compile_mention_patterns(raw: Any) -> list[re.Pattern]:
         """Compile group-mention wake words; ``raw`` is a list, a raw env string (JSON list or
-        comma/newline-separated), or None (Hermes defaults)."""
+        comma/newline-separated), or None (Zeus defaults)."""
         return compile_mention_patterns(raw, log_prefix="bluebubbles", defaults=DEFAULT_MENTION_PATTERNS,
                                         logger_=logger)
 
@@ -623,7 +623,7 @@ def _is_connected(config) -> bool:
     extra = getattr(config, "extra", None) or {}
     if extra.get("server_url") and extra.get("password"):
         return True
-    import hermes_cli.gateway as gateway_mod
+    import zeus_cli.gateway as gateway_mod
     return all((gateway_mod.get_env_value(n) or "").strip() for n in ("BLUEBUBBLES_SERVER_URL", "BLUEBUBBLES_PASSWORD"))
 
 
@@ -652,13 +652,13 @@ async def _standalone_send(pconfig, chat_id: str, message: str, *, thread_id: Op
 
 
 def interactive_setup() -> None:
-    """Configure BlueBubbles iMessage gateway (``hermes setup`` / ``hermes gateway setup``)."""
-    from hermes_cli.setup import _info, print_header, print_success, prompt, prompt_yes_no
-    from hermes_cli.setup_platforms import _prompt_allowlist, _save_port, declines_reconfigure, save_prompted
+    """Configure BlueBubbles iMessage gateway (``zeus setup`` / ``zeus gateway setup``)."""
+    from zeus_cli.setup import _info, print_header, print_success, prompt, prompt_yes_no
+    from zeus_cli.setup_platforms import _prompt_allowlist, _save_port, declines_reconfigure, save_prompted
     print_header("BlueBubbles (iMessage)")
     if declines_reconfigure("BlueBubbles", "Reconfigure BlueBubbles?", "BLUEBUBBLES_SERVER_URL"):
         return
-    _info("Connects Hermes to iMessage via BlueBubbles — a free, open-source",
+    _info("Connects Zeus to iMessage via BlueBubbles — a free, open-source",
           "macOS server that bridges iMessage to any device.",
           "   Requires a Mac running BlueBubbles Server v1.0.0+",
           "   Download: https://bluebubbles.app/", None,
@@ -701,11 +701,11 @@ _PLATFORM_HINT = (
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the Zeus plugin system."""
     from . import gateway_env  # env -> GatewayConfig bridge (gateway.config_env)
     ctx.register_platform(
         name="bluebubbles", label="BlueBubbles (iMessage)", adapter_factory=BlueBubblesAdapter,
-        dashboard_description="Use Hermes through iMessage via a BlueBubbles server.",
+        dashboard_description="Use Zeus through iMessage via a BlueBubbles server.",
         docs_url="https://bluebubbles.app/",
         dashboard_env_vars=("BLUEBUBBLES_SERVER_URL", "BLUEBUBBLES_PASSWORD", "BLUEBUBBLES_ALLOWED_USERS"),
         check_fn=check_bluebubbles_requirements, is_connected=_is_connected,

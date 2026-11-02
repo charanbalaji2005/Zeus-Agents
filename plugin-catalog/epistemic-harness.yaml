@@ -7,7 +7,7 @@ description: "Bounded, session-scoped inquiry workflow with explicit probe captu
 maintainer: quangphucqp
 tier: community
 category: general
-requires_hermes: ">=0.21,<1.0"
+requires_zeus: ">=0.21,<1.0"
 platforms:
   - linux
   - macos

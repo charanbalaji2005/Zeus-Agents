@@ -6,16 +6,16 @@ import { clearWebappSession, seedWebappSession } from '@/test/webapp-session'
 
 import { installBrowserDesktopBridge } from './browser-desktop-bridge'
 
-type BootstrapWindow = Window & { __HERMES_BASE_PATH__?: string; }
+type BootstrapWindow = Window & { __ZEUS_BASE_PATH__?: string; }
 const win = window as unknown as BootstrapWindow
 
 /** A fresh page load: the bridge is rebuilt from scratch, only storage survives. */
 function reload(basePath = '') {
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  win.__HERMES_BASE_PATH__ = basePath
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  win.__ZEUS_BASE_PATH__ = basePath
   expect(installBrowserDesktopBridge()).toBe(true)
 
-  return win.hermesDesktop!.settings
+  return win.zeusDesktop!.settings
 }
 
 function onProfile(profile: string) {
@@ -28,8 +28,8 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  Reflect.deleteProperty(win, 'hermesDesktop')
-  delete win.__HERMES_BASE_PATH__
+  Reflect.deleteProperty(win, 'zeusDesktop')
+  delete win.__ZEUS_BASE_PATH__
   clearWebappSession()
   $connection.set(null)
   localStorage.clear()

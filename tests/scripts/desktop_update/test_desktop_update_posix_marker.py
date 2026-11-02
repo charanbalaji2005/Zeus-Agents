@@ -44,11 +44,11 @@ receipt = os.environ.get('HANDOFF_RECEIPT')  # outcome[,correlation][,unfinished
 if receipt and sys.argv[1:2] == ['update']:
     import json
     outcome, correlation, finished = (receipt.split(',') + ['', ''])[:3]
-    path = Path(os.environ['HERMES_HOME']) / 'logs' / 'update_receipts' / 'latest.json'
+    path = Path(os.environ['ZEUS_HOME']) / 'logs' / 'update_receipts' / 'latest.json'
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps({
         'stages': [{'name': 'apply', 'outcome': 'failed'}],  # nested keys are never read
-        'correlation_id': correlation or os.environ.get('HERMES_UPDATE_CORRELATION_ID'),
+        'correlation_id': correlation or os.environ.get('ZEUS_UPDATE_CORRELATION_ID'),
         'outcome': outcome, 'finished_at': None if finished else '2026-10-05T12:00:00.000001+00:00',
     }, indent=2) + '\\n', encoding='utf-8')
 hold = os.environ.get('HANDOFF_HOLD')
@@ -84,8 +84,8 @@ def sleeper():
 
 def _install(tmp_path: Path, *, legacy: bool = False) -> tuple[Path, Path]:
     home = tmp_path / "home"
-    install = home / "hermes-agent"
-    package = install / "hermes_cli"
+    install = home / "zeus-agents"
+    package = install / "zeus_cli"
     package.mkdir(parents=True)
     (package / "__init__.py").touch()
     (package / "main.py").write_text(FAKE_CLI, encoding="utf-8")
@@ -93,9 +93,9 @@ def _install(tmp_path: Path, *, legacy: bool = False) -> tuple[Path, Path]:
         bin_dir = install / "venv" / "bin"
         bin_dir.mkdir(parents=True)
         (bin_dir / "python3").symlink_to(sys.executable)
-        hermes = bin_dir / "hermes"
-        hermes.write_text(f'#!/usr/bin/env bash\nexec {shlex.quote(sys.executable)} -m hermes_cli.main "$@"\n', encoding="utf-8")
-        hermes.chmod(0o755)
+        zeus = bin_dir / "zeus"
+        zeus.write_text(f'#!/usr/bin/env bash\nexec {shlex.quote(sys.executable)} -m zeus_cli.main "$@"\n', encoding="utf-8")
+        zeus.chmod(0o755)
     else:
         (install / "pm").mkdir()
         publish_fixture_launcher(install, FAKE_CLI)
@@ -103,10 +103,10 @@ def _install(tmp_path: Path, *, legacy: bool = False) -> tuple[Path, Path]:
 
 
 def _run(tmp_path: Path, home: Path, install: Path, *args: str, **env: str) -> subprocess.CompletedProcess:
-    full_env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "HERMES_HOME": str(home),
-                "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "HERMES_RUNTIME_DIR": str(tmp_path / "store"),
-                "HERMES_UPDATE_SHIM_GRACE_SECONDS": "0", **env}
-    for key in ("PYTHONPATH", "PYTHONHOME", "HERMES_UPDATE_STARTED_AT"):
+    full_env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "ZEUS_HOME": str(home),
+                "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "ZEUS_RUNTIME_DIR": str(tmp_path / "store"),
+                "ZEUS_UPDATE_SHIM_GRACE_SECONDS": "0", **env}
+    for key in ("PYTHONPATH", "PYTHONHOME", "ZEUS_UPDATE_STARTED_AT"):
         full_env.pop(key, None)
     full_env.update(env)
     return subprocess.run(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install), *args],
@@ -123,12 +123,12 @@ def test_live_marker_is_never_reclaimed_and_refuses_the_handoff(tmp_path, sleepe
     home, install = _install(tmp_path)
     live = sleeper()
     if delegate:
-        # The orchestrator died (pid 1 is never ours) while `hermes update` still runs as the
+        # The orchestrator died (pid 1 is never ours) while `zeus update` still runs as the
         # delegate: the marker stays LIVE through line 4.
         body = f"999999\n{int(time.time()) - 60}\nct:1.000\ndelegate:{live.pid} ct:{_ct(live.pid)}\n"
     else:
         body = f"{live.pid}\n{int(time.time()) - 3600}\nct:{_ct(live.pid)}\n"
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     marker.write_text(body, encoding="utf-8")
 
     result = _run(tmp_path, home, install)
@@ -137,7 +137,7 @@ def test_live_marker_is_never_reclaimed_and_refuses_the_handoff(tmp_path, sleepe
     assert marker.read_text(encoding="utf-8-sig") == body
     assert _calls(tmp_path) == []
     # A refused run changed nothing and owns no result (contract A4): the other update reports.
-    assert not (home / ".hermes-update-result.json").exists()
+    assert not (home / ".zeus-update-result.json").exists()
 
 
 def _now() -> int:
@@ -163,7 +163,7 @@ def test_marker_bodies_are_parsed_positionally_like_every_other_reader(tmp_path,
     home, install = _install(tmp_path)
     live = sleeper()
     make, verdict = _MATRIX[case]
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     body = make(live.pid, _ct(live.pid)).encode("utf-8")
     marker.write_bytes(body)
 
@@ -180,7 +180,7 @@ def test_marker_bodies_are_parsed_positionally_like_every_other_reader(tmp_path,
 @pytest.mark.parametrize("age", [0, 60], ids=["young-claim-in-flight", "stale"])
 def test_empty_marker_is_live_only_while_young(tmp_path, age):
     home, install = _install(tmp_path)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     marker.write_bytes(b"")
     os.utime(marker, (time.time() - age, time.time() - age))
 
@@ -195,7 +195,7 @@ def test_desktop_started_handoff_only_adopts_its_bridge(tmp_path, sleeper, bridg
     the script must not claim fresh, run, or write a result the next boot would show."""
     home, install = _install(tmp_path)
     desktop, other = sleeper(), sleeper()
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     body = f"{other.pid}\n{_now()}\nct:{_ct(other.pid)}\n"
     if bridge == "someone-else":
         marker.write_text(body, encoding="utf-8")
@@ -204,7 +204,7 @@ def test_desktop_started_handoff_only_adopts_its_bridge(tmp_path, sleeper, bridg
 
     assert result.returncode == 2, result.stdout + result.stderr
     assert _calls(tmp_path) == []
-    assert not (home / ".hermes-update-result.json").exists()
+    assert not (home / ".zeus-update-result.json").exists()
     if bridge == "absent":
         assert not marker.exists()
     else:
@@ -215,7 +215,7 @@ def test_desktop_bridge_marker_is_adopted_with_its_started_at(tmp_path, sleeper)
     home, install = _install(tmp_path)
     desktop = sleeper()
     started = int(time.time()) - 30
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     marker.write_text(f"{desktop.pid}\n{started}\nct:{_ct(desktop.pid)}\n", encoding="utf-8")
 
     result = _run(tmp_path, home, install, "--desktop-pid", str(desktop.pid), "--self-test-marker")
@@ -234,17 +234,17 @@ def test_committed_update_with_failed_followup_is_ok_with_warnings(tmp_path):
     result = _run(tmp_path, home, install, HANDOFF_OUTPUT="Desktop build failed")
 
     assert result.returncode == 0, result.stdout + result.stderr
-    receipt = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    receipt = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert receipt["ok"] is True and receipt["manual"] is True
     assert receipt["warnings"] and receipt["warnings"][0].startswith("desktop-rebuild:")
     assert "previous version" not in receipt["message"]
     assert isinstance(receipt["started_at"], int)
-    assert not (home / ".hermes-update-in-progress").exists()
+    assert not (home / ".zeus-update-in-progress").exists()
 
 
 @pytest.mark.parametrize(("outcome", "code"), [("interrupted", "130"), ("partial", "1"), ("success", "1")])
 def test_nonzero_exit_after_the_commit_point_is_installed_with_a_followup(tmp_path, outcome, code):
-    """Contract C3: `hermes update` exits 130 (Ctrl-C after the code moved) or 1 (a parked
+    """Contract C3: `zeus update` exits 130 (Ctrl-C after the code moved) or 1 (a parked
     autostash) AFTER its commit point. Its own receipt says so; the result must report the
     update installed with an owed follow-up, never ok:false / "still on the previous version"."""
     home, install = _install(tmp_path)
@@ -252,9 +252,9 @@ def test_nonzero_exit_after_the_commit_point_is_installed_with_a_followup(tmp_pa
     result = _run(tmp_path, home, install, HANDOFF_EXIT=code, HANDOFF_RECEIPT=outcome)
 
     assert result.returncode == 0, result.stdout + result.stderr
-    receipt = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    receipt = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert (receipt["ok"], receipt["exit_code"], receipt["manual"]) == (True, 0, True), receipt
-    assert receipt["message"].startswith("Hermes was updated, but"), receipt
+    assert receipt["message"].startswith("Zeus was updated, but"), receipt
     assert [w.split(":")[0] for w in receipt["warnings"]] == ["update"], receipt
     assert f"exited {code} after the commit point" in receipt["warnings"][0]
 
@@ -264,11 +264,11 @@ def test_handoff_interrupted_while_a_committed_update_finishes_is_still_installe
     passed the commit point. The hand-off's own interruption is then an owed follow-up."""
     home, install = _install(tmp_path)
     hold = tmp_path / "release-update"
-    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "HERMES_HOME": str(home),
-           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "HERMES_RUNTIME_DIR": str(tmp_path / "store"),
-           "HERMES_UPDATE_SHIM_GRACE_SECONDS": "0", "HANDOFF_HOLD": str(hold), "HANDOFF_EXIT": "130",
+    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "ZEUS_HOME": str(home),
+           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "ZEUS_RUNTIME_DIR": str(tmp_path / "store"),
+           "ZEUS_UPDATE_SHIM_GRACE_SECONDS": "0", "HANDOFF_HOLD": str(hold), "HANDOFF_EXIT": "130",
            "HANDOFF_RECEIPT": "interrupted"}
-    for key in ("PYTHONPATH", "PYTHONHOME", "HERMES_UPDATE_STARTED_AT"):
+    for key in ("PYTHONPATH", "PYTHONHOME", "ZEUS_UPDATE_STARTED_AT"):
         env.pop(key, None)
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)],
                               env=env, cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -285,7 +285,7 @@ def test_handoff_interrupted_while_a_committed_update_finishes_is_still_installe
         hold.touch()
         if script.poll() is None:
             script.kill(); script.wait()
-    outcome = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    outcome = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert (outcome["ok"], outcome["exit_code"], outcome["manual"]) == (True, 0, True), outcome
     assert any(w.startswith("handoff: interrupted by INT") for w in outcome["warnings"]), outcome
 
@@ -298,7 +298,7 @@ def test_nonzero_exit_without_this_runs_committed_receipt_still_fails(tmp_path, 
     result = _run(tmp_path, home, install, HANDOFF_EXIT="130", HANDOFF_RECEIPT=receipt)
 
     assert result.returncode == 130, result.stdout + result.stderr
-    outcome = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    outcome = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert (outcome["ok"], outcome["exit_code"]) == (False, 130), outcome
 
 
@@ -313,9 +313,9 @@ def test_failed_update_carries_the_updaters_own_output(tmp_path, output):
     result = _run(tmp_path, home, install, HANDOFF_EXIT="1", HANDOFF_OUTPUT=output)
 
     assert result.returncode == 1, result.stdout + result.stderr
-    outcome = json.loads((home / ".hermes-update-result.json").read_text(encoding="utf-8-sig"))
+    outcome = json.loads((home / ".zeus-update-result.json").read_text(encoding="utf-8-sig"))
     assert (outcome["ok"], outcome["exit_code"]) == (False, 1), outcome
-    assert outcome["message"].startswith("Update failed (exit 1). Run hermes debug share"), outcome
+    assert outcome["message"].startswith("Update failed (exit 1). Run zeus debug share"), outcome
     if output:
         assert "Last output: sweeping the venv ERROR: the autostash cannot be re-applied" in outcome["message"], outcome
     else:
@@ -324,17 +324,17 @@ def test_failed_update_carries_the_updaters_own_output(tmp_path, output):
 
 def test_interrupted_app_swap_is_rolled_back_at_the_next_run(tmp_path):
     home, install = _install(tmp_path)
-    app = tmp_path / "Applications" / "Hermes.app"
-    previous = app.with_name("Hermes.app.old")
+    app = tmp_path / "Applications" / "Zeus.app"
+    previous = app.with_name("Zeus.app.old")
     (previous / "Contents").mkdir(parents=True)
     (previous / "Contents" / "Info.plist").write_text("previous", encoding="utf-8")
-    (app.with_name("Hermes.app.new") / "Contents").mkdir(parents=True)  # partial staged copy
+    (app.with_name("Zeus.app.new") / "Contents").mkdir(parents=True)  # partial staged copy
 
     result = _run(tmp_path, home, install, "--relaunch-target", str(app))
 
     assert result.returncode == 0, result.stdout + result.stderr
     assert (app / "Contents" / "Info.plist").read_text(encoding="utf-8-sig") == "previous"
-    assert not previous.exists() and not app.with_name("Hermes.app.new").exists()
+    assert not previous.exists() and not app.with_name("Zeus.app.new").exists()
 
 
 def _custodian(home: Path) -> str:
@@ -354,16 +354,16 @@ def _ancestry(pid: int) -> list[int]:
 
 
 def test_script_killed_right_after_spawning_the_update_leaves_a_live_marker(tmp_path):
-    """C1 rule 6, written by the script itself: posix.sh dies (SIGKILL) while its `hermes update`
+    """C1 rule 6, written by the script itself: posix.sh dies (SIGKILL) while its `zeus update`
     child is only starting up and has not taken the update lock. The marker must still read LIVE
     through the child named on line 4, and turn dead once that child is gone."""
     home, install = _install(tmp_path)
     hold = tmp_path / "release-update"
-    marker = home / ".hermes-update-in-progress"
-    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "HERMES_HOME": str(home),
-           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "HERMES_RUNTIME_DIR": str(tmp_path / "store"),
-           "HERMES_UPDATE_SHIM_GRACE_SECONDS": "0", "HANDOFF_HOLD": str(hold)}
-    for key in ("PYTHONPATH", "PYTHONHOME", "HERMES_UPDATE_STARTED_AT"):
+    marker = home / ".zeus-update-in-progress"
+    env = {**os.environ, "HOME": str(tmp_path), "TMPDIR": str(tmp_path), "ZEUS_HOME": str(home),
+           "HANDOFF_CAPTURE": str(tmp_path / "calls.txt"), "ZEUS_RUNTIME_DIR": str(tmp_path / "store"),
+           "ZEUS_UPDATE_SHIM_GRACE_SECONDS": "0", "HANDOFF_HOLD": str(hold)}
+    for key in ("PYTHONPATH", "PYTHONHOME", "ZEUS_UPDATE_STARTED_AT"):
         env.pop(key, None)
     script = subprocess.Popen(["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)],
                               env=env, cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -408,7 +408,7 @@ def test_script_killed_right_after_spawning_the_update_leaves_a_live_marker(tmp_
 
 
 def _write_bridge(home: Path, desktop_pid: int) -> None:
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     marker.write_text(f"{desktop_pid}\n{int(time.time())}\nct:{_ct(desktop_pid)}\n", encoding="utf-8")
 
 
@@ -418,7 +418,7 @@ def test_desktop_still_alive_at_the_exit_ceiling_refuses_without_updating(tmp_pa
     _write_bridge(home, desktop.pid)
     started = time.monotonic()
 
-    result = _run(tmp_path, home, install, "--desktop-pid", str(desktop.pid), HERMES_UPDATE_DESKTOP_EXIT_SECONDS="2")
+    result = _run(tmp_path, home, install, "--desktop-pid", str(desktop.pid), ZEUS_UPDATE_DESKTOP_EXIT_SECONDS="2")
 
     assert result.returncode == 4, result.stdout + result.stderr
     assert time.monotonic() - started < 30
@@ -430,7 +430,7 @@ def test_desktop_that_exits_inside_the_ceiling_lets_the_update_run(tmp_path):
     desktop = subprocess.Popen(["sleep", "3"])
     _write_bridge(home, desktop.pid)
 
-    result = _run(tmp_path, home, install, "--desktop-pid", str(desktop.pid), HERMES_UPDATE_DESKTOP_EXIT_SECONDS="20")
+    result = _run(tmp_path, home, install, "--desktop-pid", str(desktop.pid), ZEUS_UPDATE_DESKTOP_EXIT_SECONDS="20")
     desktop.wait()
 
     assert result.returncode == 0, result.stdout + result.stderr

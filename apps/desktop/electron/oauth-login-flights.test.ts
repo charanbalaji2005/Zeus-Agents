@@ -51,7 +51,7 @@ function fakeWindows<T>(outcome: () => Promise<T>) {
   return { stats, start }
 }
 
-const JAR = 'persist:hermes-remote-oauth'
+const JAR = 'persist:zeus-remote-oauth'
 const GATEWAY = 'https://gateway.example.test'
 const KEY = loginFlightKey(JAR, GATEWAY)
 
@@ -192,7 +192,7 @@ test('refused requests and the boot cascade sign in hidden; only user actions ma
   const source = readFileSync(new URL('./main.ts', import.meta.url), 'utf8')
   const fetchStart = source.indexOf('function fetchJsonViaOauthSession(')
   const fetchBody = source.slice(fetchStart, source.indexOf('\n}\n', fetchStart))
-  const bootStart = source.indexOf('async function waitForRemoteHermes(')
+  const bootStart = source.indexOf('async function waitForRemoteZeus(')
   const bootBody = source.slice(bootStart, source.indexOf('\n}\n', bootStart))
 
   expect(fetchBody).toContain('openOauthLoginWindow(origin, { silent: true, background: true })')

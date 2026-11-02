@@ -19,7 +19,7 @@ import { sendLanded } from './composer-outbox-landed'
 // The saved draft can already hold the same words (main's draft persistence wrote them before the
 // send cleared the composer). Then the entry hands that draft its identity instead of being offered
 // later beside it: two copies of one send, each with its own id, would both run.
-const PREFIX = 'hermes:composer-outbox:v1:'
+const PREFIX = 'zeus:composer-outbox:v1:'
 // An entry older than this is no longer a send the user is waiting on: dropped, never offered. A week,
 // so a send cut off before a weekend away still comes back.
 const ENTRY_TTL_MS = 7 * 24 * 60 * 60_000

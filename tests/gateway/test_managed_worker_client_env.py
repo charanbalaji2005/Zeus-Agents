@@ -73,7 +73,7 @@ def test_managed_workers_run_each_sessions_tools_under_its_client_toolchain(tmp_
     bins = {name: _bin(tmp_path, name) for name in ('daemon', 'alpha', 'beta')}
     env = {k: os.environ[k] for k in ('LANG', 'TZ') if k in os.environ}
     env.update(PATH=f'{bins["daemon"]}{os.pathsep}{system_path}', HOME=str(user), USERPROFILE=str(user),
-               HERMES_HOME=str(home), PYTHONPATH=str(ROOT), OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url)
+               ZEUS_HOME=str(home), PYTHONPATH=str(ROOT), OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url)
     # Never printed by the probe: if it shows anywhere public, the private client map leaked.
     sentinels = {name: f'--title=client-env-sentinel-{name}' for name in ('alpha', 'beta')}
 
@@ -116,7 +116,7 @@ def test_managed_workers_run_each_sessions_tools_under_its_client_toolchain(tmp_
     assert outputs['alpha'].strip().endswith('/nvm/alpha|alpha'), outputs
     assert outputs['beta'].strip().endswith('/nvm/beta|beta'), outputs
     assert outputs['desktop'].strip().endswith('|daemon'), outputs  # no client_env: the gateway's own
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB(home / 'state.db')
     try:
         public += [db.export_session(sid, include_compacted=True) for sid in sessions.values()]

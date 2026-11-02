@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // The canonical dispatcher refuses any key outside CanonicalBotDeliverParams (4001
 // invalid_params, handler never called). Read that closed set from the Python contract so the
@@ -48,12 +48,12 @@ test('a Bot Relay delivery on a canonical dial carries only keys the owner admit
       )
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
 
   try {
     const address = server.address() as { port: number }
     await client.connect(`ws://127.0.0.1:${address.port}/api/ws?native_dial=fixture&ticket=one-use`)
-    // Exactly what hermes-bots/relay.ts::relayDeliverParams sends.
+    // Exactly what zeus-bots/relay.ts::relayDeliverParams sends.
     await expect(
       client.request('bot_relay.deliver', {
         id: 'env-1',

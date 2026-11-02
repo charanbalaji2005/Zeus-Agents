@@ -1,4 +1,4 @@
-import type { OnboardingStartResult } from '@hermes/shared'
+import type { OnboardingStartResult } from '@zeus/shared'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { BACKEND_BOOT_WAIT_TIMEOUT_MS } from '@/lib/with-timeout'
@@ -31,7 +31,7 @@ const adopt = vi.fn(async (storedId: string) => {
 })
 
 beforeEach(() => {
-  Object.defineProperty(window, 'hermesDesktop', {
+  Object.defineProperty(window, 'zeusDesktop', {
     configurable: true,
     value: { chatOnboarding: { size } }
   })

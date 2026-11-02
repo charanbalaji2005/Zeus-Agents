@@ -26,7 +26,7 @@ function writeHeldResult(home: string, holders: ReleaseHolder[]) {
       ok: true,
       exit_code: 0,
       manual: true,
-      message: 'the Desktop app could not be replaced because a program outside Hermes is using its folder.',
+      message: 'the Desktop app could not be replaced because a program outside Zeus is using its folder.',
       branch: 'main',
       warnings: ['build: the Desktop app folder is in use'],
       // windows.ps1's wire shape: the start time stays the CLI's text
@@ -40,7 +40,7 @@ async function reportWithAnswer(home: string, response: number) {
   const boxes: any[] = []
   const consented: ReleaseHolder[][] = []
   reportHandoffResult({
-    hermesHome: home,
+    zeusHome: home,
     expectedStartedAt: null,
     expectedRunId: null,
     log: () => undefined,
@@ -82,7 +82,7 @@ async function retry(root: string, holders: ReleaseHolder[], outcome: { ok: bool
   await new Promise(resolve => setTimeout(resolve, 0))
 }
 
-test('#101789: a swap blocked by a program outside Hermes names it and closes it only on an explicit click', async () => {
+test('#101789: a swap blocked by a program outside Zeus names it and closes it only on an explicit click', async () => {
   const home = fs.mkdtempSync(path.join(os.tmpdir(), 'release-holder-'))
 
   writeHeldResult(home, [SOGOU])

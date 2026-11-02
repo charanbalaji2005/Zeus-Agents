@@ -2,7 +2,7 @@
 import asyncio
 from contextlib import asynccontextmanager
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 @asynccontextmanager
@@ -90,7 +90,7 @@ def _prefix_not_served(runner, profile):
     if not profile or getattr(runner, 'session_authorities', None) is None:
         return False
     from gateway.session_authorities import authority_for_home
-    from hermes_cli.profiles import get_profile_dir
+    from zeus_cli.profiles import get_profile_dir
     authority = authority_for_home(runner, get_profile_dir(profile))
     return authority is None or getattr(authority, 'retiring', False) is True
 
@@ -130,7 +130,7 @@ async def admit_producer(adapter, event):
     async with producer_scope(adapter, event) as authority:
         from gateway.config import Platform
         from gateway.run_inbound_consumer import POST_ADMISSION_HOOK
-        from hermes_cli.lifecycle import has_hook
+        from zeus_cli.lifecycle import has_hook
         webhook = adapter.platform == Platform.WEBHOOK
         hooks = [name for name in ('pre_gateway_dispatch', POST_ADMISSION_HOOK) if has_hook(name)]
         if not (webhook or hooks):
@@ -242,7 +242,7 @@ async def _webhook_retry(authority, event, payload, rows):
     # One-shot finalization ends the route. Resolve an existing provider receipt
     # before SessionStore would rotate it into a new physical session.
     from gateway.session_ingress_media import ingress_fingerprint
-    from hermes_state_runtime import get_session_admission
+    from zeus_state_runtime import get_session_admission
     if not rows:
         return None
     row = get_session_admission(authority.db, admission_id=rows[0]['admission_id'])
@@ -291,7 +291,7 @@ async def recover_webhook_finalizations(authority):
     """Close settled original webhooks only after current route authorization succeeds."""
     from gateway.session_envelope import check_native_route
     from gateway.session_contract import SessionRef
-    from hermes_state_runtime import RuntimeStoreError, get_session_admission
+    from zeus_state_runtime import RuntimeStoreError, get_session_admission
 
     rows = authority.db._read_all("""
         SELECT a.admission_id FROM sessions AS s

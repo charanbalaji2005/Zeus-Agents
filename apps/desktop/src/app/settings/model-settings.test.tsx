@@ -26,8 +26,8 @@ const setModelAssignment = vi.fn()
 const getRecommendedDefaultModel = vi.fn()
 const saveMoaModels = vi.fn()
 const setEnvVar = vi.fn()
-const getHermesConfigRecord = vi.fn()
-const saveHermesConfig = vi.fn()
+const getZeusConfigRecord = vi.fn()
+const saveZeusConfig = vi.fn()
 const startManualLocalEndpoint = vi.fn()
 const startManualOnboarding = vi.fn()
 const startManualProviderOAuth = vi.fn()
@@ -35,7 +35,7 @@ let profileSwitchHandler: (() => void) | null = null
 
 // Keep the real read-origin helpers (WeakMap peek/bind) live: the shared
 // config hook reaches them through the barrel, and a bare mock would throw.
-vi.mock('@/hermes', async () => ({
+vi.mock('@/zeus', async () => ({
   ...(await vi.importActual<typeof ConfigApi>('@/api/config')),
   getGlobalModelInfo: (profile?: null | string) => getGlobalModelInfo(profile),
   getGlobalModelOptions: (opts?: unknown, profile?: null | string) => getGlobalModelOptions(opts, profile),
@@ -47,8 +47,8 @@ vi.mock('@/hermes', async () => ({
   getRecommendedDefaultModel: (slug: string) => getRecommendedDefaultModel(slug),
   saveMoaModels: (body: unknown) => saveMoaModels(body),
   setEnvVar: (key: string, value: string) => setEnvVar(key, value),
-  getHermesConfigRecord: () => getHermesConfigRecord(),
-  saveHermesConfig: (config: unknown) => saveHermesConfig(config),
+  getZeusConfigRecord: () => getZeusConfigRecord(),
+  saveZeusConfig: (config: unknown) => saveZeusConfig(config),
   setApiRequestProfile: () => {}
 }))
 
@@ -85,8 +85,8 @@ beforeEach(() => {
   setModelAssignment.mockResolvedValue({ ok: true, provider: 'nous', model: 'hermes-4', gateway_tools: [] })
   getRecommendedDefaultModel.mockResolvedValue({ provider: 'nous', model: 'hermes-4', free_tier: null })
   setEnvVar.mockResolvedValue({ ok: true })
-  getHermesConfigRecord.mockResolvedValue({ agent: { reasoning_effort: 'medium', service_tier: 'normal' } })
-  saveHermesConfig.mockResolvedValue({ ok: true })
+  getZeusConfigRecord.mockResolvedValue({ agent: { reasoning_effort: 'medium', service_tier: 'normal' } })
+  saveZeusConfig.mockResolvedValue({ ok: true })
 })
 
 afterEach(() => {
@@ -333,17 +333,17 @@ describe('ModelSettings', () => {
     // The cached record is a default-expanded snapshot; a CLI pin made after it
     // loaded is not in it. Echoing the whole record back would reset that
     // auxiliary slot to auto/'' (#95460) — only the edited key may be sent.
-    getHermesConfigRecord.mockResolvedValue({
+    getZeusConfigRecord.mockResolvedValue({
       agent: { reasoning_effort: 'medium', service_tier: 'normal' },
       auxiliary: { curator: { provider: 'auto', model: '', reasoning_effort: 'high' } }
     })
     renderModelSettings()
-    await waitFor(() => expect(getHermesConfigRecord).toHaveBeenCalled())
+    await waitFor(() => expect(getZeusConfigRecord).toHaveBeenCalled())
 
     const fastSwitch = await screen.findByRole('switch')
     fireEvent.click(fastSwitch)
 
-    await waitFor(() => expect(saveHermesConfig).toHaveBeenCalledWith({ agent: { service_tier: 'fast' } }))
+    await waitFor(() => expect(saveZeusConfig).toHaveBeenCalledWith({ agent: { service_tier: 'fast' } }))
   })
 
   it('hides the reasoning/speed defaults when the main model reports no capabilities', async () => {
@@ -360,7 +360,7 @@ describe('ModelSettings', () => {
     })
 
     renderModelSettings()
-    await waitFor(() => expect(getHermesConfigRecord).toHaveBeenCalled())
+    await waitFor(() => expect(getZeusConfigRecord).toHaveBeenCalled())
 
     expect(screen.queryByRole('switch')).toBeNull()
   })
@@ -1019,11 +1019,11 @@ describe('ModelSettings stale-aux banner dismissal', () => {
 
 describe('ModelSettings code-skew 503', () => {
   const skewError = new Error(
-    'Error invoking remote method \'hermes:api\': Error: 503: {"detail":"Restart required: This process is running code from 08b4875f4a but the checkout on disk is now 48d2528066. The model picker would risk a stale-module crash — restart the Desktop-owned backend to load the new code (use Restart backend in Hermes Desktop, or quit and reopen the app)"}'
+    'Error invoking remote method \'zeus:api\': Error: 503: {"detail":"Restart required: This process is running code from 08b4875f4a but the checkout on disk is now 48d2528066. The model picker would risk a stale-module crash — restart the Desktop-owned backend to load the new code (use Restart backend in Zeus Desktop, or quit and reopen the app)"}'
   )
 
   afterEach(() => {
-    delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+    delete (window as unknown as { zeusDesktop?: unknown }).zeusDesktop
   })
 
   it('unwraps the stale-backend 503 instead of dumping IPC JSON', async () => {
@@ -1035,14 +1035,14 @@ describe('ModelSettings code-skew 503', () => {
       expect(screen.getByText(/running old code after an update/i)).toBeTruthy()
     })
     expect(screen.getByRole('button', { name: 'Restart backend' })).toBeTruthy()
-    expect(screen.queryByText(/hermes:api/)).toBeNull()
+    expect(screen.queryByText(/zeus:api/)).toBeNull()
     expect(screen.queryByText(/systemctl/)).toBeNull()
   })
 
   it('recycles the Desktop-owned backend and reloads the catalog', async () => {
     const recycleBackend = vi.fn().mockResolvedValue({ ok: true })
 
-    ;(window as unknown as { hermesDesktop: { recycleBackend: typeof recycleBackend } }).hermesDesktop = {
+    ;(window as unknown as { zeusDesktop: { recycleBackend: typeof recycleBackend } }).zeusDesktop = {
       recycleBackend
     }
 

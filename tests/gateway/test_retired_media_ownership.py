@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from gateway.session_contract import Principal, SessionRef, Submission
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 @pytest.mark.asyncio

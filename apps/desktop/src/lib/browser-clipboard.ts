@@ -8,7 +8,7 @@ interface BrowserClipboardOptions {
 
 export function createBrowserClipboardBridge({
   saveBuffer
-}: BrowserClipboardOptions): Pick<Window['hermesDesktop'], 'readClipboard' | 'saveClipboardImage' | 'writeClipboard'> {
+}: BrowserClipboardOptions): Pick<Window['zeusDesktop'], 'readClipboard' | 'saveClipboardImage' | 'writeClipboard'> {
   // Bound at install: installClipboardShim later routes navigator.clipboard.writeText
   // through writeClipboard, so a late lookup would call itself.
   const nativeWriteClipboard = navigator.clipboard?.writeText?.bind(navigator.clipboard)

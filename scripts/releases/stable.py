@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Iterable
 from urllib.parse import unquote, urlsplit
 
-from hermes_cli.update_channel import STABLE_TAG_RE
+from zeus_cli.update_channel import STABLE_TAG_RE
 from scripts.releases import lanes as lane_set
 from scripts.releases.draft_warning import strip_draft_warning
 from scripts.releases.versioning import tag_record
@@ -891,7 +891,7 @@ def ensure_final_tag(tag: str, commit: str, claim: dict, *, candidate_manifest_s
         except subprocess.CalledProcessError:
             message = json.dumps(expected, sort_keys=True, separators=(",", ":"))
             run([
-                "git", "-c", "user.name=Hermes Release Automation",
+                "git", "-c", "user.name=Zeus Release Automation",
                 "-c", "user.email=release-bot@users.noreply.github.com",
                 "tag", "-a", tag, commit, "-m", message,
             ])

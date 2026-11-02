@@ -1,9 +1,9 @@
 /**
  * Stop the backends E2E runs start, at three points.
  *
- * Desktop dials its backend through `hermes gateway ensure`, which spawns a detached
+ * Desktop dials its backend through `zeus gateway ensure`, which spawns a detached
  * `gateway run` that outlives the app on purpose (production attach mode). Closing the app
- * therefore never stops it, and an orphan rewrites its sandbox HERMES_HOME after the
+ * therefore never stops it, and an orphan rewrites its sandbox ZEUS_HOME after the
  * fixture's rmSync, so the leaked run root reappears. Each layer below covers a teardown the
  * one before it cannot reach:
  *
@@ -15,7 +15,7 @@
  *    is dead (SIGKILLed by a CI or agent timeout, so neither teardown nor the exit hook ran).
  *
  * The run-level layers read /proc (Linux only; elsewhere they are no-ops). They only signal a
- * process whose environment carries BOTH `HERMES_E2E_RUN_TMP=<root>` and a HERMES_HOME under
+ * process whose environment carries BOTH `ZEUS_E2E_RUN_TMP=<root>` and a ZEUS_HOME under
  * that root, so a developer's own gateway (no run root) is never a candidate, and a root whose
  * runner is alive (a concurrent run) or unrecorded (an older harness) is left alone.
  */
@@ -67,25 +67,25 @@ export function terminateProcesses(pids: Iterable<number>, stillOurs: (pid: numb
   signal('SIGKILL')
 }
 
-function processHomeUnder(pid: number, root: string, hermesHome: string): boolean {
+function processHomeUnder(pid: number, root: string, zeusHome: string): boolean {
   if (!procfsCensus) {
-    return isSandboxProcess(pid, hermesHome)
+    return isSandboxProcess(pid, zeusHome)
   }
 
   const info = readProc(pid)
 
-  return Boolean(info?.cmdline) && info!.environ.split('\0').some(entry => entry.startsWith(`HERMES_HOME=${root}`))
+  return Boolean(info?.cmdline) && info!.environ.split('\0').some(entry => entry.startsWith(`ZEUS_HOME=${root}`))
 }
 
 /**
  * SIGTERM (then SIGKILL after 15 s) every daemon recorded in a sandbox `gateway.lock` (launch
  * home and each profile home), while its environment still names this sandbox.
  */
-export function stopSandboxGatewayDaemons(root: string, hermesHome: string): void {
-  const profilesDir = path.join(hermesHome, 'profiles')
+export function stopSandboxGatewayDaemons(root: string, zeusHome: string): void {
+  const profilesDir = path.join(zeusHome, 'profiles')
 
   const homes = [
-    hermesHome,
+    zeusHome,
     ...(fs.existsSync(profilesDir) ? fs.readdirSync(profilesDir).map(name => path.join(profilesDir, name)) : [])
   ]
 
@@ -95,7 +95,7 @@ export function stopSandboxGatewayDaemons(root: string, hermesHome: string): voi
     try {
       const pid = Number(JSON.parse(fs.readFileSync(path.join(home, 'gateway.lock'), 'utf8'))?.pid)
 
-      if (Number.isInteger(pid) && pid > 0 && processHomeUnder(pid, root, hermesHome)) {
+      if (Number.isInteger(pid) && pid > 0 && processHomeUnder(pid, root, zeusHome)) {
         pids.add(pid)
       }
     } catch {
@@ -103,7 +103,7 @@ export function stopSandboxGatewayDaemons(root: string, hermesHome: string): voi
     }
   }
 
-  terminateProcesses(pids, pid => processHomeUnder(pid, root, hermesHome))
+  terminateProcesses(pids, pid => processHomeUnder(pid, root, zeusHome))
 }
 
 /** Kernel start time of `pid` (/proc/<pid>/stat field 22): with the pid, a process identity no recycle repeats. */
@@ -135,11 +135,11 @@ function runnerAlive(root: string): boolean {
   return typeof owner.pid === 'number' && owner.start !== null && startTicks(owner.pid) === owner.start
 }
 
-/** The run root a process belongs to: its HERMES_E2E_RUN_TMP, when its HERMES_HOME also lies under it. */
+/** The run root a process belongs to: its ZEUS_E2E_RUN_TMP, when its ZEUS_HOME also lies under it. */
 function runRootOf(pid: number): null | string {
   const env = readProc(pid)?.environ.split('\0') ?? []
-  const root = env.find(entry => entry.startsWith('HERMES_E2E_RUN_TMP='))?.slice('HERMES_E2E_RUN_TMP='.length)
-  const home = env.find(entry => entry.startsWith('HERMES_HOME='))?.slice('HERMES_HOME='.length)
+  const root = env.find(entry => entry.startsWith('ZEUS_E2E_RUN_TMP='))?.slice('ZEUS_E2E_RUN_TMP='.length)
+  const home = env.find(entry => entry.startsWith('ZEUS_HOME='))?.slice('ZEUS_HOME='.length)
 
   return root && home?.startsWith(root + path.sep) ? root : null
 }

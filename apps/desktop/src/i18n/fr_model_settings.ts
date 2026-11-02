@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import { frAuxTasks } from './fr_aux_tasks'
 import { frDelegationRouting } from './fr_delegation_routing'

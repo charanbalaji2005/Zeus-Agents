@@ -5,14 +5,14 @@ from typing import Any
 from urllib.parse import urlparse
 
 from agent.reasoning_effort import KIMI_K3_EFFORTS, KIMI_K3_OVERRIDES, thinking_toggle_extras
-from hermes_cli.version_info import hermes_user_agent
+from zeus_cli.version_info import zeus_user_agent
 from providers import register_provider
 from providers.base import OMIT_TEMPERATURE, LazyHeaders, ProviderProfile
 
 _HEADERS = {
-    "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-    "X-Title": "Hermes Agent",
-    "User-Agent": lambda: hermes_user_agent("HermesAgent"),
+    "HTTP-Referer": "https://charanbalaji2005.github.io/Zeus-Agents",
+    "X-Title": "Zeus Agents",
+    "User-Agent": lambda: zeus_user_agent("ZeusAgents"),
     # Exclude brotli: httpx's brotlicffi backend has a streaming decode bug on
     # Moonshot's content-encoding: br SSE responses (#28043, #48428, #59556).
     # gzip sidesteps it while still compressing the transfer.

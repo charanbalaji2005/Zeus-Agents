@@ -1,6 +1,6 @@
 """Hand the standalone backend's Group Chats to the gateway that owns the profile (WA-19).
 
-A native Desktop on a standalone ``hermes serve``/``hermes dashboard`` (no session authority) keeps
+A native Desktop on a standalone ``zeus serve``/``zeus dashboard`` (no session authority) keeps
 its rooms in the root ``shared-state.db`` and drives them in that process (``tui_gateway``
 route), while the gateway keeps its own in the profile's ``state.db`` (owner claim and epoch fence
 in the room insert's transaction). Once a gateway serves the profile, the standalone backend
@@ -129,7 +129,7 @@ def import_standalone_rooms(target_db: Path, *, runtime_epoch: int | None = None
     from gateway.hosted_rooms_common import clock
     from gateway.hosted_rooms_legacy_import import _copy_rows
     from gateway.owner_identity import host_owner_subject
-    from hermes_state_runtime import RuntimeStoreError, _epoch
+    from zeus_state_runtime import RuntimeStoreError, _epoch
 
     source = source_for(target_db)
     if source is None:

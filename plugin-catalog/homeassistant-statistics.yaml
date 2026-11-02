@@ -5,7 +5,7 @@ description: 'Read-only Home Assistant Recorder statistics tools (ha_list_statis
 maintainer: goncami
 tier: community
 category: tools
-requires_hermes: ">=0.22.5"
+requires_zeus: ">=0.22.5"
 version: "0.1.0"
 docs_url: https://github.com/goncami/hermes-homeassistant-statistics
 platforms: []

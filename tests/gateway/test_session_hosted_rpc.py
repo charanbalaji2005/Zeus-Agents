@@ -18,7 +18,7 @@ def test_local_hosted_member_revoked_during_preparation_is_not_admitted(hosted_o
     from gateway import hosted_room_driver as tasks, session_hosted_attachments
     from gateway.hosted_rooms import create_room, local_authority_gateway_id
     from gateway.session_hosted_service import CanonicalHostedRoomService
-    from hermes_state_runtime import RuntimeStoreError, list_session_admissions
+    from zeus_state_runtime import RuntimeStoreError, list_session_admissions
     from tui_gateway.hosted_room_driver import HostedRoomBinding
 
     authority, loop, _, _ = hosted_owner
@@ -93,7 +93,7 @@ def test_local_hosted_member_revoked_during_preparation_is_not_admitted(hosted_o
 def test_room_binding_exact_retry_terminal_history_and_unknown(hosted_owner):
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.hosted_room_driver import TaskIdentity
-    from hermes_state_runtime import RuntimeStoreError, list_session_admissions, claim_session_input, settle_session_input, begin_runtime_epoch, recover_session_inputs
+    from zeus_state_runtime import RuntimeStoreError, list_session_admissions, claim_session_input, settle_session_input, begin_runtime_epoch, recover_session_inputs
     authority, loop, principal, _ = hosted_owner
     allowed = [True]
     seen = []
@@ -145,7 +145,7 @@ def test_room_binding_exact_retry_terminal_history_and_unknown(hosted_owner):
 def test_controls_are_exact_current_admission_and_loop_safe(hosted_owner):
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.hosted_room_driver import TaskIdentity
-    from hermes_state_runtime import RuntimeStoreError, claim_session_input
+    from zeus_state_runtime import RuntimeStoreError, claim_session_input
     authority, loop, principal, agent = hosted_owner
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default', principal=principal, authorize=lambda *args: True)
     coords = dict(profile='default', source='bot_room')
@@ -183,7 +183,7 @@ def test_terminal_callback_follows_canonical_drain_without_polling(hosted_owner,
     from gateway.session_authority import SessionAuthority
     from gateway.hosted_room_driver import TaskIdentity
     from gateway import session_finite
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
     authority, loop, principal, _ = hosted_owner
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default', principal=principal, authorize=lambda *args: True)
     coords = dict(profile='default', source='bot_room')
@@ -210,7 +210,7 @@ def test_terminal_callback_follows_canonical_drain_without_polling(hosted_owner,
 def test_unknown_info_is_inactive_with_hosted_not_canonical_generation(hosted_owner):
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.hosted_room_driver import TaskIdentity
-    from hermes_state_runtime import claim_session_input, begin_runtime_epoch, recover_session_inputs
+    from zeus_state_runtime import claim_session_input, begin_runtime_epoch, recover_session_inputs
     authority, loop, principal, _ = hosted_owner
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default', principal=principal, authorize=lambda *args: True)
     coords = dict(profile='default', source='bot_room')
@@ -230,7 +230,7 @@ def test_unknown_info_is_inactive_with_hosted_not_canonical_generation(hosted_ow
 def test_discard_requires_exact_owned_unknown_tuple_without_replay(hosted_owner, monkeypatch):
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.hosted_room_driver import TaskIdentity
-    from hermes_state_runtime import RuntimeStoreError, list_session_admissions, claim_session_input, begin_runtime_epoch, recover_session_inputs
+    from zeus_state_runtime import RuntimeStoreError, list_session_admissions, claim_session_input, begin_runtime_epoch, recover_session_inputs
     authority, loop, principal, _ = hosted_owner
     allowed = [True]
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default', principal=principal, authorize=lambda *args: allowed[0])
@@ -286,7 +286,7 @@ def test_queued_cancellation_is_a_cancelled_receipt_not_storage_unavailable(host
     a missing result is still storage corruption."""
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.hosted_room_driver import TaskIdentity
-    from hermes_state_runtime import RuntimeStoreError, claim_session_input, settle_session_input
+    from zeus_state_runtime import RuntimeStoreError, claim_session_input, settle_session_input
     authority, loop, principal, _ = hosted_owner
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default', principal=principal, authorize=lambda *args: True)
     coords = dict(profile='default', source='bot_room')
@@ -311,7 +311,7 @@ def test_room_member_turns_cannot_block_on_an_unanswerable_clarify(hosted_owner,
     """A room has no clarification reply and hosted principals lack session:respond, so a
     member turn that called clarify would block for clarify_timeout with its question never
     shown. The frozen member policy must exclude the tool even when the profile's toolsets
-    (here the hermes-cli bundle) include it; the member asks in its room reply instead."""
+    (here the zeus-cli bundle) include it; the member asks in its room reply instead."""
     from gateway import run
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.session_local_recovery import local_adapter_map
@@ -321,7 +321,7 @@ def test_room_member_turns_cannot_block_on_an_unanswerable_clarify(hosted_owner,
 
     authority, loop, principal, _ = hosted_owner
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {
-        'model': {'default': 'fixture'}, 'platform_toolsets': {'cli': ['hermes-cli']}})
+        'model': {'default': 'fixture'}, 'platform_toolsets': {'cli': ['zeus-cli']}})
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='one', profile='default',
                                  principal=principal, authorize=lambda *args: True)
     sid = rpc.create(profile='default', title='Group: room', source='bot_room')['session_id']
@@ -341,7 +341,7 @@ def test_history_read_during_a_room_session_delete_is_not_found(hosted_owner, mo
     from gateway.session_contract import SessionRef
     from gateway.session_hosted_rpc import HostedRoomAuthorityRPC
     from gateway.session_mutations import mutate_session
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     authority, loop, principal, _ = hosted_owner
     rpc = HostedRoomAuthorityRPC(authority, loop, room_id='room', member_id='member', profile='default',
                                  principal=principal, authorize=lambda *args: True)

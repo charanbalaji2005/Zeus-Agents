@@ -39,7 +39,7 @@ export function ConnectElement({ operation, onRetry, onStopWaiting, retrying = f
 
       <div className="flex flex-wrap items-center gap-2">
         {link ? (
-          <Button onClick={() => void window.hermesDesktop?.openExternal?.(link)} size="xs" variant="secondary">
+          <Button onClick={() => void window.zeusDesktop?.openExternal?.(link)} size="xs" variant="secondary">
             {copy.dialog.connectOpenAgain}
           </Button>
         ) : null}

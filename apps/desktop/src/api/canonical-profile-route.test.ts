@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // R5: the primary socket serves every multiplexed profile and the authority selects one PER
 // REQUEST from `profile`. A sibling session's rebuilt requests (CAS mutations, prompt replies,
@@ -28,7 +28,7 @@ test('a sibling profile route survives canonical request translation', async () 
       socket.send(JSON.stringify({ jsonrpc: '2.0', id: frame.id, result }))
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const delivered: any[] = []
   client.onRequest(request => { delivered.push(request) })
 

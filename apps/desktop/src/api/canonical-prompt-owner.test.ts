@@ -1,8 +1,8 @@
-import { JsonRpcGatewayClient } from '@hermes/shared'
+import { JsonRpcGatewayClient } from '@zeus/shared'
 import { afterEach, expect, test, vi } from 'vitest'
 
 import { CanonicalDesktopProtocol } from './canonical-protocol'
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 afterEach(() => vi.restoreAllMocks())
 
@@ -20,7 +20,7 @@ test('retained prompts keep their own profile when imported profiles share a sto
 
     return { status: 'resolved' } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const shown: any[] = []
   client.onRequest(request => { shown.push(request) })
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=first')
@@ -82,7 +82,7 @@ test('implicit named-profile creation and explicit follow-ups share one owner an
 
     return { session_id: 'named-session', revision: 5, operation: 'rename' } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=first')
   await client.request('session.create', {})
   await client.request('prompt.submit', { session_id: 'named-session', profile: 'alpha', submission_id: 'input', text: 'next' })
@@ -110,7 +110,7 @@ test('an unanswered prompt is replayed after its response was lost and the socke
 
     return { session_id: 's', revision: 1, execution_generation: 2, prompts: [pending] } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const shown: any[] = []
   client.onRequest(request => { shown.push(request) })
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=first')
@@ -135,7 +135,7 @@ test('failed answers recover an authoritative pending card once and callbacks ca
     return { session_id: 's', revision: 1, execution_generation: 2, prompts: [prompt] } as never
   })
 
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   const shown: any[] = []
   client.onRequest(request => { shown.push(request) })
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=first')

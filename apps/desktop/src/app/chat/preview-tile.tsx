@@ -236,7 +236,7 @@ function existingPreviewAnchor(tabId: string): string | undefined {
 export function watchPreviewTiles(): void {
   watchPreviewTileMirror()
 
-  window.hermesDesktop?.onBrowserPopoutClosed?.(tabId => {
+  window.zeusDesktop?.onBrowserPopoutClosed?.(tabId => {
     adoptPersistedBrowserTab(tabId)
     markBrowserTabPopped(tabId, false)
   })

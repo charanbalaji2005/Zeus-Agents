@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from hermes_time import now as _hermes_now
+from zeus_time import now as _zeus_now
 from typing import Optional
 
 # Log-record parity with the origin module.
@@ -294,8 +294,8 @@ def _run_time_line() -> str:
     """This fire's wall-clock time in the configured zone. The system prompt is date-only (byte-stable
     for caching), so without it a 07:00 brief can't tell itself from a 19:00 retry. Kept outside
     ``_CRON_HINT`` and after it: the hint stays byte-stable, and cron sessions are fresh per fire."""
-    from hermes_time import safe_strftime
-    now = _hermes_now()
+    from zeus_time import safe_strftime
+    now = _zeus_now()
     offset = now.strftime("%z")
     zone = f" (UTC{offset[:3]}:{offset[3:]})" if offset else ""
     return f"[CURRENT RUN TIME: {safe_strftime(now, '%A, %Y-%m-%d %H:%M %Z').strip()}{zone}]\n\n"
@@ -452,7 +452,7 @@ def _block_and_pause_job(
     except Exception:
         logger.exception("Job '%s': failed to auto-pause unrunnable job", job_id)
 
-    now_iso = _hermes_now().strftime("%Y-%m-%d %H:%M:%S")
+    now_iso = _zeus_now().strftime("%Y-%m-%d %H:%M:%S")
     doc = (
         f"# Cron Job: {job_name}\n\n"
         f"**Job ID:** {job_id}\n"

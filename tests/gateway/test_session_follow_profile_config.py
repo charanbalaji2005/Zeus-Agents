@@ -22,7 +22,7 @@ def _owner(home):
     from gateway.session import SessionStore
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
-    import hermes_state_runtime as rt
+    import zeus_state_runtime as rt
     store = SessionStore(home / 'sessions', GatewayConfig())
     db = store._db
     runner = SimpleNamespace(session_store=store, _session_db=db, adapters={}, _draining=False,
@@ -52,12 +52,12 @@ def _route(runner, live):
 @pytest.mark.asyncio
 async def test_follow_profile_session_runs_the_profiles_current_route_and_a_pick_until_superseded(monkeypatch):
     from gateway import run
-    from hermes_constants import get_hermes_home
-    home = get_hermes_home()
+    from zeus_constants import get_zeus_home
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
     # gateway.run binds its home at first import; another test module may have imported it under
-    # a different HERMES_HOME. The loader itself is real.
-    monkeypatch.setattr(run, '_hermes_home', home)
+    # a different ZEUS_HOME. The loader itself is real.
+    monkeypatch.setattr(run, '_zeus_home', home)
     _profile(home, 'old', 1, 'k-old')
     store, runner, authority, owner = _owner(home)
     try:

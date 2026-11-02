@@ -19,7 +19,7 @@ from gateway.config import GatewayConfig, Platform, PlatformConfig
 from gateway.platforms.event import MessageEvent, MessageType
 from gateway.run import GatewayRunner
 from gateway.session_envelope import snapshot_native
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 def _clear_authz_env(monkeypatch) -> None:
@@ -97,8 +97,8 @@ async def test_upstream_authorized_a2a_input_admits_durally_with_provenance(
     same provenance-bearing re-check the unified gateway runs for every A2A task (#139199)."""
     from gateway.session_authority import SessionAuthority, initialize_session_authority
     from gateway.session_ingress_context import native_callback, register_transport_home
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import list_session_admissions
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import list_session_admissions
     from plugins.platforms.a2a.adapter import A2AAdapter
 
     _clear_authz_env(monkeypatch)
@@ -109,7 +109,7 @@ async def test_upstream_authorized_a2a_input_admits_durally_with_provenance(
     authority = await initialize_session_authority(
         runner, profile_id="default", instance_id="a2a-upstream"
     )
-    register_transport_home(runner, None, get_hermes_home())
+    register_transport_home(runner, None, get_zeus_home())
     source = adapter.build_source(
         chat_id="ctx-1",
         chat_name="a2a:peer",
@@ -118,7 +118,7 @@ async def test_upstream_authorized_a2a_input_admits_durally_with_provenance(
         user_name="peer",
     )
     event = _fresh_native_event(source, text="a2a task from a bearer-authenticated peer")
-    with native_callback(runner, event, get_hermes_home()):
+    with native_callback(runner, event, get_zeus_home()):
         receipt = await authority.admit_native(event)
     payload = list_session_admissions(
         authority.db, session_id=receipt.ref.session_id, pending_only=False
@@ -137,7 +137,7 @@ async def test_same_principal_without_adapter_declaration_is_refused_by_native_a
     source (``forge``) changes nothing: only the adapter object is read."""
     from gateway.session_authority import SessionAuthority, initialize_session_authority
     from gateway.session_ingress_context import native_callback, register_transport_home
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     from plugins.platforms.a2a.adapter import A2AAdapter
 
     class UndeclaredAdapter(A2AAdapter):
@@ -153,7 +153,7 @@ async def test_same_principal_without_adapter_declaration_is_refused_by_native_a
     authority = await initialize_session_authority(
         runner, profile_id="default", instance_id="a2a-undeclared"
     )
-    register_transport_home(runner, None, get_hermes_home())
+    register_transport_home(runner, None, get_zeus_home())
     source = adapter.build_source(
         chat_id="ctx-1",
         chat_name="a2a:peer",
@@ -164,7 +164,7 @@ async def test_same_principal_without_adapter_declaration_is_refused_by_native_a
     if forge:
         vars(source)["authorization_is_upstream"] = True
     event = _fresh_native_event(source, text="a2a task from a bearer-authenticated peer")
-    with native_callback(runner, event, get_hermes_home()):
+    with native_callback(runner, event, get_zeus_home()):
         with pytest.raises(RuntimeStoreError, match="permission_denied") as refused:
             await authority.admit_native(event)
     assert refused.value.field == "user_not_authorized"

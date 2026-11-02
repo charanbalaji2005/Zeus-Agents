@@ -23,8 +23,8 @@ vi.mock('node:child_process', async importOriginal => {
 test.skipIf(process.platform !== 'win32')('native pipe tickets reuse one helper and revalidate every owner', async () => {
   const home = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'ticket-bridge-')))
   const root = path.resolve(import.meta.dirname, '../../..')
-  const python = process.env.HERMES_TEST_PYTHON || 'python'
-  const env = { ...process.env, PYTHONPATH: root, HERMES_HOME: home, PYTHONUTF8: '1' }
+  const python = process.env.ZEUS_TEST_PYTHON || 'python'
+  const env = { ...process.env, PYTHONPATH: root, ZEUS_HOME: home, PYTHONUTF8: '1' }
 
   const code = `
 import json, sys

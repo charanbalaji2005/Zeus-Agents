@@ -10,7 +10,7 @@ import { queryClient } from '@/lib/query-client'
 import { $agentPlugins, $agentPluginsStatus, type AgentPluginRow } from '@/store/agent-plugins'
 import { $activeGatewayProfile, $profiles } from '@/store/profile'
 import { $settingsScopeOverride } from '@/store/settings-scope'
-import type { ProfileInfo } from '@/types/hermes'
+import type { ProfileInfo } from '@/types/zeus'
 
 import { $catalogCardView } from '../capabilities/catalog/store'
 import { PluginsTab } from '../capabilities/plugins/plugins-tab'

@@ -2,7 +2,7 @@
  * Backend identity for the unified session list (RT-42).
  *
  * Session totals are counted once per BACKEND, keyed on the gateway `install_id` that
- * `/api/status` reports (`hermes_cli/install_identity.py`). A sidebar refresh never waits on an
+ * `/api/status` reports (`zeus_cli/install_identity.py`). A sidebar refresh never waits on an
  * identity probe: an unanswered probe reads as "unknown", which only makes the totals take
  * max() instead of a sum.
  */

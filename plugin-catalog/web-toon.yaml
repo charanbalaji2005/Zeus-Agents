@@ -7,7 +7,7 @@ description: "Paid web extract over TOON: web_extract pays a TOON node about $0.
 maintainer: drew-dot-com
 tier: community
 category: web
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/drew-dot-com/hermes-toon#install
 capabilities:
   provides_tools: []

@@ -23,7 +23,7 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Dict, FrozenSet, Optional
 
-from hermes_cli.process_identity import release_process_group_once_empty, spawn_owned
+from zeus_cli.process_identity import release_process_group_once_empty, spawn_owned
 from utils import is_truthy_value
 
 
@@ -69,7 +69,7 @@ def render_command_template(command_template: str, placeholders: dict[str, str])
 
     def replace_match(match: re.Match[str]) -> str:
         name = match.group("double") or match.group("single")
-        token = f"__HERMES_CMD_PLACEHOLDER_{len(replacements)}__"
+        token = f"__ZEUS_CMD_PLACEHOLDER_{len(replacements)}__"
         quoted = quote_command_placeholder(placeholders[name], shell_quote_context(command_template, match.start()))
         replacements.append((token, quoted))
         return token
@@ -104,7 +104,7 @@ def terminate_command_process_tree(proc: subprocess.Popen) -> None:
         try:
             # CREATE_NO_WINDOW: taskkill is a console-subprocess — the kill itself must not
             # flash a window on windowless hosts, same class of defect as the spawn above.
-            from hermes_cli._subprocess_compat import windows_hide_flags
+            from zeus_cli._subprocess_compat import windows_hide_flags
             subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], stdout=subprocess.DEVNULL,
                            stderr=subprocess.DEVNULL, timeout=5, stdin=subprocess.DEVNULL,
                            creationflags=windows_hide_flags(), check=False)
@@ -143,16 +143,16 @@ def provider_popen_group_kwargs(os_name: str) -> dict[str, Any]:
     On Windows the shell=True spawn routes through cmd.exe, a console-subsystem
     shim: with only CREATE_NEW_PROCESS_GROUP it allocates a *visible* console
     window flash on every provider run from a windowless host (pythonw gateway,
-    TUI, Desktop). The shared detach bundle (hermes_cli._subprocess_compat.
+    TUI, Desktop). The shared detach bundle (zeus_cli._subprocess_compat.
     windows_detach_flags_without_breakaway) adds CREATE_NO_WINDOW so the child
     owns a hidden console its descendants inherit instead — deliberately without
     CREATE_BREAKAWAY_FROM_JOB: this child is foreground-owned and killed by us on
     idle timeout, so job teardown propagation must keep working. POSIX: the child
     leads its own group (``spawn_owned``) so the tree can be signalled on idle
     timeout, and the group dies with this process: the idle timer lives here, so
-    a stalled command used to outlive a SIGKILLed Hermes forever.
+    a stalled command used to outlive a SIGKILLed Zeus forever.
     """
-    from hermes_cli._subprocess_compat import windows_detach_flags_without_breakaway
+    from zeus_cli._subprocess_compat import windows_detach_flags_without_breakaway
     if os_name == "nt":
         return {"creationflags": windows_detach_flags_without_breakaway()}
     return {}
@@ -163,12 +163,12 @@ def run_command_provider(
 ) -> subprocess.CompletedProcess:
     """Run a command-provider shell command with process-tree idle cleanup.
     ``timeout`` is an IDLE timeout, reset whenever the command emits output — a slow-but-alive
-    provider survives, a silently stalled one is killed. Child env is scrubbed of Hermes secrets
+    provider survives, a silently stalled one is killed. Child env is scrubbed of Zeus secrets
     while propagating delegated-child lineage markers."""
     from agent.delegation_context import delegated_child_subprocess_env
     from tools.env_passthrough import resolve_passthrough_value
-    from tools.environments.local import hermes_subprocess_env
-    scrubbed = hermes_subprocess_env(inherit_credentials=False)
+    from tools.environments.local import zeus_subprocess_env
+    scrubbed = zeus_subprocess_env(inherit_credentials=False)
     for key in env_passthrough or []:
         # Under the multiplexer os.environ is the LAUNCH profile's .env: resolve through the served
         # profile's secret scope so its own key is forwarded and never another profile's.

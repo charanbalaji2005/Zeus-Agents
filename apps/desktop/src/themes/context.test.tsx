@@ -8,7 +8,7 @@ import { everforestTheme, midnightTheme } from './presets'
 import type { DesktopTheme } from './types'
 import { installUserTheme } from './user-themes'
 
-// The live-authoring loop: Hermes writes/edits one skin file and every surface
+// The live-authoring loop: Zeus writes/edits one skin file and every surface
 // repaints. An in-place edit keeps the NAME — only the palette moves.
 const bloomberg = (foreground: string) => ({
   name: 'bloomberg',
@@ -17,7 +17,7 @@ const bloomberg = (foreground: string) => ({
 
 const cssVar = (name: string) => window.document.documentElement.style.getPropertyValue(name)
 
-const customStyleEl = () => window.document.getElementById('hermes-desktop-custom-css') as HTMLStyleElement | null
+const customStyleEl = () => window.document.getElementById('zeus-desktop-custom-css') as HTMLStyleElement | null
 
 describe('ThemeProvider ← backend skin sync', () => {
   beforeEach(() => {
@@ -79,7 +79,7 @@ describe('ThemeProvider ← backend skin sync', () => {
   // name, flattened it to the default, and the connect-time seed (apply: false,
   // by design) never repainted — so the theme "didn't stick" until `/skin`.
   it('paints a persisted backend skin once the connect-time seed makes it resolvable', () => {
-    window.localStorage.setItem('hermes-desktop-theme-v2', 'bloomberg')
+    window.localStorage.setItem('zeus-desktop-theme-v2', 'bloomberg')
 
     render(
       <ThemeProvider>
@@ -106,10 +106,10 @@ describe('ThemeProvider ← local bridge fallback', () => {
   })
 
   it('uses the local bridge skin when a remote gateway has not connected yet', async () => {
-    const previous = Object.getOwnPropertyDescriptor(window, 'hermesDesktop')
+    const previous = Object.getOwnPropertyDescriptor(window, 'zeusDesktop')
 
     try {
-      Object.defineProperty(window, 'hermesDesktop', {
+      Object.defineProperty(window, 'zeusDesktop', {
         configurable: true,
         value: { localSkin: { profile: 'research', skin: bloomberg('#ff9f0a') } }
       })
@@ -134,9 +134,9 @@ describe('ThemeProvider ← local bridge fallback', () => {
       window.localStorage.clear()
 
       if (previous) {
-        Object.defineProperty(window, 'hermesDesktop', previous)
+        Object.defineProperty(window, 'zeusDesktop', previous)
       } else {
-        Reflect.deleteProperty(window, 'hermesDesktop')
+        Reflect.deleteProperty(window, 'zeusDesktop')
       }
 
       vi.resetModules()
@@ -144,11 +144,11 @@ describe('ThemeProvider ← local bridge fallback', () => {
   })
 
   it('keeps a saved desktop appearance ahead of the local bridge fallback', async () => {
-    const previous = Object.getOwnPropertyDescriptor(window, 'hermesDesktop')
+    const previous = Object.getOwnPropertyDescriptor(window, 'zeusDesktop')
 
     try {
-      window.localStorage.setItem('hermes-desktop-theme-v2', 'everforest')
-      Object.defineProperty(window, 'hermesDesktop', {
+      window.localStorage.setItem('zeus-desktop-theme-v2', 'everforest')
+      Object.defineProperty(window, 'zeusDesktop', {
         configurable: true,
         value: { localSkin: { profile: 'research', skin: bloomberg('#ff9f0a') } }
       })
@@ -162,15 +162,15 @@ describe('ThemeProvider ← local bridge fallback', () => {
         </FreshThemeProvider>
       )
 
-      expect(window.document.documentElement.dataset.hermesTheme).toBe('everforest')
+      expect(window.document.documentElement.dataset.zeusTheme).toBe('everforest')
     } finally {
       cleanup()
       window.localStorage.clear()
 
       if (previous) {
-        Object.defineProperty(window, 'hermesDesktop', previous)
+        Object.defineProperty(window, 'zeusDesktop', previous)
       } else {
-        Reflect.deleteProperty(window, 'hermesDesktop')
+        Reflect.deleteProperty(window, 'zeusDesktop')
       }
 
       vi.resetModules()
@@ -443,9 +443,9 @@ describe('ThemeProvider boot-failure palette', () => {
     act(() => ctx!.setTheme('boot-palette'))
 
     const midground = colors.midground ?? colors.ring
-    const snapshot = JSON.parse(window.localStorage.getItem('hermes-boot-palette')!)
+    const snapshot = JSON.parse(window.localStorage.getItem('zeus-boot-palette')!)
     expect(snapshot).toEqual({
-      background: window.localStorage.getItem('hermes-boot-background'),
+      background: window.localStorage.getItem('zeus-boot-background'),
       foreground: colors.foreground,
       accent: midground,
       accentForeground: colors.midgroundForeground ?? readableInk(midground)
@@ -454,7 +454,7 @@ describe('ThemeProvider boot-failure palette', () => {
   })
 
   it('stores no snapshot for a theme whose accent is a var() the notice could not resolve', () => {
-    window.localStorage.setItem('hermes-boot-palette', '{"stale":true}')
+    window.localStorage.setItem('zeus-boot-palette', '{"stale":true}')
     const colors = { ...midnightTheme.colors, midground: 'var(--theme-primary)', midgroundForeground: '#161616' }
     installUserTheme({ ...midnightTheme, name: 'boot-palette-var', colors, darkColors: colors })
     let ctx: ReturnType<typeof useTheme>
@@ -466,7 +466,7 @@ describe('ThemeProvider boot-failure palette', () => {
 
     act(() => ctx!.setTheme('boot-palette-var'))
 
-    expect(window.localStorage.getItem('hermes-boot-palette')).toBeNull()
-    expect(window.localStorage.getItem('hermes-boot-background')).not.toBeNull()
+    expect(window.localStorage.getItem('zeus-boot-palette')).toBeNull()
+    expect(window.localStorage.getItem('zeus-boot-background')).not.toBeNull()
   })
 })

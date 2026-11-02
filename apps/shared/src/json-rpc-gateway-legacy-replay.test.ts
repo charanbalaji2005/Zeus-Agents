@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { JsonRpcGatewayClient } from './json-rpc-gateway'
 
-// Desktop in URL, Cloud or SSH mode (no `native_dial`) talks to a standalone `hermes serve`
+// Desktop in URL, Cloud or SSH mode (no `native_dial`) talks to a standalone `zeus serve`
 // on `/api/ws`. That socket announces a process epoch on gateway.ready. A serve that does not
 // know `replay_epoch` validates `session.events.since` with extra="forbid" and answers 4000
 // to any other key. The fake server below mirrors that contract.

@@ -8,7 +8,7 @@ description: "Source 2 documentation and mod tooling for CS2 and Deadlock from a
 maintainer: c-pompa
 tier: community
 category: tools
-requires_hermes: ">=0.22.3"
+requires_zeus: ">=0.22.3"
 docs_url: https://github.com/c-pompa/s2docs/tree/main/plugin
 platforms:
   - macos

@@ -7,7 +7,7 @@ import { SANDBOXED_FRAME_DEFAULT_SANDBOX, SandboxedFrame, sanitizeFrameSandbox }
 
 afterEach(() => {
   cleanup()
-  window.document.documentElement.removeAttribute('data-hermes-desktop-host')
+  window.document.documentElement.removeAttribute('data-zeus-desktop-host')
   vi.unstubAllGlobals()
 })
 
@@ -107,15 +107,15 @@ describe('SandboxedFrame in the Webapp', () => {
   const guest = `data:text/html;charset=utf-8,${encodeURIComponent('<script>parent.postMessage("ready", "*")</script>')}`
 
   function browserHost() {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
-    vi.stubGlobal('__HERMES_BASE_PATH__', '/hermes')
-    vi.stubGlobal('__HERMES_UI_SURFACE__', 'webapp')
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
+    vi.stubGlobal('__ZEUS_BASE_PATH__', '/zeus')
+    vi.stubGlobal('__ZEUS_UI_SURFACE__', 'webapp')
   }
 
   function guestLoaded(frame: HTMLIFrameElement) {
     act(() => {
       window.dispatchEvent(
-        new MessageEvent('message', { data: { type: 'hermes-guest-loaded' }, source: frame.contentWindow })
+        new MessageEvent('message', { data: { type: 'zeus-guest-loaded' }, source: frame.contentWindow })
       )
     })
   }
@@ -199,7 +199,7 @@ describe('SandboxedFrame in the Webapp', () => {
     rerender(view('visible', changed))
     expect(send).toHaveBeenCalledTimes(2)
     expect(send).toHaveBeenLastCalledWith(
-      { type: 'hermes-preview-document', html: '<p>changed</p>', sandbox: 'allow-scripts' },
+      { type: 'zeus-preview-document', html: '<p>changed</p>', sandbox: 'allow-scripts' },
       '*'
     )
     rerender(view('hidden', guest))
@@ -226,7 +226,7 @@ describe('SandboxedFrame in the Webapp', () => {
     rerender(view('hidden'))
     fireEvent.load(frame)
     expect(send).toHaveBeenCalledExactlyOnceWith(
-      { type: 'hermes-preview-document', html: '<script>parent.postMessage("ready", "*")</script>', sandbox: 'allow-scripts' },
+      { type: 'zeus-preview-document', html: '<script>parent.postMessage("ready", "*")</script>', sandbox: 'allow-scripts' },
       '*'
     )
     rerender(view('visible'))
@@ -257,7 +257,7 @@ describe('SandboxedFrame in the Webapp', () => {
       expect(onLoad).not.toHaveBeenCalled()
       act(() => {
         window.dispatchEvent(
-          new MessageEvent('message', { data: { type: 'hermes-guest-loaded' }, source: shell as unknown as Window })
+          new MessageEvent('message', { data: { type: 'zeus-guest-loaded' }, source: shell as unknown as Window })
         )
       })
       expect(onLoad).toHaveBeenCalledOnce()
@@ -343,7 +343,7 @@ describe('SandboxedFrame in the Webapp', () => {
 
     expect(ref.current).toBe(frame)
     expect(frame.getAttribute('srcdoc')).toBeNull()
-    expect(frame.src).toBe(`${window.location.origin}/hermes/assets/webapp-guest.html`)
+    expect(frame.src).toBe(`${window.location.origin}/zeus/assets/webapp-guest.html`)
     expect(frame.getAttribute('sandbox')).toBe('allow-forms allow-scripts')
     expect(frame.getAttribute('referrerpolicy')).toBe('no-referrer')
 
@@ -351,7 +351,7 @@ describe('SandboxedFrame in the Webapp', () => {
     fireEvent.load(frame)
     expect(send).toHaveBeenLastCalledWith(
       {
-        type: 'hermes-preview-document',
+        type: 'zeus-preview-document',
         html: '<script>parent.postMessage("ready", "*")</script>',
         sandbox: 'allow-forms'
       },
@@ -361,13 +361,13 @@ describe('SandboxedFrame in the Webapp', () => {
     expect(onLoad).not.toHaveBeenCalled()
 
     act(() => {
-      window.dispatchEvent(new MessageEvent('message', { data: { type: 'hermes-guest-loaded' }, source: window }))
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'zeus-guest-loaded' }, source: window }))
     })
     expect(onLoad).not.toHaveBeenCalled()
 
     act(() => {
       window.dispatchEvent(
-        new MessageEvent('message', { data: { type: 'hermes-guest-loaded' }, source: frame.contentWindow })
+        new MessageEvent('message', { data: { type: 'zeus-guest-loaded' }, source: frame.contentWindow })
       )
     })
     expect(onLoad).toHaveBeenCalledTimes(1)

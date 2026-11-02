@@ -3,7 +3,7 @@
 A 200 only proves a carrier was accepted. This harness measures whether it reached the model's
 prompt: the prompt-token delta of a request carrying a ~400-token reasoning trace versus the
 byte-identical request without it, plus a canary-recall question. Stdlib HTTP only; it measures
-the WIRE, not Hermes. See README.md for the method and how to read the matrix.
+the WIRE, not Zeus. See README.md for the method and how to read the matrix.
 
     python evals/reasoning_replay/harness.py models --route nous
     python evals/reasoning_replay/harness.py run --route nous --models x-ai/grok-4.7 --out DIR
@@ -26,7 +26,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-HOME = Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")
+HOME = Path(os.environ.get("ZEUS_HOME") or Path.home() / ".zeus")
 AUTH_JSON = HOME / "auth.json"
 DOTENV = HOME / ".env"
 
@@ -924,7 +924,7 @@ def main() -> None:
     r.add_argument("--route", required=True, help=f"one of {sorted(ROUTES)} or 'custom'")
     r.add_argument("--kind", choices=("chat", "responses", "gemini"), help="custom routes")
     r.add_argument("--base-url")
-    r.add_argument("--key-env", help="env var (process env, then ~/.hermes/.env) holding the key")
+    r.add_argument("--key-env", help="env var (process env, then ~/.zeus/.env) holding the key")
     r.add_argument("--models", required=True, help="comma list, or 'portal-all' / 'portal-max:<usd per M out>'")
     r.add_argument("--exclude", default="")
     r.add_argument("--out", required=True)

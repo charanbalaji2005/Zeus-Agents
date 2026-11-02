@@ -29,7 +29,7 @@ from gateway.session import SessionSource
 from gateway.session_ingress_context import (
     capture_provenance, native_callback, register_transport_home)
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 class _FakeAdapter:
@@ -41,13 +41,13 @@ BOB = "+15550000002"
 
 
 def _reserve_homes(tmp_path, monkeypatch, names=("guest",)):
-    root = tmp_path / ".hermes"
+    root = tmp_path / ".zeus"
     root.mkdir(mode=0o700)
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(root))
-    import hermes_state
+    monkeypatch.setenv("ZEUS_HOME", str(root))
+    import zeus_state
     monkeypatch.setattr(
-        hermes_state, "DEFAULT_DB_PATH", hermes_state._IMPORT_DEFAULT_DB_PATH)
+        zeus_state, "DEFAULT_DB_PATH", zeus_state._IMPORT_DEFAULT_DB_PATH)
     homes = [("default", root)]
     for name in names:
         home = root / "profiles" / name

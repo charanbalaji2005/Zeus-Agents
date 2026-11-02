@@ -10,14 +10,14 @@ import { registry } from '@/contrib/registry'
 import { $selectedStoredSessionId, $sessions } from '@/store/session'
 import { $sessionTiles, type SessionTileDelegate, setSessionTileDelegate } from '@/store/session-states'
 import { stubMenuDomApis, stubResizeObserver } from '@/test/jsdom'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { watchSessionTiles, workspaceTabActions } from './session-tile'
 
 // The transport: the REST rename the dialog falls back to with no live runtime.
 const renameSession = vi.hoisted(() => vi.fn())
 
-vi.mock('@/hermes', async importOriginal => ({ ...(await importOriginal<object>()), renameSession }))
+vi.mock('@/zeus', async importOriginal => ({ ...(await importOriginal<object>()), renameSession }))
 
 const row = (id: string, title: string): SessionInfo => ({
   cwd: null,
@@ -68,7 +68,7 @@ beforeEach(() => {
     'matchMedia',
     vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })
   )
-  globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
   disposeWorkspace = registry.register({
     area: 'panes',
     id: 'workspace',
@@ -90,7 +90,7 @@ afterEach(() => {
   $layoutTree.set(null)
   $narrowViewport.set(false)
   $selectedStoredSessionId.set(null)
-  delete globalThis.document.documentElement.dataset.hermesDesktopHost
+  delete globalThis.document.documentElement.dataset.zeusDesktopHost
   vi.clearAllMocks()
   vi.unstubAllGlobals()
 })

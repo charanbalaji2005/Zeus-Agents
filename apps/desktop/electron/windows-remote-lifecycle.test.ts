@@ -32,12 +32,12 @@ const ownershipId = '0123456789abcdef0123456789abcdef'
 
 test('Windows spawn holds the update mutex across marker check and helper spawn', () => {
   const command = atomicWindowsSpawnCommand({
-    hermesHome: 'C:\\Users\\andre\\.hermes',
-    python: 'C:\\Users\\andre\\.hermes\\python.exe'
+    zeusHome: 'C:\\Users\\andre\\.zeus',
+    python: 'C:\\Users\\andre\\.zeus\\python.exe'
   })
 
   const script = decodePowerShellCommand(command)
-  assert.match(script, /\.hermes-update-in-progress/)
+  assert.match(script, /\.zeus-update-in-progress/)
   assert.match(
     script,
     /\$marker\+"\.lock",\[IO\.FileMode\]::OpenOrCreate,\[IO\.FileAccess\]::ReadWrite,\[IO\.FileShare\]::None/
@@ -48,15 +48,15 @@ test('Windows spawn holds the update mutex across marker check and helper spawn'
 test('Windows spawn publishes the initial ownership record before releasing the mutex', () => {
   const command = atomicWindowsSpawnCommand(
     {
-      hermesHome: 'C:\\Users\\andre\\.hermes',
-      python: 'C:\\Users\\andre\\.hermes\\python.exe'
+      zeusHome: 'C:\\Users\\andre\\.zeus',
+      python: 'C:\\Users\\andre\\.zeus\\python.exe'
     },
     {
       ownershipId,
       spawnNonce: '0123456789abcdef',
       profile: 'default',
-      hermesPath: 'C:\\Hermes\\hermes.exe',
-      hermesHome: 'C:\\Users\\andre\\.hermes',
+      zeusPath: 'C:\\Zeus\\zeus.exe',
+      zeusHome: 'C:\\Users\\andre\\.zeus',
       tokenFingerprint: 'a'.repeat(32),
       startedAt: '2026-07-14T00:00:00.000Z'
     }
@@ -74,10 +74,10 @@ test('Windows spawn publishes the initial ownership record before releasing the 
 test.runIf(process.platform === 'win32')(
   'Windows spawn waits on <marker>.lock and judges v2 claims: live refuses, dead is deleted under the lock',
   async () => {
-    const root = await mkdtemp(path.join(os.tmpdir(), 'hermes-win-marker-'))
-    const marker = path.join(root, '.hermes-update-in-progress')
+    const root = await mkdtemp(path.join(os.tmpdir(), 'zeus-win-marker-'))
+    const marker = path.join(root, '.zeus-update-in-progress')
     const run = (command: string) => promisify(execCallback)(command, { timeout: 30_000 })
-    const command = atomicWindowsSpawnCommand({ hermesHome: root, python: path.join(root, 'missing-python.exe') })
+    const command = atomicWindowsSpawnCommand({ zeusHome: root, python: path.join(root, 'missing-python.exe') })
 
     // An updater: hold <marker>.lock sharing nothing (marker.ps1 Open-MarkerLock),
     // write its v2 claim, release, and stay alive as the live owner.
@@ -171,10 +171,10 @@ test('every emitted PowerShell script keeps try blocks attached to their catch/f
 
       return 'CLEAR'
     }),
-    'C:\\Users\\alice\\.hermes'
+    'C:\\Users\\alice\\.zeus'
   )
   scripts.push(
-    decode(atomicWindowsSpawnCommand({ hermesHome: 'C:\\Users\\alice\\.hermes', python: 'C:\\py\\python.exe' })),
+    decode(atomicWindowsSpawnCommand({ zeusHome: 'C:\\Users\\alice\\.zeus', python: 'C:\\py\\python.exe' })),
     decode(buildWindowsInteractiveCommand('C:\\work'))
   )
 
@@ -201,17 +201,17 @@ test('Windows relaunch gate refuses live and uncertain markers before executing 
       const script = scriptFromInvocation(command, options)
       scripts.push(script)
 
-      if (script.includes('Get-Command hermes -CommandType Application')) {
+      if (script.includes('Get-Command zeus -CommandType Application')) {
         return JSON.stringify({
           os: 'Windows',
           arch: 'AMD64',
-          hermesHome: 'C:\\Users\\alice\\.hermes',
-          hermesPath: 'C:\\Hermes\\hermes.exe',
-          python: 'C:\\Hermes\\python.exe'
+          zeusHome: 'C:\\Users\\alice\\.zeus',
+          zeusPath: 'C:\\Zeus\\zeus.exe',
+          python: 'C:\\Zeus\\python.exe'
         })
       }
 
-      if (script.includes('.hermes-update-in-progress')) {
+      if (script.includes('.zeus-update-in-progress')) {
         return observation
       }
 
@@ -226,13 +226,13 @@ test('Windows relaunch gate refuses live and uncertain markers before executing 
           pickLocalPort: async () => 50000,
           forward: async () => {},
           cancelForward: async () => {},
-          waitForHermes: async () => {},
+          waitForZeus: async () => {},
           probeReuseProof: async () => 'authenticated-ok'
         }),
       (error: any) => error.kind === 'update-in-progress'
     )
     assert.equal(
-      scripts.some(script => script.includes('hermes_cli.windows_ssh_runtime')),
+      scripts.some(script => script.includes('zeus_cli.windows_ssh_runtime')),
       false
     )
   }
@@ -243,7 +243,7 @@ test('Windows gates keep a dead marker while the checkout lock or a lease byte i
   // after the update_lock byte range -- owner byte + 16 R5b lease bytes at
   // 1048576 -- of the installer checkout and the runtime python's checkout is free.
   const decode = (command: string, options: SshExecOptions = {}) => scriptFromInvocation(command, options)
-  const runtime = { hermesHome: 'C:\\Users\\alice\\.hermes', python: 'C:\\src\\hermes\\venv\\Scripts\\python.exe' }
+  const runtime = { zeusHome: 'C:\\Users\\alice\\.zeus', python: 'C:\\src\\zeus\\venv\\Scripts\\python.exe' }
   const spawnScript = decode(atomicWindowsSpawnCommand(runtime))
   let probeScript = ''
 
@@ -253,7 +253,7 @@ test('Windows gates keep a dead marker while the checkout lock or a lease byte i
 
       return 'HELD'
     }),
-    runtime.hermesHome,
+    runtime.zeusHome,
     runtime.python
   ).catch(error => error)
 
@@ -262,9 +262,9 @@ test('Windows gates keep a dead marker while the checkout lock or a lease byte i
 
   for (const script of [spawnScript, probeScript]) {
     assert.match(script, /\$lockFile\.Lock\(1048576,17\)/)
-    assert.match(script, /Combine\(\$gitdir,"hermes-update\.lock"\)/)
-    assert.match(script, /\$checkoutRoots=@\(\[IO\.Path\]::Combine\(\$installRoot,"hermes-agent"\),/)
-    assert.ok(script.includes("GetDirectoryName('C:\\src\\hermes\\venv\\Scripts\\python.exe')"))
+    assert.match(script, /Combine\(\$gitdir,"zeus-update\.lock"\)/)
+    assert.match(script, /\$checkoutRoots=@\(\[IO\.Path\]::Combine\(\$installRoot,"zeus-agents"\),/)
+    assert.ok(script.includes("GetDirectoryName('C:\\src\\zeus\\venv\\Scripts\\python.exe')"))
   }
 
   const deleteAt = spawnScript.indexOf('[IO.File]::Delete($marker)')
@@ -289,8 +289,8 @@ test('Windows relaunch gate uses strict install-wide marker parsing and fail-clo
     return 'CLEAR'
   })
 
-  await assertWindowsRemoteInstallUpdateClear(ssh, 'C:\\Users\\alice\\.hermes\\profiles\\research')
-  assert.match(script, /\.hermes-update-in-progress/)
+  await assertWindowsRemoteInstallUpdateClear(ssh, 'C:\\Users\\alice\\.zeus\\profiles\\research')
+  assert.match(script, /\.zeus-update-in-progress/)
   assert.match(script, /Split-Path -Leaf \$parent.*profiles/)
   assert.match(script, /UTF8Encoding.*true/)
   assert.match(script, /\$result=Get-MarkerVerdict \$text/)
@@ -298,7 +298,7 @@ test('Windows relaunch gate uses strict install-wide marker parsing and fail-clo
   assert.doesNotMatch(script, /ErrorAction SilentlyContinue/)
 })
 
-test('Windows probe validates Hermes and Python topology before selection', async () => {
+test('Windows probe validates Zeus and Python topology before selection', async () => {
   let script = ''
   await probeWindowsRemote(
     sshWith(async (command, options) => {
@@ -307,21 +307,21 @@ test('Windows probe validates Hermes and Python topology before selection', asyn
       return JSON.stringify({
         os: 'Windows',
         arch: 'AMD64',
-        hermesHome: 'C:\\\\h',
-        hermesPath: 'C:\\\\h\\\\hermes.exe',
+        zeusHome: 'C:\\\\h',
+        zeusPath: 'C:\\\\h\\\\zeus.exe',
         python: 'C:\\\\h\\\\python.exe'
       })
     }),
-    'C:\\\\h\\\\hermes.exe'
+    'C:\\\\h\\\\zeus.exe'
   )
 
   const explicitCheck = script.indexOf('if($explicit){Assert-NoReparse $explicit $false;')
   const explicitPythonCheck = script.indexOf('Assert-NoReparse $explicitPython $true')
-  const envHome = script.indexOf('$hermesHome=$env:HERMES_HOME')
-  // #118988: HERMES_HOME is trusted only when it is a directory on the remote; anything else
+  const envHome = script.indexOf('$zeusHome=$env:ZEUS_HOME')
+  // #118988: ZEUS_HOME is trusted only when it is a directory on the remote; anything else
   // (stale User-scope value, client path leaked over SSH) falls back to the remote default.
-  const envHomeGuard = script.indexOf('Test-Path -LiteralPath $hermesHome -PathType Container')
-  const fallbackJoin = script.indexOf('Join-Path $hermesHome')
+  const envHomeGuard = script.indexOf('Test-Path -LiteralPath $zeusHome -PathType Container')
+  const fallbackJoin = script.indexOf('Join-Path $zeusHome')
   const candidatePythonCheck = script.indexOf('Assert-NoReparse $candidatePython $true')
   const candidateSelection = script.indexOf('Get-Item -LiteralPath $candidate')
   const pythonJoin = script.indexOf('$python=[IO.Path]::Combine')
@@ -343,8 +343,8 @@ test('Windows probe validates Hermes and Python topology before selection', asyn
 const CLEAN_PROBE_RESULT = JSON.stringify({
   os: 'Windows',
   arch: 'AMD64',
-  hermesHome: 'C:\\h',
-  hermesPath: 'C:\\h\\hermes.exe',
+  zeusHome: 'C:\\h',
+  zeusPath: 'C:\\h\\zeus.exe',
   python: 'C:\\h\\python.exe'
 })
 
@@ -377,13 +377,13 @@ test('Windows probe tolerates CLIXML progress-stream pollution around the probe 
 
     assert.equal(parsed.os, 'Windows')
     assert.equal(parsed.arch, 'AMD64')
-    assert.equal(parsed.hermesPath, 'C:\\h\\hermes.exe')
+    assert.equal(parsed.zeusPath, 'C:\\h\\zeus.exe')
     assert.equal(parsed.python, 'C:\\h\\python.exe')
   }
 })
 
 test('Windows probe still rejects output that is not platform JSON', async () => {
-  await assert.rejects(probeWindowsRemote(sshWith(async () => 'hermes is not installed on this host')))
+  await assert.rejects(probeWindowsRemote(sshWith(async () => 'zeus is not installed on this host')))
   await assert.rejects(
     probeWindowsRemote(
       sshWith(async () => JSON.stringify({ os: 'Windows' }) + '\n' + JSON.stringify({ unrelated: true }))
@@ -419,7 +419,7 @@ test('the update marker gate stays CLEAR when CLIXML lands after the final Write
 
 test('every parsed Windows PowerShell script silences the progress stream', async () => {
   // The marker gate runs Add-Type (C# compilation) and the spawn/helper scripts
-  // import the remote hermes_cli module — both emit progress records the
+  // import the remote zeus_cli module — both emit progress records the
   // probe's Get-Item/Get-Command suppression knows nothing about, on the same
   // stdout the parsers read.
   const decode = (command: string, options: SshExecOptions = {}) => scriptFromInvocation(command, options)
@@ -434,7 +434,7 @@ test('every parsed Windows PowerShell script silences the progress stream', asyn
     'C:\\h'
   )
   scripts.push(
-    decode(atomicWindowsSpawnCommand({ hermesHome: 'C:\\h', python: 'C:\\py\\python.exe' })),
+    decode(atomicWindowsSpawnCommand({ zeusHome: 'C:\\h', python: 'C:\\py\\python.exe' })),
     decode(helperCommand({ python: 'C:\\py\\python.exe' }, 'inspect', []))
   )
 
@@ -454,7 +454,7 @@ test('helper parsing ignores CLIXML progress blocks around its JSON line', async
       sshWith(async () => output),
       { python: 'C:\\py\\python.exe' },
       'inspect',
-      ['C:\\h\\hermes.exe']
+      ['C:\\h\\zeus.exe']
     )
 
     assert.equal(parsed.supported, true)
@@ -476,8 +476,8 @@ test('Windows platform probe and marker gate send their scripts without stdin', 
       return JSON.stringify({
         os: 'Windows',
         arch: 'AMD64',
-        hermesHome: 'C:\\\\h',
-        hermesPath: 'C:\\\\h\\\\hermes.exe',
+        zeusHome: 'C:\\\\h',
+        zeusPath: 'C:\\\\h\\\\zeus.exe',
         python: 'C:\\\\h\\\\python.exe'
       })
     }
@@ -503,7 +503,7 @@ test('Windows platform probe and marker gate send their scripts without stdin', 
   assert.match(markerCommand, /-EncodedCommand [A-Za-z0-9+/=]+$/)
   assert.doesNotMatch(probeCommand, /-Command /)
   assert.match(decodePowerShellCommand(probeCommand), /Assert-NoReparse/)
-  assert.match(decodePowerShellCommand(markerCommand), /HermesMarkerNoFollow/)
+  assert.match(decodePowerShellCommand(markerCommand), /ZeusMarkerNoFollow/)
 })
 
 test('Windows platform probe preserves Unicode paths in its compressed command', async () => {
@@ -517,16 +517,16 @@ test('Windows platform probe preserves Unicode paths in its compressed command',
         return JSON.stringify({
           os: 'Windows',
           arch: 'AMD64',
-          hermesHome: 'C:\\\\h',
-          hermesPath: 'C:\\\\h\\\\hermes.exe',
+          zeusHome: 'C:\\\\h',
+          zeusPath: 'C:\\\\h\\\\zeus.exe',
           python: 'C:\\\\h\\\\python.exe'
         })
       }
     },
-    'C:\\Users\\한글\\hermes.exe'
+    'C:\\Users\\한글\\zeus.exe'
   )
 
-  assert.ok(decodePowerShellCommand(command).includes('C:\\Users\\한글\\hermes.exe'))
+  assert.ok(decodePowerShellCommand(command).includes('C:\\Users\\한글\\zeus.exe'))
 })
 
 test('every Windows remote command fits the cmd.exe 8191-char limit (#106716)', async () => {
@@ -542,35 +542,35 @@ test('every Windows remote command fits the cmd.exe 8191-char limit (#106716)', 
 
     const script = scriptFromInvocation(command, options)
 
-    if (script.includes('.hermes-update-in-progress')) {
+    if (script.includes('.zeus-update-in-progress')) {
       return 'CLEAR'
     }
 
     return JSON.stringify({
       os: 'Windows',
       arch: 'AMD64',
-      hermesHome: 'C:\\h',
-      hermesPath: 'C:\\h\\hermes.exe',
+      zeusHome: 'C:\\h',
+      zeusPath: 'C:\\h\\zeus.exe',
       python: 'C:\\h\\python.exe'
     })
   })
 
   // Worst-case path lengths: an explicit path and home near the deeper end of
   // what the connection settings allow.
-  const longHome = `C:\\Users\\${'u'.repeat(100)}\\.hermes\\profiles\\${'p'.repeat(100)}`
-  const longExplicit = `C:\\${'h'.repeat(200)}\\hermes.exe`
+  const longHome = `C:\\Users\\${'u'.repeat(100)}\\.zeus\\profiles\\${'p'.repeat(100)}`
+  const longExplicit = `C:\\${'h'.repeat(200)}\\zeus.exe`
 
   await probeWindowsRemote(ssh, longExplicit)
   await assertWindowsRemoteInstallUpdateClear(ssh, longHome, `${longHome}\\python.exe`)
   commands.push(
     atomicWindowsSpawnCommand(
-      { hermesHome: longHome, python: `${longHome}\\python.exe` },
+      { zeusHome: longHome, python: `${longHome}\\python.exe` },
       {
         ownershipId: 'f'.repeat(32),
         spawnNonce: '0123456789abcdef',
         profile: 'p'.repeat(64),
-        hermesPath: longExplicit,
-        hermesHome: longHome,
+        zeusPath: longExplicit,
+        zeusHome: longHome,
         tokenFingerprint: 'a'.repeat(32),
         startedAt: '2026-07-14T00:00:00.000Z'
       },
@@ -578,7 +578,7 @@ test('every Windows remote command fits the cmd.exe 8191-char limit (#106716)', 
         ownershipId: 'f'.repeat(32),
         spawnNonce: '0123456789abcdef',
         profile: 'p'.repeat(64),
-        hermesPath: longExplicit
+        zeusPath: longExplicit
       })
     ),
     helperCommand({ python: `${longHome}\\python.exe` }, 'inspect', [longExplicit]),
@@ -621,22 +621,22 @@ function runLocalWindowsCommand(command, stdinData) {
 }
 
 test.skipIf(process.platform !== 'win32')('Windows platform probe executes in real PowerShell', async () => {
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-probe-'))
-  const hermesPath = path.join(tempDir, 'hermes.exe')
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-probe-'))
+  const zeusPath = path.join(tempDir, 'zeus.exe')
 
   try {
-    fs.writeFileSync(hermesPath, '')
+    fs.writeFileSync(zeusPath, '')
     fs.writeFileSync(path.join(tempDir, 'python.exe'), '')
 
     const result = await probeWindowsFiles(
       {
         exec: (command: string, options: SshExecOptions = {}) => runLocalWindowsCommand(command, options.stdinData)
       },
-      hermesPath
+      zeusPath
     )
 
     assert.equal(result.os, 'Windows')
-    assert.equal(result.hermesPath, hermesPath)
+    assert.equal(result.zeusPath, zeusPath)
     assert.equal(result.python, path.join(tempDir, 'python.exe'))
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true })
@@ -674,7 +674,7 @@ test.skipIf(process.platform !== 'win32')(
         }
       })
 
-    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-marker-'))
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-marker-'))
 
     try {
       await assertWindowsRemoteInstallUpdateClear(
@@ -703,8 +703,8 @@ test('platform detection preserves POSIX and falls back to Windows PowerShell', 
       return JSON.stringify({
         os: 'Windows',
         arch: 'ARM64',
-        hermesHome: 'C:\\h',
-        hermesPath: 'C:\\h\\hermes.exe',
+        zeusHome: 'C:\\h',
+        zeusPath: 'C:\\h\\zeus.exe',
         python: 'C:\\h\\python.exe'
       })
     })
@@ -736,10 +736,10 @@ test('platform detection surfaces transport failures as themselves, not unsuppor
           throw new Error('not recognized')
         }
 
-        throw new Error('Hermes is not installed on the remote Windows host.')
+        throw new Error('Zeus is not installed on the remote Windows host.')
       })
     ),
-    (err: any) => err.kind === 'unsupported-platform' && /Hermes is not installed/.test(err.message)
+    (err: any) => err.kind === 'unsupported-platform' && /Zeus is not installed/.test(err.message)
   )
 
   await assert.rejects(
@@ -750,13 +750,13 @@ test('platform detection surfaces transport failures as themselves, not unsuppor
         }
 
         throw new Error(
-          '#< CLIXML <Objs><S S="progress">module load</S><S S="Error">The remote Hermes Python runtime was not found._x000D__x000A_</S></Objs>'
+          '#< CLIXML <Objs><S S="progress">module load</S><S S="Error">The remote Zeus Python runtime was not found._x000D__x000A_</S></Objs>'
         )
       })
     ),
     (err: any) =>
       err.kind === 'unsupported-platform' &&
-      /probe: The remote Hermes Python runtime was not found\./.test(err.message) &&
+      /probe: The remote Zeus Python runtime was not found\./.test(err.message) &&
       !/CLIXML|module load/.test(err.message)
   )
 })
@@ -796,15 +796,15 @@ test('platform detection preserves typed Windows probe failures', async () => {
 
 test('helper command enters through the launcher module dispatch and quotes path data', () => {
   // The shape update drain and bootstrap rollback rebuild from stored state: no runtime command.
-  const command = helperCommand({ hermesPath: "C:\\Program Files\\Hermes's\\bin\\hermes.exe", hermesHome: 'C:\\h', python: '' }, 'inspect', [
-    'C:\\x y\\hermes.exe'
+  const command = helperCommand({ zeusPath: "C:\\Program Files\\Zeus's\\bin\\zeus.exe", zeusHome: 'C:\\h', python: '' }, 'inspect', [
+    'C:\\x y\\zeus.exe'
   ])
 
   const encoded = command.split(' ').pop()!
   const script = Buffer.from(encoded, 'base64').toString('utf16le')
-  assert.match(script, /bin\\hermes\.exe' '--run-module' 'hermes_cli\.windows_ssh_runtime' 'inspect'/)
-  assert.match(script, /Hermes''s/)
-  assert.match(script, /C:\\x y\\hermes\.exe/)
+  assert.match(script, /bin\\zeus\.exe' '--run-module' 'zeus_cli\.windows_ssh_runtime' 'inspect'/)
+  assert.match(script, /Zeus''s/)
+  assert.match(script, /C:\\x y\\zeus\.exe/)
 })
 
 test('Windows lock validation is scoped and exact', () => {
@@ -817,8 +817,8 @@ test('Windows lock validation is scoped and exact', () => {
     creationTimeNs: '1784219690452757504',
     port: 1234,
     tokenFingerprint: 'a'.repeat(32),
-    hermesPath: 'C:\\h\\hermes.exe',
-    hermesHome: 'C:\\h'
+    zeusPath: 'C:\\h\\zeus.exe',
+    zeusHome: 'C:\\h'
   }
 
   assert.equal(validLock(lock, ownershipId), true)
@@ -843,12 +843,12 @@ test('Windows SSH reuse requires the requested remote profile to match the lock'
     port: 1234,
     profile: 'default',
     tokenFingerprint: crypto.createHash('sha256').update(token).digest('hex').slice(0, 32),
-    hermesPath: 'C:\\h\\hermes.exe',
-    hermesHome: 'C:\\h'
+    zeusPath: 'C:\\h\\zeus.exe',
+    zeusHome: 'C:\\h'
   }
 
   const state = { alive: true, owned: true }
-  const runtime = { hermesPath: lock.hermesPath, hermesHome: lock.hermesHome }
+  const runtime = { zeusPath: lock.zeusPath, zeusHome: lock.zeusHome }
 
   assert.equal(reusableWindowsLock(lock, state, 'default', token, runtime), true)
   assert.equal(reusableWindowsLock(lock, state, 'desktop-work', token, runtime), false)
@@ -873,8 +873,8 @@ test('managed update drain preserves a Windows owner when creation time does not
     port: 1234,
     profile: 'default',
     tokenFingerprint: 'a'.repeat(32),
-    hermesPath: 'C:\\h\\hermes.exe',
-    hermesHome: 'C:\\h'
+    zeusPath: 'C:\\h\\zeus.exe',
+    zeusHome: 'C:\\h'
   }
 
   const operations: string[] = []
@@ -915,8 +915,8 @@ test('managed update drain rechecks Windows PID/create-time ownership before exa
     port: 1234,
     profile: 'default',
     tokenFingerprint: 'a'.repeat(32),
-    hermesPath: 'C:\\h\\hermes.exe',
-    hermesHome: 'C:\\h'
+    zeusPath: 'C:\\h\\zeus.exe',
+    zeusHome: 'C:\\h'
   }
 
   const operations: string[] = []

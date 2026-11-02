@@ -1,10 +1,10 @@
-import { randomUuid } from '@hermes/shared'
+import { randomUuid } from '@zeus/shared'
 
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { dismissNotification } from '@/store/notifications'
 
 interface BrowserWindowOptions {
-  api: <T>(request: HermesApiRequest) => Promise<T>
+  api: <T>(request: ZeusApiRequest) => Promise<T>
   basePath: string
   privateSession: boolean
 }
@@ -43,9 +43,9 @@ const HELLO_PARAM = 'hello'
 
 // The pop-out's channels, each named by a randomUuid() (crypto.randomUUID exists only in secure
 // contexts, and a gated host may be served over plain HTTP from another machine). The handoff page
-// (hermes_cli/web_routers/webapp.py) opens the window channel by the same name.
-const HELLO_CHANNEL_PREFIX = 'hermes.webapp.hello:'
-const WINDOW_CHANNEL_PREFIX = 'hermes.webapp.window:'
+// (zeus_cli/web_routers/webapp.py) opens the window channel by the same name.
+const HELLO_CHANNEL_PREFIX = 'zeus.webapp.hello:'
+const WINDOW_CHANNEL_PREFIX = 'zeus.webapp.window:'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 

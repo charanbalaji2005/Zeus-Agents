@@ -1,4 +1,4 @@
-import { Box, Text } from '@hermes/ink'
+import { Box, Text } from '@zeus/ink'
 import { useState } from 'react'
 
 import { useT } from '../i18n/useT.js'

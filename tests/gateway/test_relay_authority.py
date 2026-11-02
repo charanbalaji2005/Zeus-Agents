@@ -13,7 +13,7 @@ import time
 
 
 def test_authenticated_relay_uses_canonical_admission(tmp_path):
-    env = dict(os.environ, HOME=str(tmp_path), HERMES_HOME=str(tmp_path), PYTHONUNBUFFERED='1')
+    env = dict(os.environ, HOME=str(tmp_path), ZEUS_HOME=str(tmp_path), PYTHONUNBUFFERED='1')
     result = subprocess.run([sys.executable, __file__, 'peer'], env=env,
                             capture_output=True, text=True, timeout=100, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -33,8 +33,8 @@ async def probe(peer):
     from gateway.session_authority import initialize_session_authority
     from gateway.session_contract import SessionRef
     from gateway.session_envelope import prepare_native, restore_native
-    from hermes_cli import web_server
-    from hermes_state_runtime import RuntimeStoreError, list_session_admissions
+    from zeus_cli import web_server
+    from zeus_state_runtime import RuntimeStoreError, list_session_admissions
     from tests.waiting import async_wait_until
 
     sockets, outgoing, frames = [], [], []
@@ -253,7 +253,7 @@ async def probe(peer):
                     'admissions': [r['admission_id'] for r in rows], 'model_requests': len(peer.requests),
                     'finals': finals, 'observer_complete': True, 'reconnect_dedupe': True,
                     'busy_fifo': True, 'replacement_rejected': True, 'ws_revocation_rejected': True}
-                Path(os.environ['HERMES_HOME'], 'relay-receipt.json').write_text(json.dumps(receipt))
+                Path(os.environ['ZEUS_HOME'], 'relay-receipt.json').write_text(json.dumps(receipt))
         finally:
             await adapter.disconnect()
             await stop_gateway_api(api)
@@ -271,7 +271,7 @@ def main():
     threading.Thread(target=peer.serve_forever, daemon=True).start()
     url = f'http://127.0.0.1:{peer.server_port}/v1'
     os.environ.update(OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url)
-    Path(os.environ['HERMES_HOME'], 'config.yaml').write_text(
+    Path(os.environ['ZEUS_HOME'], 'config.yaml').write_text(
         f'model:\n  default: local-wire-stub\n  provider: custom\n  base_url: {url}\n'
         'streaming:\n  enabled: false\nauxiliary:\n  title_generation:\n    enabled: false\n')
     try:

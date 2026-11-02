@@ -99,7 +99,7 @@ def available(extra: str) -> bool:
 
 
 def _platform_gates() -> dict[str, str]:
-    """The [tool.hermes.extras-platforms] table from pyproject.toml:
+    """The [tool.zeus.extras-platforms] table from pyproject.toml:
     extra -> PEP 508 marker string. Cached per process."""
     global _PLATFORM_GATES
     if _PLATFORM_GATES is not None:
@@ -112,7 +112,7 @@ def _platform_gates() -> dict[str, str]:
     try:
         with (repo_root() / "pyproject.toml").open("rb") as f:
             data = tomllib.load(f)
-        table = data.get("tool", {}).get("hermes", {}).get("extras-platforms", {})
+        table = data.get("tool", {}).get("zeus", {}).get("extras-platforms", {})
         if isinstance(table, dict):
             gates = {str(k): str(v) for k, v in table.items()}
     except (OSError, ValueError):
@@ -181,7 +181,7 @@ def _evaluate_in_runtime(marker: str, environment: dict[str, str]) -> bool:
 
 def install_hint(extra: str) -> str:
     """The one command users are told to run for a missing extra."""
-    return f"hermes pm install --extra {extra}"
+    return f"zeus pm install --extra {extra}"
 
 
 def ensure_import(extra: str) -> None:
@@ -210,7 +210,7 @@ def ensure_import(extra: str) -> None:
         app_running = bool(getattr(get_app_or_none(), "is_running", False))
     if not app_running and sys.stdin.isatty() and sys.stdout.isatty():
         try:
-            answer = input(f"\nThis needs Hermes' optional {extra!r} feature, which isn't installed yet.\n"
+            answer = input(f"\nThis needs Zeus' optional {extra!r} feature, which isn't installed yet.\n"
                            "Install it now? [Y/n] ").strip().lower()
         except (EOFError, KeyboardInterrupt):
             answer = "n"
@@ -235,7 +235,7 @@ def ensure_import(extra: str) -> None:
         if selected not in {Path(entry).resolve() for entry in sys.path}:
             reason = restart_needed(root) or "this process does not run from the install's dependency environment"
             note_restart_pending(f"{extra} installed ({reason})")
-            raise InstallError("venv", f"{extra} installed; restart Hermes to activate it ({reason})")
+            raise InstallError("venv", f"{extra} installed; restart Zeus to activate it ({reason})")
 
 
 def ensure_and_bind(extra, importer, target_globals) -> bool:

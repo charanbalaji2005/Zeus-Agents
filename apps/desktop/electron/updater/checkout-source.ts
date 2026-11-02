@@ -17,7 +17,7 @@ export interface SourceUpdateProbe {
   python: string | null
   git: string
   updateRoot: string
-  hermesHome: string
+  zeusHome: string
   branch?: string
   channel?: 'main' | 'stable' | 'canary'
   /** Persist this install's channel first (the About selector); the check then reports it. */
@@ -62,18 +62,18 @@ function probeFlags(probe: SourceUpdateProbe): string[] {
  */
 export async function sourceUpdateEnvironment(
   updateRoot: string,
-  hermesHome: string,
+  zeusHome: string,
   note?: (message: string) => void
 ): Promise<NodeJS.ProcessEnv> {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     ...(await updateProxyEnv(process.env, note, updateRoot)),
     ...buildDesktopBackendEnv(),
-    HERMES_HOME: hermesHome,
-    HERMES_INSTALL_ROOT: updateRoot
+    ZEUS_HOME: zeusHome,
+    ZEUS_INSTALL_ROOT: updateRoot
   }
 
-  delete env.HERMES_RUNTIME_DIR
+  delete env.ZEUS_RUNTIME_DIR
 
   return env
 }
@@ -85,7 +85,7 @@ export async function readSourceUpdate(probe: SourceUpdateProbe): Promise<Source
   const managed = existsSync(path.join(probe.updateRoot, 'pm'))
 
   const launcher = managed
-    ? resolveInstallationLauncher(probe.updateRoot, process.platform === 'win32', probe.hermesHome)
+    ? resolveInstallationLauncher(probe.updateRoot, process.platform === 'win32', probe.zeusHome)
     : null
 
   if (managed && !launcher) {
@@ -98,17 +98,17 @@ export async function readSourceUpdate(probe: SourceUpdateProbe): Promise<Source
 
   const args: string[] = [
     ...(managed
-      ? ['--run-module', 'hermes_cli.source_check']
+      ? ['--run-module', 'zeus_cli.source_check']
       : [
           '-c',
           // Inspect the target checkout's callable, not stderr strings or an editable
           // install elsewhere on sys.path. Exceptions inside a present probe propagate.
-          'from pathlib import Path; import runpy; p = Path("hermes_cli/source_check.py"); entry = runpy.run_path(str(p)).get("main") if p.is_file() else None; entry() if callable(entry) else print("null")'
+          'from pathlib import Path; import runpy; p = Path("zeus_cli/source_check.py"); entry = runpy.run_path(str(p)).get("main") if p.is_file() else None; entry() if callable(entry) else print("null")'
         ]),
     '--install-root',
     probe.updateRoot,
     '--home',
-    probe.hermesHome,
+    probe.zeusHome,
     '--git',
     probe.git,
     ...probeFlags(probe)
@@ -130,7 +130,7 @@ export async function readSourceUpdate(probe: SourceUpdateProbe): Promise<Source
       : args,
     hiddenWindowsChildOptions({
       cwd: probe.updateRoot,
-      env: await sourceUpdateEnvironment(probe.updateRoot, probe.hermesHome),
+      env: await sourceUpdateEnvironment(probe.updateRoot, probe.zeusHome),
       encoding: 'utf8',
       timeout: 360000,
       maxBuffer: 1024 * 1024,

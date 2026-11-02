@@ -6,7 +6,7 @@ description: >-
   Opt-in bounded idle prompt warming for explicitly allowlisted OpenAI-compatible
   text-chat endpoints. Sends potentially billable requests; no tool execution or
   conversation writes. Does not support Codex/Responses or native Anthropic.
-  Authenticated endpoints use optional HERMES_SESSION_WARMER_API_KEY.
+  Authenticated endpoints use optional ZEUS_SESSION_WARMER_API_KEY.
 maintainer: mojomast
 tier: community
 category: models

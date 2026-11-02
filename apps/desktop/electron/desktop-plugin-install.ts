@@ -140,7 +140,7 @@ export function repoNameFromUrl(url: string): string {
 
 /** *name* when it can be one folder directly under the desktop-plugins root, else throw. It comes from
  *  the repository (a manifest's `name`, a subdirectory's last segment), so it must never reach a path
- *  unchecked: `..` would make a forced install replace the Hermes home. No separators, no leading dot
+ *  unchecked: `..` would make a forced install replace the Zeus home. No separators, no leading dot
  *  (the root's staging folders use it), and none of the names Windows reads as something else (a colon
  *  makes `C:..` drive-relative, a device name opens the device, a trailing dot is dropped). The agent
  *  side's `_checked_name` refuses the same names (#146394). */
@@ -237,7 +237,7 @@ const AGENT_PAYLOAD_FILES = ['__init__.py', path.join('dashboard', 'manifest.jso
 
 /** Whether a `plugin.yaml` folder has something for the agent side to load. A manifest alone is not
  *  enough: desktop-only plugins ship one beside `desktop/plugin.js` for metadata. Same rule as the
- *  gateway's `_yaml_ships_agent_payload` (hermes_cli/plugins_cmd_inspect.py); the shared cases live in
+ *  gateway's `_yaml_ships_agent_payload` (zeus_cli/plugins_cmd_inspect.py); the shared cases live in
  *  tests/fixtures/plugin_component_detection.json. */
 async function yamlShipsAgentPayload(pluginRoot: string, yamlPath: string): Promise<boolean> {
   if (AGENT_PAYLOAD_FILES.some(rel => pathExistsSync(path.join(pluginRoot, rel)))) {
@@ -382,7 +382,7 @@ function sparseCheckoutPattern(subdir: string): string {
 // a monorepo (Hindsight: 170 MB at depth 1, 2 MB for its plugin folder) otherwise downloads every
 // file in the repository and times out on slow connections.
 async function cloneToTemp(gitBin: string, gitUrl: string, subdir: string | null): Promise<string> {
-  const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'hermes-plugin-'))
+  const tmpRoot = await fsp.mkdtemp(path.join(os.tmpdir(), 'zeus-plugin-'))
 
   try {
     if (!subdir) {

@@ -5,7 +5,7 @@ Two uses:
 * :func:`standard_user_access` asks the kernel (AccessCheck) whether a standard-user token may
   open a path with a given access mask, without starting anything.
 * :class:`StandardUserProcess` starts a real process under that token, so a journey can run
-  ``hermes gateway run``, ``hermes gateway status`` or a turn exactly as a non-elevated user's
+  ``zeus gateway run``, ``zeus gateway status`` or a turn exactly as a non-elevated user's
   console, login item or Desktop would.
 
 The token is the runner's own token passed through ``CreateRestrictedToken`` with

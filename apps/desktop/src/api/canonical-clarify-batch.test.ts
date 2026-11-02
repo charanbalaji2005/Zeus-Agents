@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // The owner asks a multi-question clarify as ONE request (the card's single form) only for a turn
 // whose submit declared `clarify_batch`; an older owner's closed submit params refuse the key, so the
@@ -38,7 +38,7 @@ async function submitThrough(capabilities: Record<string, unknown> | null, dial 
         authority_epoch: 1, execution_generation: 1 })
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
 
   try {
     await client.connect(`ws://127.0.0.1:${(server.address() as { port: number }).port}/api/ws?${dial}`)

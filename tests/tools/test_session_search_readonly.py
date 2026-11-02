@@ -7,16 +7,16 @@ import sqlite3
 
 
 def test_search_does_not_create_current_storage_for_empty_or_foreign_reads(tmp_path, monkeypatch):
-    from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-    from hermes_state import SessionDB
+    from zeus_constants import reset_zeus_home_override, set_zeus_home_override
+    from zeus_state import SessionDB
     import tools.session_search_tool
     from tools.registry import registry
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    token = set_hermes_home_override(home)
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    token = set_zeus_home_override(home)
     handler = registry.get_entry("session_search").handler
     try:
         empty = json.loads(handler({}))
@@ -39,19 +39,19 @@ def test_search_does_not_create_current_storage_for_empty_or_foreign_reads(tmp_p
             assert result["messages"][0]["content"] == "owned target marker"
             assert not (home / "state.db").exists()
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
 
 def test_search_reads_live_storage_without_a_write_commit(tmp_path, monkeypatch):
-    from hermes_constants import reset_hermes_home_override, set_hermes_home_override
-    from hermes_state import SessionDB
+    from zeus_constants import reset_zeus_home_override, set_zeus_home_override
+    from zeus_state import SessionDB
     import tools.session_search_tool
     from tools.registry import registry
 
     home = tmp_path / "profile"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    token = set_hermes_home_override(home)
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    token = set_zeus_home_override(home)
     owner = SessionDB(home / "state.db")
     observer = sqlite3.connect(home / "state.db")
     try:
@@ -65,4 +65,4 @@ def test_search_reads_live_storage_without_a_write_commit(tmp_path, monkeypatch)
     finally:
         observer.close()
         owner.close()
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)

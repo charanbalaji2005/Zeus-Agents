@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Battery runner + readout for the fixed-prefix re-diet A/B.
 
-    PRD_BASE_TREE=<checkout of the base SHA> PRD_PR_TREE=<checkout of the PR SHA> PRD_PYTHON=<hermes env python> \\
+    PRD_BASE_TREE=<checkout of the base SHA> PRD_PR_TREE=<checkout of the PR SHA> PRD_PYTHON=<zeus env python> \\
     python3 run.py <model> <reps> [--parallel=N] [--only=task1,task2]
 
 Inference: PRD_INFERENCE_URL + PRD_INFERENCE_KEY, or (default) the Nous Portal agent key read fresh from
-$HERMES_HOME/auth.json for every cell. Read-only: the harness never refreshes or copies the OAuth grant.
+$ZEUS_HOME/auth.json for every cell. Read-only: the harness never refreshes or copies the OAuth grant.
     python3 run.py --report
 
 Resume-safe per (model, task, arm, rep); errored cells score 0 and stay in the denominator.
@@ -27,7 +27,7 @@ TIMEOUT = {"term_slow_tests": 600}
 def _inference_env():
     env = dict(os.environ)
     if not env.get("PRD_INFERENCE_KEY"):
-        home = Path(os.environ.get("HERMES_HOME") or Path.home() / ".hermes")
+        home = Path(os.environ.get("ZEUS_HOME") or Path.home() / ".zeus")
         nous = json.loads((home / "auth.json").read_text())["providers"]["nous"]
         env["PRD_INFERENCE_URL"], env["PRD_INFERENCE_KEY"] = nous["inference_base_url"], nous["agent_key"]
     return env

@@ -33,7 +33,7 @@ export function bundledPayload(
     storePython: path.join(root, runtime.storePython),
     sitePackages: path.join(root, runtime.sitePackages),
     commands,
-    shim: commands.hermes
+    shim: commands.zeus
   }
 }
 
@@ -47,7 +47,7 @@ export function payloadPythonPath(payload: Pick<PayloadInfo, 'repoDir' | 'sitePa
 }
 
 /**
- * The bundled shim is the Hermes CLI, not an interpreter, so it rejects the
+ * The bundled shim is the Zeus CLI, not an interpreter, so it rejects the
  * ticket bridge's `-P -u -c`. Ticket minting runs the payload python against
  * the same import closure the shim gives the CLI.
  */
@@ -77,7 +77,7 @@ export function requireBundledPayload(mechanism: string, resourcesPath = process
 //
 // The CLI owns the channel records; Electron only reads the install id for
 // `update.installs.<sha16>/` bookkeeping. Channel resolution itself lives in
-// hermes_cli/update_channel.py — main.ts keys canary/stable off the baked
+// zeus_cli/update_channel.py — main.ts keys canary/stable off the baked
 // install stamp tag directly.
 
 export type UpdateChannel = 'stable' | 'main' | 'canary'

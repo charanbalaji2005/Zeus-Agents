@@ -14,8 +14,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from hermes_state import SessionDB
-from hermes_state_runtime import (
+from zeus_state import SessionDB
+from zeus_state_runtime import (
     admit_session_input, begin_runtime_epoch, claim_session_input, list_session_admissions,
     recover_session_inputs, settle_session_input,
 )
@@ -41,7 +41,7 @@ class _OwnerClient:
     async def rpc(self, method, **params):
         reply = await self.conn.dispatch({"jsonrpc": "2.0", "id": 1, "method": method, "params": params})
         if "error" in reply:
-            from hermes_cli.gateway_client import rpc_error
+            from zeus_cli.gateway_client import rpc_error
             raise rpc_error(reply["error"])
         return reply["result"]
 
@@ -221,7 +221,7 @@ def test_a_receipt_lost_after_the_owner_queued_it_is_unconfirmed_not_resendable(
     server runs the real ``AuthorityConnection``; the relay uses the real ``GatewayClient``."""
     import json
     from gateway.session_controls import AuthorityConnection
-    from hermes_cli.gateway_client import GatewayClient
+    from zeus_cli.gateway_client import GatewayClient
     from websockets.asyncio.client import connect
     from websockets.asyncio.server import serve
     from tui_gateway import owner_forward
@@ -349,8 +349,8 @@ def test_a_prompt_the_owner_cannot_queue_is_refused_with_why_and_when(monkeypatc
             monkeypatch.setattr(owner_forward, "connect_owner", refused)
         elif case == "owner_queue_full":
             # Sent, and refused by the owner's ledger inside its write: nothing was queued.
-            import hermes_state_runtime
-            monkeypatch.setattr(hermes_state_runtime, "ADMISSION_QUEUE_MAX", 0)
+            import zeus_state_runtime
+            monkeypatch.setattr(zeus_state_runtime, "ADMISSION_QUEUE_MAX", 0)
         else:
             params.update(truncate_before_user_ordinal=0, confirm_truncate=True)
         reply = server.handle_request({"id": "p", "method": "prompt.submit", "params": params})

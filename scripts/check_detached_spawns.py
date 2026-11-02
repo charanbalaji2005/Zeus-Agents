@@ -2,10 +2,10 @@
 """Fail when production code starts a detached child outside the owned-child helper.
 
 A child started in its own session/process group (``start_new_session=True``, ``os.setsid``,
-``os.setpgid``/``os.setpgrp`` in a ``preexec_fn``) no longer dies with the Hermes process that
+``os.setpgid``/``os.setpgrp`` in a ``preexec_fn``) no longer dies with the Zeus process that
 started it. When that process is SIGKILLed, OOM-killed or crashes, the child reparents to init
 (or a ``systemd --user`` subreaper) and runs forever. Every long-lived child that should die with
-its owner goes through ``hermes_cli.process_identity.spawn_owned`` (or hands its group to
+its owner goes through ``zeus_cli.process_identity.spawn_owned`` (or hands its group to
 ``own_process_groups`` where something else spawned it), which registers the group with the
 per-process owner-death supervisor.
 
@@ -49,9 +49,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MARKER = "detached-spawn: ok"
 # The helper itself: the one place a detached spawn is the point.
-HELPER_FILES = {"hermes_cli/process_identity.py"}
-SCAN_TREES = ("agent", "cron", "gateway", "hermes_cli", "plugins", "tools", "tui_gateway", "acp_adapter", "pm")
-SCAN_ROOT_FILES = ("cli.py", "run_agent.py", "hermes_state.py", "utils.py", "hermes_constants.py")
+HELPER_FILES = {"zeus_cli/process_identity.py"}
+SCAN_TREES = ("agent", "cron", "gateway", "zeus_cli", "plugins", "tools", "tui_gateway", "acp_adapter", "pm")
+SCAN_ROOT_FILES = ("cli.py", "run_agent.py", "zeus_state.py", "utils.py", "zeus_constants.py")
 SKIP_PARTS = {"tests", "__pycache__", "evals", "node_modules"}
 _DETACH_OS_ATTRS = {"setsid", "setpgid", "setpgrp"}
 # Helpers that return detaching Popen kwargs (``start_new_session=True`` on POSIX).
@@ -205,7 +205,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     print("\n".join(problems))
     print(f"\n{len(problems)} detached spawn(s) flagged. A child in its own session/group outlives a "
-          "SIGKILLed Hermes. Start long-lived children with hermes_cli.process_identity.spawn_owned "
+          "SIGKILLed Zeus. Start long-lived children with zeus_cli.process_identity.spawn_owned "
           "(or hand the group to own_process_groups), or mark a child that must outlive its owner / "
           f"is awaited with a group-killing timeout with `{MARKER} — <why>` (same line or the line above).")
     return 1

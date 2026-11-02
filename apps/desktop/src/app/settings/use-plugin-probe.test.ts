@@ -57,7 +57,7 @@ describe('usePluginProbe', () => {
   it('prefers Electron inspection when the preload provides it', async () => {
     const probePluginRepo = vi.fn(async () => found('native'))
     const gateway = vi.fn(async () => found('gateway'))
-    vi.stubGlobal('hermesDesktop', { probePluginRepo })
+    vi.stubGlobal('zeusDesktop', { probePluginRepo })
     const { result } = renderHook(() => usePluginProbe('unavailable', gateway))
 
     act(() => result.current.start('owner/repo'))

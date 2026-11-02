@@ -24,7 +24,7 @@ class TestResizeObserver {
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 describe('ExpandableBlock', () => {
@@ -46,7 +46,7 @@ describe('ExpandableBlock', () => {
   })
 
   it('shows a non-blocking horizontal cue until a wide block reaches its end', () => {
-    window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    window.document.documentElement.dataset.zeusDesktopHost = 'browser'
     vi.stubGlobal('ResizeObserver', TestResizeObserver)
 
     render(

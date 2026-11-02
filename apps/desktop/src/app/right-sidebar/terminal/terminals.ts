@@ -1,4 +1,4 @@
-import { randomUuid } from '@hermes/shared'
+import { randomUuid } from '@zeus/shared'
 import type { WebglAddon } from '@xterm/addon-webgl'
 import type { Terminal } from '@xterm/xterm'
 import { atom, computed } from 'nanostores'
@@ -97,11 +97,11 @@ export function redrawAllTerminals(skipTerm?: Terminal): void {
 // An OS resume can evict the GPU's glyph textures without ever firing
 // 'webglcontextlost' (common on macOS after sleep/wake): every terminal then
 // paints from an empty atlas. The main process broadcasts powerMonitor
-// 'resume'/'unlock-screen' as 'hermes:power-resume'; rebuild every registered
+// 'resume'/'unlock-screen' as 'zeus:power-resume'; rebuild every registered
 // terminal's atlas + render model when it arrives. Import-for-side-effect,
 // same pattern as store/power.ts.
 if (typeof window !== 'undefined') {
-  window.hermesDesktop?.onPowerResume?.(() => {
+  window.zeusDesktop?.onPowerResume?.(() => {
     redrawAllTerminals()
   })
 }
@@ -152,7 +152,7 @@ interface PersistedTerminalState {
   terminals: PersistedTerminalEntry[]
 }
 
-const TERMINALS_STORAGE_KEY = 'hermes.desktop.terminals.v1'
+const TERMINALS_STORAGE_KEY = 'zeus.desktop.terminals.v1'
 
 // Cap a single tab's replayed history so the persisted layout can't blow the
 // localStorage quota. Roughly mirrors VS Code's persistentSessionScrollback
@@ -389,7 +389,7 @@ const closingTerminals = new Set<string>()
  *  the last one closes the whole pane. */
 export function closeTerminal(id: string): void {
   const entry = $terminals.get().find(term => term.id === id)
-  const closeSaved = window.hermesDesktop?.terminal?.closeSaved
+  const closeSaved = window.zeusDesktop?.terminal?.closeSaved
 
   if (entry?.kind !== 'user' || !closeSaved) {
     removeExitedTerminal(id)

@@ -11,7 +11,7 @@ const STYLES = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'style
 )
 
 const COARSE_POINTER_MEDIA = /@media\s*\(\s*hover\s*:\s*none\s*\)\s*,\s*\(\s*pointer\s*:\s*coarse\s*\)\s*\{/g
-const BROWSER_HOST = "html[data-hermes-desktop-host='browser']"
+const BROWSER_HOST = "html[data-zeus-desktop-host='browser']"
 
 /** The text between the brace at `open` and its matching close. */
 function blockBody(css: string, open: number): string {

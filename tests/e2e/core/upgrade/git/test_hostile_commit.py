@@ -1,7 +1,7 @@
-"""The source swap of ``hermes update`` is one crash-safe commit point (lane LP-COMMIT).
+"""The source swap of ``zeus update`` is one crash-safe commit point (lane LP-COMMIT).
 
 Each cell drives a real install (HEAD's own ``scripts/install.sh`` in a bwrap sandbox) through a
-real ``hermes update`` against a local origin, breaks it at one named point with a real SIGKILL or a
+real ``zeus update`` against a local origin, breaks it at one named point with a real SIGKILL or a
 real git failure, and then judges the next real launch from the files the updater itself owns:
 
 * ``kill_after_tree_moved``: git finished the fast-forward of a release with NO dependency change
@@ -15,8 +15,8 @@ real git failure, and then judges the next real launch from the files the update
   first switches it to ``main`` (CP0); the updater dies while git is rewriting files. The next
   launch must put the parked tree back.
 * ``kill_mid_zip_swap``: the ZIP swap is SIGKILLed between renames. The next launch must finish or
-  roll back the swap, leaving no ``*.hermes-update-staging``/``-old`` sibling to wedge a retry.
-* ``kill_mid_zip_swap_with_hermes_cli_moved_aside``: the swap renamed ``hermes_cli/`` (the recovery
+  roll back the swap, leaving no ``*.zeus-update-staging``/``-old`` sibling to wedge a retry.
+* ``kill_mid_zip_swap_with_zeus_cli_moved_aside``: the swap renamed ``zeus_cli/`` (the recovery
   code itself) aside and died before its replacement landed. The next launch must still restore.
 * ``syntax_error_target``: a release whose startup module does not compile is refused BEFORE
   HEAD moves (no fast-forward in the reflog), not merely rolled back afterwards.
@@ -24,7 +24,7 @@ real git failure, and then judges the next real launch from the files the update
   tree, then the upstream fast-forward fails (read-only directory) and the updater is killed. The
   tail owed for the moved tree must survive the failed second move.
 * ``kill_mid_zip_swap_over_leftover_backup``: the only copy of an entry is a leftover
-  ``*.hermes-update-old`` the swap heals before swapping; a kill mid-swap must never delete both.
+  ``*.zeus-update-old`` the swap heals before swapping; a kill mid-swap must never delete both.
 * ``kill_during_branch_switch_without_local_branch``: the parked checkout has no local ``main``
   (only ``origin/main``); git's checkout guess would create it and rewrite the tree unmarked.
 * ``kill_during_syntax_rollback``: a broken release past the preflight is rolled back and the
@@ -59,7 +59,7 @@ pytestmark = [
 ]
 
 REAL_GIT = shutil.which("git") or "git"
-ARTIFACT_SUFFIXES = (".hermes-update-staging", ".hermes-update-old")
+ARTIFACT_SUFFIXES = (".zeus-update-staging", ".zeus-update-old")
 
 
 @pytest.fixture(scope="module")
@@ -109,11 +109,11 @@ def _stamp_commit(sb) -> str:
 
 def _launch(sb, marker: str) -> subprocess.CompletedProcess:
     """A later real launch by the user (fresh pid, lazy installs on: the real launch path)."""
-    return P.run_env(sb, [*_RETRY_PREFIX, sb.hermes, "-z", marker], P.lazy_env(sb), timeout=P.UPDATE_TIMEOUT)
+    return P.run_env(sb, [*_RETRY_PREFIX, sb.zeus, "-z", marker], P.lazy_env(sb), timeout=P.UPDATE_TIMEOUT)
 
 
 def _update(sb) -> subprocess.CompletedProcess:
-    return P.run_env(sb, [*_RETRY_PREFIX, sb.hermes, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
+    return P.run_env(sb, [*_RETRY_PREFIX, sb.zeus, "update", "--yes", "--branch", "main", "--no-gateway-restart"],
                      sb.env, timeout=P.UPDATE_TIMEOUT)
 
 
@@ -185,8 +185,8 @@ def test_kill_during_branch_switch_is_restored(world):
 def test_syntax_error_target_is_refused_before_head_moves(world):
     sb = world["sb"]
     pre = _head(sb)
-    constants = I.git("show", "main:hermes_constants.py", cwd=world["origin"])
-    _release(world, {"hermes_constants.py": constants + "\ndef broken(:\n"})
+    constants = I.git("show", "main:zeus_constants.py", cwd=world["origin"])
+    _release(world, {"zeus_constants.py": constants + "\ndef broken(:\n"})
     reflog_before = I.git("reflog", "-n", "20", "--format=%H %gs", cwd=sb.checkout)
     refused = _update(sb)
     reflog_after = I.git("reflog", "-n", "20", "--format=%H %gs", cwd=sb.checkout)
@@ -199,20 +199,20 @@ def test_syntax_error_target_is_refused_before_head_moves(world):
 _ZIP_DRIVER = r"""
 import os, signal, sys
 sys.path.insert(0, sys.argv[3])  # the install's checkout (the venv's own path points at its workspace)
-from hermes_cli import update_cmd_zip as z
-import hermes_cli.main as m
+from zeus_cli import update_cmd_zip as z
+import zeus_cli.main as m
 assert str(m.PROJECT_ROOT) == sys.argv[3], m.PROJECT_ROOT
 swaps, kill_at = [0], sys.argv[2]
 def killing(real):
     def move(src, dst):
         real(src, dst)
         if kill_at.startswith("after:"):  # right after the named entry's replacement landed
-            if os.path.basename(str(src)) == kill_at[6:] + ".hermes-update-staging":
+            if os.path.basename(str(src)) == kill_at[6:] + ".zeus-update-staging":
                 os.kill(os.getpid(), signal.SIGKILL)
-        elif kill_at == "hermes_cli-moved-aside":  # the live package renamed away, its replacement not yet in
-            if os.path.basename(str(src)) == "hermes_cli" and str(dst).endswith(".hermes-update-old"):
+        elif kill_at == "zeus_cli-moved-aside":  # the live package renamed away, its replacement not yet in
+            if os.path.basename(str(src)) == "zeus_cli" and str(dst).endswith(".zeus-update-old"):
                 os.kill(os.getpid(), signal.SIGKILL)
-        elif str(src).endswith(".hermes-update-staging"):  # one entry swapped in
+        elif str(src).endswith(".zeus-update-staging"):  # one entry swapped in
             swaps[0] += 1
             if swaps[0] >= int(kill_at):
                 os.kill(os.getpid(), signal.SIGKILL)
@@ -225,10 +225,10 @@ z._download_and_swap_zip("main", sys.argv[1])
 def _zip_killed_at(world, kill_at: str, files: dict[str, str] | None = None):
     """A ZIP update of a fresh release, SIGKILLed at ``kill_at`` (N-th entry swapped in, or a named point)."""
     sb = world["sb"]
-    target = _release(world, {"e2e_zip_release.py": f"Z = {world['n']}\n", "hermes_cli/e2e_zip_marker.py": "M = 1\n",
+    target = _release(world, {"e2e_zip_release.py": f"Z = {world['n']}\n", "zeus_cli/e2e_zip_marker.py": "M = 1\n",
                               **(files or {})})
     archive = world["root"] / f"release-{world['n']}.zip"
-    I.git("archive", "--format=zip", "--prefix=hermes-agent-main/", "-o", str(archive), target, cwd=world["origin"])
+    I.git("archive", "--format=zip", "--prefix=zeus-agents-main/", "-o", str(archive), target, cwd=world["origin"])
     driver = world["root"] / "zip_driver.py"
     driver.write_text(_ZIP_DRIVER, encoding="utf-8")
     return P.run_env(sb, [sb.python, str(driver), archive.as_uri(), kill_at, str(sb.checkout)], sb.env,
@@ -255,18 +255,18 @@ def test_kill_mid_zip_swap_is_settled_by_the_next_launch(world):
         "the interrupted ZIP swap left a mixed tree:\n" + _tracked_dirty(sb) + "\n" + I.describe(launch))
 
 
-def test_kill_mid_zip_swap_with_hermes_cli_moved_aside_reaches_recovery(world):
-    """The one window where the recovery code itself is gone: the swap renamed ``hermes_cli/`` aside
+def test_kill_mid_zip_swap_with_zeus_cli_moved_aside_reaches_recovery(world):
+    """The one window where the recovery code itself is gone: the swap renamed ``zeus_cli/`` aside
     and died before the replacement landed. The next launch must still reach the journal-driven
-    restore (from the moved-aside copy) and run, not die on ``No module named 'hermes_cli'``."""
+    restore (from the moved-aside copy) and run, not die on ``No module named 'zeus_cli'``."""
     sb = world["sb"]
     pre = _head(sb)
-    killed = _zip_killed_at(world, "hermes_cli-moved-aside")
-    assert not (sb.checkout / "hermes_cli").exists() and (sb.checkout / "hermes_cli.hermes-update-old").is_dir(), (
-        "harness: the ZIP swap was not killed with hermes_cli/ moved aside\n" + I.describe(killed))
-    launch = _launch(sb, "first launch after a kill with hermes_cli moved aside")
-    assert launch.returncode == 0 and (sb.checkout / "hermes_cli" / "main.py").is_file(), (
-        "the launch after a kill with hermes_cli/ moved aside could not reach recovery\n" + I.describe(launch))
+    killed = _zip_killed_at(world, "zeus_cli-moved-aside")
+    assert not (sb.checkout / "zeus_cli").exists() and (sb.checkout / "zeus_cli.zeus-update-old").is_dir(), (
+        "harness: the ZIP swap was not killed with zeus_cli/ moved aside\n" + I.describe(killed))
+    launch = _launch(sb, "first launch after a kill with zeus_cli moved aside")
+    assert launch.returncode == 0 and (sb.checkout / "zeus_cli" / "main.py").is_file(), (
+        "the launch after a kill with zeus_cli/ moved aside could not reach recovery\n" + I.describe(launch))
     assert not _artifacts(sb) and _head(sb) == pre and not _tracked_dirty(sb), (
         f"left {_artifacts(sb)[:5]} / tracked changes {_tracked_dirty(sb)!r}\n" + I.describe(launch))
     P.ok(_update(sb), "the update after the restored swap failed")
@@ -313,16 +313,16 @@ def test_failed_upstream_sync_after_origin_pull_keeps_the_tail_owed(world):
 
 
 def test_kill_mid_zip_swap_over_leftover_backup_keeps_the_entry(world):
-    """A pre-journal crash left ``e2e_zip_lost.hermes-update-old`` as the ONLY copy of a tracked dir.
+    """A pre-journal crash left ``e2e_zip_lost.zeus-update-old`` as the ONLY copy of a tracked dir.
     The next swap heals it, swaps it, and is killed right after its replacement landed: recovery
     must put the old dir back, never drop both copies."""
     sb = world["sb"]
     pre = _release(world, {"e2e_zip_lost/m.py": "OLD = 1\n"})
     P.ok(_update(sb), "harness: plain update failed")
     lost = sb.checkout / "e2e_zip_lost"
-    lost.rename(sb.checkout / "e2e_zip_lost.hermes-update-old")
+    lost.rename(sb.checkout / "e2e_zip_lost.zeus-update-old")
     killed = _zip_killed_at(world, "after:e2e_zip_lost", {"e2e_zip_lost/m.py": "NEW = 1\n"})
-    assert (lost / "m.py").read_text(encoding="utf-8-sig") == "NEW = 1\n" and (sb.checkout / "e2e_zip_lost.hermes-update-old").is_dir(), (
+    assert (lost / "m.py").read_text(encoding="utf-8-sig") == "NEW = 1\n" and (sb.checkout / "e2e_zip_lost.zeus-update-old").is_dir(), (
         "harness: the swap was not killed right after e2e_zip_lost landed\n" + I.describe(killed))
     launch = _launch(sb, "first launch after a kill over a leftover backup")
     assert (lost / "m.py").is_file() and (lost / "m.py").read_text(encoding="utf-8-sig") == "OLD = 1\n", (
@@ -368,13 +368,13 @@ def test_kill_during_syntax_rollback_lands_on_the_pre_update_commit(world):
     files back. The next launch must finish on the pre-update commit, not restore the broken one."""
     sb = world["sb"]
     pre = _head(sb)
-    constants = I.git("show", "main:hermes_constants.py", cwd=world["origin"])
-    broken = _release(world, {"hermes_constants.py": constants + "\ndef broken(:\n",
+    constants = I.git("show", "main:zeus_constants.py", cwd=world["origin"])
+    broken = _release(world, {"zeus_constants.py": constants + "\ndef broken(:\n",
                               "e2e_rollback_extra.py": "X = 1\n"})
-    _hostile_git(world, 'case " $* " in *" show "*":hermes_constants.py "*) "$REAL" show HEAD:hermes_constants.py; '
+    _hostile_git(world, 'case " $* " in *" show "*":zeus_constants.py "*) "$REAL" show HEAD:zeus_constants.py; '
                         'exit $?;; '
-                        '*" cat-file --batch "*) sed "s#^[^ ]*:hermes_constants.py\\$#HEAD:hermes_constants.py#" | "$REAL" "$@"; exit $?;; '
-                        '*" reset --hard "*) "$REAL" show "${@: -1}:hermes_constants.py" > hermes_constants.py; '
+                        '*" cat-file --batch "*) sed "s#^[^ ]*:zeus_constants.py\\$#HEAD:zeus_constants.py#" | "$REAL" "$@"; exit $?;; '
+                        '*" reset --hard "*) "$REAL" show "${@: -1}:zeus_constants.py" > zeus_constants.py; '
                         'kill -KILL $PPID; exit 137;; esac')
     killed = _update(sb)
     _hostile_git(world, "")
@@ -414,7 +414,7 @@ def test_git_killed_inside_the_rollback_reset_is_finished_by_the_next_launch(wor
     sb = world["sb"]
     pre = _head(sb)
     # A critical module the launcher imports only after the launch-time repair ran (the launcher's own
-    # first import, hermes_constants, is a documented limit: a broken copy dies before any repair).
+    # first import, zeus_constants, is a documented limit: a broken copy dies before any repair).
     tools = I.git("show", "main:model_tools.py", cwd=world["origin"])
     broken = _release(world, {"model_tools.py": tools + "\ndef broken(:\n",
                               "e2e_rollback_reset_extra.py": "X = 1\n"})
@@ -437,7 +437,7 @@ def test_git_killed_inside_the_rollback_reset_is_finished_by_the_next_launch(wor
         "harness: the kill did not land while git held index.lock\n" + I.describe(killed))
     assert killed.returncode != 0 and "Rollback complete" not in output, (
         "the updater reported a rollback that never happened\n" + I.describe(killed))
-    assert (sb.checkout / ".git" / "hermes-update-pull").is_file(), (
+    assert (sb.checkout / ".git" / "zeus-update-pull").is_file(), (
         "the killed rollback erased its own recovery record while HEAD is still the broken release\n"
         + I.describe(killed))
 
@@ -446,4 +446,4 @@ def test_git_killed_inside_the_rollback_reset_is_finished_by_the_next_launch(wor
         f"the launch did not finish the rollback to {pre[:10]} (HEAD {_head(sb)[:10]}, broken {broken[:10]}, "
         f"lock {lock.exists()}, tracked changes {_tracked_dirty(sb)!r})\n" + P.diagnostics(sb, killed, launch))
     assert not (sb.checkout / "e2e_rollback_reset_extra.py").exists()
-    assert not (sb.checkout / ".git" / "hermes-update-pull").exists()
+    assert not (sb.checkout / ".git" / "zeus-update-pull").exists()

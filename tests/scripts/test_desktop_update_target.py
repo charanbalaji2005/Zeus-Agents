@@ -30,8 +30,8 @@ def main():
     receipt = Path(os.environ['HANDOFF_CAPTURE'])
     previous = receipt.read_text(encoding='utf-8') if receipt.exists() else ''
     with receipt.open('a', encoding='utf-8') as stream:
-        stream.write(json.dumps({'argv': sys.argv[1:], 'home': os.environ.get('HERMES_HOME'),
-                                 'install_root': os.environ.get('HERMES_INSTALL_ROOT'),
+        stream.write(json.dumps({'argv': sys.argv[1:], 'home': os.environ.get('ZEUS_HOME'),
+                                 'install_root': os.environ.get('ZEUS_INSTALL_ROOT'),
                                  'cwd': os.getcwd()}) + '\\n')
     print('Desktop build failed') if os.environ.get('HANDOFF_EXIT') else None
     sys.exit(int(os.environ['HANDOFF_EXIT']) if 'HANDOFF_EXIT' in os.environ else (1 if not previous else 0))
@@ -52,7 +52,7 @@ def _run_handoff(tmp_path, target, *, windows=False, inherited_home=True, modern
         )
     package = (
         install / "venv" / "Lib" / "site-packages" if windows and not modern else install
-    ) / "hermes_cli"
+    ) / "zeus_cli"
     package.mkdir(parents=True)
     (package / "__init__.py").touch()
     (package / "main.py").write_text(FAKE_CLI, encoding="utf-8")
@@ -69,19 +69,19 @@ def _run_handoff(tmp_path, target, *, windows=False, inherited_home=True, modern
         **os.environ,
         "HOME": str(tmp_path),
         "TMPDIR": str(tmp_path),
-        "HERMES_INSTALL_ROOT": str(install),
+        "ZEUS_INSTALL_ROOT": str(install),
         "HANDOFF_CAPTURE": str(capture),
     }
     env.pop("PYTHONPATH", None)
     env.pop("PYTHONHOME", None)
-    env.pop("HERMES_HOME", None)
+    env.pop("ZEUS_HOME", None)
     if inherited_home:
-        env["HERMES_HOME"] = str(home)
+        env["ZEUS_HOME"] = str(home)
     if modern:
         env["HANDOFF_EXIT"] = str(code)
         if foreign:
             env["HANDOFF_FOREIGN"] = str(tmp_path)
-        env["HERMES_RUNTIME_DIR"] = str(tmp_path / "empty-store")
+        env["ZEUS_RUNTIME_DIR"] = str(tmp_path / "empty-store")
     if windows:
         # The disposable runtime has only the fixture CLI; verification is outside
         # this transport contract and runs its own harmless fixture implementation.
@@ -105,12 +105,12 @@ def _run_handoff(tmp_path, target, *, windows=False, inherited_home=True, modern
             bin_dir = install / "venv" / "bin"
             bin_dir.mkdir(parents=True)
             (bin_dir / "python3").symlink_to(sys.executable)
-            hermes = bin_dir / "hermes"
-            hermes.write_text(
-                f'#!/usr/bin/env bash\nexec {shlex.quote(sys.executable)} -m hermes_cli.main "$@"\n',
+            zeus = bin_dir / "zeus"
+            zeus.write_text(
+                f'#!/usr/bin/env bash\nexec {shlex.quote(sys.executable)} -m zeus_cli.main "$@"\n',
                 encoding="utf-8",
             )
-            hermes.chmod(0o755)
+            zeus.chmod(0o755)
         command = [
             "bash",
             str(SCRIPTS / "posix.sh"),
@@ -166,11 +166,11 @@ def _assert_forwarded(
         for argv in expected_argvs
     ], calls
     receipt = json.loads(
-        (home / ".hermes-update-result.json").read_text(encoding="utf-8-sig")
+        (home / ".zeus-update-result.json").read_text(encoding="utf-8-sig")
     )
     assert receipt["ok"]
     assert receipt["channel"] == (expected[1] if expected[0] == "--channel" else "")
-    assert not (home / ".hermes-update-in-progress").exists()
+    assert not (home / ".zeus-update-in-progress").exists()
 
 
 @pytest.mark.platforms("posix")
@@ -215,8 +215,8 @@ def _assert_rejected(tmp_path, target, *, windows=False):
     result, calls, home, _ = _run_handoff(tmp_path, target, windows=windows)
     assert result.returncode != 0, result.stdout + result.stderr
     assert not calls
-    assert not (home / ".hermes-update-in-progress").exists()
-    assert not (home / ".hermes-update-result.json").exists()
+    assert not (home / ".zeus-update-in-progress").exists()
+    assert not (home / ".zeus-update-result.json").exists()
 
 
 @pytest.mark.platforms("posix")
@@ -256,7 +256,7 @@ def test_pm_handoff_uses_published_launcher_and_does_not_retry(tmp_path, code):
     assert result.returncode == code, result.stdout + result.stderr
     assert calls == [{"argv": ["update", "--yes", "--gateway", "--channel", "canary"],
                       "home": str(home), "cwd": str(install), "install_root": str(install)}]
-    receipt = json.loads((home / ".hermes-update-result.json").read_text())
+    receipt = json.loads((home / ".zeus-update-result.json").read_text())
     assert receipt["ok"] == (code == 0)
     assert not (install / "venv").exists()
 
@@ -267,5 +267,5 @@ def test_earlier_pm_userbin_publication_requires_exact_source_identity(tmp_path,
     result, calls, _home, install = _run_handoff(tmp_path, [], modern=True, userbin_only=True, foreign=foreign)
     assert result.returncode == (3 if foreign else 0), result.stdout + result.stderr
     assert len(calls) == (0 if foreign else 1)
-    assert not (install / '.hermes/bin/hermes').exists()
+    assert not (install / '.zeus/bin/zeus').exists()
     assert not (install / 'venv').exists()

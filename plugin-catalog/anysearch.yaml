@@ -5,7 +5,7 @@ description: 'AnySearch web search and extraction plus two real-time fallback ch
 maintainer: vollegrewar
 tier: community
 category: web
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/vollegrewar/hermes-plugin-anysearch#readme
 platforms: []
 capabilities:

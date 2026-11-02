@@ -1,21 +1,21 @@
-"""``hermes update`` killed mid-flight on native Windows, then the user's next launch.
+"""``zeus update`` killed mid-flight on native Windows, then the user's next launch.
 
 Failure class: an update that never finishes. A user closes the console, Task Manager
 ends the tree, the machine loses power. On Windows the kill is ``taskkill /T /F``:
 no signal handler, no ``finally``, no atexit — exactly what these cells do to the
-real process tree that ``hermes.exe update`` (or the Desktop's hand-off script
+real process tree that ``zeus.exe update`` (or the Desktop's hand-off script
 ``scripts/desktop-update/windows.ps1``) started.
 
 Each cell kills at one point of the update and then asserts what the user is owed:
 
-* the next ``hermes`` launch runs a turn (the install is runnable);
+* the next ``zeus`` launch runs a turn (the install is runnable);
 * right after that launch the checkout IS the commit before the update or its target:
   HEAD is one of them and every tracked byte agrees with it (``git status`` clean,
   ``git diff --quiet HEAD``) — never a third, half-written tree. Each target edits
   modules every launch imports (``RUNTIME_FILES``), so a torn tree differs in code
   that runs, not only in a marker file;
-* nothing the dead update left blocks the next one: a plain ``hermes update`` then
-  completes to the target and no ``.hermes-update-in-progress`` marker survives it
+* nothing the dead update left blocks the next one: a plain ``zeus update`` then
+  completes to the target and no ``.zeus-update-in-progress`` marker survives it
   (a marker naming a dead process that refuses every later update is the permanent
   marker the hand-off contract forbids).
 
@@ -28,27 +28,27 @@ before the next cell starts, noted in the evidence: ``_run_cells``):
   ``reset`` / ``checkout``) is inside the checkout with ``.git/index.lock`` held. The kill is
   deterministic: a smudge filter the harness names in the install's own ``.git/config`` and
   ``.git/info/attributes`` (git's filter hook, nothing in the product) holds git while it
-  writes ``hermes_constants.py``, the last changed path in index order. At that moment git
-  has written the cell's new file and ``hermes_cli/main.py`` and unlinked
-  ``hermes_constants.py``: the torn tree, stale ``index.lock`` and missing startup module
+  writes ``zeus_constants.py``, the last changed path in index order. At that moment git
+  has written the cell's new file and ``zeus_cli/main.py`` and unlinked
+  ``zeus_constants.py``: the torn tree, stale ``index.lock`` and missing startup module
   a mid-merge kill leaves;
-* ``mid_git_bootstrap``: the same hold on ``hermes_bootstrap.py``, the first changed path in
+* ``mid_git_bootstrap``: the same hold on ``zeus_bootstrap.py``, the first changed path in
   index order and the module every launcher imports to reach the repair: the kill leaves it
   unlinked, so the next launch must repair from the recovery code the update published outside
   the tree before git wrote;
 * ``tree_moved``: killed right after the checkout moved to the target, before the
   update finished (dependency sync, launcher refresh, completion stamp);
 * ``desktop_handoff``: the Desktop hand-off script's whole tree killed while its
-  ``hermes update`` child runs;
-* ``orphaned_update``: ONLY the hand-off script killed, once its ``hermes update`` child
+  ``zeus update`` child runs;
+* ``orphaned_update``: ONLY the hand-off script killed, once its ``zeus update`` child
   holds its place under the script's claim (that child keeps running: the shape of an
   ended PowerShell). The update must
-  finish, ``.hermes-update-in-progress`` must read LIVE for as long as it runs (contract
+  finish, ``.zeus-update-in-progress`` must read LIVE for as long as it runs (contract
   C1: the owner or its line-4 delegate is alive) and be gone once it exits.
 
 Kill points are observed states, never timings: a git child of the update in the
 process tree (by its argv), the held filter plus ``index.lock``, HEAD read straight from
-the ref files, the hand-off's ``hermes update``
+the ref files, the hand-off's ``zeus update``
 child past its lock acquisition (its banner in update.log) plus the claimed marker. Each waits with a bounded timeout and an update that
 exits before its kill point is a harness verdict, never a pass.
 
@@ -72,7 +72,7 @@ from pathlib import Path
 import psutil
 import pytest
 
-from hermes_cli import update_lock
+from zeus_cli import update_lock
 from tests.e2e.core._pending_fixes import known_failure
 
 from tests.e2e.core.windows._helpers import _decode
@@ -94,9 +94,9 @@ from tests.fakes.fake_llm_provider import FakeLLMServer
 pytestmark = [pytest.mark.platforms("windows"), pytest.mark.integration,
               pytest.mark.live_system_guard_bypass, REQUIRES_OPT_IN]
 
-MARKER = ".hermes-update-in-progress"
-# Imported by every `hermes` launch: each crash target appends one statement to both.
-RUNTIME_FILES = ("hermes_constants.py", "hermes_cli/main.py")
+MARKER = ".zeus-update-in-progress"
+# Imported by every `zeus` launch: each crash target appends one statement to both.
+RUNTIME_FILES = ("zeus_constants.py", "zeus_cli/main.py")
 
 
 def _git_op(proc, ops: tuple[str, ...]) -> tuple[str, int] | None:
@@ -127,10 +127,10 @@ def _git_fetching(proc, machine, target) -> str | None:
 
 # The update's git commands that write the checkout and its index.
 LOCAL_GIT_OPS = ("merge", "reset", "checkout")
-HOLD_FILTER = "hermes-e2e-hold"
-# The last changed path in index order (".hermes-e2e-*" < "hermes_cli/main.py" <
-# "hermes_constants.py"): when git reaches it, the other two are already written at the target.
-HELD_PATH = "hermes_constants.py"
+HOLD_FILTER = "zeus-e2e-hold"
+# The last changed path in index order (".zeus-e2e-*" < "zeus_cli/main.py" <
+# "zeus_constants.py"): when git reaches it, the other two are already written at the target.
+HELD_PATH = "zeus_constants.py"
 # The smudge filter. Git runs it while it checks out HELD_PATH, inside unpack_trees with
 # .git/index.lock held and the old file already unlinked. One shot: the first run marks
 # `held` and waits (the kill lands here); any later checkout passes the bytes through.
@@ -275,7 +275,7 @@ def _tree(machine, label: str) -> dict:
     return {"head": head if rc_head == 0 else f"<rev-parse rc={rc_head}: {head[:200]}>",
             "dirty": status.splitlines()[:20] if rc_status == 0 else [f"<status rc={rc_status}: {status[:300]}>"],
             "diff_rc": rc_diff, "diff_err": diff[:300] if rc_diff not in (0, 1) else "",
-            "target_file": (machine.install_dir / f".hermes-e2e-{label}").exists()}
+            "target_file": (machine.install_dir / f".zeus-e2e-{label}").exists()}
 
 
 def _tree_matches(tree: dict, commit: str, target: str) -> bool:
@@ -362,18 +362,18 @@ def _crash(machine, srv, label: str, start, point, hold: _GitHold | None = None,
         held_missing_after_kill = hold is not None and not (machine.install_dir / hold.path).exists()
         turn = one_shot_turn(machine, srv, f"{label}-next-launch")
         tree_after_launch = _tree(machine, label)
-        marker_after_launch = (machine.hermes_home / MARKER).is_file()
-        follow_up = machine.hermes("update", "--yes", label=f"{label}-follow-up-update", timeout=UPDATE_TIMEOUT)
+        marker_after_launch = (machine.zeus_home / MARKER).is_file()
+        follow_up = machine.zeus("update", "--yes", label=f"{label}-follow-up-update", timeout=UPDATE_TIMEOUT)
     tree_final = _tree(machine, label)
     return {"label": label, "pre": pre, "target": target, "seen": seen, "tree_after_kill": tree_after_kill,
             "index_lock_after_kill": index_lock_after_kill, "held_missing_after_kill": held_missing_after_kill,
             "turn": turn, "tree_after_launch": tree_after_launch, "marker_after_launch": marker_after_launch,
             "follow_up": follow_up, "tree_final": tree_final,
-            "marker_final": (machine.hermes_home / MARKER).is_file()}
+            "marker_final": (machine.zeus_home / MARKER).is_file()}
 
 
 def _cli_update(machine, label: str):
-    return lambda: machine.spawn_logged([str(machine.hermes_exe), "update", "--yes"], label)
+    return lambda: machine.spawn_logged([str(machine.zeus_exe), "update", "--yes"], label)
 
 
 def _handoff(machine, label: str):
@@ -384,7 +384,7 @@ def _handoff(machine, label: str):
 
 
 def _update_child(proc, machine, target) -> str | None:
-    """The hand-off's ``hermes update`` child is running (marker claimed, tree not yet done)."""
+    """The hand-off's ``zeus update`` child is running (marker claimed, tree not yet done)."""
     for child in descendants(proc):
         try:
             argv = [a.lower() for a in child.cmdline()]
@@ -427,7 +427,7 @@ def _marker_live(text: str) -> str | None:
 
 def _read_marker(machine) -> str | None:
     try:
-        return (machine.hermes_home / MARKER).read_text(encoding="utf-8-sig")
+        return (machine.zeus_home / MARKER).read_text(encoding="utf-8-sig")
     except FileNotFoundError:
         return None
     except OSError as exc:  # mid-replace by a writer
@@ -459,10 +459,10 @@ def _direct_update_child(proc) -> psutil.Process | None:
     return None
 
 
-# Printed by ``_cmd_update_impl``, which hermes_cli/main.py enters only after
+# Printed by ``_cmd_update_impl``, which zeus_cli/main.py enters only after
 # ``UpdateLock.acquire()`` returned: once update.log gains one, the update child has
 # taken its place under the script's claim (and named itself in it, where it does).
-UPDATE_BANNER = "Updating Hermes Agent..."
+UPDATE_BANNER = "Updating Zeus Agents..."
 
 
 UPDATE_DONE = "Update complete!"
@@ -477,11 +477,11 @@ ORPHAN_RELEASE_GRACE = 30.0
 
 
 def _receipts(machine) -> set[Path]:
-    return set((machine.hermes_home / "logs" / "update_receipts").glob("update_*.json"))
+    return set((machine.zeus_home / "logs" / "update_receipts").glob("update_*.json"))
 
 
 def _new_receipt_outcome(machine, before: set[Path]) -> str | None:
-    """The outcome of the newest update receipt not in ``before`` (hermes_cli/update_receipt.py)."""
+    """The outcome of the newest update receipt not in ``before`` (zeus_cli/update_receipt.py)."""
     new = _receipts(machine) - before
     if not new:
         return None
@@ -499,7 +499,7 @@ def _orphan_completed(r: dict) -> bool:
 
 def _update_banners(machine, banner: str = UPDATE_BANNER) -> int:
     try:
-        return (machine.hermes_home / "logs" / "update.log").read_text(
+        return (machine.zeus_home / "logs" / "update.log").read_text(
             encoding="utf-8-sig", errors="replace").count(banner)
     except OSError:
         return 0
@@ -544,7 +544,7 @@ class _ExitCode:
 
 
 def _orphan(machine, srv, label: str) -> dict:
-    """Start the hand-off script, kill ONLY its powershell once its ``hermes update``
+    """Start the hand-off script, kill ONLY its powershell once its ``zeus update``
     child runs under the claimed marker, and watch that orphaned update to its end."""
     pre = _head(machine)
     target = machine.mint(pre, label, RUNTIME_FILES)
@@ -559,7 +559,7 @@ def _orphan(machine, srv, label: str) -> dict:
         deadline = time.monotonic() + UPDATE_TIMEOUT
         child = None
         while time.monotonic() < deadline:
-            # Kill point: the script's own `hermes update` child is past its lock
+            # Kill point: the script's own `zeus update` child is past its lock
             # acquisition (a fresh banner in update.log) and the marker exists.
             child = _direct_update_child(proc)
             if child is not None and _read_marker(machine) is not None and _update_banners(machine) > banners:
@@ -567,12 +567,12 @@ def _orphan(machine, srv, label: str) -> dict:
             child = None
             if proc.poll() is not None:
                 raise AssertionError(fail_with(
-                    machine, f"{label}: the hand-off exited rc={proc.returncode} before its hermes update "
+                    machine, f"{label}: the hand-off exited rc={proc.returncode} before its zeus update "
                              f"child ran (transcript {proc.transcript.name})"))
             time.sleep(0.05)
         if child is None:
             taskkill_tree(proc.pid)
-            raise AssertionError(fail_with(machine, f"{label}: no hermes update child within {UPDATE_TIMEOUT:.0f}s"))
+            raise AssertionError(fail_with(machine, f"{label}: no zeus update child within {UPDATE_TIMEOUT:.0f}s"))
         # Held from before the kill, while the update is minutes from done.
         exit_code = _ExitCode(child.pid)
         marker_at_kill = _read_marker(machine)
@@ -621,7 +621,7 @@ def _orphan(machine, srv, label: str) -> dict:
         marker_after_orphan = _read_marker(machine)
         marker_after_orphan_text = _marker_text(machine)
         turn = one_shot_turn(machine, srv, f"{label}-next-launch")
-        follow_up = machine.hermes("update", "--yes", label=f"{label}-follow-up-update", timeout=UPDATE_TIMEOUT)
+        follow_up = machine.zeus("update", "--yes", label=f"{label}-follow-up-update", timeout=UPDATE_TIMEOUT)
     return {"label": label, "pre": pre, "target": target, "seen": f"update child {child.pid}",
             "marker_at_kill": marker_at_kill, "orphan_finished": orphan_finished, "orphan_rc": rc,
             "orphan_reported_done": orphan_reported_done, "orphan_receipt": orphan_receipt,
@@ -629,7 +629,7 @@ def _orphan(machine, srv, label: str) -> dict:
             "tree_after_orphan": tree_after_orphan, "marker_after_orphan": marker_after_orphan,
             "marker_after_orphan_text": marker_after_orphan_text,
             "turn": turn, "follow_up": follow_up,
-            "tree_final": _tree(machine, label), "marker_final": (machine.hermes_home / MARKER).is_file()}
+            "tree_final": _tree(machine, label), "marker_final": (machine.zeus_home / MARKER).is_file()}
 
 
 # -- one machine, six cells: a broken cell must not take the later ones down ------------------
@@ -649,7 +649,7 @@ def _unsound(machine, cell: str, result) -> str | None:
     tree = _tree(machine, result["label"])
     if not _tree_matches(tree, result["target"], result["target"]):
         reasons.append(f"the checkout is not its target {result['target']}: {_tree_text(tree)}")
-    if (machine.hermes_home / MARKER).is_file():
+    if (machine.zeus_home / MARKER).is_file():
         reasons.append(f"{MARKER} left: {_marker_text(machine)}")
     if (machine.install_dir / ".git" / "index.lock").is_file():
         reasons.append(".git/index.lock left")
@@ -669,7 +669,7 @@ def _restore_after(machine, cell: str, result) -> None:
         return
     machine.kill_owned()
     (machine.install_dir / ".git" / "index.lock").unlink(missing_ok=True)
-    (machine.hermes_home / MARKER).unlink(missing_ok=True)
+    (machine.zeus_home / MARKER).unlink(missing_ok=True)
     errors = []
     for commit in ((result["target"],) if isinstance(result, dict) else ()) + ("HEAD",):
         try:
@@ -702,7 +702,7 @@ CELLS_RAN_MANIFEST = "crash-cells-ran.txt"
 
 
 def _record_cells_ran(j: Journey) -> None:
-    artifacts = os.environ.get("HERMES_E2E_ARTIFACTS")
+    artifacts = os.environ.get("ZEUS_E2E_ARTIFACTS")
     if not artifacts:
         return
     Path(artifacts).mkdir(parents=True, exist_ok=True)
@@ -721,7 +721,7 @@ def journey(tmp_path_factory):
                 "install", j["install"].returncode == 0, "install.ps1 failed", j["install"]))
             if j.ok("installed"):
                 hold = _GitHold(machine)
-                boot_hold = _GitHold(machine, "hermes_bootstrap.py")
+                boot_hold = _GitHold(machine, "zeus_bootstrap.py")
                 _run_cells(machine, j, (
                     ("mid_fetch", lambda: _crash(machine, srv, "mid-fetch",
                                                  _cli_update(machine, "mid-fetch-update"), _git_fetching)),
@@ -736,7 +736,7 @@ def journey(tmp_path_factory):
                                                _cli_update(machine, "mid-git-update"), hold.point, hold)),
                     ("mid_git_bootstrap", lambda: _crash(
                         machine, srv, "mid-git-bootstrap", _cli_update(machine, "mid-git-bootstrap-update"),
-                        boot_hold.point, boot_hold, runtime_files=("hermes_bootstrap.py", *RUNTIME_FILES))),
+                        boot_hold.point, boot_hold, runtime_files=("zeus_bootstrap.py", *RUNTIME_FILES))),
                 ))
             _record_cells_ran(j)
             yield j
@@ -784,15 +784,15 @@ def test_update_killed_mid_fetch_leaves_a_runnable_install(journey: Journey) -> 
 
 
 # Red on main (wine2e run 37139409703): the killed git leaves .git/index.lock, which
-# hermes_cli/gitlock.py only sweeps once it is 10 minutes old, and the launch-time
-# interrupted-pull repair (hermes_cli/_early_recovery.py) dies with WinError 2 on a
+# zeus_cli/gitlock.py only sweeps once it is 10 minutes old, and the launch-time
+# interrupted-pull repair (zeus_cli/_early_recovery.py) dies with WinError 2 on a
 # machine whose only Git is the installer's private copy — so the next update refuses.
 # Fixed by #132361. Until round 6 every green run killed at fetch (index.lock never
 # existed); the hold now lands the kill inside the merge's checkout, lock held.
 #
-# What that exposed (native run 37190464303): the launcher imported hermes_constants from the
-# checkout before `import hermes_bootstrap`, whose restore_interrupted_pull is the repair, so a
-# merge killed after git unlinked hermes_constants.py bricked every launch. Fixed in #132361
+# What that exposed (native run 37190464303): the launcher imported zeus_constants from the
+# checkout before `import zeus_bootstrap`, whose restore_interrupted_pull is the repair, so a
+# merge killed after git unlinked zeus_constants.py bricked every launch. Fixed in #132361
 # (launchers reach the repair first); this cell asserts recovery outright.
 
 
@@ -804,13 +804,13 @@ def test_update_killed_mid_git_leaves_a_runnable_install(journey: Journey) -> No
     _assert_recovered(journey, "mid_git")
 
 
-# The repair's own entry: hermes_bootstrap.py unlinked by the killed merge. Red before #132361
+# The repair's own entry: zeus_bootstrap.py unlinked by the killed merge. Red before #132361
 # round 8 (D1): every launch died importing it, the marker kept, the tree never restored.
 def test_update_killed_writing_the_launch_repairs_own_code_leaves_a_runnable_install(journey: Journey) -> None:
     r = journey["mid_git_bootstrap"]
     assert r["index_lock_after_kill"] and r["held_missing_after_kill"], fail_with(
         journey.machine, f"mid_git_bootstrap: the kill did not leave git's checkout holding with "
-                         f"hermes_bootstrap.py unlinked (killed at {r['seen']}, index.lock="
+                         f"zeus_bootstrap.py unlinked (killed at {r['seen']}, index.lock="
                          f"{r['index_lock_after_kill']}, unlinked={r['held_missing_after_kill']})")
     _assert_recovered(journey, "mid_git_bootstrap")
 
@@ -829,14 +829,14 @@ def test_desktop_handoff_killed_mid_run_leaves_a_runnable_install(journey: Journ
 # removes it afterwards. The line-4 delegate (#132354 script side, #132365 Python side)
 # keeps it LIVE. Merge-order safe: XFAILs only on exactly this gap, and only after every
 # other assertion of the cell passed; an acceptance run of the integrated batch
-# (HERMES_E2E_STRICT_ACCEPTANCE=upd-txn) fails on it instead.
-ORPHAN_MARKER_GAP = (r"orphaned_update: \.hermes-update-in-progress (read DEAD|survived)",
+# (ZEUS_E2E_STRICT_ACCEPTANCE=upd-txn) fails on it instead.
+ORPHAN_MARKER_GAP = (r"orphaned_update: \.zeus-update-in-progress (read DEAD|survived)",
                      "upd-txn: the line-4 delegate lands in #132354 + #132365")
 # The expiry PR CI can check (it never runs this cell, nor strict): the fix's footprint in the
 # tree. Once every half is here the excuse is off, so the cell is strict on any runner, and
 # tests/ci/test_windows_update_crash_oracles.py (every PR) fails until the wrapper is deleted.
 ORPHAN_MARKER_FIX = (
-    ("hermes_cli/update_lock.py", "def delegate_live("),  # #132365: the judge honours a live delegate
+    ("zeus_cli/update_lock.py", "def delegate_live("),  # #132365: the judge honours a live delegate
     ("scripts/desktop-update/marker.ps1", "function Add-MarkerDelegate("),  # #132354: the script names one
     ("scripts/desktop-update/windows.ps1", "Add-MarkerDelegate @($proc.Id)"),  # ... its update child
 )
@@ -865,10 +865,10 @@ def test_desktop_handoff_script_killed_alone_keeps_the_marker_live_until_its_upd
         journey: Journey) -> None:
     m, r = journey.machine, journey["orphaned_update"]
     assert r["orphan_finished"], fail_with(
-        m, f"orphaned_update: the orphaned hermes update was still running {UPDATE_TIMEOUT:.0f}s after "
+        m, f"orphaned_update: the orphaned zeus update was still running {UPDATE_TIMEOUT:.0f}s after "
            f"the script died")
     assert _orphan_completed(r), fail_with(
-        m, f"orphaned_update: the hermes update orphaned by the dead script did not finish the update "
+        m, f"orphaned_update: the zeus update orphaned by the dead script did not finish the update "
            f"(rc={r['orphan_rc']}, '{UPDATE_DONE}' logged={r['orphan_reported_done']}, "
            f"its receipt's outcome={r['orphan_receipt']}, "
            f"tree {_tree_text(r['tree_after_orphan'])}, target {r['target']}; marker holders seen: {r['holders']})")
@@ -886,7 +886,7 @@ def test_desktop_handoff_script_killed_alone_keeps_the_marker_live_until_its_upd
     gaps = []
     if r["dead_while_running"] is not None:
         gaps.append(f"{MARKER} read DEAD {r['dead_while_running'][0]}s after the script died while its "
-                    f"hermes update still ran: {r['dead_while_running'][1]} (at kill: {r['marker_at_kill']!r})")
+                    f"zeus update still ran: {r['dead_while_running'][1]} (at kill: {r['marker_at_kill']!r})")
     if r["marker_after_orphan"] is not None:
         gaps.append(f"{MARKER} survived the orphaned update's exit: {r['marker_after_orphan_text']}")
     with _orphan_gap_excuse():

@@ -5,7 +5,7 @@
  * idle while the app runs.
  *
  * Desktop no longer owns per-profile backend children: every local profile attaches to the one host
- * gateway (`hermes gateway ensure`). The invariant here: an attached, idle secondary profile keeps
+ * gateway (`zeus gateway ensure`). The invariant here: an attached, idle secondary profile keeps
  * the same gateway process(es) and the same endpoint past the retired reaper's 60s idle floor plus
  * two of its 60s ticks, and re-dialing it attaches instead of spawning.
  */
@@ -29,7 +29,7 @@ const OLD_IDLE_WINDOW_MS = 60_000 + 2 * 60_000 + 5_000
 
 function dialReviewer(page: Page) {
   return page.evaluate(async () => {
-    const conn = await (window as any).hermesDesktop.getConnectionFor({ connectionId: 'local', profile: 'reviewer' })
+    const conn = await (window as any).zeusDesktop.getConnectionFor({ connectionId: 'local', profile: 'reviewer' })
 
     return { baseUrl: String(conn?.baseUrl ?? ''), mode: String(conn?.mode ?? ''), profile: String(conn?.profile ?? '') }
   })
@@ -44,8 +44,8 @@ test('an idle local profile stays attached to its gateway', async () => {
   test.setTimeout(360_000)
   const provider = await startScriptedProvider()
   const box = createCoreSandbox('no-idle-reap')
-  writeProviderHome(box.hermesHome, provider.url)
-  writeProviderHome(path.join(box.hermesHome, 'profiles', 'reviewer'), provider.url)
+  writeProviderHome(box.zeusHome, provider.url)
+  writeProviderHome(path.join(box.zeusHome, 'profiles', 'reviewer'), provider.url)
 
   const { app, page } = await launchCoreApp(coreAppEnv(box))
 

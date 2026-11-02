@@ -23,13 +23,13 @@ CONNECTOR_FILE_MAX_BYTES = 20 * 1024 * 1024
 # INITIALIZING and INITIATED both arrive as `pending`). Present only once the session binds an
 # account; a value outside this set is a contract break and fails validation.
 ConnectionStatus = Literal["pending", "active", "failed", "expired", "revoked", "inactive"]
-# Where the vendor's done page sends the browser after consent; the dev desktop registers hermes-dev://.
-ConnectorReturnTarget = Literal["hermes-desktop", "hermes-desktop-dev", "portal"]
+# Where the vendor's done page sends the browser after consent; the dev desktop registers zeus-dev://.
+ConnectorReturnTarget = Literal["zeus-desktop", "zeus-desktop-dev", "portal"]
 # Who asked for a connect, so the gateway can attribute each minted link. The gateway sets
 # ``execute_link`` and ``portal`` itself; an older gateway ignores the field.
 ConnectorInitiator = Literal["agent_tool", "desktop_page", "card_retry"]
 
-# Hermes dispatch caps batches lower, so client-side chunking is deliberately absent.
+# Zeus dispatch caps batches lower, so client-side chunking is deliberately absent.
 WIRE_BATCH_MAX = 25
 
 # Any string: a gateway newer than this client may add codes, and an unknown code still renders.
@@ -173,7 +173,7 @@ class ConnectorExecuteCall(_Wire):
     connector: str
     tool: str
     arguments: dict[str, Any] = Field(default_factory=dict)
-    # Never sent by hermes: the model picks an account with the ``connector_alias`` argument, which
+    # Never sent by zeus: the model picks an account with the ``connector_alias`` argument, which
     # the gateway strips and resolves itself.
     account: Optional[str] = None
 
@@ -237,7 +237,7 @@ class ConnectorConnectionsRequest(_Wire):
     # The existing account a reinitiate repairs; sent instead of ``alias`` when known.
     connection_id: Optional[str] = Field(default=None, alias="connectionId")
     return_to: Optional[ConnectorReturnTarget] = Field(default=None, alias="returnTo")
-    # The caller's operation id, echoed on the hermes://connections/done link.
+    # The caller's operation id, echoed on the zeus://connections/done link.
     op: Optional[str] = Field(default=None, min_length=1, max_length=128)
     initiator: Optional[ConnectorInitiator] = None
 

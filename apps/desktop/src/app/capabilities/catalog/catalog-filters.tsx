@@ -1,4 +1,4 @@
-import { compactNumber } from '@hermes/shared'
+import { compactNumber } from '@zeus/shared'
 import type { ReactNode } from 'react'
 
 import { SidebarDateDivider, SidebarSectionMeta } from '@/app/chat/sidebar/chrome'

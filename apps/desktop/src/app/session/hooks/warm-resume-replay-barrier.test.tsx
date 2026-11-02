@@ -1,12 +1,12 @@
-import { type GatewayEvent, JsonRpcGatewayClient } from '@hermes/shared'
+import { type GatewayEvent, JsonRpcGatewayClient } from '@zeus/shared'
 import { QueryClient } from '@tanstack/react-query'
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { useRef } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
-import type { HermesGateway } from '@/api/client'
+import type { ZeusGateway } from '@/api/client'
 import { reconcileActiveTranscript } from '@/app/contrib/hooks/use-background-sync'
-import { getLatestSessionMessages } from '@/hermes'
+import { getLatestSessionMessages } from '@/zeus'
 import { chatMessageText, toChatMessages } from '@/lib/chat-messages'
 import { resetInFlightTurnJournalStateForTests } from '@/lib/inflight-turn-journal'
 import { setPrimaryGateway } from '@/store/gateway'
@@ -23,13 +23,13 @@ import {
   setSessions
 } from '@/store/session'
 import { clearAllSessionStates } from '@/store/session-states'
-import type { SessionMessage, SessionResumeResult } from '@/types/hermes'
+import type { SessionMessage, SessionResumeResult } from '@/types/zeus'
 
 import { useMessageStream } from './use-message-stream'
 import { useSessionActions } from './use-session-actions'
 import { useSessionStateCache } from './use-session-state-cache'
 
-vi.mock('@/hermes', async original => ({
+vi.mock('@/zeus', async original => ({
   ...(await original<Record<string, unknown>>()),
   getLatestSessionMessages: vi.fn()
 }))
@@ -118,7 +118,7 @@ async function mountWithPendingReplay() {
       ...cache,
       queryClient,
       hydrateFromStoredSession: noop,
-      refreshHermesConfig: noop,
+      refreshZeusConfig: noop,
       refreshSessions: noop
     })
 
@@ -139,7 +139,7 @@ async function mountWithPendingReplay() {
   })
 
   // The store types the primary as the desktop subclass; the barrier under test lives on the shared base.
-  setPrimaryGateway(client as unknown as HermesGateway)
+  setPrimaryGateway(client as unknown as ZeusGateway)
   client.onEvent(gatewayEvent => hook.result.current.stream.handleGatewayEvent(gatewayEvent))
 
   const connect = async () => {

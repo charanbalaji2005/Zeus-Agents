@@ -107,7 +107,7 @@ export interface DesktopTheme {
   /** Dark-variant terminal ANSI palette. Falls back to `terminal`. */
   darkTerminal?: DesktopTerminalPalette
   /** Raw CSS injected as a scoped <style> tag on theme apply.
-   *  Persists across updates because it lives in ~/.hermes/skins/,
+   *  Persists across updates because it lives in ~/.zeus/skins/,
    *  not inside app.asar. */
   customCSS?: string
   /** On a saved accent retint (`<base>-accent-<hex>`): the theme it was retinted from. */

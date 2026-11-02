@@ -21,8 +21,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from types import SimpleNamespace
 with redirect_stdout(sys.stderr):
-    from hermes_cli.gateway_client import _session_ticket
-    from hermes_cli.gateway_runtime_discovery import DiscoveryError, _private_node
+    from zeus_cli.gateway_client import _session_ticket
+    from zeus_cli.gateway_runtime_discovery import DiscoveryError, _private_node
 while True:
     line = sys.stdin.buffer.readline(65537)
     if not line:
@@ -174,7 +174,7 @@ const RUNTIME_COMMAND_TIMEOUT_MS = 30_000
 /** Ask an installation launcher for its interpreter; it owns ABI and store selection. */
 function launcherRuntimePython(backend: ResolvedTicketBackend & { root: string }): Promise<string> {
   return new Promise((resolve, reject) => {
-    const fail = (detail: string) => reject(new Error(`Gateway ticket bootstrap could not resolve the installed Hermes Python runtime: ${detail}`))
+    const fail = (detail: string) => reject(new Error(`Gateway ticket bootstrap could not resolve the installed Zeus Python runtime: ${detail}`))
 
     // A .cmd override is a shell backend: quote it as the backend spawn does, or cmd.exe
     // splits a launcher path with a space at the first one (#74064).
@@ -241,7 +241,7 @@ export async function ticketRuntimeFor(backend: ResolvedTicketBackend): Promise<
     return { command: python, env: { ...backend.env, PYTHONPATH: backend.root } }
   }
 
-  throw new Error('Gateway ticket bootstrap requires the installed Hermes Python runtime')
+  throw new Error('Gateway ticket bootstrap requires the installed Zeus Python runtime')
 }
 
 export function createGatewayTicketResolver(resolveBackend: () => Promise<ResolvedTicketBackend>, cwd: () => string) {
@@ -276,7 +276,7 @@ export function mintGatewayTicketWithPython(
   endpoint: TicketEndpoint,
   purpose: GatewayTicketPurpose
 ): Promise<string> {
-  const env = { ...process.env, ...backend.env, HERMES_HOME: endpoint.profile_id,
+  const env = { ...process.env, ...backend.env, ZEUS_HOME: endpoint.profile_id,
     PYTHONIOENCODING: 'utf-8', PYTHONUTF8: '1' }
 
   const key = JSON.stringify([backend.command, cwd, Object.entries(env).sort(([a], [b]) => a.localeCompare(b))])

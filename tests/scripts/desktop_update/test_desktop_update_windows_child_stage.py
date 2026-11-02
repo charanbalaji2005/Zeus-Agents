@@ -1,7 +1,7 @@
-"""The Windows hand-off relays the stages `hermes update` publishes, instead of one static line.
+"""The Windows hand-off relays the stages `zeus update` publishes, instead of one static line.
 
-The real ``windows.ps1`` runs a fixture ``hermes`` whose update publishes a stage through the real
-``hermes_cli.update_stage.publish_stage`` and then waits to be released. On main the hand-off never
+The real ``windows.ps1`` runs a fixture ``zeus`` whose update publishes a stage through the real
+``zeus_cli.update_stage.publish_stage`` and then waits to be released. On main the hand-off never
 told the child where to publish, so the window (and the hand-off log) read "Updating code and
 dependencies" for the whole 20-60 minute run (#139952, #135363).
 """
@@ -29,10 +29,10 @@ def main():
         print('--keep-stash'); return 0
     if sys.argv[1:2] == ['update']:
         sys.path.insert(0, os.environ['HANDOFF_REPO'])
-        # The fixture install ships its own hermes_cli package: load the tree's.
-        for name in [m for m in sys.modules if m == 'hermes_cli' or m.startswith('hermes_cli.')]:
+        # The fixture install ships its own zeus_cli package: load the tree's.
+        for name in [m for m in sys.modules if m == 'zeus_cli' or m.startswith('zeus_cli.')]:
             del sys.modules[name]
-        from hermes_cli.update_stage import publish_stage
+        from zeus_cli.update_stage import publish_stage
         from tests.waiting import wait_until
         publish_stage('Packaging the desktop app')
         wait_until(Path(os.environ['HANDOFF_HOLD']).exists, timeout=60, what='the test to release the update')
@@ -53,7 +53,7 @@ def test_handoff_shows_the_stage_the_update_publishes(tmp_path: Path) -> None:
         ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT),
          "-InstallRoot", str(install), "-NoUi"],
         cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        env={**os.environ, "HERMES_HOME": str(home), "HERMES_RUNTIME_DIR": str(tmp_path / "empty-store"),
+        env={**os.environ, "ZEUS_HOME": str(home), "ZEUS_RUNTIME_DIR": str(tmp_path / "empty-store"),
              "HANDOFF_HOLD": str(hold), "HANDOFF_REPO": str(ROOT)},
     )
     try:
@@ -81,9 +81,9 @@ def main():
         print('--keep-stash'); return 0
     if sys.argv[1:2] == ['update']:
         sys.path.insert(0, os.environ['HANDOFF_REPO'])
-        for name in [m for m in sys.modules if m == 'hermes_cli' or m.startswith('hermes_cli.')]:
+        for name in [m for m in sys.modules if m == 'zeus_cli' or m.startswith('zeus_cli.')]:
             del sys.modules[name]
-        from hermes_cli.update_stage import publish_stage
+        from zeus_cli.update_stage import publish_stage
         from tests.waiting import wait_until
         Path(os.environ['HANDOFF_STARTED']).write_text('', encoding='utf-8')
         wait_until(Path(os.environ['HANDOFF_RELEASED']).exists, timeout=60, what='the log to be released')
@@ -109,7 +109,7 @@ def test_lines_logged_while_another_process_holds_the_log_land_once_it_lets_go(t
         ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT),
          "-InstallRoot", str(install), "-NoUi"],
         cwd=tmp_path, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-        env={**os.environ, "HERMES_HOME": str(home), "HERMES_RUNTIME_DIR": str(tmp_path / "empty-store"),
+        env={**os.environ, "ZEUS_HOME": str(home), "ZEUS_RUNTIME_DIR": str(tmp_path / "empty-store"),
              "HANDOFF_STARTED": str(started), "HANDOFF_RELEASED": str(released), "HANDOFF_HOLD": str(hold),
              "HANDOFF_REPO": str(ROOT)},
     )

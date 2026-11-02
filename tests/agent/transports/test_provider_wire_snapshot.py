@@ -11,7 +11,7 @@ provider fails ``test_snapshot_covers_every_provider`` until its wire is reviewe
 
 Intentional wire changes: regenerate and review the JSON diff in the same PR::
 
-    HERMES_UPDATE_WIRE_SNAPSHOT=1 .venv/bin/python -m pytest tests/agent/transports/test_provider_wire_snapshot.py
+    ZEUS_UPDATE_WIRE_SNAPSHOT=1 .venv/bin/python -m pytest tests/agent/transports/test_provider_wire_snapshot.py
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from unittest.mock import patch
 import pytest
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "fixtures" / "provider_wire_snapshot.json"
-UPDATE = os.environ.get("HERMES_UPDATE_WIRE_SNAPSHOT") == "1"
+UPDATE = os.environ.get("ZEUS_UPDATE_WIRE_SNAPSHOT") == "1"
 
 REASONING = {
     "unset": None,
@@ -93,13 +93,13 @@ BASE_URL_ONLY = {
 
 # Values that legitimately differ per run or per release; everything else compares exactly.
 _VOLATILE = (
-    (re.compile(r"client=hermes-client-v[^\"]*"), "client=hermes-client-v<VERSION>"),
+    (re.compile(r"client=zeus-client-v[^\"]*"), "client=zeus-client-v<VERSION>"),
     (re.compile(r'"promptId": "[0-9a-f-]{36}"'), '"promptId": "<UUID>"'),
 )
 
 
 def _cells() -> list[tuple[str, str, str]]:
-    from hermes_cli.auth import PROVIDER_REGISTRY
+    from zeus_cli.auth import PROVIDER_REGISTRY
     from providers import get_provider_profile
 
     seen: set[str] = set()

@@ -17,7 +17,7 @@ import time
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 from evals.desktop_gateway_ticket_native.run import stop_owned
-from hermes_cli.gateway_runtime_discovery import query_identify
+from zeus_cli.gateway_runtime_discovery import query_identify
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     python = os.path.abspath(args.python)
-    from hermes_constants import find_node_executable
+    from zeus_constants import find_node_executable
     node = find_node_executable('node')
     if not node:
         parser.error('node is required')
@@ -64,7 +64,7 @@ def main():
             directory.mkdir(parents=True, mode=0o700, exist_ok=True)
         env = {key: value for key, value in os.environ.items() if key.upper() in {
             'PATH', 'DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'XAUTHORITY', 'LD_LIBRARY_PATH', 'LANG', 'TZ'}}
-        env.update(HOME=str(home), USERPROFILE=str(home), HERMES_HOME=str(state),
+        env.update(HOME=str(home), USERPROFILE=str(home), ZEUS_HOME=str(state),
                    XDG_CONFIG_HOME=str(home / '.config'), XDG_CACHE_HOME=str(home / '.cache'),
                    TEMP=str(base / 'tmp'), TMP=str(base / 'tmp'), TMPDIR=str(base / 'tmp'),
                    PYTHONPATH=str(REPO), PYTHONUNBUFFERED='1', PYTHONUTF8='1', PYTHONIOENCODING='utf-8')

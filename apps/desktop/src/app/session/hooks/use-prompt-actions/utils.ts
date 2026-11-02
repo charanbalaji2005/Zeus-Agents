@@ -1,5 +1,5 @@
 import type { AppendMessage } from '@assistant-ui/react'
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 
 import { translateNow, type Translations } from '@/i18n'
 import type { ChatMessage } from '@/lib/chat-messages'
@@ -306,7 +306,7 @@ export function isCompressionBusyError(error: unknown): boolean {
 }
 
 /** prompt.submit refused because this principal's submission id on this session is ALREADY admitted
- *  with another payload (hermes_state_runtime.ADMITTED_REQUEST_CONFLICT): the send was delivered.
+ *  with another payload (zeus_state_runtime.ADMITTED_REQUEST_CONFLICT): the send was delivered.
  *  Every other `admission_conflict` (route, binding, lineage) names no such field and stays an error. */
 export function isAdmittedSubmissionConflict(error: unknown): boolean {
   const data = error instanceof JsonRpcGatewayError ? (error.data as { field?: unknown; reason?: unknown } | undefined) : null
@@ -524,7 +524,7 @@ export function imageFilenameFromPath(filePath: string): string {
 export async function readImageForRemoteAttach(
   filePath: string
 ): Promise<{ contentBase64: string; filename: string } | null> {
-  const dataUrl = await window.hermesDesktop?.readFileDataUrl(filePath)
+  const dataUrl = await window.zeusDesktop?.readFileDataUrl(filePath)
 
   if (isReadFileErrorResult(dataUrl)) {
     return null
@@ -540,7 +540,7 @@ export async function readImageForRemoteAttach(
 // Prefer the attach-specific IPC (256 MiB) so remote uploads are not stuck on
 // the preview/Settings default; fall back for older Electron shells.
 export async function readFileDataUrlForAttach(filePath: string): Promise<string | null> {
-  const reader = window.hermesDesktop?.readFileDataUrlForAttach ?? window.hermesDesktop?.readFileDataUrl
+  const reader = window.zeusDesktop?.readFileDataUrlForAttach ?? window.zeusDesktop?.readFileDataUrl
 
   if (!reader) {
     return null

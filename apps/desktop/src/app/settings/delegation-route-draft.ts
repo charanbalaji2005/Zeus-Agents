@@ -1,4 +1,4 @@
-import type { ModelOptionProvider } from '@hermes/shared'
+import type { ModelOptionProvider } from '@zeus/shared'
 import { useState } from 'react'
 
 import { findCatalogProvider } from '@/lib/model-options'

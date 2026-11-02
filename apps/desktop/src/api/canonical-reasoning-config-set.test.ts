@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // B14: main's Desktop /reasoning <level> changed the session's reasoning through legacy config.set.
 // On the shared owner the session scope is the revision-fenced `session.mutate operation=reasoning`;
@@ -46,7 +46,7 @@ test('typed /reasoning sets the session level through the owner mutation; --glob
       )
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
 
   try {
     const address = server.address() as { port: number }

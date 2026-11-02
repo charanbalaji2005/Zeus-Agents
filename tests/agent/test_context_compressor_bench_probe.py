@@ -3,7 +3,7 @@
 from unittest.mock import patch
 
 from agent.context_compressor import ContextCompressor
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 
 
 def _compressor():

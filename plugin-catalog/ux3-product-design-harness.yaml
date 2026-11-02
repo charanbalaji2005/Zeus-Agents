@@ -18,12 +18,12 @@ description: >-
 maintainer: cis2042
 tier: community
 category: general
-requires_hermes: ">=0.22.4"
+requires_zeus: ">=0.22.4"
 docs_url: https://github.com/cis2042/ux3-product-design-harness/blob/48965c6b501f61ebbb8130c9c2e4f9af08922b9f/README.md
 readme: true
 platforms: []
 known_issues:
-  - "Hermes 0.15.1 does not support this portable package; Hermes >=0.22.4 is required."
+  - "Zeus 0.15.1 does not support this portable package; Zeus >=0.22.4 is required."
   - "Compatible-host installation, runtime inventory, enable/disable and admission scanning have not been executed locally."
   - "User-invoked bundled validators require existing Python and jsonschema dependencies; no dependency installer or plugin install hook is provided."
 capabilities:

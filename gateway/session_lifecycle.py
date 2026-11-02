@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timedelta, timezone, UTC
 from typing import TYPE_CHECKING, Optional
 
-from hermes_state_ids import new_session_id
+from zeus_state_ids import new_session_id
 
 if TYPE_CHECKING:
     from gateway.session import SessionEntry, SessionSource
@@ -48,7 +48,7 @@ _AUTO_CONTINUE_FRESHNESS_SECS_DEFAULT = 60 * 60
 
 def auto_continue_freshness_window() -> float:
     """Resume-scheduler freshness window; stale automation never discards the transcript."""
-    raw = os.environ.get("HERMES_AUTO_CONTINUE_FRESHNESS")
+    raw = os.environ.get("ZEUS_AUTO_CONTINUE_FRESHNESS")
     try:
         return float(raw) if raw else float(_AUTO_CONTINUE_FRESHNESS_SECS_DEFAULT)
     except (TypeError, ValueError):
@@ -112,8 +112,8 @@ class SessionLifecycleMixin:
             return None
         import sqlite3
 
-        from hermes_state_local import local_receipt
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_local import local_receipt
+        from zeus_state_runtime import RuntimeStoreError
         try:
             receipt = local_receipt(db, str(origin.chat_id))
             if receipt.get("route") != entry.session_key:
@@ -136,7 +136,7 @@ class SessionLifecycleMixin:
         import json
         import sqlite3
 
-        from hermes_state_local import API_BINDING_PREFIX
+        from zeus_state_local import API_BINDING_PREFIX
         try:
             with db._read_ctx() as conn:
                 saved = conn.execute("SELECT value FROM state_meta WHERE key=?",

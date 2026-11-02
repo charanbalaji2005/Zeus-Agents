@@ -5,7 +5,7 @@ tier: community
 category: general
 maintainer: forumevi
 version: "2.0.0"
-title: Hermes Self-Healing Context
+title: Zeus Self-Healing Context
 capabilities:
   provides_hooks:
     - on_session_start

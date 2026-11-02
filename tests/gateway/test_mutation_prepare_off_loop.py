@@ -20,8 +20,8 @@ async def test_model_prepare_waiting_on_a_contended_writer_keeps_the_loop_live(t
     from gateway.session_authority import SessionAuthority
     from gateway.session_controls import AuthorityConnection
     from gateway.session_local import create_local_session
-    from hermes_cli import model_switch
-    import hermes_state_runtime as rt
+    from zeus_cli import model_switch
+    import zeus_state_runtime as rt
     monkeypatch.setattr(run, '_load_gateway_config', lambda *a: {})
     monkeypatch.setattr(model_switch, 'switch_model', lambda **k: model_switch.ModelSwitchResult(
         success=True, new_model='switched', target_provider='custom', base_url='http://127.0.0.1:9/v1'))

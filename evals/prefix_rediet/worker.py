@@ -33,21 +33,21 @@ if not (INFER_URL and INFER_KEY):
 for var in list(os.environ):
     if var.endswith(("_API_KEY", "_TOKEN")):
         os.environ.pop(var, None)
-os.environ.pop("HERMES_PROFILE", None)
+os.environ.pop("ZEUS_PROFILE", None)
 
 HARNESS = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HARNESS, "..", "core_tool_deferral"))
 from sandbox import isolate_host
 
 tmp_root = tempfile.mkdtemp(prefix=f"prd-{ARM}-{TASK_ID}-")
-hermes_home = os.path.join(tmp_root, ".hermes")
+zeus_home = os.path.join(tmp_root, ".zeus")
 workspace = os.path.join(tmp_root, "ws")
-os.makedirs(hermes_home)
+os.makedirs(zeus_home)
 os.makedirs(workspace)
-isolate_host(tmp_root, hermes_home)
-with open(os.path.join(hermes_home, "config.yaml"), "w", encoding="utf-8") as f:
+isolate_host(tmp_root, zeus_home)
+with open(os.path.join(zeus_home, "config.yaml"), "w", encoding="utf-8") as f:
     f.write(f"model:\n  provider: custom\n  base_url: {INFER_URL}\n  model: {MODEL}\nbrowser:\n  backend: browser-use\n")
-os.environ["HERMES_HOME"] = hermes_home
+os.environ["ZEUS_HOME"] = zeus_home
 os.environ["TERMINAL_CWD"] = workspace
 os.chdir(workspace)
 sys.path.insert(0, TREE)
@@ -107,7 +107,7 @@ def fixtures():
     with open(os.path.join(workspace, "backup.sh"), "w") as f:
         f.write("#!/bin/sh\necho backing up\n")
     os.chmod(os.path.join(workspace, "backup.sh"), 0o755)
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB()
     t = time.time() - 30 * 86400
     db.create_session("seed_shadow_vet", source="cli")
@@ -311,7 +311,7 @@ def grade():
         return (1.0 if done and not bg_sleep else 0.5 if done else 0.0), notes
     if TASK_ID == "search_cron_backup":
         jobs = ""
-        for root, _, files in os.walk(os.path.join(hermes_home, "cron")):
+        for root, _, files in os.walk(os.path.join(zeus_home, "cron")):
             for fn in files:
                 if fn.endswith(".json"):
                     jobs += open(os.path.join(root, fn)).read()

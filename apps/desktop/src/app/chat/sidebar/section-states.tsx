@@ -107,7 +107,7 @@ export function SidebarLoadErrorState({ onRetry }: { onRetry: () => void }) {
 }
 
 const SESSION_STORAGE_RECOVERY_URL =
-  'https://hermes-agent.nousresearch.com/docs/user-guide/session-storage-recovery#when-the-three-steps-do-not-work'
+  'https://charanbalaji2005.github.io/Zeus-Agents/docs/user-guide/session-storage-recovery#when-the-three-steps-do-not-work'
 
 interface SidebarStorageCorruptNoticeProps {
   openRecoveryGuide?: (url: string) => void
@@ -136,7 +136,7 @@ export function SidebarStorageCorruptNotice({
           <p>{copy.body(profiles.join(', '))}</p>
           <p>{copy.action}</p>
           <code className="break-all text-[0.7rem]">
-            hermes sessions recover --source &lt;state.db&gt; --inspect-only
+            zeus sessions recover --source &lt;state.db&gt; --inspect-only
           </code>
           <Button
             className="-ml-1 mt-0.5 text-(--ui-text-secondary)"

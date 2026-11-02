@@ -1,6 +1,6 @@
 """Exact operator controls for canonical hosted attempts, never legacy replay."""
 from gateway import hosted_room_driver as tasks
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 from tui_gateway.hosted_room_driver import HostedRoomBinding
 from tui_gateway.hosted_room_prepare_stall import RETRY_TASK_PREFIX
 from tui_gateway.hosted_room_service import attempt_action, task_member_id

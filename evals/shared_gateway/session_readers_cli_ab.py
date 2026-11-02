@@ -24,7 +24,7 @@ COMMANDS = {
     'pinned': ['sessions', 'pinned', '--json'],
 }
 EXPECTED = {
-    'insights': ['No sessions found in the last 30 days (source: tui).', 'Hermes Insights'],
+    'insights': ['No sessions found in the last 30 days (source: tui).', 'Zeus Insights'],
     'list': ['No sessions found.', 'reader-fixture'],
     'stats': ['Total sessions: 0', 'Total sessions: 1'],
     'pinned': ['[]', 'reader-fixture'],
@@ -33,22 +33,22 @@ results = []
 for (label, tree), (name, command), populated in itertools.product(TREES.items(), COMMANDS.items(), (False, True)):
     sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=tree, text=True, stdin=subprocess.DEVNULL,
                                   timeout=30).strip()
-    with tempfile.TemporaryDirectory(prefix='hermes-readers-cli-ab-') as tmp:
+    with tempfile.TemporaryDirectory(prefix='zeus-readers-cli-ab-') as tmp:
         home = Path(tmp) / 'profile'
         home.mkdir()
         env = {k: os.environ[k] for k in ('PATH', 'LANG', 'TZ') if k in os.environ}
-        env.update(HOME=tmp, USERPROFILE=tmp, HERMES_HOME=str(home), PYTHONPATH=str(tree))
+        env.update(HOME=tmp, USERPROFILE=tmp, ZEUS_HOME=str(home), PYTHONPATH=str(tree))
         def run(args):
             return subprocess.run([PYTHON, *args], cwd=tree, env=env, stdin=subprocess.DEVNULL,
                                   capture_output=True, text=True, timeout=45, check=False)
         if populated:
-            seed = run(['-c', "from hermes_state import SessionDB; db=SessionDB(); db.create_session('reader-fixture',source='tui'); db.append_message('reader-fixture',role='user',content='fixture'); db.set_session_pinned('reader-fixture',True); db.close()"])
+            seed = run(['-c', "from zeus_state import SessionDB; db=SessionDB(); db.create_session('reader-fixture',source='tui'); db.append_message('reader-fixture',role='user',content='fixture'); db.set_session_pinned('reader-fixture',True); db.close()"])
             assert seed.returncode == 0, seed.stderr
         db = home / 'state.db'
         def digest():
             return hashlib.sha256(db.read_bytes()).hexdigest() if db.exists() else None
         before = digest()
-        result = run(['-m', 'hermes_cli.main', *command])
+        result = run(['-m', 'zeus_cli.main', *command])
         after = digest()
         results.append(dict(tree=label, sha=sha, command=name, populated=populated, exit_code=result.returncode,
                             output_ok=EXPECTED[name][int(populated)] in result.stdout,

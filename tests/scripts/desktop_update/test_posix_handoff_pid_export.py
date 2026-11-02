@@ -1,9 +1,9 @@
 """A later generation of a POSIX Desktop hand-off's update adopts the hand-off's own claim.
 
-``hermes update`` adopts an existing claim only when a live partner is its own pid, the
-``HERMES_UPDATE_HANDOFF_PID`` value, or an ancestor (``update_lock.UpdateLock._is_partner``).
+``zeus update`` adopts an existing claim only when a live partner is its own pid, the
+``ZEUS_UPDATE_HANDOFF_PID`` value, or an ancestor (``update_lock.UpdateLock._is_partner``).
 ``posix.sh`` hands marker line 1 to a custodian before any update work starts; the custodian is a
-sibling of the update, never an ancestor. The first ``hermes update`` is named on the delegate
+sibling of the update, never an ancestor. The first ``zeus update`` is named on the delegate
 line, but a later generation (a relaunch or a takeover detached from it) has a new pid, so the
 hand-off pid is its only way to recognise the custodian. Naming the script there made those
 updates refuse their own claim with exit 2 (#134268, #134602).
@@ -34,12 +34,12 @@ if sys.argv[1:2] == ['update'] and '--help' not in sys.argv:  # not the --keep-s
     out = Path(os.environ['GEN2_OUT'])
     probe = (
         "import json, os, sys; from pathlib import Path\\n"
-        "from hermes_cli.update_lock import UpdateLock, update_marker_path\\n"
+        "from zeus_cli.update_lock import UpdateLock, update_marker_path\\n"
         "lock = UpdateLock(path=update_marker_path())\\n"
         "ok = lock.acquire()\\n"
         "Path(sys.argv[1]).write_text(json.dumps({'adopted': ok, 'pid': os.getpid(), "
         "'holder': lock.holder.pid if lock.holder else None, "
-        "'told': os.environ.get('HERMES_UPDATE_HANDOFF_PID')}), encoding='utf-8')\\n"
+        "'told': os.environ.get('ZEUS_UPDATE_HANDOFF_PID')}), encoding='utf-8')\\n"
         "ok and lock.release()\\n")
     env = {k: v for k, v in os.environ.items() if not k.startswith('PYTHON')}
     env['PYTHONPATH'] = os.environ['GEN2_REPO']
@@ -56,7 +56,7 @@ if sys.argv[1:2] == ['update'] and '--help' not in sys.argv:  # not the --keep-s
 
 def test_a_later_update_generation_adopts_the_handoffs_claim(tmp_path):
     home, install = _install(tmp_path)
-    (install / "hermes_cli" / "main.py").write_text(SECOND_GENERATION + FAKE_CLI, encoding="utf-8")
+    (install / "zeus_cli" / "main.py").write_text(SECOND_GENERATION + FAKE_CLI, encoding="utf-8")
     out = tmp_path / "gen2.json"
 
     result = _run(tmp_path, home, install, GEN2_OUT=str(out), GEN2_REPO=str(REPOSITORY))

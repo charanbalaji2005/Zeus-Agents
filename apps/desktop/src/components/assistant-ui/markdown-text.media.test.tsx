@@ -17,12 +17,12 @@ describe('MarkdownTextContent remote images', () => {
     throw new Error(`unexpected path ${path}`)
   })
 
-  let originalDesktop: typeof window.hermesDesktop
+  let originalDesktop: typeof window.zeusDesktop
 
   beforeEach(() => {
     api.mockClear()
-    originalDesktop = window.hermesDesktop
-    Object.defineProperty(window, 'hermesDesktop', {
+    originalDesktop = window.zeusDesktop
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: { api }
     })
@@ -32,7 +32,7 @@ describe('MarkdownTextContent remote images', () => {
   afterEach(() => {
     cleanup()
     $connection.set(null)
-    Object.defineProperty(window, 'hermesDesktop', {
+    Object.defineProperty(window, 'zeusDesktop', {
       configurable: true,
       value: originalDesktop
     })
@@ -85,33 +85,33 @@ describe('MarkdownImage media routing', () => {
 // or play after a long pause) instead of degrading to "Open file" for good.
 describe('MarkdownImage stream-ticket renewal', () => {
   const mint = vi.fn()
-  let originalDesktop: typeof window.hermesDesktop
+  let originalDesktop: typeof window.zeusDesktop
 
   const audioSrc = (container: HTMLElement) => container.querySelector('audio')?.getAttribute('src')
 
   beforeEach(() => {
     let minted = 0
 
-    mint.mockReset().mockImplementation(async () => `https://hermes.test/api/files/stream?ticket=t${++minted}`)
-    originalDesktop = window.hermesDesktop
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { getGatewayFileStreamUrl: mint } })
+    mint.mockReset().mockImplementation(async () => `https://zeus.test/api/files/stream?ticket=t${++minted}`)
+    originalDesktop = window.zeusDesktop
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { getGatewayFileStreamUrl: mint } })
   })
 
   afterEach(() => {
     cleanup()
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: originalDesktop })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: originalDesktop })
   })
 
   it('re-mints the source after a loaded element errors and resumes where it stopped', async () => {
     const { container } = render(<MarkdownImage alt="note" src="/srv/media/note.mp3" />)
 
-    await waitFor(() => expect(audioSrc(container)).toBe('https://hermes.test/api/files/stream?ticket=t1'))
+    await waitFor(() => expect(audioSrc(container)).toBe('https://zeus.test/api/files/stream?ticket=t1'))
     const audio = container.querySelector('audio')!
     fireEvent.loadedMetadata(audio)
     audio.currentTime = 42
     fireEvent.error(audio)
 
-    await waitFor(() => expect(audioSrc(container)).toBe('https://hermes.test/api/files/stream?ticket=t2'))
+    await waitFor(() => expect(audioSrc(container)).toBe('https://zeus.test/api/files/stream?ticket=t2'))
     audio.currentTime = 0
     fireEvent.loadedMetadata(audio)
     expect(audio.currentTime).toBe(42)
@@ -121,7 +121,7 @@ describe('MarkdownImage stream-ticket renewal', () => {
   it('offers the file instead when a source fails before it ever loads', async () => {
     const { container } = render(<MarkdownImage alt="note" src="/srv/media/note.mp3" />)
 
-    await waitFor(() => expect(audioSrc(container)).toBe('https://hermes.test/api/files/stream?ticket=t1'))
+    await waitFor(() => expect(audioSrc(container)).toBe('https://zeus.test/api/files/stream?ticket=t1'))
     fireEvent.error(container.querySelector('audio')!)
 
     expect(await screen.findByText('Open audio file')).toBeTruthy()

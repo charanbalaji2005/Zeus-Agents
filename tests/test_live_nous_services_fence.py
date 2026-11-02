@@ -11,7 +11,7 @@ import pytest
 
 
 def test_first_connector_action_in_a_test_home_mints_no_portal_guest():
-    from hermes_cli import anon_auth
+    from zeus_cli import anon_auth
     from tools.connectors.gateway.config import ensure_guest_identity
 
     failure = ensure_guest_identity()

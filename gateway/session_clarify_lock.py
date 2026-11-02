@@ -9,7 +9,7 @@ attached to the request's session with ``session:respond`` may lock its answers.
 """
 import json
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 async def clarify_lock(connection, ref, params):

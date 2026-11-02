@@ -3,8 +3,8 @@
  *
  * The detached updater (scripts/desktop-update/posix.sh mac_swap /
  * windows.ps1) rebuilds and swaps the packaged app on disk AFTER
- * `hermes update` exits. An instance that was launched from the PRE-swap
- * bundle — the user reopened Hermes mid-update, the #50238 gesture the boot
+ * `zeus update` exits. An instance that was launched from the PRE-swap
+ * bundle — the user reopened Zeus mid-update, the #50238 gesture the boot
  * gate exists for — would otherwise proceed to run the NEW runtime under the
  * OLD renderer. The updater's own `open`/relaunch leg cannot rescue it: the
  * single-instance lock turns that into a focus of the parked process, so no
@@ -76,7 +76,7 @@ export function detectBundleSwap(running: BundleSwapStamp | null, onDisk: Bundle
 // One-shot guard for the automatic bundle-swap relaunch below: the relaunched
 // instance carries this flag so a stamp that still mismatches (unreadable
 // resources, exotic packaging) can never produce a relaunch loop.
-export const BUNDLE_SWAP_RELAUNCH_FLAG = '--hermes-bundle-swap-relaunched'
+export const BUNDLE_SWAP_RELAUNCH_FLAG = '--zeus-bundle-swap-relaunched'
 
 // How long the parked instance waits for its own scheduled exit to land before
 // giving up and booting the stale build anyway. Better a torn renderer with a
@@ -96,7 +96,7 @@ export interface BundleSwapRelaunchHost {
   log: (line: string) => void
 }
 
-// The detached updater swaps the packaged bundle on disk AFTER `hermes update`
+// The detached updater swaps the packaged bundle on disk AFTER `zeus update`
 // exits (posix.sh mac_swap / windows.ps1). An instance reopened mid-update —
 // the #50238 gesture the boot update gate exists for — was launched from the
 // PRE-swap bundle, and the updater's `open` leg then merely focuses us (single

@@ -63,7 +63,7 @@ def test_an_endpointless_bare_custom_profile_still_finds_the_entry_serving_the_m
 
 
 def test_a_launch_key_on_an_endpointless_bare_custom_profile_gets_the_model_only_refusal(tmp_path):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     with pytest.raises(RuntimeStoreError) as refused:
         _launch(tmp_path, ENDPOINTLESS, 'sk-launch', model='qwen3-32b')
     assert (refused.value.reason, refused.value.field) == ('invalid_params', 'api_key')
@@ -108,7 +108,7 @@ def test_a_named_profile_keeps_its_entry_when_it_serves_the_model(tmp_path):
 
 def test_a_launch_key_is_refused_for_an_entry_only_the_model_chose(tmp_path):
     """Only another entry lists the model: the gateway would guess its host, so the user's key is not sent there."""
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     config = {'model': {'provider': 'custom:local', 'default': 'qwen3-32b'},
               'providers': {'relay': {'api': RELAY, 'key_env': 'RELAY_KEY', 'models': ['relay-only']},
                             'local': {'api': LOCAL, 'key_env': 'LOCAL_KEY', 'default_model': 'qwen3-32b'}}}
@@ -122,12 +122,12 @@ def test_a_kanban_custom_provider_override_stays_on_the_profiles_endpoint(tmp_pa
     from types import SimpleNamespace
     from gateway.session_contract import Principal
     from gateway.session_kanban import build_kanban_policy
-    from hermes_cli import kanban_db as kb
-    from hermes_cli.kanban_db_connect import connect
-    monkeypatch.setenv('HERMES_KANBAN_HOME', str(tmp_path))
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
-    monkeypatch.delenv('HERMES_KANBAN_DB', raising=False)
-    monkeypatch.setattr('hermes_cli.profiles.resolve_profile_env', lambda name: str(tmp_path))
+    from zeus_cli import kanban_db as kb
+    from zeus_cli.kanban_db_connect import connect
+    monkeypatch.setenv('ZEUS_KANBAN_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
+    monkeypatch.delenv('ZEUS_KANBAN_DB', raising=False)
+    monkeypatch.setattr('zeus_cli.profiles.resolve_profile_env', lambda name: str(tmp_path))
     kb.create_board('owned')
     with closing(connect(board='owned')) as conn:
         task_id = kb.create_task(conn, title='t', assignee='default', workspace_kind='dir',
@@ -148,11 +148,11 @@ async def test_a_session_create_with_a_bare_custom_pick_stays_on_the_profiles_en
     """The real ``session.create`` (``stage_local_session``) and the turn's runtime resolver."""
     import json
     from gateway import run
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     from tests.gateway.test_session_follow_profile_config import _owner, _route
-    home = get_hermes_home()
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     (home / 'config.yaml').write_text(json.dumps(BARE_LOCAL))
     store, runner, authority, owner = _owner(home)
     runner._peek_session_state = lambda key: None
@@ -173,11 +173,11 @@ async def test_adopting_a_legacy_custom_row_recovers_the_entry_serving_its_model
     import json
     from gateway import run
     from gateway.session_local_migration import resolve_local_target
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
     from tests.gateway.test_session_follow_profile_config import _owner, _route
-    home = get_hermes_home()
+    home = get_zeus_home()
     home.mkdir(parents=True, exist_ok=True)
-    monkeypatch.setattr(run, '_hermes_home', home)
+    monkeypatch.setattr(run, '_zeus_home', home)
     (home / 'config.yaml').write_text(json.dumps({
         'model': {'provider': 'custom', 'base_url': LOCAL, 'default': 'qwen3-32b', 'key_env': 'LOCAL_KEY'},
         'providers': {'relay': {'api': RELAY, 'key_env': 'RELAY_KEY', 'models': ['saved-model']}}}))

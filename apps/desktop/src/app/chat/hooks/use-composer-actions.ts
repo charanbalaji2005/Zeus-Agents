@@ -131,11 +131,11 @@ export async function stageDroppedFilePath(candidate: DroppedFile): Promise<stri
     throw new Error("Folders can't be attached by dropping them. Use Attach → Folder… instead.")
   }
 
-  if (!candidate.file || !window.hermesDesktop?.stageFileForAttach) {
+  if (!candidate.file || !window.zeusDesktop?.stageFileForAttach) {
     return ''
   }
 
-  return window.hermesDesktop.stageFileForAttach(candidate.file)
+  return window.zeusDesktop.stageFileForAttach(candidate.file)
 }
 
 /** Stage a drop for the main composer's chips. A rejected stage keeps its
@@ -152,11 +152,11 @@ async function stageDropForChip(candidate: DroppedFile, name: string): Promise<{
 
 /** MIME emitted by in-app drag sources (project tree, gutter line numbers).
  * Payload is JSON `{ path; isDirectory?; line?; lineEnd? }[]`. */
-export const HERMES_PATHS_MIME = 'application/x-hermes-paths'
+export const ZEUS_PATHS_MIME = 'application/x-zeus-paths'
 
 /**
  * Eagerly resolve files from a drop event into [File?, path, isDirectory?]
- * triples. Internal Hermes sources (e.g. the project tree) ride on a custom
+ * triples. Internal Zeus sources (e.g. the project tree) ride on a custom
  * MIME and produce path-only entries; OS drops produce File-bearing entries.
  *
  * Must be called synchronously from inside the drop handler — `DataTransfer`
@@ -167,13 +167,13 @@ export function extractDroppedFiles(transfer: DataTransfer): DroppedFile[] {
   const result: DroppedFile[] = []
   const seenPaths = new Set<string>()
   const seenFiles = new Set<File>()
-  const getPath = window.hermesDesktop?.getPathForFile
+  const getPath = window.zeusDesktop?.getPathForFile
   const urls = droppedLinkUrls(transfer)
 
   // In-app drags first — they carry richer metadata (isDirectory) than the
   // File-based fallback can provide, and produce no overlapping native files.
   try {
-    const internalRaw = transfer.getData(HERMES_PATHS_MIME)
+    const internalRaw = transfer.getData(ZEUS_PATHS_MIME)
 
     if (internalRaw) {
       const parsed = JSON.parse(internalRaw) as {
@@ -457,12 +457,12 @@ export function useComposerActions({
     (attachment: ComposerAttachment) => {
       const stagedUpload =
         attachment.kind === 'file' && attachment.path
-          ? window.hermesDesktop?.getStagedFileForAttach?.(attachment.path)
+          ? window.zeusDesktop?.getStagedFileForAttach?.(attachment.path)
           : undefined
 
       const displayName =
         attachment.kind === 'file' && attachment.path && attachment.label === pathLabel(attachment.path)
-          ? window.hermesDesktop?.getStagedFileDisplayName?.(attachment.path)
+          ? window.zeusDesktop?.getStagedFileDisplayName?.(attachment.path)
           : undefined
 
       scope.add({
@@ -663,7 +663,7 @@ export function useComposerActions({
 
         const data = new Uint8Array(buffer)
         const name = blob instanceof File ? blob.name : undefined
-        const savedPath = await window.hermesDesktop?.saveImageBuffer(data, blobExtension(blob), name)
+        const savedPath = await window.zeusDesktop?.saveImageBuffer(data, blobExtension(blob), name)
 
         if (!savedPath) {
           notify({ kind: 'error', title: copy.imageAttach, message: copy.imageWriteFailed })
@@ -718,7 +718,7 @@ export function useComposerActions({
   const pasteClipboardImage = useCallback(
     async ({ silent = false }: { silent?: boolean } = {}) => {
       try {
-        const path = await window.hermesDesktop?.saveClipboardImage()
+        const path = await window.zeusDesktop?.saveClipboardImage()
 
         if (!path) {
           if (!silent) {
@@ -749,14 +749,14 @@ export function useComposerActions({
   /**
    * Convert a very large plain-text paste into a `.txt` attachment chip.
    * The trimmed, sanitized paste text is written to a
-   * Hermes-managed composer-pastes file via the main process, then attached
+   * Zeus-managed composer-pastes file via the main process, then attached
    * through the same `@file:` pipeline as a manually attached text file.
    * Returns false (paste stays inline) when the desktop bridge is missing
    * or the write fails.
    */
   const attachPastedText = useCallback(
     async (text: string) => {
-      const save = window.hermesDesktop?.savePastedText
+      const save = window.zeusDesktop?.savePastedText
 
       if (!text || !save) {
         return false
@@ -862,7 +862,7 @@ export function useComposerActions({
         }
 
         const fallbackPath =
-          !knownPath && window.hermesDesktop?.getPathForFile ? window.hermesDesktop.getPathForFile(file) : ''
+          !knownPath && window.zeusDesktop?.getPathForFile ? window.zeusDesktop.getPathForFile(file) : ''
 
         const filePath = knownPath || fallbackPath || ''
         const isImage = isDroppedImage(file, filePath, isDirectory)

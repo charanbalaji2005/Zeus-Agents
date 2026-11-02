@@ -4,7 +4,7 @@ import { singleFlightSessionResume } from '@/app/session/hooks/use-prompt-action
 import { primaryResumeParams } from '@/app/session/hooks/use-session-actions/resume-owner'
 import { mapPool } from '@/lib/pool'
 import { stableArray } from '@/lib/stable-array'
-import type { SessionResumeResult } from '@/types/hermes'
+import type { SessionResumeResult } from '@/types/zeus'
 
 import { $queuedPromptsBySession, serverOwnsComposerQueue } from './composer-queue'
 import { journaledPendingSessions, pendingSnapshotFence, reconcilePendingSubmissions } from './pending-submissions'

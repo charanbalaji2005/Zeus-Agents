@@ -25,7 +25,7 @@ it('re-enumerates a roster that timed out while the local gateway was still boot
   }
 
   const getAgentRoster = vi.fn().mockResolvedValue(booting)
-  window.hermesDesktop = { getAgentRoster } as never
+  window.zeusDesktop = { getAgentRoster } as never
 
   $gatewayState.set('connecting')
   renderHook(() => useFleetRoster(true))

@@ -5,15 +5,15 @@ import type * as ClientApi from './client'
 vi.mock('@/lib/legacy-session-owner-backfill', () => ({ maybeBackfillLegacySessionOwners: vi.fn() }))
 vi.mock('@/store/transcript-tail', () => ({ recordTranscriptTail: vi.fn() }))
 vi.mock('./client', async importOriginal => ({
-  ...await importOriginal<typeof ClientApi>(), hermesApi: vi.fn()
+  ...await importOriginal<typeof ClientApi>(), zeusApi: vi.fn()
 }))
-import { hermesApi, setApiRequestConnection, setApiRequestProfile } from './client'
+import { zeusApi, setApiRequestConnection, setApiRequestProfile } from './client'
 import { deleteSession, renameSession, setSessionArchived, setSessionPinnedRemote, setSessionUnreadRemote } from './sessions'
 
-beforeEach(() => { vi.mocked(hermesApi).mockReset(); setApiRequestConnection('owner'); setApiRequestProfile('work') })
+beforeEach(() => { vi.mocked(zeusApi).mockReset(); setApiRequestConnection('owner'); setApiRequestProfile('work') })
 
 it('concurrent equal sidebar edits share the missing-snapshot verdict on older standalone servers', async () => {
-  vi.mocked(hermesApi).mockImplementation(async request => {
+  vi.mocked(zeusApi).mockImplementation(async request => {
     if (!request.method || request.method === 'GET') {
       throw new Error('404: {"detail":"No such API endpoint: /api/sessions/shared-old/mutation-snapshot"}')
     }
@@ -27,13 +27,13 @@ it('concurrent equal sidebar edits share the missing-snapshot verdict on older s
   ])
 
   expect(results.map(result => result.status)).toEqual(['fulfilled', 'fulfilled'])
-  expect(vi.mocked(hermesApi).mock.calls.filter(([request]) => !request.method || request.method === 'GET')).toHaveLength(1)
+  expect(vi.mocked(zeusApi).mock.calls.filter(([request]) => !request.method || request.method === 'GET')).toHaveLength(1)
 })
 
 it('a missing-route response from a write never selects an unfenced retry', async () => {
   const missing = new Error('404: {"detail":"No such API endpoint: /api/sessions/write-only"}')
   const writes: unknown[] = []
-  vi.mocked(hermesApi).mockImplementation(async request => {
+  vi.mocked(zeusApi).mockImplementation(async request => {
     if (!request.method || request.method === 'GET') {
       return { exists: true, runtime_revision: 2, runtime_generation: 1 } as never
     }
@@ -50,7 +50,7 @@ it('a missing-route response from a write never selects an unfenced retry', asyn
 it('uses owner snapshots and preserves the exact delete identity after a lost reply', async () => {
   let lost = true
   const writes: unknown[] = []
-  vi.mocked(hermesApi).mockImplementation(async request => {
+  vi.mocked(zeusApi).mockImplementation(async request => {
     if (!request.method || request.method === 'GET') {
       return { exists: true, runtime_revision: 12, runtime_generation: 8 } as never
     }
@@ -80,7 +80,7 @@ it('all sidebar mutations use real counters and surface conflicts without a blin
     () => setSessionArchived('sidebar', true, 'work'), () => setSessionPinnedRemote('sidebar', false, 'work'),
     () => setSessionUnreadRemote('sidebar', true, 'work')]
 
-  vi.mocked(hermesApi).mockImplementation(async request => {
+  vi.mocked(zeusApi).mockImplementation(async request => {
     if (!request.method || request.method === 'GET') {
       return { exists: true, runtime_revision: 19, runtime_generation: 4 } as never
     }
@@ -91,9 +91,9 @@ it('all sidebar mutations use real counters and surface conflicts without a blin
   })
 
   for (const invoke of calls) { await expect(invoke()).rejects.toThrow('revision_conflict') }
-  vi.mocked(hermesApi).mockReset().mockResolvedValue({ exists: true } as never)
+  vi.mocked(zeusApi).mockReset().mockResolvedValue({ exists: true } as never)
   await expect(renameSession('unknown-counter', 'name')).rejects.toThrow(/snapshot/)
-  expect(hermesApi).toHaveBeenCalledTimes(1)
+  expect(zeusApi).toHaveBeenCalledTimes(1)
 })
 
 // R12: an older standalone runtime has no fencing route (its SPA catch-all answers the exact
@@ -102,7 +102,7 @@ it('all sidebar mutations use real counters and surface conflicts without a blin
 it('sidebar edits fall back to the base write only when the backend lacks the fencing route', async () => {
   const routeMissing = '404: {"detail":"No such API endpoint: /api/sessions/old/mutation-snapshot"}'
   const writes: Array<{ path: string; method?: string; body?: unknown }> = []
-  vi.mocked(hermesApi).mockImplementation(async request => {
+  vi.mocked(zeusApi).mockImplementation(async request => {
     if (!request.method || request.method === 'GET') { throw new Error(routeMissing) }
     writes.push(request as never)
 
@@ -122,7 +122,7 @@ it('sidebar edits fall back to the base write only when the backend lacks the fe
   for (const refusal of ['404: {"detail":"Profile \'work\' does not exist."}', '403: permission_denied',
     '503: {"detail":"session_authority_unavailable"}', 'Request timed out']) {
     writes.length = 0
-    vi.mocked(hermesApi).mockReset().mockImplementation(async request => {
+    vi.mocked(zeusApi).mockReset().mockImplementation(async request => {
       if (!request.method || request.method === 'GET') { throw new Error(refusal) }
       writes.push(request as never)
 
@@ -133,12 +133,12 @@ it('sidebar edits fall back to the base write only when the backend lacks the fe
   }
 })
 
-// N21: an older headless `hermes serve` (SSH remotes) answers an unmatched GET with its own fixed
+// N21: an older headless `zeus serve` (SSH remotes) answers an unmatched GET with its own fixed
 // catch-all body, formatted by Electron's httpStatusError. That is the same route verdict.
 it('sidebar edits on an older headless serve fall back to the base write', async () => {
-  const headless = '404: {"error":"Headless backend (hermes serve): web UI disabled \u2014 use `hermes dashboard` for the browser UI."}'
+  const headless = '404: {"error":"Headless backend (zeus serve): web UI disabled \u2014 use `zeus dashboard` for the browser UI."}'
   const writes: Array<{ method?: string; body?: unknown }> = []
-  vi.mocked(hermesApi).mockReset().mockImplementation(async request => {
+  vi.mocked(zeusApi).mockReset().mockImplementation(async request => {
     if (!request.method || request.method === 'GET') { throw new Error(headless) }
     writes.push(request as never)
 
@@ -156,7 +156,7 @@ it('sidebar edits on an older headless serve fall back to the base write', async
 
   // FastAPI's bare 404 is no route verdict: it keeps the fenced path and writes nothing.
   writes.length = 0
-  vi.mocked(hermesApi).mockReset().mockImplementation(async request => {
+  vi.mocked(zeusApi).mockReset().mockImplementation(async request => {
     if (!request.method || request.method === 'GET') { throw new Error('404: {"detail":"Not Found"}') }
     writes.push(request as never)
 

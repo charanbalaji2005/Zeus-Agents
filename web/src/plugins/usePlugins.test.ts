@@ -6,7 +6,7 @@ import {
   MANIFEST_CACHE_KEY,
   pluginAssetUrl,
 } from "./usePlugins";
-import { HERMES_BASE_PATH } from "@/lib/api";
+import { ZEUS_BASE_PATH } from "@/lib/api";
 import type { PluginManifest } from "./types";
 
 function makeStorage(): Storage {
@@ -149,7 +149,7 @@ describe("canSeedLoadedFromCache (loading seed gate)", () => {
 describe("pluginAssetUrl", () => {
   it("names the profile whose plugin list described the plugin in its path", () => {
     expect(pluginAssetUrl("kanban", "dist/index.js", "work bench")).toBe(
-      `${HERMES_BASE_PATH}/dashboard-plugins/@work%20bench/kanban/dist/index.js`,
+      `${ZEUS_BASE_PATH}/dashboard-plugins/@work%20bench/kanban/dist/index.js`,
     );
   });
 
@@ -157,16 +157,16 @@ describe("pluginAssetUrl", () => {
     // url("./icon.svg") in a stylesheet, or a chunk import, drops the sheet's query string.
     const sheet = new URL(pluginAssetUrl("kanban", "dist/style.css", "beta"), "http://127.0.0.1:9119");
     expect(new URL("./icon.svg", sheet).pathname).toBe(
-      `${HERMES_BASE_PATH}/dashboard-plugins/@beta/kanban/dist/icon.svg`,
+      `${ZEUS_BASE_PATH}/dashboard-plugins/@beta/kanban/dist/icon.svg`,
     );
     expect(new URL("../fonts/a.woff2", sheet).pathname).toBe(
-      `${HERMES_BASE_PATH}/dashboard-plugins/@beta/kanban/fonts/a.woff2`,
+      `${ZEUS_BASE_PATH}/dashboard-plugins/@beta/kanban/fonts/a.woff2`,
     );
   });
 
   it("stays unscoped when no profile is known", () => {
     expect(pluginAssetUrl("kanban", "style.css", "")).toBe(
-      `${HERMES_BASE_PATH}/dashboard-plugins/kanban/style.css`,
+      `${ZEUS_BASE_PATH}/dashboard-plugins/kanban/style.css`,
     );
   });
 });

@@ -14,7 +14,7 @@ import type {
   OnboardingStartParams,
   OnboardingStartResult,
   OnboardingStateParams
-} from '@hermes/shared'
+} from '@zeus/shared'
 import { atom, computed } from 'nanostores'
 
 import { getRuntimeI18nLocale } from '@/i18n/runtime'
@@ -98,7 +98,7 @@ const factsSource = (): 'local' | 'remote' => ($connection.get()?.mode === 'loca
 
 /** The unpackaged app's `--fresh-install` launch: the backend treats this machine as a first install.
  *  Only then is `assume_fresh` sent; packaged launches and Settings reruns never carry the field. */
-const assumeFreshInstall = (): boolean => window.hermesDesktop?.assumeFreshInstall === true
+const assumeFreshInstall = (): boolean => window.zeusDesktop?.assumeFreshInstall === true
 
 /** The first-run intro around a start (`components/onboarding/first-run/kickoff.ts`). */
 export interface OnboardingIntroHooks {

@@ -35,7 +35,7 @@ export function registerSpellcheckDictionaryIpc(
   ipcMain: Pick<IpcMain, 'handle'>,
   contents: { fromId: (id: number) => undefined | WebContents }
 ): void {
-  ipcMain.handle('hermes:context-menu:spellcheck', (event: IpcMainInvokeEvent, action) => {
+  ipcMain.handle('zeus:context-menu:spellcheck', (event: IpcMainInvokeEvent, action) => {
     const kind = action?.kind
     const word = String(action?.word || '')
 
@@ -52,7 +52,7 @@ export function registerSpellcheckDictionaryIpc(
 
   // Guest dictionary add: the webview TAG exposes replaceMisspelling but no
   // session API, so the renderer names the guest by webContents id.
-  ipcMain.handle('hermes:context-menu:guest-add-word', (_event: IpcMainInvokeEvent, payload) => {
+  ipcMain.handle('zeus:context-menu:guest-add-word', (_event: IpcMainInvokeEvent, payload) => {
     const word = String(payload?.word || '')
     const guest = contents.fromId(Number(payload?.webContentsId))
 
@@ -63,7 +63,7 @@ export function registerSpellcheckDictionaryIpc(
 
   // `host.spellcheck.addWord/removeWord`. Resolves Chromium's own verdict
   // (false for an in-memory session), false for anything refused here.
-  ipcMain.handle('hermes:spellcheck:dictionary', (event: IpcMainInvokeEvent, payload): boolean => {
+  ipcMain.handle('zeus:spellcheck:dictionary', (event: IpcMainInvokeEvent, payload): boolean => {
     const op = DICTIONARY_OPS.get(payload?.op)
     const word = normalizeDictionaryWord(payload?.word)
 

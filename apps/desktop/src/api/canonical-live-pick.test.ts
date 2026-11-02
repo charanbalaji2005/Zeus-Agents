@@ -1,7 +1,7 @@
-import { JsonRpcGatewayClient, JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayClient, JsonRpcGatewayError } from '@zeus/shared'
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 afterEach(() => { vi.restoreAllMocks() })
 
@@ -15,7 +15,7 @@ async function attached(mutate: (params: Record<string, unknown>) => unknown) {
 
     return { session_id: 's', revision: 4, execution_generation: 2, messages: [], info: {} } as never
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
   await client.connect('ws://localhost/api/ws?native_dial=fixture&ticket=fixture')
   await client.request('session.resume', { session_id: 's' })
   calls.length = 0

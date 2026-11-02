@@ -1,4 +1,4 @@
-import type { DelegationModelMap, DelegationModelRoute, DelegationProfileRoutes } from '@/hermes'
+import type { DelegationModelMap, DelegationModelRoute, DelegationProfileRoutes } from '@/zeus'
 
 /** The fields the route dialog edits; every other key of a stored route round-trips untouched. */
 export interface ModelRouteDraft {

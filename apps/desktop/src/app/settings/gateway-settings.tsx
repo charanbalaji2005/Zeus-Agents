@@ -1,4 +1,4 @@
-import { isGatewayReauthRequired } from '@hermes/shared'
+import { isGatewayReauthRequired } from '@zeus/shared'
 import { useStore } from '@nanostores/react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -57,7 +57,7 @@ import { WebappGatewaySettings } from './webapp-gateway-settings'
 
 type Mode = 'local' | 'remote' | 'cloud' | 'ssh'
 type AuthMode = 'oauth' | 'token'
-// Hermes Cloud discovery lifecycle for the cloud-mode panel.
+// Zeus Cloud discovery lifecycle for the cloud-mode panel.
 type CloudDiscoverStatus = 'idle' | 'loading' | 'done' | 'error'
 
 export interface GatewaySettingsState {
@@ -79,7 +79,7 @@ export interface GatewaySettingsState {
   sshUser: string
   sshPort: number | null
   sshKeyPath: string
-  sshRemoteHermesPath: string
+  sshRemoteZeusPath: string
   sshRemoteProfile: string
 }
 
@@ -100,7 +100,7 @@ const EMPTY_STATE: GatewaySettingsState = {
   sshUser: '',
   sshPort: null,
   sshKeyPath: '',
-  sshRemoteHermesPath: '',
+  sshRemoteZeusPath: '',
   sshRemoteProfile: ''
 }
 
@@ -270,7 +270,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     host: 'settings',
     enabled: !loading && state.mode === 'remote',
     beforeOAuthLogin: async (payload: DesktopConnectionConfigInput): Promise<void> => {
-      await window.hermesDesktop.saveConnectionConfig(payload)
+      await window.zeusDesktop.saveConnectionConfig(payload)
     },
     onNotice: notify
   })
@@ -315,7 +315,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   // so confirm resumes the right one.
   const [plainTextConfirm, setPlainTextConfirm] = useState<null | { apply: boolean }>(null)
 
-  // --- Hermes Cloud (cloud mode) state ---
+  // --- Zeus Cloud (cloud mode) state ---
   // One portal session powers discovery + the silent per-agent cascade. These
   // track the cloud panel: whether we're signed in, the discovered agent list,
   // and which agent is mid-connect.
@@ -343,7 +343,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
 
   useEffect(() => {
     let cancelled = false
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
 
     if (!desktop?.getConnectionConfig) {
       setLoading(false)
@@ -414,7 +414,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
         throw error
       }
 
-      const desktop = window.hermesDesktop
+      const desktop = window.zeusDesktop
 
       // Cloud registry URLs are the persisted agent dashboardUrl. Keep saved
       // rows usable without discovery, but never run the cascade against ''.
@@ -462,12 +462,12 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   }, [state.sshHost, sshHostSuggestions])
 
   useEffect(() => {
-    if (state.mode !== 'ssh' || !window.hermesDesktop?.sshConfigHosts) {
+    if (state.mode !== 'ssh' || !window.zeusDesktop?.sshConfigHosts) {
       return
     }
 
     let cancelled = false
-    void window.hermesDesktop
+    void window.zeusDesktop
       .sshConfigHosts()
       .then(result => {
         if (!cancelled) {
@@ -500,7 +500,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     state.sshUser,
     state.sshPort,
     state.sshKeyPath,
-    state.sshRemoteHermesPath,
+    state.sshRemoteZeusPath,
     state.sshRemoteProfile
   ])
 
@@ -521,7 +521,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
           sshUser: state.sshUser.trim(),
           sshPort: state.sshPort,
           sshKeyPath: state.sshKeyPath.trim(),
-          sshRemoteHermesPath: state.sshRemoteHermesPath.trim(),
+          sshRemoteZeusPath: state.sshRemoteZeusPath.trim(),
           // A blank clears an existing remote-profile mapping.
           sshRemoteProfile: state.sshRemoteProfile.trim()
         }),
@@ -545,8 +545,8 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
 
     try {
       const next = apply
-        ? await window.hermesDesktop.applyConnectionConfig(payload(allowPlainTextToken))
-        : await window.hermesDesktop.saveConnectionConfig(payload(allowPlainTextToken))
+        ? await window.zeusDesktop.applyConnectionConfig(payload(allowPlainTextToken))
+        : await window.zeusDesktop.saveConnectionConfig(payload(allowPlainTextToken))
 
       if (seq !== saveSeq.current) {
         return
@@ -574,7 +574,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
 
       const errors = {
         'auth-failed': g.sshErrAuth,
-        'hermes-not-found': g.sshErrNotInstalled,
+        'zeus-not-found': g.sshErrNotInstalled,
         'host-key-changed': g.sshErrHostKey,
         'interactive-auth': g.sshErrInteractiveAuth,
         timeout: g.sshErrTimeout,
@@ -622,14 +622,14 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     await performSave(apply, false)
   }
 
-  // --- Hermes Cloud handlers ---
+  // --- Zeus Cloud handlers ---
 
   // Pull the discovered agent list over the shared portal session. Tolerant of
   // a lapsed session: a needsCloudLogin error flips us back to signed-out.
   // `org` scopes discovery for multi-org users; when discovery comes back with
   // needsOrgSelection we surface the org list and show a picker instead.
   const discoverCloud = async (org?: string) => {
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
     const seq = contextSeq.current
 
     if (!desktop?.cloud) {
@@ -714,7 +714,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
       return
     }
 
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
 
     if (!desktop?.cloud) {
       return
@@ -760,7 +760,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   }, [state.mode])
 
   const cloudSignIn = async () => {
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
     const seq = ++signingSeq.current
 
     if (!desktop?.cloud) {
@@ -793,7 +793,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   }
 
   const cloudSignOut = async () => {
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
     const seq = ++signingSeq.current
 
     if (!desktop?.cloud) {
@@ -836,7 +836,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
       return
     }
 
-    const desktop = window.hermesDesktop
+    const desktop = window.zeusDesktop
 
     if (!desktop?.cloud) {
       return
@@ -929,14 +929,14 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
   }
 
   const resolveSshHost = async (host: string) => {
-    if (!host || !window.hermesDesktop?.sshResolveHost) {
+    if (!host || !window.zeusDesktop?.sshResolveHost) {
       return
     }
 
     const seq = ++sshResolveSeq.current
 
     try {
-      const resolved = await window.hermesDesktop.sshResolveHost(host)
+      const resolved = await window.zeusDesktop.sshResolveHost(host)
 
       if (seq !== sshResolveSeq.current) {
         return
@@ -974,7 +974,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     setLastTest(null)
 
     try {
-      const result = await window.hermesDesktop.testConnectionConfig(payload())
+      const result = await window.zeusDesktop.testConnectionConfig(payload())
 
       if (seq !== sshTestSeq.current) {
         return
@@ -983,7 +983,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
       if (!result.reachable) {
         const errors = {
           'auth-failed': g.sshErrAuth,
-          'hermes-not-found': g.sshErrNotInstalled,
+          'zeus-not-found': g.sshErrNotInstalled,
           'host-key-changed': g.sshErrHostKey,
           'interactive-auth': g.sshErrInteractiveAuth,
           timeout: g.sshErrTimeout,
@@ -1026,7 +1026,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
     )
   }
 
-  if (!window.hermesDesktop?.getConnectionConfig) {
+  if (!window.zeusDesktop?.getConnectionConfig) {
     return <EmptyState description={g.unavailableDesc} title={g.unavailableTitle} />
   }
 
@@ -1097,7 +1097,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
         </div>
       </div>
 
-      {/* Hermes Cloud panel: one portal sign-in, then a discovered-agent picker
+      {/* Zeus Cloud panel: one portal sign-in, then a discovered-agent picker
           whose selection drives the silent per-agent cascade + a cloud
           connection. Replaces the URL/token form while in cloud mode. */}
       {state.mode === 'cloud' && !state.envOverride ? (
@@ -1280,7 +1280,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
         </div>
       ) : null}
 
-      {/* An env-pinned remote (HERMES_DESKTOP_REMOTE_URL) still renders this
+      {/* An env-pinned remote (ZEUS_DESKTOP_REMOTE_URL) still renders this
           block: the override pins the URL/mode, but the browser SESSION is not
           env-owned — docs promise "you still sign in from the Gateway settings
           panel" (user-guide/desktop.md). Hiding it left a lapsed session with
@@ -1398,13 +1398,13 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
             action={
               <Input
                 className={cn('h-8 font-mono', CONTROL_TEXT)}
-                onChange={event => setState(current => ({ ...current, sshRemoteHermesPath: event.target.value }))}
-                placeholder={g.sshHermesPathPlaceholder}
-                value={state.sshRemoteHermesPath}
+                onChange={event => setState(current => ({ ...current, sshRemoteZeusPath: event.target.value }))}
+                placeholder={g.sshZeusPathPlaceholder}
+                value={state.sshRemoteZeusPath}
               />
             }
-            description={g.sshHermesPathDesc}
-            title={g.sshHermesPathTitle}
+            description={g.sshZeusPathDesc}
+            title={g.sshZeusPathTitle}
           />
         </div>
       ) : null}
@@ -1461,7 +1461,7 @@ function GatewayConnectionSettings({ embedded, standalone }: { embedded: boolean
           <KeychainEncryptionSetting keychain={keychainEncryption} />
           <ListRow
             action={
-              <Button onClick={() => void window.hermesDesktop?.revealLogs()} size="sm" variant="textStrong">
+              <Button onClick={() => void window.zeusDesktop?.revealLogs()} size="sm" variant="textStrong">
                 <FileText />
                 {g.openLogs}
               </Button>

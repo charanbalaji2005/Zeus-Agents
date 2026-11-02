@@ -318,7 +318,7 @@ export function formatErrorDiagnostics(input: {
   const model = input.surface?.model || input.model
 
   const lines = [
-    '── Hermes error details ──',
+    '── Zeus error details ──',
     input.failedAt ? `time: ${new Date(input.failedAt * 1000).toISOString()}` : null,
     input.surface ? `layer: ${input.surface.layer}` : null,
     input.surface ? `code: ${input.surface.code}` : null,
@@ -351,7 +351,7 @@ export type ErrorActionId =
   | 'compress'
   | 'start_new_session'
   | 'edit_message'
-  | 'open_hermes_folder'
+  | 'open_zeus_folder'
   | 'continue'
   | 'open_provider_settings'
   | 'open_setup_guide_tls'
@@ -367,8 +367,8 @@ export interface ErrorCardActions {
 }
 
 export const ERROR_SETUP_GUIDE_URLS = {
-  tls: 'https://hermes-agent.nousresearch.com/docs/user-guide/security#tls-certificate-trust',
-  local: 'https://hermes-agent.nousresearch.com/docs/user-guide/local-models#using-your-own-llama-server'
+  tls: 'https://charanbalaji2005.github.io/Zeus-Agents/docs/user-guide/security#tls-certificate-trust',
+  local: 'https://charanbalaji2005.github.io/Zeus-Agents/docs/user-guide/local-models#using-your-own-llama-server'
 } as const
 
 /** Provider pages where the user fixes an account-level routing/privacy block. */
@@ -377,7 +377,7 @@ const PROVIDER_SETTINGS_URLS: Record<string, string> = {
   nous: 'https://portal.nousresearch.com'
 }
 
-/** The provider's own settings page (privacy/data policy), when Hermes knows one. */
+/** The provider's own settings page (privacy/data policy), when Zeus knows one. */
 export function providerSettingsUrl(surface?: ErrorSurface | null): string | undefined {
   return PROVIDER_SETTINGS_URLS[(surface?.provider || '').toLowerCase()]
 }
@@ -387,7 +387,7 @@ const CODE_ACTIONS: Partial<Record<ErrorCodeKey, ErrorCardActions>> = {
   billing: { primary: 'open_billing', secondary: 'switch_provider' },
   content_policy_blocked: { primary: 'edit_message' },
   context_overflow: { primary: 'compress', secondary: 'start_new_session' },
-  disk_full: { primary: 'open_hermes_folder', secondary: 'retry' },
+  disk_full: { primary: 'open_zeus_folder', secondary: 'retry' },
   free_tier_at_capacity: { primary: 'sign_in_free_tier', secondary: 'retry' },
   format_error: { primary: 'switch_provider', secondary: 'start_new_session' },
   free_tier_outage: { primary: 'retry' },

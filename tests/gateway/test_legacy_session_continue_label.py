@@ -2,7 +2,7 @@
 
 Every turn of a local session refreshes its routing peer (``SessionStore._record_gateway_session_peer``),
 which rewrites ``sessions.source`` through ``session_a2a.storage_source``. For an adopted legacy row that
-must stay main's own label: ``hermes sessions list --source``, ``-c`` and the stale-open sweeps key on it.
+must stay main's own label: ``zeus sessions list --source``, ``-c`` and the stale-open sweeps key on it.
 """
 from types import SimpleNamespace
 
@@ -20,7 +20,7 @@ async def test_a_turn_on_an_adopted_legacy_row_keeps_its_source(tmp_path, monkey
     from gateway.session_contract import Principal
     from gateway.session_local_title import resolve_titled_session
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'cli': []}})
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     db = store._db

@@ -11,7 +11,7 @@ import {
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import type { HermesGateway } from '@/hermes'
+import type { ZeusGateway } from '@/zeus'
 import { useIncrementalExternalStoreRuntime } from '@/lib/incremental-external-store-runtime'
 import { $notifications, clearNotifications } from '@/store/notifications'
 
@@ -27,10 +27,10 @@ const UPLOAD_413 = 'File upload failed (413): the file is larger than the server
 afterEach(() => {
   cleanup()
   clearNotifications()
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
 })
 
-function Harness({ gateway }: { gateway: HermesGateway }) {
+function Harness({ gateway }: { gateway: ZeusGateway }) {
   const repository = ExportedMessageRepository.fromArray([userMessage(), assistantMessage()])
 
   const runtime = useIncrementalExternalStoreRuntime<ThreadMessage>({
@@ -60,7 +60,7 @@ function fileDrop(...files: File[]) {
   }
 }
 
-async function openEditor(gateway: HermesGateway) {
+async function openEditor(gateway: ZeusGateway) {
   render(<Harness gateway={gateway} />)
   fireEvent.click(await screen.findByRole('button', { name: 'Edit message' }))
 
@@ -73,9 +73,9 @@ describe('edit composer drop staging failures', () => {
       throw new Error(UPLOAD_413)
     })
 
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { stageFileForAttach } })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { stageFileForAttach } })
     const request = vi.fn(async () => ({}))
-    const editor = await openEditor({ request } as unknown as HermesGateway)
+    const editor = await openEditor({ request } as unknown as ZeusGateway)
 
     await act(async () => {
       fireEvent.drop(editor, { dataTransfer: fileDrop(new File(['payload'], 'notes.txt', { type: 'text/plain' })) })
@@ -104,8 +104,8 @@ describe('edit composer drop staging failures', () => {
       throw new Error(limit)
     })
 
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value: { stageFileForAttach } })
-    const editor = await openEditor({ request: vi.fn(async () => ({})) } as unknown as HermesGateway)
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value: { stageFileForAttach } })
+    const editor = await openEditor({ request: vi.fn(async () => ({})) } as unknown as ZeusGateway)
 
     await act(async () => {
       fireEvent.drop(editor, {

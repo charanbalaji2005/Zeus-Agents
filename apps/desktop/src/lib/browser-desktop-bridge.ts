@@ -1,6 +1,6 @@
-import { externalUrlTarget, LOCAL_CONNECTION_ID } from '@hermes/shared'
+import { externalUrlTarget, LOCAL_CONNECTION_ID } from '@zeus/shared'
 
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { BROWSER_BRIDGE_STUBS } from '@/lib/browser-bridge-stubs'
 import { createBrowserClipboardBridge } from '@/lib/browser-clipboard'
 import { createBrowserConnectionBridge } from '@/lib/browser-connection'
@@ -25,7 +25,7 @@ import { tagRegistrySessionResponse } from '../../electron/profile-session-routi
 
 /**
  * Install a capability-limited Desktop bridge when the real renderer is served
- * directly by Hermes' authenticated web server.
+ * directly by Zeus' authenticated web server.
  *
  * Electron remains authoritative everywhere it exists: no injected dashboard
  * token means this is a normal Vite/Electron renderer, and an existing preload
@@ -34,7 +34,7 @@ import { tagRegistrySessionResponse } from '../../electron/profile-session-routi
  * only safe browser equivalents for machine-level capabilities.
  */
 export function installBrowserDesktopBridge(): boolean {
-  if (window.hermesDesktop) {
+  if (window.zeusDesktop) {
     return false
   }
 
@@ -49,13 +49,13 @@ export function installBrowserDesktopBridge(): boolean {
     announceWebappWindow()
   }
 
-  const api = <T>(request: HermesApiRequest) => browserApi<T>(bootstrap, request)
+  const api = <T>(request: ZeusApiRequest) => browserApi<T>(bootstrap, request)
 
   // The renderer's REST door, owning session rows the way Electron's main process does: every row
   // this tab lists comes from the one gateway serving it, the `local` source the tab's sockets and
   // new chats already name. An untagged listed row beside a `local` new chat read as two owners,
   // which split one gateway's sessions into an unowned group and a `local` gateway group.
-  const rendererApi = async <T>(request: HermesApiRequest): Promise<T> => {
+  const rendererApi = async <T>(request: ZeusApiRequest): Promise<T> => {
     const response = await api<T>(request)
 
     return (request.method || 'GET').toUpperCase() === 'GET'
@@ -98,7 +98,7 @@ export function installBrowserDesktopBridge(): boolean {
   const uploads = createBrowserUploadsBridge({ api, bootstrap, currentProfile, objectUrls, previewUrls })
   const files = createBrowserFilesBridge({ api, bootstrap, currentProfile })
 
-  const bridge: Window['hermesDesktop'] = {
+  const bridge: Window['zeusDesktop'] = {
     ...BROWSER_BRIDGE_STUBS,
     ...createBrowserClipboardBridge({ saveBuffer: uploads.saveImageBuffer }),
     ...createBrowserConnectionBridge({ api, bootstrap }),
@@ -111,7 +111,7 @@ export function installBrowserDesktopBridge(): boolean {
     getVersion: async () => ({
       appVersion: await resolveGatewayVersion(path => api({ path, timeoutMs: 5000 })),
       electronVersion: '',
-      hermesRoot: '',
+      zeusRoot: '',
       nodeVersion: '',
       platform: 'browser'
     }),
@@ -165,8 +165,8 @@ export function installBrowserDesktopBridge(): boolean {
     zoom: createBrowserZoom(bootstrap.basePath)
   }
 
-  window.hermesDesktop = bridge
-  document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.zeusDesktop = bridge
+  document.documentElement.dataset.zeusDesktopHost = 'browser'
 
   return true
 }

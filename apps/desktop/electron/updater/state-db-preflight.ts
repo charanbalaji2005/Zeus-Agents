@@ -34,7 +34,7 @@ interface StateDbPreflight {
   home: string
   log: (message: string) => void
   /**
-   * The installation launcher of a PM-managed checkout (`.hermes/bin/hermes`).
+   * The installation launcher of a PM-managed checkout (`.zeus/bin/zeus`).
    * A managed checkout carries no venv of its own — the launcher owns
    * interpreter and generation selection there — so the snapshot runs through
    * it exactly like the update check does (`readSourceUpdate`).
@@ -57,7 +57,7 @@ export async function preflightStateDb({
       throw new Error('Python not found')
     }
 
-    const args: string[] = launcher ? ['--run-module', 'hermes_cli.backup_sqlite', home] : ['-I', '-S', script, home]
+    const args: string[] = launcher ? ['--run-module', 'zeus_cli.backup_sqlite', home] : ['-I', '-S', script, home]
 
     // Node refuses direct .cmd execFile; an older published launcher can still
     // be one. Same fail-closed guard as the update check: shell:true would
@@ -85,7 +85,7 @@ export async function preflightStateDb({
   } catch (error: unknown) {
     const message =
       `state.db pre-flight failed: ${error instanceof Error ? error.message : String(error)}. ` +
-      'Update cancelled before backend shutdown. Update the selected installation with its hermes update command, then retry.'
+      'Update cancelled before backend shutdown. Update the selected installation with its zeus update command, then retry.'
 
     log(`[updates] ${message}`)
     throw new Error(message, { cause: error })

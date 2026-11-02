@@ -5,7 +5,7 @@ import { handleSessionInfoEvent } from '@/app/session/hooks/use-message-stream/g
 import type { GatewayEventContext } from '@/app/session/hooks/use-message-stream/gateway-event/types'
 import { applyRuntimeInfo } from '@/app/session/hooks/use-session-actions/utils'
 import { isSteerableEntry } from '@/store/composer-queue'
-import type { SessionInfo } from '@/types/hermes'
+import type { SessionInfo } from '@/types/zeus'
 
 import { $queuedPromptsBySession, enqueueQueuedPrompt, getQueuedPrompts, migrateQueuedPrompts } from './composer-queue'
 import { readPendingSubmissions, reconcilePendingSubmissions, trackPendingSubmission } from './pending-submissions'
@@ -153,7 +153,7 @@ it('a delayed older empty snapshot never retires a receipt a newer frame still l
   protocol.event(live)
   handleSessionInfoEvent({
     deps: { activeGatewayProfile: 'default', activeSessionIdRef: { current: null }, hydrateFromStoredSession: vi.fn(),
-      lastCwdInfoSessionRef: { current: null }, queryClient: { invalidateQueries: vi.fn() }, refreshHermesConfig: vi.fn(),
+      lastCwdInfoSessionRef: { current: null }, queryClient: { invalidateQueries: vi.fn() }, refreshZeusConfig: vi.fn(),
       scheduleSessionsRefresh: vi.fn(), sessionInterrupted: () => false, sessionStateByRuntimeIdRef: { current: new Map() },
       updateSessionState: vi.fn(state => state), upsertToolCall: vi.fn() },
     event: live, explicitSid: 'fenced', fromActiveSource: () => true, isActiveEvent: false, occurredAt: Date.now() / 1000,
@@ -266,7 +266,7 @@ it('tracking a submission reads its own record without enumerating other session
     trackPendingSubmission(`other-${index}`, { id: `a-${index}`, text: 'elsewhere', status: 'queued' })
   }
 
-  window.localStorage.setItem('hermes.desktop.pendingSubmissions.v1', JSON.stringify({ solo: { old: { id: 'old', text: 'legacy', displayText: '/old' } } }))
+  window.localStorage.setItem('zeus.desktop.pendingSubmissions.v1', JSON.stringify({ solo: { old: { id: 'old', text: 'legacy', displayText: '/old' } } }))
   const enumerate = vi.spyOn(window.localStorage, 'key')
 
   try {

@@ -7,8 +7,8 @@ import threading
 
 import pytest
 
-from hermes_cli import plugins as plugins_mod
-from hermes_cli.plugins import PluginContext, PluginManager, PluginManifest
+from zeus_cli import plugins as plugins_mod
+from zeus_cli.plugins import PluginContext, PluginManager, PluginManifest
 from tests.agent.test_compaction_events import _Agent, _compressor, _messages
 from agent.conversation_compression import compress_context
 

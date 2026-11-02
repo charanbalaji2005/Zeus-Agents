@@ -1,10 +1,10 @@
-import { isStableOpen, reconnectBackoffDelayMs } from '@hermes/shared'
+import { isStableOpen, reconnectBackoffDelayMs } from '@zeus/shared'
 
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 import { hostHas } from '@/lib/host-capabilities'
 import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 
-import { $apiRequestScope, getApiRequestConnection, getApiRequestProfile, hermesApi, profileScoped } from './client'
+import { $apiRequestScope, getApiRequestConnection, getApiRequestProfile, zeusApi, profileScoped } from './client'
 
 /** Resolve the ACTIVE backend's connection descriptor, (connectionId,
  *  profile)-scoped — mirroring how store/profile resolves $connection: a
@@ -20,8 +20,8 @@ import { $apiRequestScope, getApiRequestConnection, getApiRequestProfile, hermes
  *  openSecondary bounds the same *For/plain pair.
  *
  *  Exported for tests. */
-export async function activeConnection(): Promise<HermesConnection> {
-  const getConnectionFor = window.hermesDesktop.getConnectionFor
+export async function activeConnection(): Promise<ZeusConnection> {
+  const getConnectionFor = window.zeusDesktop.getConnectionFor
   const connectionId = getApiRequestConnection()
   const profile = getApiRequestProfile()
 
@@ -34,18 +34,18 @@ export async function activeConnection(): Promise<HermesConnection> {
   }
 
   return withTimeout(
-    window.hermesDesktop.getConnection(profile),
+    window.zeusDesktop.getConnection(profile),
     RECONNECT_ATTEMPT_TIMEOUT_MS,
     `Timed out connecting to profile "${profile}"`
   )
 }
 
-/** Options for a plugin REST call — mirrors the app's own `hermesDesktop.api`
+/** Options for a plugin REST call — mirrors the app's own `zeusDesktop.api`
  *  shape, minus the path (which is namespace-derived). */
 export interface PluginRestOptions {
   method?: string
   body?: unknown
-  /** Single-file multipart upload (see HermesApiRequest.upload). */
+  /** Single-file multipart upload (see ZeusApiRequest.upload). */
   upload?: { filename: string; contentType?: string; bytes: ArrayBuffer }
   timeoutMs?: number
 }
@@ -71,13 +71,13 @@ function pluginPathSuffix(caller: string, path: string): string {
  *  REST call. Broader reach (core endpoints, another namespace) is the future
  *  declared-capability seam; today the namespace IS the boundary. */
 export async function pluginRest<T>(pluginId: string, path: string, opts: PluginRestOptions = {}): Promise<T> {
-  if (!window.hermesDesktop?.api) {
-    throw new Error('Hermes desktop bridge unavailable')
+  if (!window.zeusDesktop?.api) {
+    throw new Error('Zeus desktop bridge unavailable')
   }
 
   const suffix = pluginPathSuffix('pluginRest', path)
 
-  return hermesApi<T>({
+  return zeusApi<T>({
     path: `/api/plugins/${pluginId}${suffix}`,
     method: opts.method,
     body: opts.body,
@@ -97,9 +97,9 @@ type PluginSocketTarget = null | string | { refused: 'permission' }
 /** The URL a plugin socket dials, or null to stay on polling. A local gateway
  *  (`authMode: 'native'`, no static token) gets a fresh one-use URL from main:
  *  its native grant rides a request header main attaches to that one dial. */
-async function pluginSocketUrl(connection: HermesConnection, pluginId: string, suffix: string): Promise<PluginSocketTarget> {
+async function pluginSocketUrl(connection: ZeusConnection, pluginId: string, suffix: string): Promise<PluginSocketTarget> {
   if (connection.authMode === 'native') {
-    const mint = window.hermesDesktop.getPluginWsUrl
+    const mint = window.zeusDesktop.getPluginWsUrl
 
     // An IPC round-trip with no deadline of its own, bounded like activeConnection().
     return mint
@@ -175,11 +175,11 @@ export function pluginSocket(pluginId: string, path: string, onMessage: (data: u
     const stale = () => disposed || dial !== generation
 
     // No bridge: stay on the polling fallback.
-    if (!window.hermesDesktop?.getConnection) {
+    if (!window.zeusDesktop?.getConnection) {
       return
     }
 
-    let connection: HermesConnection
+    let connection: ZeusConnection
 
     try {
       connection = await activeConnection()

@@ -4,9 +4,9 @@ This file is the canary. If anyone removes a guard or weakens it, these
 tests fail. If anyone adds a NEW kill primitive to the codebase without
 adding it to the guard, the corresponding test added here will fail too.
 
-The guard exists to protect the developer's live ``hermes-gateway`` process
-from being SIGTERMed by tests, and every live Hermes systemd unit
-(``hermes-gateway*``, ``hermes-dashboard*``, ``hermes-serve*``) from being
+The guard exists to protect the developer's live ``zeus-gateway`` process
+from being SIGTERMed by tests, and every live Zeus systemd unit
+(``zeus-gateway*``, ``zeus-dashboard*``, ``zeus-serve*``) from being
 restarted or stopped by them. See PR #23397 for the original incident
 (5+ live gateway kills in 3 days). Per Teknium 2026-05-10:
 
@@ -124,31 +124,31 @@ def test_os_killpg_blocks_foreign_pgid():
 
 def test_subprocess_run_systemctl_restart_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["systemctl", "--user", "restart", "hermes-gateway"], check=False)
+        subprocess.run(["systemctl", "--user", "restart", "zeus-gateway"], check=False)
 
 
 def test_subprocess_run_full_path_systemctl_blocked():
     """``/usr/bin/systemctl`` (full path) must be blocked too."""
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["/usr/bin/systemctl", "--user", "stop", "hermes-gateway"], check=False)
+        subprocess.run(["/usr/bin/systemctl", "--user", "stop", "zeus-gateway"], check=False)
 
 
 def test_subprocess_run_sudo_systemctl_blocked():
     """``sudo systemctl ...`` defeated the old head==systemctl check."""
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["sudo", "systemctl", "restart", "hermes-gateway"], check=False)
+        subprocess.run(["sudo", "systemctl", "restart", "zeus-gateway"], check=False)
 
 
 def test_subprocess_run_env_systemctl_blocked():
     """``env systemctl ...`` similarly defeated the old head check."""
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["env", "systemctl", "--user", "restart", "hermes-gateway"], check=False)
+        subprocess.run(["env", "systemctl", "--user", "restart", "zeus-gateway"], check=False)
 
 
 def test_subprocess_run_bash_c_systemctl_blocked():
     """``bash -c "systemctl ..."`` must also be caught."""
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["bash", "-c", "systemctl --user restart hermes-gateway"], check=False)
+        subprocess.run(["bash", "-c", "systemctl --user restart zeus-gateway"], check=False)
 
 
 
@@ -156,18 +156,18 @@ def test_subprocess_run_bash_c_systemctl_blocked():
 @pytest.mark.parametrize(
     "cmd",
     [
-        ["systemctl", "--user", "restart", "hermes-dashboard.service"],
-        ["systemctl", "--user", "restart", "hermes-dashboard-work.service"],
-        ["systemctl", "--user", "stop", "hermes-serve"],
-        ["/usr/bin/systemctl", "--user", "--no-ask-password", "restart", "hermes-serve-work.service"],
-        ["bash", "-c", "systemctl --user restart hermes-dashboard.service"],
-        "systemctl --user restart hermes-dashboard-work.service",
-        'bash -c "systemctl --user restart hermes-serve.service"',
+        ["systemctl", "--user", "restart", "zeus-dashboard.service"],
+        ["systemctl", "--user", "restart", "zeus-dashboard-work.service"],
+        ["systemctl", "--user", "stop", "zeus-serve"],
+        ["/usr/bin/systemctl", "--user", "--no-ask-password", "restart", "zeus-serve-work.service"],
+        ["bash", "-c", "systemctl --user restart zeus-dashboard.service"],
+        "systemctl --user restart zeus-dashboard-work.service",
+        'bash -c "systemctl --user restart zeus-serve.service"',
     ],
 )
-def test_subprocess_run_systemctl_mutating_any_hermes_unit_blocked(cmd):
+def test_subprocess_run_systemctl_mutating_any_zeus_unit_blocked(cmd):
     """Not just the gateway: a test that forgot to stub the runner restarted the developer's
-    real hermes-dashboard / hermes-serve units, which the gateway-only tokens let through."""
+    real zeus-dashboard / zeus-serve units, which the gateway-only tokens let through."""
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(cmd, shell=isinstance(cmd, str), check=False)
 
@@ -175,15 +175,15 @@ def test_subprocess_run_systemctl_mutating_any_hermes_unit_blocked(cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
-        ["systemctl", "--user", "show", "hermes-dashboard.service", "--property=MainPID"],
-        ["systemctl", "--user", "status", "hermes-dashboard"],
-        ["systemctl", "--user", "is-active", "hermes-serve.service"],
+        ["systemctl", "--user", "show", "zeus-dashboard.service", "--property=MainPID"],
+        ["systemctl", "--user", "status", "zeus-dashboard"],
+        ["systemctl", "--user", "is-active", "zeus-serve.service"],
         ["systemctl", "--user", "restart", "nginx.service"],
-        ["systemctl", "--user", "restart", "myhermes-dashboard.service"],
+        ["systemctl", "--user", "restart", "myzeus-dashboard.service"],
     ],
 )
 def test_subprocess_run_systemctl_read_only_or_foreign_unit_passes_guard(cmd):
-    """Read-only verbs on Hermes units and mutating verbs on other units reach the real
+    """Read-only verbs on Zeus units and mutating verbs on other units reach the real
     ``subprocess.run``; an empty PATH turns that into FileNotFoundError, never a real systemctl."""
     with pytest.raises(FileNotFoundError):
         subprocess.run(cmd, env={"PATH": "/nonexistent"}, check=False)
@@ -192,10 +192,10 @@ def test_subprocess_run_systemctl_read_only_or_foreign_unit_passes_guard(cmd):
 @pytest.mark.parametrize(
     "cmd",
     [
-        ["bash", "-c", r"systemctl st\op hermes.service"],
-        ["bash", "-c", r"systemctl --user rest\art hermes-dashboard"],
-        r"systemctl --user re\start hermes-serve.service",
-        ["bash", "-c", "sh -c 'systemctl --user restart hermes-dashboard'"],
+        ["bash", "-c", r"systemctl st\op zeus.service"],
+        ["bash", "-c", r"systemctl --user rest\art zeus-dashboard"],
+        r"systemctl --user re\start zeus-serve.service",
+        ["bash", "-c", "sh -c 'systemctl --user restart zeus-dashboard'"],
     ],
 )
 def test_subprocess_run_shell_escaped_or_nested_verb_blocked(cmd):
@@ -205,28 +205,28 @@ def test_subprocess_run_shell_escaped_or_nested_verb_blocked(cmd):
 
 
 def test_a_test_owned_unit_can_be_cleaned_up_but_no_other(request):
-    """A unit the test created under its own name may be stopped; every other Hermes unit stays refused."""
-    owned = "hermes-worker-kanban-t_selftest-run-1.scope"
+    """A unit the test created under its own name may be stopped; every other Zeus unit stays refused."""
+    owned = "zeus-worker-kanban-t_selftest-run-1.scope"
     request.node.live_system_guard_owned_units = {owned}
     with pytest.raises(FileNotFoundError):
         subprocess.run(["systemctl", "--user", "stop", owned], env={"PATH": "/nonexistent"}, check=False)
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["systemctl", "--user", "stop", owned, "hermes-dashboard.service"], check=False)
+        subprocess.run(["systemctl", "--user", "stop", owned, "zeus-dashboard.service"], check=False)
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["systemctl", "--user", "stop", "hermes-worker-kanban-other-run-1.scope"], check=False)
+        subprocess.run(["systemctl", "--user", "stop", "zeus-worker-kanban-other-run-1.scope"], check=False)
 
 
 def test_subprocess_run_setsid_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["setsid", "systemctl", "kill", "hermes-gateway"], check=False)
+        subprocess.run(["setsid", "systemctl", "kill", "zeus-gateway"], check=False)
 
 
 def test_host_gateway_start_blocked_but_container_exec_allowed():
-    """A host-side ``hermes gateway start`` spawns a real runtime; the same words addressed to
+    """A host-side ``zeus gateway start`` spawns a real runtime; the same words addressed to
     a container via ``docker exec`` stay inside it and are the Docker harness's business."""
-    with pytest.raises(RuntimeError, match="REAL hermes gateway runtime"):
-        subprocess.run(["hermes", "-p", "p", "gateway", "start"], check=False)
-    argv = ["docker", "exec", "-u", "hermes", "hermes-test-x", "sh", "-c", "hermes -p p gateway start"]
+    with pytest.raises(RuntimeError, match="REAL zeus gateway runtime"):
+        subprocess.run(["zeus", "-p", "p", "gateway", "start"], check=False)
+    argv = ["docker", "exec", "-u", "zeus", "zeus-test-x", "sh", "-c", "zeus -p p gateway start"]
     # Past the guard the call reaches the real subprocess.run; a missing binary is fine here.
     with pytest.raises(FileNotFoundError):
         subprocess.run(argv, env={"PATH": "/nonexistent"}, check=False)
@@ -235,7 +235,7 @@ def test_host_gateway_start_blocked_but_container_exec_allowed():
 def test_subprocess_run_string_shell_true_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(
-            "systemctl --user restart hermes-gateway",
+            "systemctl --user restart zeus-gateway",
             shell=True,
             check=False,
         )
@@ -243,32 +243,32 @@ def test_subprocess_run_string_shell_true_blocked():
 
 def test_subprocess_popen_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.Popen(["systemctl", "--user", "stop", "hermes-gateway"])
+        subprocess.Popen(["systemctl", "--user", "stop", "zeus-gateway"])
 
 
 def test_subprocess_call_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.call(["systemctl", "--user", "restart", "hermes-gateway"])
+        subprocess.call(["systemctl", "--user", "restart", "zeus-gateway"])
 
 
 def test_subprocess_check_call_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.check_call(["systemctl", "--user", "restart", "hermes-gateway"])
+        subprocess.check_call(["systemctl", "--user", "restart", "zeus-gateway"])
 
 
 def test_subprocess_check_output_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.check_output(["systemctl", "--user", "restart", "hermes-gateway"])
+        subprocess.check_output(["systemctl", "--user", "restart", "zeus-gateway"])
 
 
 def test_subprocess_getoutput_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.getoutput("systemctl --user restart hermes-gateway")
+        subprocess.getoutput("systemctl --user restart zeus-gateway")
 
 
 def test_subprocess_getstatusoutput_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.getstatusoutput("systemctl --user restart hermes-gateway")
+        subprocess.getstatusoutput("systemctl --user restart zeus-gateway")
 
 
 # ──────────────────── os.system / os.popen ────────────────────
@@ -276,12 +276,12 @@ def test_subprocess_getstatusoutput_systemctl_blocked():
 
 def test_os_system_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        os.system("systemctl --user restart hermes-gateway")
+        os.system("systemctl --user restart zeus-gateway")
 
 
 def test_os_popen_systemctl_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        os.popen("systemctl --user restart hermes-gateway")
+        os.popen("systemctl --user restart zeus-gateway")
 
 
 # ──────────────────── pty.spawn ────────────────────────────────
@@ -291,7 +291,7 @@ def test_os_popen_systemctl_blocked():
 def test_pty_spawn_systemctl_blocked():
     import pty
     with pytest.raises(RuntimeError, match="live-system guard"):
-        pty.spawn(["systemctl", "--user", "restart", "hermes-gateway"])
+        pty.spawn(["systemctl", "--user", "restart", "zeus-gateway"])
 
 
 # ──────────────────── asyncio.create_subprocess_* ──────────────
@@ -302,7 +302,7 @@ def test_asyncio_create_subprocess_exec_systemctl_blocked():
 
     async def _attempt():
         await asyncio.create_subprocess_exec(
-            "systemctl", "--user", "restart", "hermes-gateway"
+            "systemctl", "--user", "restart", "zeus-gateway"
         )
 
     with pytest.raises(RuntimeError, match="live-system guard"):
@@ -314,7 +314,7 @@ def test_asyncio_create_subprocess_shell_systemctl_blocked():
 
     async def _attempt():
         await asyncio.create_subprocess_shell(
-            "systemctl --user restart hermes-gateway"
+            "systemctl --user restart zeus-gateway"
         )
 
     with pytest.raises(RuntimeError, match="live-system guard"):
@@ -324,22 +324,22 @@ def test_asyncio_create_subprocess_shell_systemctl_blocked():
 # ──────────────────── pkill / killall / taskkill ───────────────
 
 
-def test_subprocess_pkill_hermes_blocked():
+def test_subprocess_pkill_zeus_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["pkill", "-f", "hermes"], check=False)
+        subprocess.run(["pkill", "-f", "zeus"], check=False)
 
 
 
 
 def test_subprocess_pkill_python_dash_f_blocked():
-    """``pkill -f python`` matches the gateway's "python -m hermes_cli.main"."""
+    """``pkill -f python`` matches the gateway's "python -m zeus_cli.main"."""
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.run(["pkill", "-f", "python"], check=False)
 
 
-def test_subprocess_killall_hermes_blocked():
+def test_subprocess_killall_zeus_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
-        subprocess.run(["killall", "hermes"], check=False)
+        subprocess.run(["killall", "zeus"], check=False)
 
 
 # ──────────────────── pass-through cases (must NOT raise) ──────
@@ -363,13 +363,13 @@ def test_subprocess_killall_hermes_blocked():
 
 
 def test_subprocess_popen_real_gateway_restart_blocked():
-    """``python -m hermes_cli.main gateway restart`` is a detached child that
-    inherits the pytest-tmp HERMES_HOME, resolves the developer's real
-    ``hermes-gateway`` unit, and outlives the test (39 six-day orphans squatted
+    """``python -m zeus_cli.main gateway restart`` is a detached child that
+    inherits the pytest-tmp ZEUS_HOME, resolves the developer's real
+    ``zeus-gateway`` unit, and outlives the test (39 six-day orphans squatted
     the webhook port, 2026-09-03). Blocked at the spawn primitive."""
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.Popen(
-            [sys.executable, "-m", "hermes_cli.main", "gateway", "restart"],
+            [sys.executable, "-m", "zeus_cli.main", "gateway", "restart"],
             start_new_session=True,
         )
 
@@ -382,7 +382,7 @@ def test_subprocess_popen_inline_source_restart_watcher_blocked():
     with pytest.raises(RuntimeError, match="live-system guard"):
         subprocess.Popen(
             [sys.executable, "-c", "import time; time.sleep(1)", "4242",
-             sys.executable, "-m", "hermes_cli.main", "gateway", "run"],
+             sys.executable, "-m", "zeus_cli.main", "gateway", "run"],
             start_new_session=True,
         )
 
@@ -392,7 +392,7 @@ def test_subprocess_run_gateway_status_passes_through():
     read-only subcommand) must still spawn — via the canonical matcher, not an
     argv substring."""
     result = subprocess.run(
-        [sys.executable, "-c", "import sys; print(sys.argv[1:])", "-m", "hermes_cli.main", "gateway", "status"],
+        [sys.executable, "-c", "import sys; print(sys.argv[1:])", "-m", "zeus_cli.main", "gateway", "status"],
         capture_output=True, text=True,
         check=False,
     )

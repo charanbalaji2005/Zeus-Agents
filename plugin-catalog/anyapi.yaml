@@ -15,4 +15,4 @@ capabilities:
   requires_env:
   - ANYAPI_API_KEY
 version: 0.1.0
-requires_hermes: ">=0.20.0"
+requires_zeus: ">=0.20.0"

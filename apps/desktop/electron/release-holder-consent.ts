@@ -1,7 +1,7 @@
 // The Desktop half of the consented "close it and retry" for a Desktop app swap blocked by a
-// program outside Hermes (#101789). The consent is bound to the ONE hand-off run the retry starts
-// (its run id reaches the swap as HERMES_UPDATE_CORRELATION_ID) and to the exact processes the
-// user saw (pid + start time + program). The next promotion swap (hermes_cli/desktop_release_holders.py)
+// program outside Zeus (#101789). The consent is bound to the ONE hand-off run the retry starts
+// (its run id reaches the swap as ZEUS_UPDATE_CORRELATION_ID) and to the exact processes the
+// user saw (pid + start time + program). The next promotion swap (zeus_cli/desktop_release_holders.py)
 // removes the file whatever its source and acts on it only in that run; a retry that never hands
 // off removes it here, and the hand-off script removes one its run never used.
 

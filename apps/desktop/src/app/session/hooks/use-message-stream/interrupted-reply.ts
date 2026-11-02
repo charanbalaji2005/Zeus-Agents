@@ -1,4 +1,4 @@
-import type { PersistedTurn } from '@hermes/shared'
+import type { PersistedTurn } from '@zeus/shared'
 
 import { transcriptRowIds } from '@/app/session/hooks/use-session-actions/pending-turn-identity'
 import {

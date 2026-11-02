@@ -61,7 +61,7 @@ def test_missing_explicit_seed_cannot_silently_resolve_new_versions(layout):
 
 
 def test_plugin_workspace_trusts_core_lock_instead_of_rechecking_release_age(layout, locked_project):  # health: allow F811 -- pytest injects the imported locked_project fixture by parameter name
-    """Release age is checked when Hermes locks, never on the user's machine (#135589).
+    """Release age is checked when Zeus locks, never on the user's machine (#135589).
 
     The generated root carries no ``exclude-newer`` (a mirror without upload times makes
     uv reject every file it cannot date) and adds no constraints of its own: core's ranges
@@ -134,7 +134,7 @@ def test_classify_network_failure_stays_generic():
 
 
 def test_core_only_generation_carries_no_release_age_cutoff(layout):
-    """A core-only install (hermes update) is a frozen sync: the cutoff there only gates the build
+    """A core-only install (zeus update) is a frozen sync: the cutoff there only gates the build
     tools uv fetches, and a mirror without upload times rejects every one of them (#135589)."""
     tmp, core, _, _ = layout
     manifest = core / "pyproject.toml"
@@ -150,8 +150,8 @@ def test_undated_index_failure_names_the_index_not_a_conflict():
     from pm.workspace import ResolutionConflict, classify_uv_failure
 
     seeded = ("  x No solution found when resolving dependencies:\n"
-              "  Because resvg-py==0.4.0 has no publish time and hermes-agent depends on resvg-py==0.4.0, "
-              "we can conclude that hermes-agent's requirements are unsatisfiable.")
+              "  Because resvg-py==0.4.0 has no publish time and zeus-agents depends on resvg-py==0.4.0, "
+              "we can conclude that zeus-agents's requirements are unsatisfiable.")
     cold = ("warning: cffi-2.0.0.tar.gz is missing an upload date, but user provided: 2026-09-25T00:00:00Z\n"
             "  x No solution found when resolving dependencies:\n"
             "  Because there are no versions of cffi and you require cffi>=2.0.0, we can conclude that "

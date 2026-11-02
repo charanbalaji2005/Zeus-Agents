@@ -6,7 +6,7 @@ maintainer: promptclickrun
 tier: community
 category: tools
 version: "0.1.0"
-requires_hermes: ">=0.21.2"
+requires_zeus: ">=0.21.2"
 docs_url: https://github.com/promptclickrun/hermes-govee#readme
 platforms: []
 capabilities:

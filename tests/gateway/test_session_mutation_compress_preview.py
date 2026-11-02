@@ -11,9 +11,9 @@ import pytest
 from gateway.session_authority import SessionAuthority
 from gateway.session_controls import AuthorityConnection
 from gateway.session_local import create_local_session
-from hermes_cli.gateway_client import GatewayClientError
-from hermes_cli.gateway_mutations import slash_mutation
-import hermes_state_runtime as rt
+from zeus_cli.gateway_client import GatewayClientError
+from zeus_cli.gateway_mutations import slash_mutation
+import zeus_state_runtime as rt
 
 
 def test_slash_mutation_parses_compress_through_the_shared_parser():
@@ -250,7 +250,7 @@ async def test_no_op_compress_without_a_resident_agent_estimates_the_stored_prom
                                                               model='frozen', toolsets=[]))
     db.append_message(ref.session_id, 'user', 'hi')
     db.append_message(ref.session_id, 'assistant', 'hello')
-    prompt = 'You are Hermes. ' * 400
+    prompt = 'You are Zeus. ' * 400
     tools = [{'type': 'function', 'function': {'name': 'read_file', 'description': 'Read a file. ' * 50,
                                                'parameters': {'type': 'object', 'properties': {}}}}]
     db.update_system_prompt(ref.session_id, prompt)

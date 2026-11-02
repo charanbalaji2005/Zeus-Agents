@@ -22,7 +22,7 @@ export function createBrowserProfileBridge({
   basePath,
   currentProfile,
   openWindow
-}: BrowserProfileOptions): Pick<Window['hermesDesktop'], 'openWindow' | 'profile'> {
+}: BrowserProfileOptions): Pick<Window['zeusDesktop'], 'openWindow' | 'profile'> {
   // localStorage supplies origin isolation; the base path separates colocated servers.
   const storageKey = browserStartupProfileKey(basePath)
   const listeners = new Set<(route: DesktopProfileRoute | null) => void>()

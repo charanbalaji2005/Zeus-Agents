@@ -7,7 +7,7 @@ export function registerClipboardTextIpc(
   ipcMain: Pick<IpcMain, 'handle'>,
   clipboard: Pick<Clipboard, 'readText' | 'writeText'>
 ): void {
-  ipcMain.handle('hermes:writeClipboard', async (_event: IpcMainInvokeEvent, text: unknown): Promise<boolean> => {
+  ipcMain.handle('zeus:writeClipboard', async (_event: IpcMainInvokeEvent, text: unknown): Promise<boolean> => {
     await clipboard.writeText(String(text || ''))
 
     return true
@@ -17,5 +17,5 @@ export function registerClipboardTextIpc(
   // navigator.clipboard.readText() throws "Document is not focused" whenever a
   // portaled overlay has focus, and there's no way to route a read through the
   // canvas. The main process has no such gate.
-  ipcMain.handle('hermes:readClipboard', (): Promise<string> => clipboard.readText())
+  ipcMain.handle('zeus:readClipboard', (): Promise<string> => clipboard.readText())
 }

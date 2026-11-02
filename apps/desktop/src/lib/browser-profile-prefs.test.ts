@@ -17,26 +17,26 @@ import {
 } from './browser-settings'
 import { browserStartupProfileKey } from './browser-startup-profile'
 
-type BootstrapWindow = Window & { __HERMES_BASE_PATH__?: string; __HERMES_DASHBOARD_PROFILE__?: string }
+type BootstrapWindow = Window & { __ZEUS_BASE_PATH__?: string; __ZEUS_DASHBOARD_PROFILE__?: string }
 
 const win = window as BootstrapWindow
 
-function host(basePath = '/hermes') {
-  document.documentElement.dataset.hermesDesktopHost = 'browser'
-  win.__HERMES_BASE_PATH__ = basePath
+function host(basePath = '/zeus') {
+  document.documentElement.dataset.zeusDesktopHost = 'browser'
+  win.__ZEUS_BASE_PATH__ = basePath
 }
 
 function unhost() {
-  delete document.documentElement.dataset.hermesDesktopHost
-  delete win.__HERMES_BASE_PATH__
-  delete win.__HERMES_DASHBOARD_PROFILE__
+  delete document.documentElement.dataset.zeusDesktopHost
+  delete win.__ZEUS_BASE_PATH__
+  delete win.__ZEUS_DASHBOARD_PROFILE__
 }
 
-function putFolder(profile: string, dir: string, basePath = '/hermes') {
+function putFolder(profile: string, dir: string, basePath = '/zeus') {
   localStorage.setItem(browserDefaultProjectDirKey(basePath, profile), dir)
 }
 
-function putStartup(profile: string, basePath = '/hermes', connectionId: null | string = null) {
+function putStartup(profile: string, basePath = '/zeus', connectionId: null | string = null) {
   localStorage.setItem(browserStartupProfileKey(basePath), JSON.stringify({ connectionId, profile }))
 }
 
@@ -62,7 +62,7 @@ afterEach(() => {
 
 describe('browser profile folder for a new chat', () => {
   it('starts a chat or tile in profile B in B folder, and stays detached when B never chose one', () => {
-    expect(browserDefaultProjectDirKey('/hermes', 'beta')).toBe('hermes:browser:default-project-dir:["/hermes","beta"]')
+    expect(browserDefaultProjectDirKey('/zeus', 'beta')).toBe('zeus:browser:default-project-dir:["/zeus","beta"]')
     host()
     putFolder('alpha', '/srv/alpha')
     putFolder('beta', '/srv/beta')
@@ -71,7 +71,7 @@ describe('browser profile folder for a new chat', () => {
     expect(resolveNewSessionCwd()).toBe('/srv/alpha')
     expect(resolveNewSessionCwd('beta')).toBe('/srv/beta')
 
-    localStorage.removeItem(browserDefaultProjectDirKey('/hermes', 'beta'))
+    localStorage.removeItem(browserDefaultProjectDirKey('/zeus', 'beta'))
 
     expect(resolveNewSessionCwd('beta')).toBe('')
     $newChatProfile.set('beta')
@@ -110,17 +110,17 @@ describe('browser profile prefs follow rename and delete', () => {
     putFolder('alpha', '/srv/alpha')
     putFolder('beta', '/srv/beta')
     putFolder('alpha', '/srv/other-alpha', '/other')
-    putStartup('alpha', '/hermes', 'local')
+    putStartup('alpha', '/zeus', 'local')
     putStartup('alpha', '/other', 'remote-box')
     $defaultProfileRoute.set({ connectionId: 'local', profile: 'alpha' })
 
     migrateTilesForProfile('alpha', 'renamed')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBeNull()
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'renamed'))).toBe('/srv/alpha')
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'beta'))).toBe('/srv/beta')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBeNull()
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'renamed'))).toBe('/srv/alpha')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'beta'))).toBe('/srv/beta')
     expect(localStorage.getItem(browserDefaultProjectDirKey('/other', 'alpha'))).toBe('/srv/other-alpha')
-    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/hermes'))!)).toEqual({
+    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/zeus'))!)).toEqual({
       connectionId: 'local',
       profile: 'renamed'
     })
@@ -143,7 +143,7 @@ describe('browser profile prefs follow rename and delete', () => {
     ({ expected, research }) => {
       host()
       putFolder('work', '/srv/deleted-work')
-      putStartup('work', '/hermes', 'local')
+      putStartup('work', '/zeus', 'local')
       $defaultProfileRoute.set({ connectionId: 'local', profile: 'work' })
 
       if (research) {
@@ -153,8 +153,8 @@ describe('browser profile prefs follow rename and delete', () => {
       migrateTilesForProfile('research', 'work')
 
       expect(resolveNewSessionCwd('work')).toBe(expected)
-      expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'research'))).toBeNull()
-      expect(localStorage.getItem(browserStartupProfileKey('/hermes'))).toBeNull()
+      expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'research'))).toBeNull()
+      expect(localStorage.getItem(browserStartupProfileKey('/zeus'))).toBeNull()
       expect($defaultProfileRoute.get()).toBeNull()
     }
   )
@@ -165,8 +165,8 @@ describe('browser profile prefs follow rename and delete', () => {
 
     migrateTilesForProfile('alpha', 'renamed')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBeNull()
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'renamed'))).toBeNull()
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBeNull()
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'renamed'))).toBeNull()
   })
 
   it('rewrites startup storage when this window is not currently mirroring it', () => {
@@ -175,7 +175,7 @@ describe('browser profile prefs follow rename and delete', () => {
 
     migrateTilesForProfile('alpha', 'renamed')
 
-    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/hermes'))!).profile).toBe('renamed')
+    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/zeus'))!).profile).toBe('renamed')
     expect($defaultProfileRoute.get()).toBeNull()
   })
 
@@ -187,8 +187,8 @@ describe('browser profile prefs follow rename and delete', () => {
 
     migrateTilesForProfile('alpha', 'renamed')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'renamed'))).toBe('/srv/alpha')
-    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/hermes'))!).profile).toBe('renamed')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'renamed'))).toBe('/srv/alpha')
+    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/zeus'))!).profile).toBe('renamed')
     expect($defaultProfileRoute.get()).toEqual({ connectionId: null, profile: 'beta' })
   })
 
@@ -196,15 +196,15 @@ describe('browser profile prefs follow rename and delete', () => {
     host()
     putFolder('alpha', '/srv/alpha')
     putFolder('beta', '/srv/beta')
-    putStartup('alpha', '/hermes', 'local')
+    putStartup('alpha', '/zeus', 'local')
     putStartup('alpha', '/other', 'remote-box')
     $defaultProfileRoute.set({ connectionId: 'local', profile: 'alpha' })
 
     dropTilesForProfile('alpha')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBeNull()
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'beta'))).toBe('/srv/beta')
-    expect(localStorage.getItem(browserStartupProfileKey('/hermes'))).toBeNull()
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBeNull()
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'beta'))).toBe('/srv/beta')
+    expect(localStorage.getItem(browserStartupProfileKey('/zeus'))).toBeNull()
     expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/other'))!).profile).toBe('alpha')
     expect($defaultProfileRoute.get()).toBeNull()
     expect(resolveNewSessionCwd('alpha')).toBe('')
@@ -212,34 +212,34 @@ describe('browser profile prefs follow rename and delete', () => {
 
   it('leaves a stored startup route the profile bridge does not read as one', async () => {
     host()
-    const bridge = createBrowserProfileBridge({ basePath: '/hermes', currentProfile: () => null, openWindow: async () => ({ ok: true }) })
+    const bridge = createBrowserProfileBridge({ basePath: '/zeus', currentProfile: () => null, openWindow: async () => ({ ok: true }) })
 
     for (const stored of [
       { connectionId: 'remote-1', profile: 'work' },
       { connectionId: null, profile: ' work ' }
     ]) {
       const raw = JSON.stringify(stored)
-      localStorage.setItem(browserStartupProfileKey('/hermes'), raw)
+      localStorage.setItem(browserStartupProfileKey('/zeus'), raw)
       await expect(bridge.profile.getDefault()).resolves.toBeNull()
 
       migrateTilesForProfile('work', 'renamed')
-      expect(localStorage.getItem(browserStartupProfileKey('/hermes'))).toBe(raw)
+      expect(localStorage.getItem(browserStartupProfileKey('/zeus'))).toBe(raw)
 
       dropTilesForProfile('work')
-      expect(localStorage.getItem(browserStartupProfileKey('/hermes'))).toBe(raw)
+      expect(localStorage.getItem(browserStartupProfileKey('/zeus'))).toBe(raw)
     }
   })
 
   it('leaves a startup profile that names someone else', () => {
     host()
     putFolder('alpha', '/srv/alpha')
-    putStartup('beta', '/hermes', 'local')
+    putStartup('beta', '/zeus', 'local')
     $defaultProfileRoute.set({ connectionId: 'local', profile: 'beta' })
 
     dropTilesForProfile('alpha')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBeNull()
-    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/hermes'))!)).toEqual({
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBeNull()
+    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/zeus'))!)).toEqual({
       connectionId: 'local',
       profile: 'beta'
     })
@@ -247,7 +247,7 @@ describe('browser profile prefs follow rename and delete', () => {
   })
 
   it('keeps folder and startup prefs when this page is not the browser host', () => {
-    win.__HERMES_BASE_PATH__ = '/hermes'
+    win.__ZEUS_BASE_PATH__ = '/zeus'
     putFolder('alpha', '/srv/alpha')
     putStartup('alpha')
     $defaultProfileRoute.set({ connectionId: null, profile: 'alpha' })
@@ -255,9 +255,9 @@ describe('browser profile prefs follow rename and delete', () => {
     migrateTilesForProfile('alpha', 'renamed')
     dropTilesForProfile('alpha')
 
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'alpha'))).toBe('/srv/alpha')
-    expect(localStorage.getItem(browserDefaultProjectDirKey('/hermes', 'renamed'))).toBeNull()
-    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/hermes'))!).profile).toBe('alpha')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'alpha'))).toBe('/srv/alpha')
+    expect(localStorage.getItem(browserDefaultProjectDirKey('/zeus', 'renamed'))).toBeNull()
+    expect(JSON.parse(localStorage.getItem(browserStartupProfileKey('/zeus'))!).profile).toBe('alpha')
     expect($defaultProfileRoute.get()).toEqual({ connectionId: null, profile: 'alpha' })
   })
 })
@@ -267,12 +267,12 @@ describe('browser profile prefs follow rename and delete', () => {
 // folder alpha's tab chose sits under 'default'. A tab that named
 // `?profile=default` saved there too, so whose folder it is stays unknown.
 describe('browser folder saved by an older build', () => {
-  const legacyKey = 'hermes:browser:default-project-dir:["/hermes","default"]'
-  const alphaKey = 'hermes:browser:default-project-dir:["/hermes","alpha"]'
+  const legacyKey = 'zeus:browser:default-project-dir:["/zeus","default"]'
+  const alphaKey = 'zeus:browser:default-project-dir:["/zeus","alpha"]'
 
   function serveAlphaWithLegacy(dir: string) {
     host()
-    win.__HERMES_DASHBOARD_PROFILE__ = 'alpha'
+    win.__ZEUS_DASHBOARD_PROFILE__ = 'alpha'
     localStorage.setItem(legacyKey, dir)
   }
 
@@ -312,8 +312,8 @@ describe('browser folder saved by an older build', () => {
   it('shows the copied folder in Settings for a tab that names no profile, and for default', async () => {
     serveAlphaWithLegacy('/srv/legacy')
 
-    const unnamed = createBrowserSettings({ basePath: '/hermes', currentProfile: () => null })
-    const named = createBrowserSettings({ basePath: '/hermes', currentProfile: () => 'default' })
+    const unnamed = createBrowserSettings({ basePath: '/zeus', currentProfile: () => null })
+    const named = createBrowserSettings({ basePath: '/zeus', currentProfile: () => 'default' })
 
     await expect(unnamed.getDefaultProjectDir()).resolves.toMatchObject({ dir: '/srv/legacy' })
     await expect(named.getDefaultProjectDir()).resolves.toMatchObject({ dir: '/srv/legacy' })
@@ -333,7 +333,7 @@ describe('browser folder saved by an older build', () => {
 
     expect(resolveNewSessionCwd('default')).toBe('/srv/default')
 
-    win.__HERMES_DASHBOARD_PROFILE__ = 'alpha'
+    win.__ZEUS_DASHBOARD_PROFILE__ = 'alpha'
 
     expect(resolveNewSessionCwd('alpha')).toBe('')
     expect(resolveNewSessionCwd('default')).toBe('/srv/default')
@@ -375,14 +375,14 @@ describe('browser folder saved by an older build', () => {
 
     expect(resolveNewSessionCwd('alpha')).toBe('/srv/legacy')
 
-    migrateBrowserFolderPref('/hermes', 'alpha', 'beta')
+    migrateBrowserFolderPref('/zeus', 'alpha', 'beta')
 
     expect(resolveNewSessionCwd('beta')).toBe('/srv/legacy')
     expect(resolveNewSessionCwd('alpha')).toBe('')
     expect(resolveNewSessionCwd('default')).toBe('/srv/legacy')
 
-    migrateBrowserFolderPref('/hermes', 'beta', 'alpha')
-    dropBrowserFolderPref('/hermes', 'alpha')
+    migrateBrowserFolderPref('/zeus', 'beta', 'alpha')
+    dropBrowserFolderPref('/zeus', 'alpha')
 
     expect(resolveNewSessionCwd('alpha')).toBe('')
     expect(resolveNewSessionCwd('default')).toBe('/srv/legacy')

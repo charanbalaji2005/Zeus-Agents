@@ -34,15 +34,15 @@ async def test_restart_recovery_keeps_every_profiles_held_images_and_collects_ea
     from gateway.session_api_turn import recover_api_turns
     from gateway.session_authorities import SessionAuthorities
     from gateway.session_authority import SessionAuthority
-    from hermes_state import SessionDB
-    from hermes_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input, settle_session_input
+    from zeus_state import SessionDB
+    from zeus_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input, settle_session_input
 
-    launch = tmp_path / '.hermes'
+    launch = tmp_path / '.zeus'
     beta = launch / 'profiles' / 'beta'
     beta.mkdir(parents=True)
     for home in (launch, beta):
         (home / 'config.yaml').write_text('{}')
-    monkeypatch.setenv('HERMES_HOME', str(launch))
+    monkeypatch.setenv('ZEUS_HOME', str(launch))
     store = SessionStore(config=GatewayConfig(), sessions_dir=launch / 'sessions')
     registry = SessionAuthorities(launch, multiplexed=True)
     runner = SimpleNamespace(_draining=False, session_store=store, session_authorities=registry,

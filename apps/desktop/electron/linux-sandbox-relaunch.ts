@@ -14,7 +14,7 @@
 // (or ELECTRON_DISABLE_SANDBOX is set at launch), so a Linux launch that asks
 // for it at runtime — the boot-abort ladder's sticky fallback, or
 // `desktop.electron_flags` read from config.yaml by a launch that bypassed
-// `hermes desktop` — restarts once with the flag on argv instead.
+// `zeus desktop` — restarts once with the flag on argv instead.
 
 import { LAUNCHER_READY_FD_ENV } from './linux-launcher-ready'
 import { canRelaunch, relaunchTarget } from './relaunch-target'
@@ -31,12 +31,12 @@ export interface SandboxRelaunch {
 // whether Chromium actually started unsandboxed.
 const LAUNCHED_WITHOUT_SANDBOX = alreadyHasNoSandbox(process.argv, process.env)
 
-// `hermes desktop` shortens TMPDIR on Linux so the single-instance lock can
-// bind its socket, parking the real one in HERMES_DESKTOP_TMPDIR; main.ts
+// `zeus desktop` shortens TMPDIR on Linux so the single-instance lock can
+// bind its socket, parking the real one in ZEUS_DESKTOP_TMPDIR; main.ts
 // hands it back right after the lock. The relaunch does not go through the
 // launcher again, so it must inherit the short launch pair, not the restored
 // long TMPDIR that would hang its requestSingleInstanceLock().
-const DESKTOP_TMPDIR_ENV = 'HERMES_DESKTOP_TMPDIR'
+const DESKTOP_TMPDIR_ENV = 'ZEUS_DESKTOP_TMPDIR'
 
 const LAUNCH_TMPDIR_PAIR = process.env[DESKTOP_TMPDIR_ENV]
   ? { socketTmpdir: process.env.TMPDIR, realTmpdir: process.env[DESKTOP_TMPDIR_ENV] }
@@ -97,7 +97,7 @@ export function relaunchIfNoSandboxCameTooLate(host: SandboxRelaunchHost, before
     return false
   }
 
-  console.warn('[hermes] --no-sandbox requested after Chromium started; relaunching with it on the command line')
+  console.warn('[zeus] --no-sandbox requested after Chromium started; relaunching with it on the command line')
   // The launcher's ready pipe is not inherited across the relaunch; a stale fd
   // number would make the next process write its reveal byte into whatever
   // file reuses that descriptor.

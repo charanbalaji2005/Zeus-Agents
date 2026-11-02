@@ -7,16 +7,16 @@ import pytest
 import tui_gateway.server as srv
 from tui_gateway import methods_groups, owner_forward
 
-MEMBERS = [{"member_id": "default", "profile": "default", "handle": "hermes"},
+MEMBERS = [{"member_id": "default", "profile": "default", "handle": "zeus"},
            {"member_id": "ops", "profile": "ops", "handle": "ops"}]
 
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
-    path = tmp_path / ".hermes"
+    path = tmp_path / ".zeus"
     (path / "profiles" / "ops").mkdir(parents=True)
     (path / "profiles" / "ops" / "config.yaml").write_text("{}\n")
-    monkeypatch.setenv("HERMES_HOME", str(path))
+    monkeypatch.setenv("ZEUS_HOME", str(path))
     methods_groups.stop_hosted_room_service(timeout=1.0)
     methods_groups.start_hosted_room_service()
     yield path
@@ -28,7 +28,7 @@ ENDPOINT = object()
 
 def _discovery(monkeypatch, *states):
     """Gateway discovery answers the given states in turn (the last one repeats)."""
-    from hermes_cli import gateway_runtime
+    from zeus_cli import gateway_runtime
     seen = list(states)
 
     def discover(home, *, timeout=2.0):
@@ -73,7 +73,7 @@ def test_capabilities_advertise_only_what_this_wire_carries(home, owner):
 
 
 def test_owner_refusal_is_returned_not_run_locally(home, monkeypatch):
-    from hermes_cli.gateway_client import GatewayRPCError
+    from zeus_cli.gateway_client import GatewayRPCError
     _discovery(monkeypatch, "ready")
 
     def refuse(*_args):
@@ -123,7 +123,7 @@ def test_a_starting_gateway_is_waited_for_and_nothing_lands_locally(home, owner,
 def test_a_named_profile_gateway_never_hides_the_standalone_rooms(home, owner, monkeypatch):
     _discovery(monkeypatch, "absent")  # Desktop on its own first
     srv._methods["groups.create"](1, {"room_id": "room-desk", "name": "Desk", "members": MEMBERS})
-    _discovery(monkeypatch, "ready")  # then `hermes -p ops gateway` serves the selected profile
+    _discovery(monkeypatch, "ready")  # then `zeus -p ops gateway` serves the selected profile
 
     listed = srv._methods["groups.list"](2, {"profile": "ops"})["result"]["rooms"]
     state = srv._methods["groups.state"](3, {"profile": "ops", "room_id": "room-desk"})

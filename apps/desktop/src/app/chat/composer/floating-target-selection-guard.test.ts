@@ -52,7 +52,7 @@ describe('floating composer focus-follow vs transcript selection', () => {
     unregister?.()
     unregister = undefined
     document.body.innerHTML = ''
-    delete document.documentElement.dataset.hermesDesktopHost
+    delete document.documentElement.dataset.zeusDesktopHost
     window.getSelection()?.removeAllRanges()
   })
 
@@ -91,7 +91,7 @@ describe('floating composer focus-follow vs transcript selection', () => {
 
   it.each(['touch', 'pen'])('keeps %s transcript gestures from focusing the composer', pointerType => {
     // Touch handling is the browser-hosted Desktop's.
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
     const { button, editor } = mount()
     unregister = registerFloatingComposer('surface-1', { groupId: 'g1', target: 'main' })
 

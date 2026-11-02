@@ -1,6 +1,6 @@
 /**
- * Backend-delivered language packs. A Hermes language-pack plugin (or a user
- * overlay under `$HERMES_HOME/locales/`) ships `<lang>.desktop.yaml`; the
+ * Backend-delivered language packs. A Zeus language-pack plugin (or a user
+ * overlay under `$ZEUS_HOME/locales/`) ships `<lang>.desktop.yaml`; the
  * gateway serves the flattened strings over `i18n.catalog {lang, surface:
  * 'desktop'}` and the selectable languages over `i18n.languages`. Both land
  * in the app-locale registry under source `backend`, merged over the bundled
@@ -11,8 +11,8 @@
  * leaves whatever the registry already holds (never blank the UI over i18n).
  */
 
-import type { LocaleSurface } from '@hermes/shared'
-import { isRecord } from '@hermes/shared/i18n'
+import type { LocaleSurface } from '@zeus/shared'
+import { isRecord } from '@zeus/shared/i18n'
 
 import { isMissingRpcMethod } from '@/lib/gateway-rpc'
 

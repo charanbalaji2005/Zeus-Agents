@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 from gateway.session_busy_controls import authorize
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 
 async def complete_path(connection, ref, params):

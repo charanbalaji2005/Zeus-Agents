@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import type { HermesConnection } from '@/global'
+import type { ZeusConnection } from '@/global'
 
 import { serverOwnsComposerQueue } from './composer-queue'
 import { $connection } from './session'
 
-const browser = (wsUrl: string) => ({ mode: 'remote', wsUrl }) as HermesConnection
+const browser = (wsUrl: string) => ({ mode: 'remote', wsUrl }) as ZeusConnection
 
 afterEach(() => $connection.set(null))
 

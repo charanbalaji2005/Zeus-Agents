@@ -131,7 +131,7 @@
       "write_file"
     ]
   },
-  "cli.hermes": {
+  "cli.zeus": {
     "prompt_tokens": {
       "context": 0,
       "stable": 1225,

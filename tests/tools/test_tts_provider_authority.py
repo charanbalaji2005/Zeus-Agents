@@ -21,7 +21,7 @@ def _fake_key(tag: str) -> str:
 
 @pytest.fixture(autouse=True)
 def clean_env(monkeypatch):
-    for key in ("OPENAI_API_KEY", "HERMES_SESSION_PLATFORM"):
+    for key in ("OPENAI_API_KEY", "ZEUS_SESSION_PLATFORM"):
         monkeypatch.delenv(key, raising=False)
     # The ignored-override warning is once-per-process per distinct value;
     # reset it so one test's emission never masks the next test's assertion.

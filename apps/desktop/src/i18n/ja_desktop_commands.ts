@@ -24,11 +24,11 @@ export const jaDesktopCommands = {
   configHeader: '設定（表示、承認、貼り付け、音声の設定のみ。それ以外は表示されません）:',
   configDefaults: '（既定値）',
   configFooter:
-    '設定画面で変更するか、ゲートウェイのホストで `hermes config edit` を使って config.yaml を編集してください。',
+    '設定画面で変更するか、ゲートウェイのホストで `zeus config edit` を使って config.yaml を編集してください。',
   historyHeader: (count: string) => `会話履歴（${count} 件のメッセージ）:`,
   historyEmpty: 'まだメッセージはありません。',
   historyYou: 'あなた',
-  historyHermes: 'Hermes',
+  historyZeus: 'Zeus',
   saveUsage: '使い方: /save [json|md|html] [filename] [redact]',
   saveLegacyRefused:
     '保存されませんでした: このゲートウェイは秘匿化・ファイル名指定・JSON 以外のコピーを書き出せません。ゲートウェイを更新するか、オプションなしで /save を実行してゲートウェイのホストに生の JSON を書き込んでください。',
@@ -39,9 +39,9 @@ export const jaDesktopCommands = {
   savedTo: (path: string) => `会話を ${path} に保存しました`,
   saveCancelled: '保存されませんでした（キャンセル）。',
   exportRemote:
-    '/export はゲートウェイのホストからプロファイルをパッケージ化しますが、そのホストはこのコンピューターではありません。そのホストで `hermes profile export` を実行してください。',
+    '/export はゲートウェイのホストからプロファイルをパッケージ化しますが、そのホストはこのコンピューターではありません。そのホストで `zeus profile export` を実行してください。',
   importRemote:
-    '/import はゲートウェイのホストにプロファイルをインストールしますが、そのホストはこのコンピューターではありません。そのホストで `hermes profile import <archive>` を実行してください。',
+    '/import はゲートウェイのホストにプロファイルをインストールしますが、そのホストはこのコンピューターではありません。そのホストで `zeus profile import <archive>` を実行してください。',
   timestampsUsage: '使い方: /timestamps [on|off|status]',
   timestampsOn: 'タイムスタンプ: オン（このウィンドウのみ。維持するには config.yaml で display.timestamps を設定）',
   timestampsOff: 'タイムスタンプ: オフ（このウィンドウのみ。維持するには config.yaml で display.timestamps を設定）'

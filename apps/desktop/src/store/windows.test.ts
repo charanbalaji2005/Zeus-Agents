@@ -13,8 +13,8 @@ import {
   openSessionInTerminal
 } from './windows'
 
-const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-const initialHermesDesktop = desktopWindow.hermesDesktop
+const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+const initialZeusDesktop = desktopWindow.zeusDesktop
 
 const notifyError = vi.fn()
 
@@ -23,15 +23,15 @@ vi.mock('./notifications', () => ({
 }))
 
 function installBridge(
-  openSessionWindow?: Window['hermesDesktop']['openSessionWindow'],
-  openWindow?: Window['hermesDesktop']['openWindow'],
-  openBrowserWindow?: Window['hermesDesktop']['openBrowserWindow']
+  openSessionWindow?: Window['zeusDesktop']['openSessionWindow'],
+  openWindow?: Window['zeusDesktop']['openWindow'],
+  openBrowserWindow?: Window['zeusDesktop']['openBrowserWindow']
 ) {
-  desktopWindow.hermesDesktop = {
+  desktopWindow.zeusDesktop = {
     ...(openSessionWindow ? { openSessionWindow } : {}),
     ...(openWindow ? { openWindow } : {}),
     ...(openBrowserWindow ? { openBrowserWindow } : {})
-  } as unknown as Window['hermesDesktop']
+  } as unknown as Window['zeusDesktop']
 }
 
 beforeEach(() => {
@@ -39,10 +39,10 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  if (initialHermesDesktop) {
-    desktopWindow.hermesDesktop = initialHermesDesktop
+  if (initialZeusDesktop) {
+    desktopWindow.zeusDesktop = initialZeusDesktop
   } else {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
   }
 })
 
@@ -76,7 +76,7 @@ describe('openSessionInNewWindow', () => {
   })
 
   it('no-ops gracefully when the bridge is absent (web fallback)', async () => {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
 
     await openSessionInNewWindow('s1')
 
@@ -124,7 +124,7 @@ describe('openSessionInNewWindow', () => {
 
 describe('openNewWindow', () => {
   it('no-ops gracefully when the bridge is absent (web fallback)', async () => {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
 
     await openNewWindow()
 
@@ -151,7 +151,7 @@ describe('openBrowserInNewWindow', () => {
   })
 
   it('returns false when the bridge is absent', async () => {
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
 
     expect(canOpenBrowserWindow()).toBe(false)
     expect(await openBrowserInNewWindow('tab-1')).toBe(false)
@@ -186,7 +186,7 @@ describe('openBrowserInNewWindow', () => {
 describe('openSessionInTerminal', () => {
   it('hands a session to the bridge, and is a no-op without one or without a session id', async () => {
     const open = vi.fn().mockResolvedValue({ ok: true })
-    desktopWindow.hermesDesktop = { openSessionInTerminal: open } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { openSessionInTerminal: open } as unknown as Window['zeusDesktop']
 
     expect(canOpenSessionInTerminal()).toBe(true)
     await openSessionInTerminal('', { cwd: '/work' })
@@ -194,7 +194,7 @@ describe('openSessionInTerminal', () => {
     await openSessionInTerminal('s1', { cwd: '/work', profile: 'work' })
     expect(open).toHaveBeenCalledWith('s1', { cwd: '/work', profile: 'work' })
 
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
 
     expect(canOpenSessionInTerminal()).toBe(false)
     await openSessionInTerminal('s1')

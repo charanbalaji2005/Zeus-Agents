@@ -20,7 +20,7 @@ from tests.waiting import wait_until
 from gateway.session_hosted_controls import HostedControls
 from tui_gateway.hosted_room_service import HostedRoomService
 
-MEMBERS = [{"member_id": "default", "profile": "default", "handle": "hermes"},
+MEMBERS = [{"member_id": "default", "profile": "default", "handle": "zeus"},
            {"member_id": "ops", "profile": "ops", "handle": "ops"}]
 
 

@@ -50,7 +50,7 @@ describe('PreviewPane console state', () => {
 
   afterEach(() => {
     cleanup()
-    globalThis.document.documentElement.removeAttribute('data-hermes-desktop-host')
+    globalThis.document.documentElement.removeAttribute('data-zeus-desktop-host')
     $previewTabs.set([])
     $rightRailActiveTabId.set(null)
     $connection.set(null)
@@ -64,7 +64,7 @@ describe('PreviewPane console state', () => {
     $connection.set({ mode: 'remote' } as never)
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
+      zeusDesktop: {
         onPreviewFileChanged,
         watchPreviewFile
       }
@@ -132,7 +132,7 @@ describe('PreviewPane console state', () => {
   })
 
   it('uses a capability-minimal sandboxed iframe in browser-hosted Desktop', async () => {
-    globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     const target = {
       kind: 'url' as const,
@@ -176,7 +176,7 @@ describe('PreviewPane console state', () => {
   })
 
   it('reuses the browser iframe when a tab navigates to another target URL', () => {
-    globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     const target = {
       kind: 'url' as const,
@@ -243,9 +243,9 @@ describe('PreviewPane console state', () => {
   })
 
   it('keeps the original URL available outside an embedded browser preview after loading', () => {
-    globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
     const openPreviewInBrowser = vi.fn(async () => undefined)
-    vi.stubGlobal('hermesDesktop', { openPreviewInBrowser })
+    vi.stubGlobal('zeusDesktop', { openPreviewInBrowser })
 
     const target = {
       kind: 'url' as const,
@@ -309,8 +309,8 @@ describe('PreviewPane console state', () => {
   it('does not offer the URL-only pop-out action for a local HTML file', async () => {
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
-        ...window.hermesDesktop,
+      zeusDesktop: {
+        ...window.zeusDesktop,
         openBrowserWindow: vi.fn(async () => ({ ok: true }))
       }
     })
@@ -499,10 +499,10 @@ describe('PreviewPane console state', () => {
       })
     })
 
-    const previousDesktop = window.hermesDesktop
+    const previousDesktop = window.zeusDesktop
     let captureCount = 0
 
-    window.hermesDesktop = {
+    window.zeusDesktop = {
       ...previousDesktop,
       capturePreview: vi.fn(async () => {
         captureCount += 1
@@ -557,7 +557,7 @@ describe('PreviewPane console state', () => {
     })
     await waitFor(() => expect(rendered.queryByRole('form', { name: 'Comment 2' })).toBeNull())
     expect(rendered.queryByRole('button', { name: 'Add 1 comment' })).toBeNull()
-    window.hermesDesktop = previousDesktop
+    window.zeusDesktop = previousDesktop
   })
 
   // The webview always runs on THIS machine, so a remote agent's localhost is
@@ -824,7 +824,7 @@ describe('PreviewPane console state', () => {
 
   // A browser tab's back button belongs to the tab: the pane leaves it alone.
   it('leaves the mouse back button to the browser tab in browser-hosted Desktop', async () => {
-    globalThis.document.documentElement.dataset.hermesDesktopHost = 'browser'
+    globalThis.document.documentElement.dataset.zeusDesktopHost = 'browser'
     const target = { kind: 'url' as const, label: 'Example', source: 'https://example.com/', url: 'https://example.com/' }
 
     let rendered!: ReturnType<typeof render>
@@ -842,7 +842,7 @@ describe('PreviewPane console state', () => {
     $connection.set({ mode: 'local' } as never)
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
+      zeusDesktop: {
         readFileDataUrl
       }
     })
@@ -905,7 +905,7 @@ describe('PreviewPane console state', () => {
     $connection.set({ mode: 'local' } as never)
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
+      zeusDesktop: {
         readFileDataUrl
       }
     })
@@ -942,7 +942,7 @@ describe('PreviewPane console state', () => {
     $connection.set({ mode: 'local' } as never)
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
+      zeusDesktop: {
         readFileDataUrl
       }
     })
@@ -983,7 +983,7 @@ describe('PreviewPane console state', () => {
     $connection.set({ mode: 'local' } as never)
     vi.stubGlobal('window', {
       ...window,
-      hermesDesktop: {
+      zeusDesktop: {
         api,
         readFileDataUrl
       }
@@ -1048,21 +1048,21 @@ describe('PreviewPane console state', () => {
 
 describe('PreviewPane guest external handoff', () => {
   // #112941: a guest page's `_blank` anchor (Streamlit's "Ask Google" button)
-  // reaches the OS browser only through the audited `hermes:openExternal` IPC.
-  const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-  const initialHermesDesktop = desktopWindow.hermesDesktop
+  // reaches the OS browser only through the audited `zeus:openExternal` IPC.
+  const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+  const initialZeusDesktop = desktopWindow.zeusDesktop
 
   afterEach(() => {
-    if (initialHermesDesktop) {
-      desktopWindow.hermesDesktop = initialHermesDesktop
+    if (initialZeusDesktop) {
+      desktopWindow.zeusDesktop = initialZeusDesktop
     } else {
-      delete desktopWindow.hermesDesktop
+      delete desktopWindow.zeusDesktop
     }
   })
 
   async function renderWebview() {
     const openExternal = vi.fn(async () => undefined)
-    desktopWindow.hermesDesktop = { openExternal } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { openExternal } as unknown as Window['zeusDesktop']
 
     let rendered!: ReturnType<typeof render>
 
@@ -1109,8 +1109,8 @@ describe('PreviewPane guest external handoff', () => {
 })
 
 describe('PreviewPane off-screen guest', () => {
-  const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
-  const initialHermesDesktop = desktopWindow.hermesDesktop
+  const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
+  const initialZeusDesktop = desktopWindow.zeusDesktop
 
   const target = {
     kind: 'url',
@@ -1122,10 +1122,10 @@ describe('PreviewPane off-screen guest', () => {
   afterEach(() => {
     cleanup()
 
-    if (initialHermesDesktop) {
-      desktopWindow.hermesDesktop = initialHermesDesktop
+    if (initialZeusDesktop) {
+      desktopWindow.zeusDesktop = initialZeusDesktop
     } else {
-      delete desktopWindow.hermesDesktop
+      delete desktopWindow.zeusDesktop
     }
   })
 
@@ -1134,7 +1134,7 @@ describe('PreviewPane off-screen guest', () => {
   // tells main the guest left the screen — and that it came back.
   it('tells main when its guest leaves the screen and when it returns', async () => {
     const setPreviewGuestHidden = vi.fn()
-    desktopWindow.hermesDesktop = { setPreviewGuestHidden } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { setPreviewGuestHidden } as unknown as Window['zeusDesktop']
 
     const pane = (visible: boolean) => (
       <PaneVisibleContext value={visible}>
@@ -1167,7 +1167,7 @@ describe('PreviewPane off-screen guest', () => {
   // was already parked must still be reported to main and muted.
   it('reports and mutes a guest that attaches while its session is already hidden', async () => {
     const setPreviewGuestHidden = vi.fn()
-    desktopWindow.hermesDesktop = { setPreviewGuestHidden } as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = { setPreviewGuestHidden } as unknown as Window['zeusDesktop']
     act(() => setTreePaneParked('preview-tile:url:late', true))
 
     let rendered!: ReturnType<typeof render>
@@ -1200,7 +1200,7 @@ describe('PreviewPane off-screen guest', () => {
   // A hidden session's kept page keeps running, but is not heard from the chat
   // the user switched to; it comes back with the sound it had.
   async function renderAudibleGuest(tabId: string, mutedBefore: boolean) {
-    desktopWindow.hermesDesktop = {} as unknown as Window['hermesDesktop']
+    desktopWindow.zeusDesktop = {} as unknown as Window['zeusDesktop']
     let rendered!: ReturnType<typeof render>
 
     await act(async () => {
@@ -1247,13 +1247,13 @@ describe('PreviewPane local HTML Render|Source toggle', () => {
     url: 'file:///work/page.html'
   }
 
-  const desktopWindow = window as unknown as { hermesDesktop?: Window['hermesDesktop'] }
+  const desktopWindow = window as unknown as { zeusDesktop?: Window['zeusDesktop'] }
 
   beforeEach(() => {
     $connection.set({ mode: 'local' } as never)
-    desktopWindow.hermesDesktop = {
+    desktopWindow.zeusDesktop = {
       readFileText: vi.fn(async () => ({ byteSize: 22, path: target.path, text: '<!doctype html><p>x</p>' }))
-    } as unknown as Window['hermesDesktop']
+    } as unknown as Window['zeusDesktop']
     vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) =>
       window.setTimeout(() => callback(Date.now()), 0)
     )
@@ -1264,7 +1264,7 @@ describe('PreviewPane local HTML Render|Source toggle', () => {
     cleanup()
     closeRightRail()
     $connection.set(null)
-    delete desktopWindow.hermesDesktop
+    delete desktopWindow.zeusDesktop
     vi.unstubAllGlobals()
   })
 
@@ -1314,11 +1314,11 @@ describe('PreviewPane local HTML Render|Source toggle', () => {
   })
 
   it('lands on Source, not Diff, when Source is picked for a file with uncommitted changes', async () => {
-    desktopWindow.hermesDesktop = {
-      ...desktopWindow.hermesDesktop,
+    desktopWindow.zeusDesktop = {
+      ...desktopWindow.zeusDesktop,
       git: { fileDiff: vi.fn(async () => '--- a/page.html\n+++ b/page.html\n-<p>x</p>\n+<p>y</p>\n') },
       gitRoot: vi.fn(async () => '/work')
-    } as unknown as Window['hermesDesktop']
+    } as unknown as Window['zeusDesktop']
 
     openPreview(target)
 

@@ -12,8 +12,8 @@ async def test_reserved_worker_persists_while_runtime_drains(tmp_path):
     from gateway.session_worker import worker_request
     from gateway.session_worker_reservation import reserve_admission_worker
     from tests.gateway.test_worker_admission_reservation import hello
-    from hermes_state import SessionDB
-    from hermes_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input, RuntimeStoreError
+    from zeus_state import SessionDB
+    from zeus_state_runtime import admit_session_input, begin_runtime_epoch, claim_session_input, RuntimeStoreError
     db = SessionDB(tmp_path / 'state.db')
     process = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdin.read()'], stdin=subprocess.PIPE,  # noqa: ASYNC220 -- Popen returns immediately; the test drives the child through its handle
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -50,8 +50,8 @@ async def test_reserved_worker_persists_while_runtime_drains(tmp_path):
 async def test_draining_ws_redeems_only_worker_ticket(tmp_path, monkeypatch, purpose, state):
     from gateway.run_api import GatewayRuntimeAPI
     from gateway.runtime_bootstrap import TicketStore
-    from hermes_cli import web_server as web
-    from hermes_cli import web_server_chat
+    from zeus_cli import web_server as web
+    from zeus_cli import web_server_chat
     tickets = TicketStore('owner', [str(tmp_path)])
     ticket = tickets.mint(profile_id=str(tmp_path), subject='human', purpose=purpose)
     authority = SimpleNamespace(db=SimpleNamespace(db_path=tmp_path / 'state.db'), profile_id=str(tmp_path), runner=None)
@@ -61,7 +61,7 @@ async def test_draining_ws_redeems_only_worker_ticket(tmp_path, monkeypatch, pur
     async def fallback(*args):
         pytest.fail('draining native calls must not enter legacy fallback')
     async def handle(ws, **kwargs):
-        await ws.accept(subprotocol='hermes-gateway-v1')
+        await ws.accept(subprotocol='zeus-gateway-v1')
         seen.append((await ws.receive_json(), kwargs['auth_identity']['capabilities']))
     monkeypatch.setattr('tui_gateway.ws.handle_ws', handle)
     monkeypatch.setattr(web, '_DASHBOARD_EMBEDDED_CHAT_ENABLED', True)
@@ -71,8 +71,8 @@ async def test_draining_ws_redeems_only_worker_ticket(tmp_path, monkeypatch, pur
     async def send(value): sent.append(value)
     scope = {'type': 'websocket', 'path': '/api/ws', 'scheme': 'ws', 'query_string': b'',
         'client': ('127.0.0.1', 1234), 'server': ('127.0.0.1', 9999),
-        'headers': [(b'sec-websocket-protocol', ('hermes-gateway-v1, hermes-gateway-ticket.' + ticket).encode())],
-        'subprotocols': ['hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket]}
+        'headers': [(b'sec-websocket-protocol', ('zeus-gateway-v1, zeus-gateway-ticket.' + ticket).encode())],
+        'subprotocols': ['zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket]}
     await GatewayRuntimeAPI(fallback, runner, web.app)(scope, receive, send)
     if purpose == 'worker-adoption':
         assert seen == [({'method': 'worker.persist'}, frozenset({'worker:adopt'}))]

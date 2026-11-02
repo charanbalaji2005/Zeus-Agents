@@ -6,7 +6,7 @@ description: "Local ledger of the turns in which the agent changed files with wr
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/edit-ledger
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/c0a93cb23627ac1856cb29db163e2cbfff77251d/docs/edit-ledger-card.png

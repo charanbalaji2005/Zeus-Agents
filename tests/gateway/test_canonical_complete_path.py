@@ -12,8 +12,8 @@ import pytest
 from gateway import session_policy
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_controls import AuthorityConnection
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 
 
 @pytest.fixture

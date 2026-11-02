@@ -1,28 +1,28 @@
-"""CLI entry point for the hermes-agent ACP adapter.
+"""CLI entry point for the zeus-agents ACP adapter.
 
-Loads ``~/.hermes/.env``, routes logging to stderr (stdout is reserved for ACP
+Loads ``~/.zeus/.env``, routes logging to stderr (stdout is reserved for ACP
 JSON-RPC), and starts the ACP agent server.
 
 Usage::
 
-    python -m acp_adapter.entry   # or: hermes acp / hermes-acp
+    python -m acp_adapter.entry   # or: zeus acp / zeus-acp
 """
 
-# IMPORTANT: hermes_bootstrap must be the very first import — UTF-8 stdio
-# on Windows.  No-op on POSIX.  See hermes_bootstrap.py for full rationale.
+# IMPORTANT: zeus_bootstrap must be the very first import — UTF-8 stdio
+# on Windows.  No-op on POSIX.  See zeus_bootstrap.py for full rationale.
 try:
-    import hermes_bootstrap
+    import zeus_bootstrap
 except ModuleNotFoundError as exc:
-    # Partial ``hermes update`` (git-reset landed, ``uv pip install -e .`` did not).
-    if exc.name != "hermes_bootstrap":
+    # Partial ``zeus update`` (git-reset landed, ``uv pip install -e .`` did not).
+    if exc.name != "zeus_bootstrap":
         raise  # the bootstrap exists but cannot load: skipping it would skip PM activation
 else:
-    # Stop a ``utils/``/``proxy/``/``ui/`` package in the launch cwd from shadowing Hermes modules.
-    hermes_bootstrap.harden_import_path()
+    # Stop a ``utils/``/``proxy/``/``ui/`` package in the launch cwd from shadowing Zeus modules.
+    zeus_bootstrap.harden_import_path()
 
-# `hermes-acp` runs without hermes_cli.main: repair a `hermes update` killed mid-pull here, before
-# importing anything else from the checkout (a no-op under `hermes acp`, which already did).
-from hermes_cli import _early_recovery
+# `zeus-acp` runs without zeus_cli.main: repair a `zeus update` killed mid-pull here, before
+# importing anything else from the checkout (a no-op under `zeus acp`, which already did).
+from zeus_cli import _early_recovery
 
 if _early_recovery.restore_interrupted_pull():
     _early_recovery.relaunch_after_restore()
@@ -33,7 +33,7 @@ import logging
 import os
 import sys
 from pathlib import Path
-from hermes_constants import get_hermes_home
+from zeus_constants import get_zeus_home
 
 
 # Liveness-probe methods outside the ACP schema. The router correctly answers JSON-RPC -32601
@@ -79,24 +79,24 @@ def _setup_logging() -> None:
 
 
 def _load_env() -> None:
-    """Load .env from HERMES_HOME (default ``~/.hermes``)."""
-    from hermes_cli.env_loader import load_hermes_dotenv
+    """Load .env from ZEUS_HOME (default ``~/.zeus``)."""
+    from zeus_cli.env_loader import load_zeus_dotenv
 
-    hermes_home = get_hermes_home()
-    loaded = load_hermes_dotenv(hermes_home=hermes_home)
+    zeus_home = get_zeus_home()
+    loaded = load_zeus_dotenv(zeus_home=zeus_home)
     log = logging.getLogger(__name__)
     for env_file in loaded or ():
         log.info("Loaded env from %s", env_file)
     if not loaded:
-        log.info("No .env found at %s, using system env", hermes_home / ".env")
+        log.info("No .env found at %s, using system env", zeus_home / ".env")
 
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(prog="hermes-acp", description="Run Hermes Agent as an ACP stdio server.")
-    parser.add_argument("--version", action="store_true", help="Print Hermes version and exit")
+    parser = argparse.ArgumentParser(prog="zeus-acp", description="Run Zeus Agents as an ACP stdio server.")
+    parser.add_argument("--version", action="store_true", help="Print Zeus version and exit")
     parser.add_argument("--check", action="store_true", help="Verify ACP dependencies and adapter imports, then exit")
     parser.add_argument("--setup", action="store_true",
-                        help="Run interactive Hermes provider/model setup for ACP terminal auth")
+                        help="Run interactive Zeus provider/model setup for ACP terminal auth")
     parser.add_argument("--setup-browser", action="store_true",
                         help="Prepare PM's pinned Chromium for browser_exec.")
     parser.add_argument("--yes", "-y", action="store_true", dest="assume_yes",
@@ -105,25 +105,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def _print_version() -> None:
-    from hermes_cli.version_info import get_version_info
+    from zeus_cli.version_info import get_version_info
 
     print(get_version_info().derived_version)
 
 
 def _run_check() -> None:
     import acp
-    from acp_adapter.server import HermesACPAgent
+    from acp_adapter.server import ZeusACPAgent
 
-    print("Hermes ACP check OK")
+    print("Zeus ACP check OK")
 
 
 def _run_setup() -> None:
-    from hermes_cli.main import main as hermes_main
+    from zeus_cli.main import main as zeus_main
 
     old_argv = sys.argv[:]
     try:
-        sys.argv = [old_argv[0] if old_argv else "hermes", "model"]
-        hermes_main()
+        sys.argv = [old_argv[0] if old_argv else "zeus", "model"]
+        zeus_main()
     finally:
         sys.argv = old_argv
 
@@ -175,7 +175,7 @@ def main(argv: list[str] | None = None) -> None:
     _load_env()
 
     logger = logging.getLogger(__name__)
-    logger.info("Starting hermes-agent ACP adapter")
+    logger.info("Starting zeus-agents ACP adapter")
 
     # Ensure the project root is on sys.path so ``from run_agent import AIAgent`` works
     project_root = str(Path(__file__).resolve().parent.parent)
@@ -184,13 +184,13 @@ def main(argv: list[str] | None = None) -> None:
 
     # One TLS authority: trust the OS store before any outbound call (bare
     # requests/urllib included) resolves a CA bundle — see agent/ssl_verify.py.
-    # This console script bypasses hermes_cli.main, which does the same.
+    # This console script bypasses zeus_cli.main, which does the same.
     from agent.ssl_verify import install_truststore
 
     install_truststore()
 
     import acp
-    from .server import HermesACPAgent
+    from .server import ZeusACPAgent
 
     # Windows: import the configured memory provider (and numpy) on the main thread before
     # the ACP stdin-reader thread starts. A first-time native-extension import racing another
@@ -199,7 +199,7 @@ def main(argv: list[str] | None = None) -> None:
         _warm_memory_provider_import(logger)
 
     # MCP discovery and execution belong to the gateway daemon; this process is a viewer.
-    agent = HermesACPAgent()
+    agent = ZeusACPAgent()
 
     async def serve():
         # MCP and execution belong to the daemon. Close only this viewer, while

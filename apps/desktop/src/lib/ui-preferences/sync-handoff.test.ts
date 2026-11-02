@@ -11,11 +11,11 @@ import type { UiPreferencesBridge } from './sync'
 // Hand-offs between clients and page loads, against the real native writer on
 // a real file (#145536 re-review): an upgraded browser's old defaults, a closed
 // tab's unsent edit, a first snapshot that lands after the app read its cache.
-const KEYBINDS = 'hermes.desktop.keybinds'
-const HAPTICS = 'hermes.desktop.hapticsMuted'
-const MODE = 'hermes-desktop-mode-v1'
-const FAVORITES = 'hermes.desktop.favorite-models'
-const OUTBOX_PREFIX = 'hermes:ui-preferences:outbox:'
+const KEYBINDS = 'zeus.desktop.keybinds'
+const HAPTICS = 'zeus.desktop.hapticsMuted'
+const MODE = 'zeus-desktop-mode-v1'
+const FAVORITES = 'zeus.desktop.favorite-models'
+const OUTBOX_PREFIX = 'zeus:ui-preferences:outbox:'
 const CUSTOM_KEYBINDS = '{"composer.dictate":["mod+shift+d"]}'
 
 // Every store that writes its value the moment its module evaluates.
@@ -37,7 +37,7 @@ const stops: (() => void)[] = []
 const tick = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms))
 
 function storeFile(): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-ui-handoff-'))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-ui-handoff-'))
   dirs.push(dir)
 
   return path.join(dir, 'ui-preferences.json')
@@ -111,7 +111,7 @@ it('a browser upgraded from a build that stored every default at load never seed
 
   const oldDefaults = Object.fromEntries(
     Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index) ?? '')
-      .filter(key => key.startsWith('hermes.desktop.') || key.startsWith('hermes-desktop-'))
+      .filter(key => key.startsWith('zeus.desktop.') || key.startsWith('zeus-desktop-'))
       .map(key => [key, window.localStorage.getItem(key) ?? ''])
   )
 

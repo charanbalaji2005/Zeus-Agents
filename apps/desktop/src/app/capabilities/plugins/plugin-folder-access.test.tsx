@@ -25,12 +25,12 @@ const door = {
 afterEach(() => {
   cleanup()
   queryClient.clear()
-  delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+  delete (window as unknown as { zeusDesktop?: unknown }).zeusDesktop
 })
 
 describe('PluginFolderAccess', () => {
   it('shows each granted folder and revokes it for that plugin', async () => {
-    ;(window as unknown as { hermesDesktop: unknown }).hermesDesktop = { pluginFiles: door }
+    ;(window as unknown as { zeusDesktop: unknown }).zeusDesktop = { pluginFiles: door }
     render(
       <QueryClientProvider client={queryClient}>
         <PluginFolderAccess name="Plexus" plugin={{ id: 'plexus' } as PluginRecord} />
@@ -46,7 +46,7 @@ describe('PluginFolderAccess', () => {
   it('a failed read says so and can be retried, instead of looking like no access', async () => {
     grants.splice(0, grants.length, { grantedAt: 'x', id: 'f1', name: 'Vault', path: '/home/me/Vault' })
     door.grants.mockRejectedValueOnce(new Error('EACCES: grants.json'))
-    ;(window as unknown as { hermesDesktop: unknown }).hermesDesktop = { pluginFiles: door }
+    ;(window as unknown as { zeusDesktop: unknown }).zeusDesktop = { pluginFiles: door }
     render(
       <QueryClientProvider client={queryClient}>
         <PluginFolderAccess name="Plexus" plugin={{ id: 'plexus' } as PluginRecord} />

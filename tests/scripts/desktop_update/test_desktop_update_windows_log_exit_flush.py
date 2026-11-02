@@ -51,7 +51,7 @@ def test_a_marker_op_log_line_lands_after_the_log_is_released(tmp_path: Path) ->
     handle = _held_log(tmp_path)
     proc = subprocess.Popen(
         [POWERSHELL, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(SCRIPT),
-         "-MarkerOp", "reclaim", "-InstallRoot", str(tmp_path / "hermes-agent")],
+         "-MarkerOp", "reclaim", "-InstallRoot", str(tmp_path / "zeus-agents")],
         cwd=tmp_path, env=_env(tmp_path), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         text=True, encoding="utf-8", errors="replace")
     assert proc.stdout is not None
@@ -76,7 +76,7 @@ def test_the_marker_load_failure_line_lands_after_the_log_is_released(tmp_path: 
     handle = _held_log(home)
     proc = subprocess.Popen(
         [POWERSHELL, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(alone / "windows.ps1"),
-         "-InstallRoot", str(home / "hermes-agent"), "-NoUi"],
+         "-InstallRoot", str(home / "zeus-agents"), "-NoUi"],
         cwd=tmp_path, env=_env(home), stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         text=True, encoding="utf-8", errors="replace")
     assert proc.stdout is not None

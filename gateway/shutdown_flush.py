@@ -2,7 +2,7 @@
 
 When FTS5 corruption blocks ``INSERT INTO messages``, ``_pending_messages`` and the live
 ``agent._session_messages`` are the only surviving copies; shutdown ``.clear()`` would drop them.
-All hooks write atomic JSON payloads under ``<hermes_home>/pending_messages/``:
+All hooks write atomic JSON payloads under ``<zeus_home>/pending_messages/``:
 ``flush_pending_to_file`` / ``flush_overflow_to_file`` (queue head / FIFO tail, before clear),
 ``recover_pending_to_db`` (at startup, before resume turns; replays via ``SessionDB.append_message``,
 deletes each file on success), ``flush_agent_history_to_file`` (DB flush raised),
@@ -22,7 +22,7 @@ import time
 import uuid
 from pathlib import Path
 from typing import Any, Dict, Optional
-from hermes_dir_acl import make_user_dir
+from zeus_dir_acl import make_user_dir
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +42,10 @@ _REPLAYED_UNREMOVABLE: set[Path] = set()
 
 
 def _get_flush_dir():
-    """Return the pending-messages flush directory under the active HERMES_HOME."""
-    from hermes_constants import get_hermes_home
-    flush_dir = get_hermes_home() / "pending_messages"
-    from hermes_constants import assert_named_profile_home_live
+    """Return the pending-messages flush directory under the active ZEUS_HOME."""
+    from zeus_constants import get_zeus_home
+    flush_dir = get_zeus_home() / "pending_messages"
+    from zeus_constants import assert_named_profile_home_live
     assert_named_profile_home_live(flush_dir)
     make_user_dir(flush_dir, parents=True, exist_ok=True, mode=0o700)
     if os.name == "posix":
@@ -128,7 +128,7 @@ def spool_dropped_transcript_message(session_id: str, message: dict[str, Any]) -
     """Spool a cap-evicted transcript message; ``None`` on failure (callers degrade to drop+log).
 
     Uses the same on-disk pending spool as :func:`flush_pending_to_file` (one atomic JSON payload per
-    message under ``<hermes_home>/pending_messages/``), so a runtime cap rotation no longer silently
+    message under ``<zeus_home>/pending_messages/``), so a runtime cap rotation no longer silently
     discards user data while the process stays up (#78182).
     """
     try:
@@ -337,7 +337,7 @@ def recover_pending_spool(session_db=None, *, session_resolver=None) -> tuple[in
         return 0, set()
     own_db = session_db is None
     if own_db:
-        from hermes_state_registry import acquire
+        from zeus_state_registry import acquire
         session_db = acquire()
     recovered = 0
     # Sessions whose spool replay already failed this pass -> files held back for them. Ordering is a
@@ -367,7 +367,7 @@ def recover_pending_spool(session_db=None, *, session_resolver=None) -> tuple[in
     finally:
         if own_db:  # shutdown cancellation/interrupt must not strand an owned DB
             with contextlib.suppress(Exception):
-                from hermes_state_registry import release_or_close
+                from zeus_state_registry import release_or_close
                 release_or_close(session_db)
     if recovered:
         logger.info("Recovered %d pending message(s) from shutdown flush", recovered)
@@ -443,32 +443,32 @@ def _recover_one_payload(session_db, path: Path, payload: dict[str, Any], *,
 def recover_gateway_pending(runner) -> int:
     """Replay every ``pending_messages`` spool this gateway owns into state.db; return the count.
 
-    ``_get_flush_dir`` follows the active HERMES_HOME, so a routed turn on a multiplexed gateway spools
+    ``_get_flush_dir`` follows the active ZEUS_HOME, so a routed turn on a multiplexed gateway spools
     its stalled transcript backlog under ``profiles/<name>/`` and the runtime drain forgets it on
     restart. After the launch home, replay each served profile inside its own home so the default
     store ``recover_pending_spool`` opens is that profile's state.db (#123584). The sessions a pass
     holds back are marked on the session store, so their next live row drains the spool first.
     """
     from gateway.run import _multiplex_profile_homes
-    from hermes_constants import get_hermes_home, reset_hermes_home_override, set_hermes_home_override
+    from zeus_constants import get_zeus_home, reset_zeus_home_override, set_zeus_home_override
 
     store = runner.session_store
     recovered, held_back = recover_pending_spool(session_resolver=store.resolve_session_id_for_key)
     store.mark_spooled_drop_sessions(held_back)
     if not getattr(runner.config, "multiplex_profiles", False):
         return recovered
-    launch_home = Path(get_hermes_home()).resolve()
+    launch_home = Path(get_zeus_home()).resolve()
     for name, home in _multiplex_profile_homes(runner.config):
         if Path(home).resolve() == launch_home or not (Path(home) / "pending_messages").is_dir():
             continue
-        token = set_hermes_home_override(str(home))
+        token = set_zeus_home_override(str(home))
         try:
             count, held_back = recover_pending_spool(session_resolver=store.resolve_session_id_for_key)
         except Exception:  # one profile's unreadable spool must not strand the others'
             logger.warning("Pending-message recovery failed for profile %s", name, exc_info=True)
             continue
         finally:
-            reset_hermes_home_override(token)
+            reset_zeus_home_override(token)
         recovered += count
         store.mark_spooled_drop_sessions(held_back)
     return recovered

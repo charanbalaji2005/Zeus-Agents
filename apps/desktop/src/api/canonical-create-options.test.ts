@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { expect, test } from 'vitest'
 
-import { HermesGateway } from './client'
+import { ZeusGateway } from './client'
 
 // B09 / C-hx-1: a local Desktop new chat sends `desktopSessionCreateParams` (use-session-actions)
 // verbatim. The fixture owner refuses exactly what the generated canonical contract refuses, so a
@@ -48,7 +48,7 @@ test.each(CASES)('%s: the Desktop create frame is admitted by the owner contract
         : { jsonrpc: '2.0', id: frame.id, result: { session_id: 's', stored_session_id: 's', revision: 1, execution_generation: 0, messages: [], prompts: [] } }))
     })
   })
-  const client = new HermesGateway()
+  const client = new ZeusGateway()
 
   try {
     const address = server.address() as { port: number }

@@ -16,7 +16,7 @@ from gateway.config import GatewayConfig
 from gateway.session import SessionStore
 from gateway.session_authority import initialize_session_authority
 from gateway.session_controls import AuthorityConnection
-from hermes_cli.gateway_client import GatewayClientError
+from zeus_cli.gateway_client import GatewayClientError
 from tests.acp_adapter.test_gateway_unacked_slash import SlashWire
 
 IMAGE = {'type': 'image_url', 'image_url': {'url': 'data:image/png;base64,AA=='}}
@@ -40,7 +40,7 @@ class LossyResume(SlashWire):
 
 @contextlib.asynccontextmanager
 async def _editor(tmp_path, monkeypatch, wire_class=SlashWire):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     executed = []
 

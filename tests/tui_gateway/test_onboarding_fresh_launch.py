@@ -10,7 +10,7 @@ import pytest
 
 from agent import onboarding_record
 from agent.onboarding_flow import PENDING, Answered, Facts, Shown
-from hermes_cli.config import read_user_config_raw
+from zeus_cli.config import read_user_config_raw
 from tui_gateway import server
 
 FACTS = Facts(os="macos", arch="arm64", machine_kind="Mac", plugins=())
@@ -18,11 +18,11 @@ FACTS = Facts(os="macos", arch="arm64", machine_kind="Mac", plugins=())
 
 @pytest.fixture
 def root(tmp_path, monkeypatch) -> Path:
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".zeus"
     home.mkdir()
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setenv("HERMES_HOME", str(home))
-    monkeypatch.setattr(server, "_hermes_home", str(home))
+    monkeypatch.setenv("ZEUS_HOME", str(home))
+    monkeypatch.setattr(server, "_zeus_home", str(home))
     monkeypatch.setattr(server, "_db", None)
     monkeypatch.setattr("agent.onboarding_facts.read_facts", lambda **kw: FACTS)
     (home / ".env").write_text("OPENROUTER_API_KEY=sk-or-test\n", encoding="utf-8")  # a model to run on
@@ -45,7 +45,7 @@ def client(root, monkeypatch):
 
     monkeypatch.setitem(server._methods, "session.resume", resume)
     monkeypatch.setitem(server._methods, "prompt.submit", submit)
-    from hermes_cli.process_identity import serving_local_desktop
+    from zeus_cli.process_identity import serving_local_desktop
     with serving_local_desktop(True):  # the local Desktop's requests: only it starts a first run
         yield calls
 

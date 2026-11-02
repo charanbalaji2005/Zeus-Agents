@@ -11,7 +11,7 @@ param(
 # The parent runs this detached with no stdio, so this file is the only record of why it gave up.
 # It is shared across attempts: lines carry the stage dir name so the parent can pick out its own,
 # and it restarts when it passes 64KB so it cannot grow without bound.
-$LogFile = Join-Path $env:TEMP 'hermes-relaunch-waiter.log'
+$LogFile = Join-Path $env:TEMP 'zeus-relaunch-waiter.log'
 $Attempt = Split-Path -Leaf (Split-Path -Parent $ReadyFile)
 $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 try { if ((Test-Path -LiteralPath $LogFile) -and (Get-Item -LiteralPath $LogFile).Length -gt 65536) { Remove-Item -LiteralPath $LogFile -Force } } catch {}
@@ -67,7 +67,7 @@ try {
 } finally {
   Set-Location $env:TEMP
   Remove-Item -LiteralPath $ReadyFile -Force -ErrorAction SilentlyContinue
-  if ([IO.Path]::GetFileName($PSScriptRoot).StartsWith('hermes-relaunch-')) {
+  if ([IO.Path]::GetFileName($PSScriptRoot).StartsWith('zeus-relaunch-')) {
     Remove-Item -LiteralPath $PSScriptRoot -Recurse -Force -ErrorAction SilentlyContinue
   }
 }

@@ -45,7 +45,7 @@ class EventContract:
 
 
 METHODS: dict[str, MethodContract] = {}
-# ``hermes-gateway-v1`` verbs only ``gateway/session_controls.py::AuthorityConnection`` serves
+# ``zeus-gateway-v1`` verbs only ``gateway/session_controls.py::AuthorityConnection`` serves
 # (``contracts/canonical.py``), plus explicit overrides where a shared name has a different wire.
 CANONICAL_METHODS: dict[str, MethodContract] = {}
 SERVER_REQUESTS: dict[str, ServerRequestContract] = {}
@@ -55,7 +55,7 @@ EVENTS: dict[str, EventContract] = {}
 def unknown_method_message(method: str) -> str:
     """The ``-32601`` text both routes send. A JSON-RPC client sends no version, so a missing
     method says only what the backend knows: this backend does not serve it."""
-    return f"unknown method: {method} — not available on this Hermes backend"
+    return f"unknown method: {method} — not available on this Zeus backend"
 
 
 def _declare(table: dict, entry) -> None:
@@ -96,7 +96,7 @@ def event(name: str, payload: type[Payload] | None = None, *, doc: str = "") -> 
 # JSON-RPC ``4000`` with the field path, never a silent ignore. Results and payloads are OUR bug when
 # raises, which is what makes the suite the gate.
 
-STRICT = bool(os.environ.get("HERMES_TEST_ISOLATION"))
+STRICT = bool(os.environ.get("ZEUS_TEST_ISOLATION"))
 
 class ContractViolation(AssertionError):
     """A result or payload the gateway produced does not match its declared contract."""
@@ -121,7 +121,7 @@ def validate_params(contract: MethodContract | ServerRequestContract, params: di
             if err.get("type") == "extra_forbidden":
                 loc = ".".join(str(p) for p in err.get("loc", ())) or "params"
                 return None, (f"invalid params for {contract.name}: {loc}: {err.get('msg')} — the client and "
-                              "the Hermes backend are out of sync (different versions); run `hermes update` "
+                              "the Zeus backend are out of sync (different versions); run `zeus update` "
                               "and restart both")
     return params, None
 

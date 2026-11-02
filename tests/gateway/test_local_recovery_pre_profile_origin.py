@@ -16,13 +16,13 @@ def _build_runtime(tmp_path, monkeypatch):
     from gateway.session import SessionStore
     from gateway.session_authorities import SessionAuthorities
     from gateway import run
-    root = tmp_path / '.hermes'
+    root = tmp_path / '.zeus'
     root.mkdir(mode=0o700, exist_ok=True)
-    monkeypatch.setenv('HERMES_HOME', str(root))
-    # The autouse isolation fixture pins hermes_state.DEFAULT_DB_PATH to its own fake home once
-    # hermes_state is imported; per-home stores must follow the scoped HERMES_HOME here.
-    import hermes_state
-    monkeypatch.setattr(hermes_state, 'DEFAULT_DB_PATH', hermes_state._IMPORT_DEFAULT_DB_PATH)
+    monkeypatch.setenv('ZEUS_HOME', str(root))
+    # The autouse isolation fixture pins zeus_state.DEFAULT_DB_PATH to its own fake home once
+    # zeus_state is imported; per-home stores must follow the scoped ZEUS_HOME here.
+    import zeus_state
+    monkeypatch.setattr(zeus_state, 'DEFAULT_DB_PATH', zeus_state._IMPORT_DEFAULT_DB_PATH)
     secondary = root / 'profiles' / 'secondary'
     secondary.mkdir(parents=True, mode=0o700, exist_ok=True)
     if not (secondary / 'config.yaml').exists():
@@ -39,7 +39,7 @@ async def _served_authority(tmp_path, monkeypatch, instance_id, db=None):
     """Launch home plus one served secondary sharing the runner's store, as a multiplex gateway
     builds them; returns (served authority, its state db, the secondary home path)."""
     from gateway.session_authority import initialize_session_authority
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     runner, registry, root, secondary = _build_runtime(tmp_path, monkeypatch)
     launch = await initialize_session_authority(runner, profile_id=str(root), instance_id=instance_id)
     registry.add(root, launch, name='default')
@@ -57,7 +57,7 @@ async def _served_authority(tmp_path, monkeypatch, instance_id, db=None):
 def _age_receipt_origins(db, sid, mutate):
     """Rewrite every persisted origin copy of *sid*'s receipt through *mutate* (a dict -> dict
     function), the way an older build's on-disk spelling differs from the recomputed source."""
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     with db._read_ctx() as conn:
         row = conn.execute('SELECT value FROM state_meta WHERE key=?', (POLICY_PREFIX + sid,)).fetchone()
     receipt = json.loads(row[0])
@@ -82,7 +82,7 @@ def _age_receipt_origins(db, sid, mutate):
 
 def _store_receipt(db, sid, mutate):
     """Rewrite *sid*'s stored receipt text through *mutate* (a str -> str function)."""
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     with db._read_ctx() as conn:
         stored = conn.execute('SELECT value FROM state_meta WHERE key=?', (POLICY_PREFIX + sid,)).fetchone()[0]
     db._write_sql('UPDATE state_meta SET value=? WHERE key=?', (mutate(stored), POLICY_PREFIX + sid))
@@ -126,7 +126,7 @@ async def test_a_refused_receipt_names_its_failing_check_in_the_log(tmp_path, mo
     from gateway.session_contract import Principal
     from gateway.session_local import create_local_session
     from gateway.session_local_recovery import restore_local_session
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
 
     served, db, secondary = await _served_authority(tmp_path, monkeypatch, 'first')
     actor = Principal('owner', str(secondary), frozenset({'session:create', 'session:read'}), 'socket')

@@ -3,7 +3,7 @@ import asyncio
 import logging
 import sqlite3
 
-from hermes_state_runtime import RuntimeStoreError, _admission, _epoch, settle_steer_transfers
+from zeus_state_runtime import RuntimeStoreError, _admission, _epoch, settle_steer_transfers
 
 logger = logging.getLogger(__name__)
 
@@ -122,9 +122,9 @@ def _publish_completion(authority, live, ref, row, settled, response, captured):
 
 
 RESTART_INTERRUPT_NOTICE = ('Gateway restarting: this turn was interrupted and will not be run again. '
-                            'Send your message again once Hermes reconnects.')
+                            'Send your message again once Zeus reconnects.')
 SHUTDOWN_INTERRUPT_NOTICE = ('Gateway shutting down: this turn was interrupted and will not be run again. '
-                             'Send your message again once Hermes is back.')
+                             'Send your message again once Zeus is back.')
 
 
 def owner_stop_notice(captured, outcome, row=None):

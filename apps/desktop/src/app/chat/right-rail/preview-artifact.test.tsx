@@ -28,7 +28,7 @@ describe('ArtifactPreview', () => {
     cleanup()
     $artifactRegistry.set({})
     $artifactVersionSelection.set({})
-    Reflect.deleteProperty(window, 'hermesDesktop')
+    Reflect.deleteProperty(window, 'zeusDesktop')
   })
 
   it('renders html in a scripts-only sandboxed frame the parent app is unreachable from', async () => {
@@ -45,7 +45,7 @@ describe('ArtifactPreview', () => {
 
   it('opens a browser-hosted HTML blob without corrupting it as a file URL', async () => {
     const openPreviewInBrowser = vi.fn().mockResolvedValue(undefined)
-    window.hermesDesktop = {
+    window.zeusDesktop = {
       openExternal: vi.fn().mockResolvedValue(undefined),
       openPreviewInBrowser,
       saveImageBuffer: vi.fn().mockResolvedValue('blob:http://localhost/artifact')

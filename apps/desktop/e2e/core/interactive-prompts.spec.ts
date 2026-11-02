@@ -1,7 +1,7 @@
 /**
  * C20 core: blocking interactive prompts round-trip through the real chain.
  *
- * Real Electron + real `hermes serve`, approvals in manual mode; only the LLM
+ * Real Electron + real `zeus serve`, approvals in manual mode; only the LLM
  * is faked. For each prompt kind the invariant is end to end, not "a card
  * rendered":
  *  - clarify: exactly one card; the choice the user clicks is exactly what
@@ -60,7 +60,7 @@ function toolResults(completion: RecordedCompletion | undefined): string {
 test('clarify and approval prompts round-trip exactly once', async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('prompts')
-  writeProviderHome(sandbox.hermesHome, provider.url, '', 'manual')
+  writeProviderHome(sandbox.zeusHome, provider.url, '', 'manual')
   // Keep this explicit gateway home distinct from the sandbox account default:
   // launchd belongs to the real UID, not HOME, and must never select its bare service.
   const accountHome = path.join(sandbox.root, 'account-home')

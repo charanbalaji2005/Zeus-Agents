@@ -3,10 +3,10 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-/** The closed token set `hermes_cli.update_receipt.record_stop_reason` records. */
+/** The closed token set `zeus_cli.update_receipt.record_stop_reason` records. */
 const STOP_CLASS_TOKEN = /^[a-z][a-z0-9_]{0,39}$/
 
-const UPDATES_GUIDE = 'https://hermes-agent.nousresearch.com/docs/getting-started/updating'
+const UPDATES_GUIDE = 'https://charanbalaji2005.github.io/Zeus-Agents/docs/getting-started/updating'
 
 export interface UpdateStop {
   stopClass: string
@@ -21,14 +21,14 @@ export interface UpdateStopExplanation {
 }
 
 /**
- * Receipts live under the ROOT home: `hermes -p <name> update` files its receipt
+ * Receipts live under the ROOT home: `zeus -p <name> update` files its receipt
  * in `<root>/logs/update_receipts/`, and the hand-off script resolves the same
  * root before it reads the receipt back (scripts/desktop-update/posix.sh,
  * `update_committed_after_exit`). A profile home passed here therefore still
  * reads the root's store.
  */
-export function receiptDirectory(hermesHome: string): string {
-  const home: string = path.resolve(hermesHome)
+export function receiptDirectory(zeusHome: string): string {
+  const home: string = path.resolve(zeusHome)
   const root: string = path.basename(path.dirname(home)) === 'profiles' ? path.dirname(path.dirname(home)) : home
 
   return path.join(root, 'logs', 'update_receipts')
@@ -38,13 +38,13 @@ export function receiptDirectory(hermesHome: string): string {
  * This run's own stop, read from the receipt the update wrote.
  *
  * `correlation_id` is the hand-off `run_id` (the launcher exports it as
- * `HERMES_UPDATE_CORRELATION_ID`), so a receipt left behind by an earlier run
+ * `ZEUS_UPDATE_CORRELATION_ID`), so a receipt left behind by an earlier run
  * cannot explain this one. A record still `running` keeps `finished_at` null and
  * never matches — the same rule the hand-off script applies before it trusts an
  * outcome. Anything missing or unexpected returns null and the caller keeps its
  * generic text: the dialog must never invent a stop it cannot prove.
  */
-export function readStoppedRun(hermesHome: string, correlationId: string | null): UpdateStop | null {
+export function readStoppedRun(zeusHome: string, correlationId: string | null): UpdateStop | null {
   if (!correlationId) {
     return null // no run identity: a receipt on disk cannot be attributed to this result
   }
@@ -52,7 +52,7 @@ export function readStoppedRun(hermesHome: string, correlationId: string | null)
   let parsed: any
 
   try {
-    parsed = JSON.parse(fs.readFileSync(path.join(receiptDirectory(hermesHome), 'latest.json'), 'utf8'))
+    parsed = JSON.parse(fs.readFileSync(path.join(receiptDirectory(zeusHome), 'latest.json'), 'utf8'))
   } catch {
     return null
   }
@@ -81,18 +81,18 @@ export function readStoppedRun(hermesHome: string, correlationId: string | null)
  * to say it. Kept to the stops whose remedy the CLI already owns: a token with
  * no entry keeps the generic failure dialog rather than a guessed explanation.
  *
- * `downgrade_refused` is the refusal `hermes_cli/update_downgrade_guard.py`
+ * `downgrade_refused` is the refusal `zeus_cli/update_downgrade_guard.py`
  * prints before anything moves (the receipt records the exit, not that text), so
  * the remedy here is the one the guide names: follow the checkout's channel.
  */
 const STOP_EXPLANATIONS: Record<string, UpdateStopExplanation> = {
   downgrade_refused: {
-    message: 'Hermes kept your install: the offered release is older than it',
+    message: 'Zeus kept your install: the offered release is older than it',
     detail:
       'The updater refused to move this install back to the release it offered, because that release predates the ' +
       'gateway runtime your session stores already use. Downgrading is unsupported, and nothing was changed: you are ' +
       'still on the version you had.\n\n' +
-      'To follow this checkout instead of the release channel, run `hermes update --set-channel main`, or pick a ' +
+      'To follow this checkout instead of the release channel, run `zeus update --set-channel main`, or pick a ' +
       `channel in About ▸ Updates.\n\n${UPDATES_GUIDE}`
   }
 }

@@ -1,10 +1,10 @@
-import { isGatewayReauthRequired, isStableOpen, reconnectBackoffDelayMs } from '@hermes/shared'
+import { isGatewayReauthRequired, isStableOpen, reconnectBackoffDelayMs } from '@zeus/shared'
 
-import type { HermesTerminalExit, HermesTerminalSession, HermesTerminalState } from '@/global'
+import type { ZeusTerminalExit, ZeusTerminalSession, ZeusTerminalState } from '@/global'
 
 import { readJson, writeJson } from './storage'
 
-type TerminalApi = Window['hermesDesktop']['terminal']
+type TerminalApi = Window['zeusDesktop']['terminal']
 type DataListener = Parameters<TerminalApi['onData']>[1]
 
 interface SavedTerminal {
@@ -33,20 +33,20 @@ interface TerminalState {
   socket: WebSocket | null
   generation: number
   stopped: boolean
-  status: HermesTerminalState
+  status: ZeusTerminalState
   retry: number
   retryTimer: number
   openedAt: number | null
   cancelDial?: () => void
-  started?: Promise<HermesTerminalSession>
+  started?: Promise<ZeusTerminalSession>
   pendingData: Array<{ data: string; replay: boolean }>
   dataListeners: Set<DataListener>
-  exit: HermesTerminalExit | null
-  exitListeners: Set<(exit: HermesTerminalExit) => void>
-  stateListeners: Set<(state: HermesTerminalState) => void>
+  exit: ZeusTerminalExit | null
+  exitListeners: Set<(exit: ZeusTerminalExit) => void>
+  stateListeners: Set<(state: ZeusTerminalState) => void>
 }
 
-const META = '\u0000HERMES_TERMINAL_META:'
+const META = '\u0000ZEUS_TERMINAL_META:'
 // 4410 also ends a shell the server closed (expiry, a deleted profile, shutdown); only a shell
 // that exited by itself (`exit`, Ctrl-D) carries this reason (pty_session.WS_CLOSE_PROCESS_EXITED_REASON).
 const PROCESS_EXITED_REASON = 'Process exited'
@@ -127,13 +127,13 @@ interface DialContext {
   isPaused: () => boolean
   stopSocket: (state: TerminalState) => void
   emitData: (state: TerminalState, data: string, replay?: boolean) => void
-  setStatus: (state: TerminalState, status: HermesTerminalState) => void
+  setStatus: (state: TerminalState, status: ZeusTerminalState) => void
   forget: (state: TerminalState) => void
   finish: (state: TerminalState, signal: string | null) => void
   reconnect: (state: TerminalState) => void
 }
 
-async function dialTerminal(state: TerminalState, context: DialContext): Promise<HermesTerminalSession> {
+async function dialTerminal(state: TerminalState, context: DialContext): Promise<ZeusTerminalSession> {
   const { stopSocket, emitData, setStatus, forget, finish, reconnect } = context
   stopSocket(state)
   const generation = ++state.generation
@@ -291,7 +291,7 @@ export function createBrowserTerminal(options: BrowserTerminalOptions): Terminal
   const terminals = new Map<string, TerminalState>()
   let sequence = 0
   let paused = false
-  const storageKey = (key: string) => `hermes.webapp.terminal.v1:${JSON.stringify([window.location.origin, options.basePath, key])}`
+  const storageKey = (key: string) => `zeus.webapp.terminal.v1:${JSON.stringify([window.location.origin, options.basePath, key])}`
 
   const load = (key?: string): SavedTerminal | null => {
     const saved = key ? readJson<SavedTerminal>(storageKey(key)) : null
@@ -306,7 +306,7 @@ export function createBrowserTerminal(options: BrowserTerminalOptions): Terminal
     }
   }
 
-  const setStatus = (state: TerminalState, status: HermesTerminalState) => {
+  const setStatus = (state: TerminalState, status: ZeusTerminalState) => {
     if (state.status === status) {return}
     state.status = status
     state.stateListeners.forEach(listener => listener(status))
@@ -435,7 +435,7 @@ export function createBrowserTerminal(options: BrowserTerminalOptions): Terminal
   }
 
   const resume = (event: PageTransitionEvent) => {
-    if (!event.persisted || !paused || window.hermesDesktop?.terminal !== api) {return}
+    if (!event.persisted || !paused || window.zeusDesktop?.terminal !== api) {return}
     paused = false
     terminals.forEach(state => {
       if (state.stopped) {return}

@@ -1,9 +1,9 @@
 /**
  * C5 core: boot handshake and backend process lifecycle.
  *
- * Real Electron + real `hermes serve`; only the LLM is faked. Process facts
+ * Real Electron + real `zeus serve`; only the LLM is faked. Process facts
  * come from a /proc census of every process carrying this sandbox's
- * HERMES_HOME (so an orphan reparented to init is still counted), sampled
+ * ZEUS_HOME (so an orphan reparented to init is still counted), sampled
  * continuously in the background so a transient extra spawn is seen too.
  *
  *  1. boot: composer interactive, exactly one backend, first turn completes
@@ -13,10 +13,10 @@
  *  3. quit while a turn is streaming and a tool subprocess is running: every
  *     Electron process is gone, and exactly ONE gateway remains — the same
  *     daemon that served the app, still answering. Desktop is an attach
- *     client of the profile's gateway (`hermes gateway ensure`): closing the
+ *     client of the profile's gateway (`zeus gateway ensure`): closing the
  *     app never takes cron, messaging adapters, bots or an in-flight turn down
- *     with it. `hermes gateway stop` then proves teardown works when asked.
- *  4. relaunch the same HERMES_HOME repeatedly: each boot ATTACHES to the one
+ *     with it. `zeus gateway stop` then proves teardown works when asked.
+ *  4. relaunch the same ZEUS_HOME repeatedly: each boot ATTACHES to the one
  *     gateway (same PID throughout, never a second backend), and the transcript
  *     persisted by the first launch cold-hydrates exactly once every time.
  */
@@ -54,7 +54,7 @@ const TOOL_TAG = `core-orphan-${nonce}`
 test('boot handshake, supervised respawn, and zero orphans on quit', async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('boot')
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
   const ws = recordWebSockets(page)
   let closed = false
@@ -179,7 +179,7 @@ test('boot handshake, supervised respawn, and zero orphans on quit', async () =>
             [...sandboxProcesses(sandbox), ...processesTagged(TOOL_TAG)].map(
               p => `${p.pid} ${p.cmdline.slice(0, 120)}`
             ),
-          { timeout: 60_000, message: 'no sandbox process (gateway, tool child) survives hermes gateway stop' }
+          { timeout: 60_000, message: 'no sandbox process (gateway, tool child) survives zeus gateway stop' }
         )
         .toEqual([])
     })
@@ -208,7 +208,7 @@ test('boot handshake, supervised respawn, and zero orphans on quit', async () =>
 test('relaunching the same home: one gateway across every boot, transcript intact', async () => {
   const provider = await startScriptedProvider()
   const sandbox = createCoreSandbox('relaunch')
-  writeProviderHome(sandbox.hermesHome, provider.url)
+  writeProviderHome(sandbox.zeusHome, provider.url)
   const session: OracleTarget = { sessionId: '', expectUserMarkers: [U(1)] }
   let live: Awaited<ReturnType<typeof launchCoreApp>> | null = null
   let gatewayPid: number | null = null
@@ -270,7 +270,7 @@ test('relaunching the same home: one gateway across every boot, transcript intac
     await expect
       .poll(() => sandboxProcesses(sandbox).map(p => `${p.pid} ${p.cmdline.slice(0, 120)}`), {
         timeout: 60_000,
-        message: 'no sandbox process survives hermes gateway stop'
+        message: 'no sandbox process survives zeus gateway stop'
       })
       .toEqual([])
   } finally {

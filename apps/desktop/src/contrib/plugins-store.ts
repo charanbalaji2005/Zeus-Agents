@@ -1,7 +1,7 @@
 /**
  * PLUGIN INVENTORY — the reactive record of every desktop plugin the app
  * knows about (bundled `src/plugins/*`, the in-repo runtime example, the
- * `<hermes home>/desktop-plugins/*` disk door — incl. agent-written ones),
+ * `<zeus home>/desktop-plugins/*` disk door — incl. agent-written ones),
  * plus the persisted DISABLED set. The settings "Plugins" page renders this;
  * the loaders publish into it and consult the disabled set before
  * registering. Enable/disable is live: each record carries the loader's own
@@ -20,7 +20,7 @@ export interface PluginRecord {
   status: PluginStatus
   /** One-liner from the plugin's own metadata (what it adds). */
   description?: string
-  /** Sensitive doors the plugin declared (`HermesPlugin.capabilities`). */
+  /** Sensitive doors the plugin declared (`ZeusPlugin.capabilities`). */
   capabilities?: string[]
   /** Load/registration failure message (status 'error'). */
   error?: string
@@ -35,8 +35,8 @@ export interface PluginRecord {
 // Explicit user enable/disable choices, id -> boolean. ABSENCE means "no
 // choice" — the plugin falls back to its own `defaultEnabled`. This is what
 // lets an opt-in plugin ship off-by-default: absence ≠ enabled anymore.
-const DECISIONS_KEY = 'hermes.desktop.pluginDecisions.v2'
-const LEGACY_DISABLED_KEY = 'hermes.desktop.disabledPlugins.v1'
+const DECISIONS_KEY = 'zeus.desktop.pluginDecisions.v2'
+const LEGACY_DISABLED_KEY = 'zeus.desktop.disabledPlugins.v1'
 
 function loadDecisions(): Record<string, boolean> {
   try {

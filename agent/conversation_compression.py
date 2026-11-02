@@ -41,8 +41,8 @@ from agent.memory_provider import PRE_COMPRESS_CHECKPOINT_API_VERSION
 from agent.model_metadata import estimate_messages_tokens_rough, estimate_request_tokens_rough
 from agent.session_activity import ActivityProvenance, normalize_activity_provenance
 from agent.usage_anchor import set_usage_anchor
-from hermes_state_ids import new_session_id as mint_session_id
-from hermes_state_pidns import holder_namespace_token
+from zeus_state_ids import new_session_id as mint_session_id
+from zeus_state_pidns import holder_namespace_token
 from agent.conversation_compression_watermark import held_archive_watermark
 
 logger = logging.getLogger(__name__)
@@ -232,7 +232,7 @@ _COMPRESSOR_ATTEMPT_LOCK = threading.Lock()
 # worker and fallback threads each see their own generation. Callers outside the dispatch machinery
 # (manual compress, legacy paths) read None and keep unguarded historical behavior.
 _COMPRESSOR_ATTEMPT_GENERATION: contextvars.ContextVar[Any] = contextvars.ContextVar(
-    "hermes_compressor_attempt_generation", default=None
+    "zeus_compressor_attempt_generation", default=None
 )
 
 
@@ -1380,10 +1380,10 @@ from agent.conversation_compression_checkpoint import _checkpoint_blocked, _chec
 
 def _lock_api_is_absent_on_session_db(lock_db: Any) -> bool:
     """Whether the live in-memory SessionDB class structurally predates locks.
-    Only the exact old ``hermes_state.SessionDB`` class (hot-reload skew) may fail open; proxies, lookalikes,
+    Only the exact old ``zeus_state.SessionDB`` class (hot-reload skew) may fail open; proxies, lookalikes,
     non-callables and descriptor failures fail closed."""
     try:
-        from hermes_state import SessionDB
+        from zeus_state import SessionDB
         missing = object()
         return (
             type(lock_db) is SessionDB
@@ -1563,9 +1563,9 @@ def _rebind_session_context(session_id: str) -> None:
         from gateway.session_context import set_current_session_id
         set_current_session_id(session_id)
     except Exception:
-        os.environ["HERMES_SESSION_ID"] = session_id
+        os.environ["ZEUS_SESSION_ID"] = session_id
     with contextlib.suppress(Exception):
-        from hermes_logging import set_session_context
+        from zeus_logging import set_session_context
         set_session_context(session_id)
 
 
@@ -1682,7 +1682,7 @@ def recover_rotated_compression_session(agent: Any) -> Optional[list[dict[str, A
 
 
 def _compression_lock_holder(agent: Any) -> str:
-    """Build a unique lock holder id: ``pid[:pidns]:tid:agent-instance:uuid`` (pidns: see ``hermes_state_pidns``).
+    """Build a unique lock holder id: ``pid[:pidns]:tid:agent-instance:uuid`` (pidns: see ``zeus_state_pidns``).
     pid+tid tell crashed holders apart; instance id and per-acquire uuid disambiguate co-resident/pooled agents."""
     return f"pid={os.getpid()}{holder_namespace_token()}:tid={threading.get_ident()}:agent={id(agent):x}:nonce={uuid.uuid4().hex[:8]}"
 
@@ -1971,7 +1971,7 @@ def _lower_threshold_to_aux_context(
             f"  To make this permanent, use a larger compression model in config.yaml:\n       auxiliary:\n"
             f"         compression:\n           model: <model-with-{old_threshold:,}+-context>\n"
             f"  (Lowering compression.threshold cannot help here — with {_main_label}'s {main_ctx:,}-token window, "
-            f"Hermes's small-context floor and output reservation would recompute the trigger to "
+            f"Zeus's small-context floor and output reservation would recompute the trigger to "
             f"{recomputed_threshold:,} tokens, still above the compression model's {aux_context:,}.)"
         )
     _emit_feasibility_notice(agent, msg)
@@ -1984,7 +1984,7 @@ def _lower_threshold_to_aux_context(
 
 def _aux_inherits_main_route(agent: Any, aux_model: str, aux_base_url: str) -> bool:
     """True when the auxiliary compression client is the main model on the main endpoint."""
-    from hermes_cli.route_identity import normalize_route_base_url
+    from zeus_cli.route_identity import normalize_route_base_url
     if str(aux_model or "").strip().lower() != str(getattr(agent, "model", "") or "").strip().lower():
         return False
     main_base = normalize_route_base_url(str(getattr(agent, "base_url", "") or ""))
@@ -2027,8 +2027,8 @@ def check_compression_model_feasibility(agent: Any) -> None:
                 )
             else:
                 msg = (
-                    "⚠ No auxiliary LLM provider configured: Hermes has no helper model for summarising "
-                    "long chats, so older messages will be cut without a summary. Run `hermes setup` to add one."
+                    "⚠ No auxiliary LLM provider configured: Zeus has no helper model for summarising "
+                    "long chats, so older messages will be cut without a summary. Run `zeus setup` to add one."
                 )
             _emit_feasibility_notice(agent, msg)
             logger.warning("No auxiliary LLM provider for compression — summaries will be unavailable.")
@@ -2059,7 +2059,7 @@ def check_compression_model_feasibility(agent: Any) -> None:
             raise ValueError(
                 f"Auxiliary compression model {aux_model} has a context "
                 f"window of {aux_context:,} tokens, which is below the "
-                f"minimum {MINIMUM_CONTEXT_LENGTH:,} required by Hermes "
+                f"minimum {MINIMUM_CONTEXT_LENGTH:,} required by Zeus "
                 f"Agent.  Choose a compression model with at least "
                 f"{MINIMUM_CONTEXT_LENGTH // 1000}K context (set "
                 f"auxiliary.compression.model in config.yaml), or set "
@@ -2466,7 +2466,7 @@ _PENDING_CONTEXT_ENGINE_NOTIFICATION = "_pending_context_engine_compression_noti
 def _hand_off_metrics_segment(old_session_id: str, new_session_id: str) -> None:
     """Shared metrics count one conversation across the rotation (a no-op when collection is off)."""
     with _swallow('shared-metrics segment hand-off failed', exc_info=True):
-        from hermes_cli.observability.relay_shared_metrics import rotate_segment
+        from zeus_cli.observability.relay_shared_metrics import rotate_segment
         rotate_segment(old_session_id, new_session_id)
 
 
@@ -2761,7 +2761,7 @@ def _acquire_compression_lease(
                 agent._last_compression_lock_error_sid = _lock_sid
                 logger.warning(
                     "compression lock subsystem unavailable for session=%s — proceeding without lock. This usually means a stale "
-                    "in-memory module after an update; restart the process (or `hermes update`) to resync.",
+                    "in-memory module after an update; restart the process (or `zeus update`) to resync.",
                     _lock_sid,
                 )
             _lock_acquired = True  # acquired-but-unlocked compatibility path
@@ -3204,7 +3204,7 @@ def _parent_deliberately_ended(session_db: Any, session_id: str) -> bool:
     if not callable(reader):
         return False
     try:
-        from hermes_state_common import is_automatic_end_reason
+        from zeus_state_common import is_automatic_end_reason
         row = reader(session_id) or {}
         return row.get("ended_at") is not None and not is_automatic_end_reason(row.get("end_reason"))
     except Exception:
@@ -3280,7 +3280,7 @@ def _publish_rotated_compaction(
     # parent's profile ("default" persists as NULL) and keeps a live /yolo; publish COALESCEs from the parent row.
     _profile_for_child = None
     with contextlib.suppress(Exception):
-        from hermes_cli.profiles import get_active_profile_name
+        from zeus_cli.profiles import get_active_profile_name
         _profile_for_child = get_active_profile_name()
     _profile_for_child = None if _profile_for_child == "default" else _profile_for_child
     old_title = agent._session_db.get_session_title(agent.session_id)
@@ -3343,7 +3343,7 @@ def _warn_summary_or_aux_fallback(agent: Any) -> None:
                 _aux_fail_model, _aux_fail_err or "unknown error",
             )
             agent._emit_warning(
-                f"ℹ Configured compression model '{_aux_fail_model}' failed, so Hermes summarised "
+                f"ℹ Configured compression model '{_aux_fail_model}' failed, so Zeus summarised "
                 "with your main model instead. Check auxiliary.compression.model in your config."
             )
 
@@ -3612,7 +3612,7 @@ def _commit_compaction(
             with _hold_attempt_telemetry(agent.context_compressor):
                 agent.commit_memory_session(original_messages)
             from agent.context_compressor import PROACTIVE_PRUNE_REARM_MODEL_CONFIG_KEY, stamp_db_persisted_markers
-            from hermes_cli.partial_compress import rejoin_compressed_head_and_tail
+            from zeus_cli.partial_compress import rejoin_compressed_head_and_tail
             if in_place:
                 # In-place compaction: same session_id; soft-archive old turns (active=0, still
                 # searchable) + insert `compressed` atomically; no pre-flush (tail already in).
@@ -3929,7 +3929,7 @@ def _begin_compression_attempt(
     }
     with contextlib.suppress(Exception):
         agent._compression_attempt_id = attempt_id
-        from hermes_cli.observability.shared_metrics_events import begin_compression_attempt
+        from zeus_cli.observability.shared_metrics_events import begin_compression_attempt
 
         begin_compression_attempt(trigger, approx_tokens or getattr(agent.context_compressor, "last_prompt_tokens", None))
     return _Attempt(snapshot, generation, started_at, seed)
@@ -4028,7 +4028,7 @@ def compress_context(
     )
 
     # Codex owns the real thread; route compaction to its own compact (config
-    # compression.codex_app_server_auto). Memory handoff is Hermes-only: no native
+    # compression.codex_app_server_auto). Memory handoff is Zeus-only: no native
     # summary prompt to inject into. `is True`: MagicMock attributes are truthy.
     checkpoint_required = getattr(agent, "compression_checkpoint_required", False) is True
     if getattr(agent, "api_mode", None) == "codex_app_server":
@@ -4300,7 +4300,7 @@ def _shrink_data_url(url: str, *, max_dimension: int, resize_fn: Any) -> tuple:
         import base64 as _b64
         raw = _b64.b64decode(data)
         tmp = tempfile.NamedTemporaryFile(
-            prefix="hermes_shrink_", suffix=_IMAGE_SUFFIX_BY_MIME.get(mime, ".jpg"), delete=False
+            prefix="zeus_shrink_", suffix=_IMAGE_SUFFIX_BY_MIME.get(mime, ".jpg"), delete=False
         )
         try:
             tmp.write(raw)

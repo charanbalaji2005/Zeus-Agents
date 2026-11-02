@@ -22,7 +22,7 @@ def _env(home, n):
 
 @pytest_asyncio.fixture
 async def owner(tmp_path, monkeypatch):
-    from hermes_cli import model_switch
+    from zeus_cli import model_switch
     monkeypatch.setattr(model_switch, 'DIRECT_ALIASES', {})
     for name in ('P5_ENDPOINT', 'P5_ALIAS_KEY'):
         monkeypatch.delenv(name, raising=False)
@@ -63,18 +63,18 @@ def _stage(authority, connection, params):
 
 def _commit(authority, staged):
     from gateway.session_local_recovery import restore_local_session
-    from hermes_state_local import commit_local_session
+    from zeus_state_local import commit_local_session
     commit_local_session(authority.db, epoch=authority.epoch, receipt=staged)
     return restore_local_session(authority, staged['session_id'])
 
 
 def _policy(authority, ref):
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     return local_receipt(authority.db, ref.session_id)['policy']
 
 
 def _refusal(call, *args):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     with pytest.raises(RuntimeStoreError) as refused:
         call(*args)
     return refused.value.reason
@@ -176,7 +176,7 @@ async def test_a_receipt_committed_before_this_change_still_takes_its_exact_retr
     """Receipts written before ``route_derived`` (and, for a same-name alias, before ``model_requested``
     was stamped for it), retried after the owner restarts on this code: the unchanged retry still
     returns the original session."""
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     home, authority, connection = owner
     params = _params(home, model=alias)
     ref = _create(authority, connection, params)
@@ -201,7 +201,7 @@ async def test_a_receipt_committed_before_this_change_still_takes_its_exact_retr
 
 
 def _attempt(call, *args):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     try:
         return call(*args)
     except RuntimeStoreError as exc:
@@ -250,7 +250,7 @@ async def test_an_overlapping_retry_with_another_key_is_still_refused(owner, fir
     assert _attempt(_stage, authority, connection, _params(home, **second)) == 'admission_conflict'
 
 
-PROMPT = 'HERMES_EPHEMERAL_SYSTEM_PROMPT'  # kept by the rules of a client the gateway did not prove local
+PROMPT = 'ZEUS_EPHEMERAL_SYSTEM_PROMPT'  # kept by the rules of a client the gateway did not prove local
 
 
 @pytest.mark.asyncio

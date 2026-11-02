@@ -38,10 +38,10 @@ def test_delegate_publication_refuses_without_our_claim(tmp_path, claim):
 
 
 def test_sidecar_timeout_never_releases_the_parked_update(tmp_path):
-    # The installer fixture is an inert executable witness, not a real Hermes
+    # The installer fixture is an inert executable witness, not a real Zeus
     # update. Production bash, locks, child creation and barrier all run unchanged.
     home, install = _install(tmp_path)
-    marker = home / ".hermes-update-in-progress"
+    marker = home / ".zeus-update-in-progress"
     log = home / "logs" / "desktop-update-handoff.log"
     script = subprocess.Popen(
         ["bash", str(POSIX), "--daemonized", "--no-ui", "--install-root", str(install)],
@@ -61,11 +61,11 @@ def test_sidecar_timeout_never_releases_the_parked_update(tmp_path):
         # Lock timeout is the actual production 10-second deadline, not a
         # shortened/mocked predicate. Let the caller process the refused write.
         deadline = time.monotonic() + 5
-        while script.poll() is None and "hermes update exit code:" not in log.read_text():
+        while script.poll() is None and "zeus update exit code:" not in log.read_text():
             assert time.monotonic() < deadline
             time.sleep(0.02)
         assert not any(call.startswith("update --yes") for call in _calls(tmp_path)), _calls(tmp_path)
-        assert "hermes update exit code: 3" in log.read_text()
+        assert "zeus update exit code: 3" in log.read_text()
         assert "delegate:" not in marker.read_text()
     finally:
         if lock_fd is not None:

@@ -12,7 +12,7 @@ their existing authentication paths; failure never creates a local replacement.
 private `session-ticket` grants with exactly `profile_id`, `instance_id` and
 `purpose`. WebSocket grants use `interactive`; JSON and file HTTP requests use
 `native-http`. Each HTTP retry mints a fresh grant and sends it only in
-`X-Hermes-Gateway-Ticket`, scoped to the endpoint's exact origin. HTTP credentials
+`X-Zeus-Gateway-Ticket`, scoped to the endpoint's exact origin. HTTP credentials
 are not stored in the renderer or attached to URLs/public connection descriptors.
 
 Streaming `/api/fs/download` and its 404-only `/api/fs/read-data-url` fallback
@@ -22,7 +22,7 @@ follow redirects or repeat the save dialog/body write after a stream failure.
 The native grant remains primary-profile-only; rejected profile selectors do
 not fall back to a remote credential.
 
-Local previews and seekable `hermes-media://stream` playback read the native
+Local previews and seekable `zeus-media://stream` playback read the native
 filesystem, not gateway HTTP. Remote media remains on its existing token/OAuth
 transport (`/api/files/stream`); remote data-URL previews use the JSON IPC API.
 Native HTTP grants are never attached to arbitrary image URLs, web previews,

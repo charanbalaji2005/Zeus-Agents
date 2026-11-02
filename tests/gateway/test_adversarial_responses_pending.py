@@ -46,7 +46,7 @@ async def test_pending_retry_pins_named_conversation_target(api, owner):
             assert all(response.status == 200 for response in responses)
             assert calls.count('slow') == 1, 'retry executed the same request on the newly mapped session'
             assert await responses[0].json() == await responses[1].json()
-            assert responses[0].headers['X-Hermes-Session-Id'] == responses[1].headers['X-Hermes-Session-Id']
+            assert responses[0].headers['X-Zeus-Session-Id'] == responses[1].headers['X-Zeus-Session-Id']
         finally:
             release.set()
             await asyncio.gather(*requests, return_exceptions=True)
@@ -55,7 +55,7 @@ async def test_pending_retry_pins_named_conversation_target(api, owner):
 @pytest.mark.asyncio
 async def test_unknown_retry_recovers_admission_after_pointer_commit_loss(api, owner):
     from gateway.session_contract import SessionRef
-    from hermes_state_runtime import begin_runtime_epoch, recover_session_inputs
+    from zeus_state_runtime import begin_runtime_epoch, recover_session_inputs
     from gateway.platforms.api_server_response_store import ResponseStore
     started, release = asyncio.Event(), asyncio.Event()
     calls = []

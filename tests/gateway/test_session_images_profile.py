@@ -7,8 +7,8 @@ import pytest
 from gateway.config import Platform
 from gateway.session_authority import LiveSession, SessionAuthority
 from gateway.session_controls import AuthorityConnection
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch
 
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2nL8AAAAASUVORK5CYII=')
 
@@ -19,8 +19,8 @@ async def test_upload_profile_selector_names_own_home_or_is_refused(tmp_path, mo
     root = tmp_path / 'root'
     home = root / 'profiles' / 'ops'
     home.mkdir(parents=True)
-    monkeypatch.setenv('HERMES_HOME', str(root))
-    monkeypatch.setattr('hermes_constants.get_default_hermes_root', lambda: root)
+    monkeypatch.setenv('ZEUS_HOME', str(root))
+    monkeypatch.setattr('zeus_constants.get_default_zeus_root', lambda: root)
     with SessionDB(db_path=home / 'state.db') as db:
         db.create_session('s', source='test')
         authority = SessionAuthority(SimpleNamespace(_draining=False), profile_id=str(home),

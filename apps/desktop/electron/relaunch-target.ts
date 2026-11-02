@@ -22,7 +22,7 @@ function realpathOrNull(target: string): string | null {
 /**
  * The AppImage file this executable runs from, or undefined when it is not one.
  *
- * The AppImage runtime exports APPIMAGE/APPDIR to every descendant: Hermes
+ * The AppImage runtime exports APPIMAGE/APPDIR to every descendant: Zeus
  * started from a terminal or IDE AppImage inherits that app's values, and
  * acting on them would relaunch, or rm -rf on uninstall, the other app.
  * APPIMAGE is ours only when this executable runs from that image's mount:
@@ -125,7 +125,7 @@ export function canRelaunch(
     const reason = executableError(file)
 
     if (reason) {
-      console.error(`[hermes] cannot start ${file} (${reason}); ${instead}`)
+      console.error(`[zeus] cannot start ${file} (${reason}); ${instead}`)
 
       return false
     }
@@ -239,7 +239,7 @@ export function spawnRelaunch(
 
   if (shell.fallback) {
     console.warn(
-      `[hermes] relaunching through /bin/sh (${shell.fallback}); file descriptors above 9 may stay open in the new process`
+      `[zeus] relaunching through /bin/sh (${shell.fallback}); file descriptors above 9 may stay open in the new process`
     )
   }
 
@@ -258,7 +258,7 @@ export function spawnRelaunch(
     env: childEnv
   })
 
-  child.on('error', error => console.error(`[hermes] relaunching ${target} failed: ${error.message}`))
+  child.on('error', error => console.error(`[zeus] relaunching ${target} failed: ${error.message}`))
   child.unref()
 
   return child

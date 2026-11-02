@@ -22,7 +22,7 @@ _SETUP_PLATFORM = {
         "1. Download the Yuanbao app from https://yuanbao.tencent.com/",
         "2. In the app, go to PAI → My Bot and create a new bot",
         "3. After the bot is created, copy the App ID and App Secret",
-        "4. Enter them below and Hermes will connect automatically over WebSocket",
+        "4. Enter them below and Zeus will connect automatically over WebSocket",
     ],
     "vars": [
         {"name": "YUANBAO_APP_ID", "prompt": "App ID", "password": False,
@@ -39,15 +39,15 @@ def check_yuanbao_requirements() -> bool:
 
 
 def interactive_setup() -> None:
-    """``hermes gateway setup`` flow: the standard App ID / App Secret prompts."""
-    from hermes_cli import gateway as gateway_mod
+    """``zeus gateway setup`` flow: the standard App ID / App Secret prompts."""
+    from zeus_cli import gateway as gateway_mod
     gateway_mod._setup_standard_platform(dict(_SETUP_PLATFORM))
 
 
 def _is_connected(config) -> bool:
     """Configured = App ID (or legacy App Key) + App Secret, from config extras or env."""
     extra = getattr(config, "extra", {}) or {}
-    import hermes_cli.gateway as gateway_mod
+    import zeus_cli.gateway as gateway_mod
     app_id = (extra.get("app_id") or gateway_mod.get_env_value("YUANBAO_APP_ID")
               or gateway_mod.get_env_value("YUANBAO_APP_KEY") or "")
     secret = extra.get("app_secret") or gateway_mod.get_env_value("YUANBAO_APP_SECRET") or ""
@@ -91,14 +91,14 @@ def _parse_send_target(ref):
 
 
 def register(ctx) -> None:
-    """Plugin entry point — called by the Hermes plugin system."""
+    """Plugin entry point — called by the Zeus plugin system."""
     from . import gateway_env  # env -> GatewayConfig bridge (gateway.config_env)
     ctx.register_platform(
         target_ref_syntax_fn=_parse_send_target,
         standalone_send=StandaloneSendPolicy(label="Yuanbao", media=True, text_direct=True),
         name="yuanbao", label="Yuanbao", adapter_factory=YuanbaoAdapter,
         dashboard_label="Yuanbao (元宝)",
-        dashboard_description="Connect Hermes to Tencent Yuanbao.",
+        dashboard_description="Connect Zeus to Tencent Yuanbao.",
         dashboard_required_env=(),
         check_fn=check_yuanbao_requirements, is_connected=_is_connected,
         config_connected_fn=config_connected_extra("app_id", "app_secret"),

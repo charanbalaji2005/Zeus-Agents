@@ -29,7 +29,7 @@ function buildArtifact(name: string, commit: string): string {
   writeFileSync(
     path.join(artifact, 'package.json'),
     JSON.stringify({
-      name: 'hermes-recovery-fixture',
+      name: 'zeus-recovery-fixture',
       version: '0.0.0',
       main: 'main.mjs',
       type: 'module'
@@ -42,7 +42,7 @@ function buildArtifact(name: string, commit: string): string {
     platform: 'node',
     format: 'esm',
     external: ['electron'],
-    define: { __HERMES_INSTALL_STAMP__: JSON.stringify(stamp(commit)) }
+    define: { __ZEUS_INSTALL_STAMP__: JSON.stringify(stamp(commit)) }
   })
 
   return artifact

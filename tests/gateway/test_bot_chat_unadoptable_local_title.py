@@ -11,11 +11,11 @@ from pathlib import Path
 
 import pytest
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 from tests.gateway import test_peer_dm_bot_chat_headless as _headless_gateway
 
-# The headless gateway fixture: one real authority over a SessionDB in a temp HERMES_HOME.
+# The headless gateway fixture: one real authority over a SessionDB in a temp ZEUS_HOME.
 headless = _headless_gateway.headless
 _local_owner = _headless_gateway._local_owner
 

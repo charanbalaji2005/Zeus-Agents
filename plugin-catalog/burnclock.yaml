@@ -7,7 +7,7 @@ maintainer: jersilb
 tier: community
 category: desktop
 version: "0.1.0"
-requires_hermes: ">=0.22.0"
+requires_zeus: ">=0.22.0"
 platforms: [macos]
 docs_url: https://github.com/jersilb/burnclock-hermes
 image: https://raw.githubusercontent.com/jersilb/burnclock-hermes/80dbfd197a14dd1531ef2d30bb38a6dea4450f82/docs/banner.png

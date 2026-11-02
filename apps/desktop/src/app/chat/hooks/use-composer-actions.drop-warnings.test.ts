@@ -8,7 +8,7 @@ import { useComposerActions } from './use-composer-actions'
 // A drop item the composer cannot attach is reported in one bounded warning, never dropped silently.
 describe('useComposerActions drop warnings', () => {
   afterEach(() => {
-    Reflect.deleteProperty(window, 'hermesDesktop')
+    Reflect.deleteProperty(window, 'zeusDesktop')
     vi.unstubAllGlobals()
     vi.clearAllMocks()
   })
@@ -16,7 +16,7 @@ describe('useComposerActions drop warnings', () => {
   it('warns about a dropped folder it cannot attach instead of staging its File', async () => {
     const stageFileForAttach = vi.fn(async () => '/srv/uploads/web-my-repo')
     const value = { getPathForFile: () => '', stageFileForAttach }
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value })
 
     const { result } = renderHook(() =>
       useComposerActions({ activeSessionId: null, currentCwd: '/w', requestGateway: vi.fn() })
@@ -45,7 +45,7 @@ describe('useComposerActions drop warnings', () => {
     })
 
     const value = { getPathForFile: () => '', stageFileForAttach }
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value })
 
     const add = vi.fn()
 
@@ -90,7 +90,7 @@ describe('useComposerActions drop warnings', () => {
     })
 
     const value = { getPathForFile: () => '', stageFileForAttach }
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value })
 
     const add = vi.fn()
 
@@ -129,7 +129,7 @@ describe('useComposerActions drop warnings', () => {
     })
 
     const value = { getPathForFile: () => '', stageFileForAttach }
-    Object.defineProperty(window, 'hermesDesktop', { configurable: true, value })
+    Object.defineProperty(window, 'zeusDesktop', { configurable: true, value })
 
     const { result } = renderHook(() =>
       useComposerActions({ activeSessionId: null, currentCwd: '/w', requestGateway: vi.fn() })

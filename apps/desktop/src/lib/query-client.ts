@@ -1,4 +1,4 @@
-import type { ModelOptionProvider, ModelOptionsResult } from '@hermes/shared'
+import type { ModelOptionProvider, ModelOptionsResult } from '@zeus/shared'
 import { QueryClient, type QueryKey, replaceEqualDeep } from '@tanstack/react-query'
 
 // Shared React Query client. Lives in its own module (not main.tsx) so non-React

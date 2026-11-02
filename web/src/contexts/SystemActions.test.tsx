@@ -11,7 +11,7 @@ const apiMocks = vi.hoisted(() => ({
   getActionStatus: vi.fn(),
   getStatus: vi.fn(),
   restartGateway: vi.fn(),
-  updateHermes: vi.fn(),
+  updateZeus: vi.fn(),
 }));
 
 vi.mock("@/lib/api", () => ({ api: apiMocks }));
@@ -24,7 +24,7 @@ import { useSystemActions } from "./useSystemActions";
   true;
 
 const INSTRUCTION =
-  "Your local changes are parked in stash@{0}; run `git stash pop` in ~/.hermes/hermes-agent.";
+  "Your local changes are parked in stash@{0}; run `git stash pop` in ~/.zeus/zeus-agents.";
 
 let container: HTMLDivElement;
 let root: Root;
@@ -35,16 +35,16 @@ function Probe() {
 }
 
 async function runUpdate(receiptActionId: string): Promise<string> {
-  apiMocks.updateHermes.mockResolvedValue({
+  apiMocks.updateZeus.mockResolvedValue({
     action_id: "c".repeat(32),
-    name: "hermes-update",
+    name: "zeus-update",
     ok: true,
     pid: 1,
   });
   apiMocks.getActionStatus.mockResolvedValue({
     exit_code: 1,
     lines: [],
-    name: "hermes-update",
+    name: "zeus-update",
     pid: null,
     running: false,
     receipt: {
@@ -89,7 +89,7 @@ describe("SystemActionsProvider update toast", () => {
     expect(text).toContain("exit 1");
     expect(text).toContain(`local_changes: ${INSTRUCTION}`);
     // A rerun does not restore a parked stash.
-    expect(text).not.toContain("re-run `hermes update`");
+    expect(text).not.toContain("re-run `zeus update`");
   });
 
   it("never names another run's debt", async () => {

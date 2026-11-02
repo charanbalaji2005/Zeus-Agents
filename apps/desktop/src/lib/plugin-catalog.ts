@@ -1,9 +1,9 @@
 /**
- * The curated Hermes plugin catalog as the Desktop sees it.
+ * The curated Zeus plugin catalog as the Desktop sees it.
  *
  * `PLUGIN_CATALOG_URL` (`/docs/api/plugins.json`, generated from the repo's
  * `plugin-catalog/` directory at site build) is the catalog the Capabilities →
- * Plugins card catalog browses. A `hermes://plugin/install?catalog=<name>`
+ * Plugins card catalog browses. A `zeus://plugin/install?catalog=<name>`
  * deep link resolves against the SAME document so a link and an in-app pick
  * always agree on the repo, subdir and reviewed pin for a name.
  *
@@ -11,14 +11,14 @@
  * catalog with its cache, kill list and in-tree fallback: the same catalog the
  * install resolves its pin from. A renderer fetch of the JSON also depends on
  * the docs host's cross-origin redirect carrying a CORS header, which it did
- * not until 2026-10-13 (hermes-agent 136483). Only a backend that predates the
+ * not until 2026-10-13 (zeus-agents 136483). Only a backend that predates the
  * method falls back to the direct fetch.
  *
  * Everything here only classifies — nothing installs. Callers open the Install
  * Plugin dialog, which still requires the user's explicit confirmation.
  */
 
-import type { ConnectionState } from '@hermes/shared'
+import type { ConnectionState } from '@zeus/shared'
 import type { ReadableAtom } from 'nanostores'
 
 import { isMissingRpcMethod } from '@/lib/gateway-rpc'
@@ -26,11 +26,11 @@ import { BACKEND_BOOT_WAIT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 import { activeGatewayProfileKey, requestGatewayForProfile } from '@/store/gateway'
 import { $gatewayState } from '@/store/session'
 
-export const CATALOG_ORIGIN = 'https://hermes-agent.nousresearch.com'
+export const CATALOG_ORIGIN = 'https://charanbalaji2005.github.io/Zeus-Agents'
 export const PLUGIN_CATALOG_URL = `${CATALOG_ORIGIN}/docs/api/plugins.json`
 export const PLUGIN_CATALOG_DOCS_URL = `${CATALOG_ORIGIN}/docs/user-guide/features/plugin-catalog`
 export const SKILLS_DOCS_URL = `${CATALOG_ORIGIN}/docs/skills/`
-export const SUBMIT_MOD_URL = 'https://github.com/NousResearch/hermes-agent/compare'
+export const SUBMIT_MOD_URL = 'https://github.com/charanbalaji2005/Zeus-Agents/compare'
 
 /** Catalog names are directory names under `plugin-catalog/`; anything else is not a lookup key. */
 export const PLUGIN_CATALOG_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/
@@ -140,7 +140,7 @@ export function sendWhenGatewayOpen<T>(
     })
   })
 
-  return withTimeout(opened, timeoutMs, 'Hermes backend did not connect', () => stop()).then(send)
+  return withTimeout(opened, timeoutMs, 'Zeus backend did not connect', () => stop()).then(send)
 }
 
 // The route lookup inside requestGatewayForProfile has no deadline of its own, so the

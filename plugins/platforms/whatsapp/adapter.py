@@ -18,9 +18,9 @@ from gateway.platforms._shared import (
     apply_yaml_bridge as _apply_yaml_bridge, extra_or_secret as _extra_or_secret, get_scoped_secret, send_error
 )
 from gateway.platforms.send_targets import StandaloneSendPolicy, regex_stripped_parser
-from hermes_cli._subprocess_compat import windows_detach_flags
-from hermes_cli.process_identity import release_process_group_once_empty, spawn_owned
-from hermes_constants import (find_node_executable, get_hermes_dir, with_hermes_node_path)
+from zeus_cli._subprocess_compat import windows_detach_flags
+from zeus_cli.process_identity import release_process_group_once_empty, spawn_owned
+from zeus_constants import (find_node_executable, get_zeus_dir, with_zeus_node_path)
 
 _IS_WINDOWS = platform.system() == "Windows"
 
@@ -71,12 +71,12 @@ def _session_dir(extra) -> Path:
     """Absolute session dir: --session, bridge.pid and every /health ``session`` comparison (gateway and standalone
     sends) share this one string, or a gateway restarted from another cwd would see its own bridge as foreign."""
     return Path(os.path.abspath(os.path.expanduser(str((extra or {}).get(
-        "session_path", get_hermes_dir("platforms/whatsapp/session", "whatsapp/session"))))))
+        "session_path", get_zeus_dir("platforms/whatsapp/session", "whatsapp/session"))))))
 
 
 def _windows_listener_pids(port: int) -> list:
     """PIDs in LISTENING state on ``port`` via netstat (Windows)."""
-    from hermes_cli._subprocess_compat import windows_hide_flags
+    from zeus_cli._subprocess_compat import windows_hide_flags
     result = subprocess.run(["netstat", "-ano", "-p", "TCP"], timeout=5, creationflags=windows_hide_flags(), **_RUN_TEXT, check=False)
     rows = (line.split() for line in result.stdout.splitlines())
     return _safe_ints(p[4] for p in rows if len(p) >= 5 and p[3] == "LISTENING" and p[1].endswith(f":{port}"))
@@ -143,7 +143,7 @@ def _kill_port_process(port: int) -> None:
                 logger.warning("[whatsapp] Not killing PID %s on port %d: process is not a node bridge (or identity unverifiable)", pid, port)
                 continue
             if _IS_WINDOWS:
-                from hermes_cli._subprocess_compat import windows_hide_flags
+                from zeus_cli._subprocess_compat import windows_hide_flags
                 # Only SubprocessError is swallowed per-PID; an OSError (e.g. taskkill missing) aborts the scan.
                 with suppress(subprocess.SubprocessError):
                     subprocess.run(["taskkill", "/PID", str(pid), "/F"], capture_output=True, stdin=subprocess.DEVNULL, timeout=5, creationflags=windows_hide_flags(), check=False)
@@ -299,7 +299,7 @@ def _cache_dirs() -> tuple:
 
 
 def _is_allowed_bridge_path(url: str) -> bool:
-    """Absolute bridge path resolves (symlinks included) inside a Hermes cache dir — a rogue bridge could hand back /etc/passwd."""
+    """Absolute bridge path resolves (symlinks included) inside a Zeus cache dir — a rogue bridge could hand back /etc/passwd."""
     try:
         resolved = Path(url).resolve()
     except (OSError, ValueError):
@@ -333,7 +333,7 @@ def check_whatsapp_requirements() -> bool:
         # Let connect prepare a missing runtime, but never install during discovery.
         return lazy_installs_allowed()
     try:
-        return subprocess.run([_node, "--version"], timeout=5, env=with_hermes_node_path(), **_RUN_TEXT, check=False).returncode == 0
+        return subprocess.run([_node, "--version"], timeout=5, env=with_zeus_node_path(), **_RUN_TEXT, check=False).returncode == 0
     except Exception:
         return False
 
@@ -373,7 +373,7 @@ def ensure_aiohttp() -> Optional[tuple[str, bool]]:
         ensure_import("sms")
     except (RuntimeError, OSError, ValueError) as exc:  # InstallError/DownloadError; anything else escapes as transient
         # Only policy or a foreign interpreter is final. A busy dependency lock, a failed download and "installed;
-        # restart Hermes to activate it" stay retryable: as final errors they exit the gateway 78 and keep it down.
+        # restart Zeus to activate it" stay retryable: as final errors they exit the gateway 78 and keep it down.
         return str(exc) or type(exc).__name__, installable
     try:
         _import_aiohttp()
@@ -430,8 +430,8 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             from gateway.platforms.whatsapp_common import resolve_whatsapp_bridge_dir
             WhatsAppAdapter._DEFAULT_BRIDGE_DIR = resolve_whatsapp_bridge_dir()
         extra = config.extra
-        from hermes_constants import get_hermes_home
-        self._profile_home = get_hermes_home()
+        from zeus_constants import get_zeus_home
+        self._profile_home = get_zeus_home()
         self._bridge_process: Optional[subprocess.Popen] = None
         self._foreign_bridge_session: Optional[str] = None  # set by _reuse_running_bridge when /health names another profile's session
         self._bridge_probe_timed_out = False  # set by _reuse_running_bridge when the port's holder gave no /health answer
@@ -488,7 +488,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
 
     def _ensure_bridge_deps(self, bridge_dir: Path) -> bool:
         """npm install when node_modules is missing OR package.json hash != stamp file. False = fatal error set."""
-        _dep_stamp = bridge_dir / "node_modules" / ".hermes-pkg-hash"  # holds the package.json hash of the last install
+        _dep_stamp = bridge_dir / "node_modules" / ".zeus-pkg-hash"  # holds the package.json hash of the last install
         _pkg_hash = _file_content_hash(bridge_dir / "package.json")
         try:
             if (bridge_dir / "node_modules").exists() and _dep_stamp.read_text(encoding="utf-8-sig").strip() == _pkg_hash and bool(_pkg_hash):
@@ -501,7 +501,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             import pm
 
             _npm_bin = find_node_executable("npm")
-            env = with_hermes_node_path()
+            env = with_zeus_node_path()
             if _npm_bin is None:
                 env = pm.ensure("npm").env
                 installed = pm.installed_package("npm")
@@ -522,7 +522,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             print(f"[{self.name}] Failed to install dependencies: {e}")
             detail = f" ({e})"
         self._set_fatal_error("whatsapp_npm_install_failed", f"WhatsApp bridge npm install failed{detail}. "
-                              "Run `hermes whatsapp`, then restart `hermes gateway`.", retryable=False)
+                              "Run `zeus whatsapp`, then restart `zeus gateway`.", retryable=False)
         return False
 
     def _attach_to_bridge(self, managed_process) -> None:
@@ -568,10 +568,10 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
 
     def _bridge_env(self) -> dict:
         """Subprocess env: the adapter's EFFECTIVE profile policy + profile-resolved WHATSAPP_* values + cache dirs."""
-        # with_hermes_node_path() copies os.environ when called with no arg: under a multiplexed secondary
+        # with_zeus_node_path() copies os.environ when called with no arg: under a multiplexed secondary
         # that copy carries the DEFAULT profile's WHATSAPP_* values, so every bridge-consumed key is
         # re-resolved from this profile (dropped on a scoped miss), never inherited from the launch env.
-        bridge_env = with_hermes_node_path()
+        bridge_env = with_zeus_node_path()
         reply_prefix = _wenv("WHATSAPP_REPLY_PREFIX")
         if reply_prefix:
             bridge_env["WHATSAPP_REPLY_PREFIX"] = reply_prefix
@@ -595,9 +595,9 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                 bridge_env[env_key] = ",".join(sorted(ids))
             else:
                 bridge_env.pop(env_key, None)
-        # Without these the bridge hardcodes ~/.hermes/{image,audio,document}_cache (wrong under HERMES_HOME/profiles/cache layout).
+        # Without these the bridge hardcodes ~/.zeus/{image,audio,document}_cache (wrong under ZEUS_HOME/profiles/cache layout).
         img_dir, audio_dir, _video_dir, doc_dir = _cache_dirs()
-        bridge_env.update(HERMES_IMAGE_CACHE_DIR=str(img_dir), HERMES_AUDIO_CACHE_DIR=str(audio_dir), HERMES_DOCUMENT_CACHE_DIR=str(doc_dir))
+        bridge_env.update(ZEUS_IMAGE_CACHE_DIR=str(img_dir), ZEUS_AUDIO_CACHE_DIR=str(audio_dir), ZEUS_DOCUMENT_CACHE_DIR=str(doc_dir))
         return bridge_env
 
     def _bridge_died(self, detail: str, code: str = "whatsapp_bridge_exited") -> bool:
@@ -647,7 +647,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             if connected is None:
                 print(f"[{self.name}] ⚠ WhatsApp not connected after 30s")
                 print(f"[{self.name}]   Bridge log: {self._bridge_log}")
-                print(f"[{self.name}]   If session expired, re-pair: hermes whatsapp")
+                print(f"[{self.name}]   If session expired, re-pair: zeus whatsapp")
         return True
 
     def _preflight(self) -> bool:
@@ -656,12 +656,12 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
         creds_path = self._session_path / "creds.json"
         checks = (
             (check_whatsapp_requirements, ("[%s] Node.js not found. WhatsApp requires Node.js.", self.name),
-             "whatsapp_node_missing", "Node.js is not installed — install Node.js and re-run `hermes gateway`."),
+             "whatsapp_node_missing", "Node.js is not installed — install Node.js and re-run `zeus gateway`."),
             (bridge_path.exists, ("[%s] Bridge script not found: %s", self.name, bridge_path),
              "whatsapp_bridge_missing", f"WhatsApp bridge script missing at {bridge_path}."),
             (creds_path.exists, ("[%s] WhatsApp is enabled but not paired (no creds.json at %s). Pair from the dashboard or run "
-                                 "`hermes whatsapp`; remove WHATSAPP_ENABLED from your .env to disable.", self.name, creds_path),
-             "whatsapp_not_paired", "WhatsApp enabled but not paired — pair from the dashboard or run `hermes whatsapp`."),
+                                 "`zeus whatsapp`; remove WHATSAPP_ENABLED from your .env to disable.", self.name, creds_path),
+             "whatsapp_not_paired", "WhatsApp enabled but not paired — pair from the dashboard or run `zeus whatsapp`."),
         )
         for ok, warn_args, code, message in checks:
             if not ok():
@@ -671,8 +671,8 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
         if (missing := ensure_aiohttp()) is not None:  # may install it: connect runs this off the event loop
             why, retryable = missing
             message = (f"aiohttp is unavailable ({why}); the WhatsApp bridge client needs it. "
-                       "Run `hermes pm install --extra sms` (it ships aiohttp; `hermes pm repair` for a damaged install), "
-                       "then restart `hermes gateway`.")
+                       "Run `zeus pm install --extra sms` (it ships aiohttp; `zeus pm repair` for a damaged install), "
+                       "then restart `zeus gateway`.")
             logger.warning("[%s] %s", self.name, message)
             self._set_fatal_error("whatsapp_aiohttp_missing", message, retryable=retryable)
             return False
@@ -751,7 +751,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
                         self._set_fatal_error(
                             "whatsapp_bridge_unresponsive",
                             f"Port {self._bridge_port} is held by a process that did not answer /health in time, so "
-                            f"Hermes cannot tell whose WhatsApp bridge it is; nothing on port {self._bridge_port} was "
+                            f"Zeus cannot tell whose WhatsApp bridge it is; nothing on port {self._bridge_port} was "
                             "stopped. Stop that process, or give this profile its own port via "
                             "platforms.whatsapp.extra.bridge_port.",
                             retryable=True,
@@ -768,7 +768,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             self._bridge_log_fh = bridge_log_fh = open(self._bridge_log, "a", encoding="utf-8")  # noqa: ASYNC230 -- long-lived log handle handed to the bridge subprocess
             node = find_node_executable("node")
             if node is None:
-                raise RuntimeError("Node.js is no longer available; run `hermes pm install`")
+                raise RuntimeError("Node.js is no longer available; run `zeus pm install`")
             self._bridge_process = _spawn_bridge_process(
                 [node, str(bridge_path), "--port", str(self._bridge_port), "--session", str(self._session_path),
                  "--mode", _wenv("WHATSAPP_MODE", "self-chat")], bridge_log_fh, self._bridge_env())
@@ -1055,7 +1055,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             await asyncio.sleep(1)  # Poll interval
 
     def _log_delivery_status(self, data: dict[str, Any]) -> None:
-        """One gateway.log line per delivery/read status change of a message Hermes sent (Baileys
+        """One gateway.log line per delivery/read status change of a message Zeus sent (Baileys
         ``messages.update`` for DMs, ``message-receipt.update`` per recipient in groups)."""
         logger.info(
             "[%s] WhatsApp delivery status: message=%s chat=%s status=%s%s at=%s%s", self.name,
@@ -1204,7 +1204,7 @@ class WhatsAppAdapter(WhatsAppBehaviorMixin, BasePlatformAdapter):
             return None
 
 
-# ── Plugin glue: register(ctx) plus the hooks for gateway/run.py, gateway/config.py, hermes_cli/gateway.py, send_message_tool.py.
+# ── Plugin glue: register(ctx) plus the hooks for gateway/run.py, gateway/config.py, zeus_cli/gateway.py, send_message_tool.py.
 
 _WA_EXT_MEDIA_TYPE = {
     **dict.fromkeys((".jpg", ".jpeg", ".png", ".webp", ".gif"), "image"),
@@ -1231,10 +1231,10 @@ async def _standalone_send(pconfig, chat_id, message, *, thread_id=None, media_f
     except ImportError:
         return send_error("aiohttp not installed. Run: pip install aiohttp")
     try:
-        from hermes_constants import get_hermes_home
+        from zeus_constants import get_zeus_home
         from .bridge_ownership import standalone_bridge_port
         bridge_port = standalone_bridge_port(
-            get_hermes_home(), (getattr(pconfig, "extra", {}) or {}).get("bridge_port")
+            get_zeus_home(), (getattr(pconfig, "extra", {}) or {}).get("bridge_port")
         )
         own_session = str(_session_dir(getattr(pconfig, "extra", {}) or {}))
         normalized_chat_id = to_whatsapp_jid(chat_id)
@@ -1271,7 +1271,7 @@ async def _standalone_send(pconfig, chat_id, message, *, thread_id=None, media_f
                 if not (health.get("capabilities") or {}).get("outboundMentions"):
                     return {"error": (
                         "WhatsApp bridge does not support native mentions; "
-                        "restart it from the same Hermes version.")}
+                        "restart it from the same Zeus version.")}
 
             async def _post(path, payload, total, error_label=None):
                 """``(messageId, None)`` on 200, else ``(None, error_dict)`` (body read only when labelled)."""
@@ -1312,8 +1312,8 @@ async def _standalone_send(pconfig, chat_id, message, *, thread_id=None, media_f
 
 def interactive_setup() -> None:
     """Guide the user through WhatsApp setup (CLI helpers lazy-imported)."""
-    from hermes_cli.config import get_env_value, remove_env_value, save_env_value
-    from hermes_cli.cli_output import prompt, prompt_yes_no, print_header, print_info, print_success
+    from zeus_cli.config import get_env_value, remove_env_value, save_env_value
+    from zeus_cli.cli_output import prompt, prompt_yes_no, print_header, print_info, print_success
     print_header("WhatsApp")
     print_info("WhatsApp uses a local Node.js bridge (WhatsApp Web client).")
     print_info("Start the bridge separately; the gateway connects to it over HTTP.")
@@ -1358,8 +1358,8 @@ def _is_connected(config) -> bool:
     """Connected == WHATSAPP_ENABLED opt-in (or an enabled PlatformConfig with extras); auth lives in the bridge."""
     if config is not None and getattr(config, "enabled", False) and (getattr(config, "extra", {}) or {}):
         return True
-    # Via hermes_cli.gateway.get_env_value (not os.getenv) so setup-status callers that patch it observe the same value.
-    import hermes_cli.gateway as gateway_mod
+    # Via zeus_cli.gateway.get_env_value (not os.getenv) so setup-status callers that patch it observe the same value.
+    import zeus_cli.gateway as gateway_mod
     return (gateway_mod.get_env_value("WHATSAPP_ENABLED") or "").strip().lower() in {"true", "1", "yes"}
 
 
@@ -1386,7 +1386,7 @@ def register(ctx) -> None:
         standalone_send=StandaloneSendPolicy(label="WhatsApp", media=True, captionable=True,
                                              forward_force_document=True, mentions=True, text_direct=True),
         name="whatsapp", label="WhatsApp", adapter_factory=WhatsAppAdapter, check_fn=check_whatsapp_requirements,
-        dashboard_description="Use Hermes through the bundled WhatsApp bridge with QR-based auth.",
+        dashboard_description="Use Zeus through the bundled WhatsApp bridge with QR-based auth.",
         docs_url="https://github.com/tulir/whatsmeow",
         dashboard_env_vars=(
             "WHATSAPP_ENABLED", "WHATSAPP_MODE", "WHATSAPP_DM_POLICY", "WHATSAPP_ALLOWED_USERS",

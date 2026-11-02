@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # posix.sh -- repo-owned macOS/Linux Desktop update hand-off.
 #
-# The whole job: wait for the Desktop to exit, run `hermes update`, tell the
+# The whole job: wait for the Desktop to exit, run `zeus update`, tell the
 # shim how it went, reopen the app. The Desktop spawns this detached and
 # quits; because it lives in the checkout, every update refreshes the code
 # that drives the next one. Replaces the in-app updater
 # (applyUpdatesPosixInApp) -- with the app gone before the update starts,
-# the HERMES_DESKTOP_CHILD_PID reaper-exclusion dance dies with it.
+# the ZEUS_DESKTOP_CHILD_PID reaper-exclusion dance dies with it.
 #
 # CONTRACT (keep in sync with apps/desktop/electron/main.ts):
 #   bash scripts/desktop-update/posix.sh
-#     --install-root <path>    repo checkout (HERMES_HOME/hermes-agent)
+#     --install-root <path>    repo checkout (ZEUS_HOME/zeus-agents)
 #     [--branch <ref> | --channel stable|canary|main]  default: branch main
 #     --desktop-pid <pid>      the Electron main process to wait out
 #     [--handoff-run <id>]     hand-off protocol 2: adopt ONLY the Desktop's
@@ -38,7 +38,7 @@
 # never opens one (see find_browser).
 #
 # The Desktop reads the next line to pick the hand-off protocol it speaks.
-# hermes-handoff-protocol: 2
+# zeus-handoff-protocol: 2
 #
 # ORDERING (the durable-truth rule): swap and relaunch are DECIDED AND
 # EXECUTED before the result file is written, the marker is removed, or a
@@ -95,14 +95,14 @@ TARGET_ARGS=(--branch "$BRANCH")
 [ -z "$CHANNEL" ] || TARGET_ARGS=(--channel "$CHANNEL")
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-HERMES_HOME="${HERMES_HOME:-${INSTALL_ROOT:+$(dirname "$INSTALL_ROOT")}}"
-HERMES_HOME="${HERMES_HOME:-${TMPDIR:-/tmp}}"
-export HERMES_HOME
-MARKER="$HERMES_HOME/.hermes-update-in-progress"
-LOG_DIR="$HERMES_HOME/logs"; mkdir -p "$LOG_DIR" 2>/dev/null || true
+ZEUS_HOME="${ZEUS_HOME:-${INSTALL_ROOT:+$(dirname "$INSTALL_ROOT")}}"
+ZEUS_HOME="${ZEUS_HOME:-${TMPDIR:-/tmp}}"
+export ZEUS_HOME
+MARKER="$ZEUS_HOME/.zeus-update-in-progress"
+LOG_DIR="$ZEUS_HOME/logs"; mkdir -p "$LOG_DIR" 2>/dev/null || true
 LOG="$LOG_DIR/desktop-update-handoff.log"
-RESULT="$HERMES_HOME/.hermes-update-result.json"
-STATUS="${TMPDIR:-/tmp}/hermes-update-status.$$"
+RESULT="$ZEUS_HOME/.zeus-update-result.json"
+STATUS="${TMPDIR:-/tmp}/zeus-update-status.$$"
 STARTED_AT="$(date +%s)"  # the shim's elapsed clock; see serve-ui.py
 # Separate identity from both heartbeat time and adopt-only HANDOFF_RUN.
 # Old Desktop / direct launches need an ID too, without changing claim rules.
@@ -111,7 +111,7 @@ RESULT_RUN_ID="${HANDOFF_RUN:-posix-$$-${STARTED_AT}-${RANDOM}}"
 UI_SERVER_PID="" UI_BROWSER_PID="" UI_PANEL_PID="" UI_PROFILE_DIR="" FINAL_CODE=1
 FINAL_MSG="update did not complete"
 DONE_NOTE=""  # set when the update succeeded but the app will NOT reopen itself
-# Follow-up work that failed AFTER `hermes update` committed the new code. The
+# Follow-up work that failed AFTER `zeus update` committed the new code. The
 # result stays ok:true (contract C3: ok:false only while still on the previous
 # version); each entry reaches the Desktop as a warning.
 WARNINGS=()
@@ -125,7 +125,7 @@ log() {
 }
 
 owed_followup_steps() { # $OUT -> the distinct owed steps, space-separated, in print order
-  # hermes_cli/update_receipt.record_followup prints each as one whole line.
+  # zeus_cli/update_receipt.record_followup prints each as one whole line.
   printf '%s\n' "$OUT" | sed -n "s/^.*Update follow-up '\([A-Za-z0-9_]*\)' did not finish: .*$/\1/p" \
     | awk '!seen[$0]++' | tr '\n' ' ' | sed 's/ *$//'
 }
@@ -218,9 +218,9 @@ marker_refresher_stop() {
 run_bounded() { # seconds cmd... -> cmd's stdout; 124 when it had to be killed
   local secs="$1" out pid i rc
   shift
-  out="$(mktemp "${TMPDIR:-/tmp}/hermes-update-probe.$$.XXXXXX")" || return 1
+  out="$(mktemp "${TMPDIR:-/tmp}/zeus-update-probe.$$.XXXXXX")" || return 1
   # Its own process group (pgid = pid), so a timeout kills the probe's whole
-  # tree -- a hung `hermes` launcher's python child included, not just the shell.
+  # tree -- a hung `zeus` launcher's python child included, not just the shell.
   if command -v perl >/dev/null 2>&1; then
     perl -e 'setpgrp(0, 0); exec { $ARGV[0] } @ARGV or exit 127' "$@" > "$out" 2>/dev/null < /dev/null &
   else
@@ -263,7 +263,7 @@ on_signal() {
     # Contract C3: the code is already updated, so the interruption is an owed
     # follow-up on an ok result, never "the update failed".
     FINAL_CODE=0
-    DONE_NOTE="Hermes was updated, but the update hand-off was interrupted by $sig before its remaining steps finished. The next launch or hermes update finishes them."
+    DONE_NOTE="Zeus was updated, but the update hand-off was interrupted by $sig before its remaining steps finished. The next launch or zeus update finishes them."
     add_warning "handoff" "interrupted by $sig after the update was committed"
     exit 0
   fi
@@ -278,20 +278,20 @@ on_signal() {
 }
 
 # ── the commit point (contract C3) ──────────────────────────────────────────
-# `hermes update` exits 0 once committed, except an interrupt (130) or a parked
+# `zeus update` exits 0 once committed, except an interrupt (130) or a parked
 # autostash (1) after the commit point, and a crash of a committed run. Its
 # receipt says which: the run's own receipt -- matched by the correlation id we
 # hand it, finalized (finished_at set) -- with outcome success | partial (the
 # user still has to act) | interrupted (Ctrl-C after the code moved). A
 # reconciled "interrupted" record keeps finished_at null, so it never matches.
-UPDATE_CORRELATION="${HERMES_UPDATE_CORRELATION_ID:-$RESULT_RUN_ID}"
+UPDATE_CORRELATION="${ZEUS_UPDATE_CORRELATION_ID:-$RESULT_RUN_ID}"
 UPDATE_COMMITTED=0 RECEIPT_OUTCOME=""
 receipt_json_field() { # file key -> the top-level string value (json.dumps indent=2 layout)
   sed -n "s/^  \"$2\": \"\([A-Za-z0-9._:+-]*\)\",\{0,1\}\$/\1/p" "$1" 2>/dev/null | head -n 1
 }
 update_committed_after_exit() { # -> 0 iff this run's receipt shows the commit point passed
-  local root="$HERMES_HOME" f outcome
-  # hermes_constants.get_default_hermes_root: a <root>/profiles/<name> home files under <root>
+  local root="$ZEUS_HOME" f outcome
+  # zeus_constants.get_default_zeus_root: a <root>/profiles/<name> home files under <root>
   [ "$(basename "$(dirname "$root")")" != profiles ] || root="$(dirname "$(dirname "$root")")"
   f="$root/logs/update_receipts/latest.json"
   [ -f "$f" ] && [ -n "$UPDATE_CORRELATION" ] || return 1
@@ -338,20 +338,20 @@ notify_fallback() { # status message — renderer-free recovery surface.
   # boot surfaces it in a dialog (handoff-result.ts + main.ts).
   case "$1" in manual|error) ;; *) return 0 ;; esac
   if [ "$(uname)" = "Darwin" ]; then
-    /usr/bin/osascript -e "display notification \"$(printf '%s' "$2" | sed 's/"/\\"/g')\" with title \"Hermes update\"" 2>/dev/null && return 0
+    /usr/bin/osascript -e "display notification \"$(printf '%s' "$2" | sed 's/"/\\"/g')\" with title \"Zeus update\"" 2>/dev/null && return 0
   else
     if command -v notify-send >/dev/null 2>&1; then
-      notify-send -u critical "Hermes update" "$2" 2>/dev/null && return 0
+      notify-send -u critical "Zeus update" "$2" 2>/dev/null && return 0
     fi
     local p
     if command -v zenity >/dev/null 2>&1; then
-      zenity --warning --title="Hermes update" --text="$2" 2>/dev/null &
+      zenity --warning --title="Zeus update" --text="$2" 2>/dev/null &
       p=$!; sleep 1
       kill -0 "$p" 2>/dev/null && return 0
       wait "$p" 2>/dev/null
     fi
     if command -v kdialog >/dev/null 2>&1; then
-      kdialog --title "Hermes update" --sorry "$2" 2>/dev/null &
+      kdialog --title "Zeus update" --sorry "$2" 2>/dev/null &
       p=$!; sleep 1
       kill -0 "$p" 2>/dev/null && return 0
       wait "$p" 2>/dev/null
@@ -384,7 +384,7 @@ find_browser() {
   # No Microsoft Edge and no Brave, on purpose. Edge's OS-level
   # Microsoft-account integration signs a fresh throwaway profile into the
   # user's MSA and renders its own "syncing your data" notification — MSA
-  # email included — inside this window that is titled "Hermes" (#88410).
+  # email included — inside this window that is titled "Zeus" (#88410).
   # Brave paints its own P3A privacy-notice bar over the progress page in
   # the same window — cramped to unreadability at the shim's small size
   # (#88682). The throwaway --user-data-dir below cannot block either; the
@@ -457,7 +457,7 @@ start_ui() {
   fi
   { [ -f "$html" ] && [ -n "$py" ] && [ -n "$browser" ]; } || { log "shim: no renderer; skipping UI"; return; }
 
-  UI_PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/hermes-update-ui-$$-XXXXXXXX")" || {
+  UI_PROFILE_DIR="$(mktemp -d "${TMPDIR:-/tmp}/zeus-update-ui-$$-XXXXXXXX")" || {
     UI_PROFILE_DIR=""
     log "shim: could not allocate a browser profile; skipping UI"
     return
@@ -470,7 +470,7 @@ start_ui() {
   # HTTP 200).  The Python wrapper immediately execs the real process, so $!
   # remains the PID that stop_ui can terminate.
   # TERM/HUP stay IGNORED in the server (SIG_IGN survives execv): a stray
-  # teardown TERM killed the shim ~1s into `hermes update` (2026-08-14 16:44,
+  # teardown TERM killed the shim ~1s into `zeus update` (2026-08-14 16:44,
   # window showed ERR_CONNECTION_REFUSED for the whole run; upstream #66753).
   # stop_ui ends the server with SIGKILL instead — it is stateless HTTP.
   "$py" -c 'import os, signal, sys; os.setsid(); signal.signal(signal.SIGTERM, signal.SIG_IGN); signal.signal(signal.SIGHUP, signal.SIG_IGN); os.execv(sys.argv[1], sys.argv[1:])' \
@@ -498,7 +498,7 @@ stop_ui() { # error/manual outcomes keep the window up briefly so a watching
   # before this, each aborted update left another orphan browser window on
   # screen until the user closed it by hand.
   if [ "${1:-}" = "leave-window" ]; then
-    sleep "${HERMES_UPDATE_SHIM_GRACE_SECONDS:-15}"
+    sleep "${ZEUS_UPDATE_SHIM_GRACE_SECONDS:-15}"
   fi
   if [ -n "$UI_SERVER_PID" ]; then
     # The server ignores TERM/HUP (see start_ui) — KILL is its off switch.
@@ -572,7 +572,7 @@ linux_gate() {
   if [ -u "$sb" ] && [ "$(stat -c %u "$sb" 2>/dev/null)" = "0" ]; then GATE=relaunch; return; fi
   # Namespace sandbox usable => Electron never consults the setuid helper,
   # so a non-root chrome-sandbox does not block relaunch (mirrors the
-  # _desktop_linux_userns_sandbox_available() probe in hermes_cli/main.py).
+  # _desktop_linux_userns_sandbox_available() probe in zeus_cli/main.py).
   if unshare --user --map-root-user true 2>/dev/null; then GATE=relaunch; return; fi
 
   case "${ELECTRON_DISABLE_SANDBOX:-}" in 1|true|TRUE|True) GATE=relaunch; return ;; esac
@@ -581,19 +581,19 @@ linux_gate() {
     [ "$arg" = "--no-sandbox" ] && { GATE=relaunch; return; }
   done
 
-  GATE=manual GATE_MSG="Update complete, but the rebuilt app can't relaunch itself (its sandbox helper needs root ownership). Reopen Hermes to finish."
+  GATE=manual GATE_MSG="Update complete, but the rebuilt app can't relaunch itself (its sandbox helper needs root ownership). Reopen Zeus to finish."
 }
 
 mac_bundle_recover() { # bundle path -- finish or roll back an interrupted swap
   # Start-of-run recovery for BOTH bundle swappers (this script's .old/.new and
-  # `hermes desktop`'s .hermes-update-old/-new). The update marker serialises
+  # `zeus desktop`'s .zeus-update-old/-new). The update marker serialises
   # swappers, so anything left here belongs to a dead run. A missing bundle
   # with its aside copy present means the swap died between its two renames:
   # put the previous app back (the staged copy may be partial). A present
   # bundle makes every aside/staged copy a leftover.
   local target="$1" aside staged
   [ -n "$target" ] || return 0
-  for aside in "$target.old" "$target.hermes-update-old"; do
+  for aside in "$target.old" "$target.zeus-update-old"; do
     if [ ! -e "$target" ] && [ -d "$aside" ]; then
       if mv "$aside" "$target" 2>/dev/null; then
         log "recovered an interrupted app swap: restored $target from $aside"
@@ -603,7 +603,7 @@ mac_bundle_recover() { # bundle path -- finish or roll back an interrupted swap
     fi
   done
   [ -d "$target" ] || return 0
-  for staged in "$target.old" "$target.new" "$target.hermes-update-old" "$target.hermes-update-new"; do
+  for staged in "$target.old" "$target.new" "$target.zeus-update-old" "$target.zeus-update-new"; do
     if [ -e "$staged" ]; then
       rm -rf "$staged" 2>/dev/null && log "removed a leftover $staged"
     fi
@@ -622,8 +622,8 @@ swap_checkpoint() { # step
 
 mac_swap() {
   local rebuilt="" c
-  for c in "$INSTALL_ROOT/apps/desktop/release/mac-arm64/Hermes.app" \
-           "$INSTALL_ROOT/apps/desktop/release/mac/Hermes.app"; do
+  for c in "$INSTALL_ROOT/apps/desktop/release/mac-arm64/Zeus.app" \
+           "$INSTALL_ROOT/apps/desktop/release/mac/Zeus.app"; do
     [ -d "$c" ] && { rebuilt="$c"; break; }
   done
 
@@ -639,7 +639,7 @@ mac_swap() {
     swap_checkpoint start
     if ! "$MAC_DITTO" "$rebuilt" "$RELAUNCH_TARGET.new"; then
       rm -rf "$RELAUNCH_TARGET.new" 2>/dev/null || true
-      DONE_NOTE="Hermes was updated, but the new app could not be staged; the previous app was kept. Run the update again."
+      DONE_NOTE="Zeus was updated, but the new app could not be staged; the previous app was kept. Run the update again."
       add_warning "app-swap" "bundle copy failed; previous app kept"
       return
     fi
@@ -650,15 +650,15 @@ mac_swap() {
     swap_checkpoint staged
     if ! mv "$RELAUNCH_TARGET" "$RELAUNCH_TARGET.old"; then
       rm -rf "$RELAUNCH_TARGET.new" 2>/dev/null || true
-      DONE_NOTE="Hermes was updated, but the new app could not replace the old one; the previous app was kept. Run the update again."
+      DONE_NOTE="Zeus was updated, but the new app could not replace the old one; the previous app was kept. Run the update again."
       add_warning "app-swap" "could not move the old bundle aside; previous app kept"
     elif swap_checkpoint aside; ! mv "$RELAUNCH_TARGET.new" "$RELAUNCH_TARGET"; then
       if mv "$RELAUNCH_TARGET.old" "$RELAUNCH_TARGET"; then
         rm -rf "$RELAUNCH_TARGET.new" 2>/dev/null || true
-        DONE_NOTE="Hermes was updated, but the new app could not be installed; the previous app was restored. Run the update again."
+        DONE_NOTE="Zeus was updated, but the new app could not be installed; the previous app was restored. Run the update again."
         add_warning "app-swap" "bundle install failed; rolled back to the previous app"
       else
-        DONE_NOTE="Hermes was updated, but installing the new app failed and the previous app could not be restored. Reinstall Hermes (the rebuilt app is at $rebuilt)."
+        DONE_NOTE="Zeus was updated, but installing the new app failed and the previous app could not be restored. Reinstall Zeus (the rebuilt app is at $rebuilt)."
         add_warning "app-swap" "bundle install failed AND rollback failed"
       fi
     else
@@ -686,15 +686,15 @@ deliver_outcome() { # the truth-determining half: swap bundles / gate the relaun
 restore_user_proxy_env() { # port of restoreUserProxyEnv (electron/updater/system-proxy-env.ts):
   # the Desktop gave its system proxy to the update only; the relaunched app gets the user's own env.
   local key saved keys
-  IFS=, read -r -a keys <<< "${HERMES_UPDATE_SYSTEM_PROXY:-}"
+  IFS=, read -r -a keys <<< "${ZEUS_UPDATE_SYSTEM_PROXY:-}"
   for key in ${keys[@]+"${keys[@]}"}; do
     case "$key" in HTTPS_PROXY|https_proxy|HTTP_PROXY|http_proxy|NO_PROXY|no_proxy) unset "$key" ;; esac
   done
   for key in NO_PROXY no_proxy; do
-    saved="HERMES_UPDATE_USER_$key"
+    saved="ZEUS_UPDATE_USER_$key"
     if printenv "$saved" >/dev/null; then export "$key=$(printenv "$saved")"; unset "$saved"; fi
   done
-  unset HERMES_UPDATE_SYSTEM_PROXY
+  unset ZEUS_UPDATE_SYSTEM_PROXY
 }
 
 launch_app() { # attempted BEFORE the terminal event (launch acceptance is
@@ -723,7 +723,7 @@ launch_app() { # attempted BEFORE the terminal event (launch acceptance is
     (cd "${RELAUNCH_CWD:-/}" 2>/dev/null || cd /
      # The relaunched app must not inherit the hand-off's update env.
      restore_user_proxy_env
-     env -u HERMES_UPDATE_STATUS_FILE -u HERMES_UPDATE_STARTED_AT -u HERMES_UPDATE_HANDOFF_PID -u PYTHONUNBUFFERED \
+     env -u ZEUS_UPDATE_STATUS_FILE -u ZEUS_UPDATE_STARTED_AT -u ZEUS_UPDATE_HANDOFF_PID -u PYTHONUNBUFFERED \
        setsid "$RELAUNCH_TARGET" ${RELAUNCH_ARGS[@]+"${RELAUNCH_ARGS[@]}"} >/dev/null 2>&1 &
      echo $! > "$STATUS.launchpid") || { log "WARNING: relaunch spawn failed"; return 1; }
     local lp
@@ -791,7 +791,7 @@ finish() {
       if ! launch_app; then
         # Even the kept bundle didn't come back: the durable message must
         # carry BOTH facts (update ok, previous app not reopened).
-        FINAL_MSG="$DONE_NOTE Hermes also could not reopen itself - open it manually."
+        FINAL_MSG="$DONE_NOTE Zeus also could not reopen itself - open it manually."
         write_result
       fi
     fi
@@ -801,7 +801,7 @@ finish() {
   else
     # Launch was due and did not land. Downgrade: truthful result for the
     # next boot, manual state held on screen now.
-    FINAL_MSG="Update complete. Reopen Hermes to finish (it could not restart itself)."
+    FINAL_MSG="Update complete. Reopen Zeus to finish (it could not restart itself)."
     MANUAL=1
     write_result
     publish "manual" "$FINAL_MSG"; stop_ui leave-window
@@ -815,16 +815,16 @@ trap finish EXIT
 # a real-file `venv/bin/python` copy plus a `.tcc-anchor-source` marker, and
 # `python3`/`python3.N` aliases that die at interpreter init ("No module
 # named 'encodings'"). On those installs EVERY normal CLI entrypoint is dead
-# (`venv/bin/hermes` has a `python3` shebang), so no Python-side heal —
+# (`venv/bin/zeus` has a `python3` shebang), so no Python-side heal —
 # doctor OR in-update — can ever run. This shell is the last surface that
 # still executes, so the heal lives here (recovery design after @aeonsong's
 # #96231; heal-point observation by @ahrazzle / @tokenfires on #95759).
 #
 # Ping-pong coherence with the re-landed forward anchor
-# (hermes_cli/macos_tcc_anchor.ensure_tcc_anchor, which re-anchors whenever
+# (zeus_cli/macos_tcc_anchor.ensure_tcc_anchor, which re-anchors whenever
 # `venv/bin/python` is a uv-managed symlink): this heal is gated on the
 # interpreter FAILING its boot probe, so a healthy anchored install is never
-# touched; and when it does restore symlinks, the very `hermes update` run it
+# touched; and when it does restore symlinks, the very `zeus update` run it
 # unblocks re-installs a boot-gated healthy anchor — a one-shot convergence,
 # not a loop.
 
@@ -935,12 +935,12 @@ EOF_ALIASES
 
 tcc_pick_update_invoke() { # sets UPDATE_INVOKE; safety net past a failed heal
   # Last-resort class: aliases still dead but the anchored copy boots. The
-  # launchd gateway proves `venv/bin/python -m hermes_cli.main` works when
+  # launchd gateway proves `venv/bin/python -m zeus_cli.main` works when
   # every alias entrypoint is bricked — drive the update the same way.
   local bin="$1"
-  UPDATE_INVOKE=("$bin/hermes")
+  UPDATE_INVOKE=("$bin/zeus")
   if ! tcc_probe_python "$bin/python3" && tcc_probe_python "$bin/python"; then
-    UPDATE_INVOKE=("$bin/python" -m hermes_cli.main)
+    UPDATE_INVOKE=("$bin/python" -m zeus_cli.main)
   fi
 }
 
@@ -979,9 +979,9 @@ fi
 if [ "$SELF_TEST_UI" -eq 1 ]; then
   start_ui
   log "SELF-TEST: shim simulation (no update will run)"
-  sleep "${HERMES_SELFTEST_HOLD_SECONDS:-6}"
+  sleep "${ZEUS_SELFTEST_HOLD_SECONDS:-6}"
   RELAUNCH_TARGET=""
-  if [ -n "${HERMES_SELFTEST_FAIL:-}" ]; then FINAL_MSG="self-test error state"
+  if [ -n "${ZEUS_SELFTEST_FAIL:-}" ]; then FINAL_MSG="self-test error state"
   else FINAL_CODE=0 FINAL_MSG="self-test complete"; fi
   exit "$FINAL_CODE"
 fi
@@ -995,20 +995,20 @@ fi
 
 # ── the actual job ──────────────────────────────────────────────────────────
 # Everything below is ONE brace group: bash parses a compound command whole
-# before running it, so `hermes update` rewriting this very file (the script
+# before running it, so `zeus update` rewriting this very file (the script
 # lives in the checkout it updates) can never feed the rest of the run from a
 # shifted offset of the new text.
 {
 # Electron's macOS quit teardown sends SIGTERM to its still-parented updater
 # child on this machine. `detached + unref` gives the child a process group but
 # does not re-parent it before `before-quit` runs, so the hand-off consistently
-# died two seconds after starting `hermes update`. Re-exec through a one-shot
+# died two seconds after starting `zeus update`. Re-exec through a one-shot
 # setsid child and let this direct Electron child exit first. The real
 # orchestrator is then owned by launchd (PPID 1) and is outside Electron's quit
 # teardown, while retaining the same marker/result protocol.
 if [ "$HANDOFF_DAEMONIZED" -ne 1 ]; then
   # This launcher is disposable. In particular it must not run finish() on
-  # EXIT: that would publish a false failure and relaunch Hermes while the
+  # EXIT: that would publish a false failure and relaunch Zeus while the
   # re-parented orchestrator is only just starting.
   trap - EXIT HUP INT QUIT TERM
   # --daemonized must precede ORIGINAL_ARGS, not follow it: ORIGINAL_ARGS may
@@ -1018,7 +1018,7 @@ if [ "$HANDOFF_DAEMONIZED" -ne 1 ]; then
   # every re-exec, causing this block to re-fire forever (self-exec loop,
   # unbounded argv growth) whenever relaunch args were present.
   # nohup leaves SIGHUP ignored, and an ignored-at-entry signal can never be
-  # re-trapped by bash, so every child (hermes update, gateways it starts, the
+  # re-trapped by bash, so every child (zeus update, gateways it starts, the
   # relaunched app) inherited it. The daemon has no terminal after setsid:
   # restore the default before exec.
   /usr/bin/nohup /usr/bin/python3 -c '
@@ -1054,7 +1054,7 @@ trap '' TERM
 # probe. The Desktop supplies one acquisition time for the whole ownership
 # chain; a bridge marker owned by --desktop-pid is adopted.
 NOW="$(date +%s)"
-STARTED_AT="${HERMES_UPDATE_STARTED_AT:-$NOW}"
+STARTED_AT="${ZEUS_UPDATE_STARTED_AT:-$NOW}"
 case "$STARTED_AT" in ''|*[!0-9]*) STARTED_AT="$NOW" ;; esac
 MIN_STARTED_AT=$((NOW - 1200))
 # Compare the validated decimal strings before doing arithmetic. Shell integer
@@ -1069,7 +1069,7 @@ if ! marker_claim; then
   # A4: this run changed nothing and owns no result -- the other update (or
   # the Desktop that gave up on this hand-off) reports its own. An older
   # Desktop quits right after spawning us, so bring one back if it is gone.
-  log "Another Hermes update is already running (process $MARKER_REFUSED_PID), or the Desktop gave up on this hand-off. Nothing was changed."
+  log "Another Zeus update is already running (process $MARKER_REFUSED_PID), or the Desktop gave up on this hand-off. Nothing was changed."
   trap - EXIT
   [ "$(uname)" = "Darwin" ] || linux_gate
   launch_app || true
@@ -1088,9 +1088,9 @@ marker_refresher_start
 # backup of a killed run, UI/probe temp files whose owning pid is gone.
 case "$RELAUNCH_TARGET" in *.app) mac_bundle_recover "$RELAUNCH_TARGET" ;; esac
 for _stale in "$INSTALL_ROOT"/venv/bin/*.tcc-heal-old.* "$INSTALL_ROOT"/venv/bin/*.tcc-heal-new.* \
-    "${TMPDIR:-/tmp}"/hermes-update-status.[0-9]* "${TMPDIR:-/tmp}"/hermes-update-probe.[0-9]* \
-    "${TMPDIR:-/tmp}"/hermes-update-go.[0-9]* \
-    "${TMPDIR:-/tmp}"/hermes-update-ui-[0-9]*-*; do
+    "${TMPDIR:-/tmp}"/zeus-update-status.[0-9]* "${TMPDIR:-/tmp}"/zeus-update-probe.[0-9]* \
+    "${TMPDIR:-/tmp}"/zeus-update-go.[0-9]* \
+    "${TMPDIR:-/tmp}"/zeus-update-ui-[0-9]*-*; do
   [ -e "$_stale" ] || [ -L "$_stale" ] || continue
   case "$_stale" in
     *.tcc-heal-*) _owner="${_stale##*.}" ;;
@@ -1115,13 +1115,13 @@ done
 # can first join a managed SSH update it is running, which legitimately outlasts
 # a short fixed wait; past the ceiling the hand-off still refuses. Overridable
 # only so tests need not sit it out.
-DESKTOP_EXIT_SECONDS="${HERMES_UPDATE_DESKTOP_EXIT_SECONDS:-150}"
+DESKTOP_EXIT_SECONDS="${ZEUS_UPDATE_DESKTOP_EXIT_SECONDS:-150}"
 case "$DESKTOP_EXIT_SECONDS" in ''|*[!0-9]*|0) DESKTOP_EXIT_SECONDS=150 ;; esac
 if [ "$DESKTOP_PID" -gt 0 ] 2>/dev/null; then
   _exit_deadline=$(( $(date +%s) + DESKTOP_EXIT_SECONDS ))
   while ident_alive "$DESKTOP_PID" "$DESKTOP_CT" && [ "$(date +%s)" -lt "$_exit_deadline" ]; do sleep 0.3; done
   if ident_alive "$DESKTOP_PID" "$DESKTOP_CT"; then
-    FINAL_CODE=4 FINAL_MSG="Update aborted: the Hermes window (pid $DESKTOP_PID) did not exit within ${DESKTOP_EXIT_SECONDS}s. Nothing was changed. Close Hermes fully and try again."
+    FINAL_CODE=4 FINAL_MSG="Update aborted: the Zeus window (pid $DESKTOP_PID) did not exit within ${DESKTOP_EXIT_SECONDS}s. Nothing was changed. Close Zeus fully and try again."
     log "$FINAL_MSG"; exit "$FINAL_CODE"
   fi
 fi
@@ -1138,28 +1138,28 @@ start_ui
 LEGACY_INSTALL=0
 [ -d "$INSTALL_ROOT/pm" ] || LEGACY_INSTALL=1
 select_update_invoke() {
-  HERMES_BIN="$INSTALL_ROOT/.hermes/bin/hermes"
-  if [ -x "$HERMES_BIN" ]; then
-    UPDATE_INVOKE=("$HERMES_BIN")
+  ZEUS_BIN="$INSTALL_ROOT/.zeus/bin/zeus"
+  if [ -x "$ZEUS_BIN" ]; then
+    UPDATE_INVOKE=("$ZEUS_BIN")
     return 0
   fi
-  if [ -f "$INSTALL_ROOT/hermes_cli/_launchers.py" ]; then
+  if [ -f "$INSTALL_ROOT/zeus_cli/_launchers.py" ]; then
     local candidate version reported expected
     expected="$(cd "$INSTALL_ROOT" && pwd -P)" || return 1
-    for candidate in "$HOME/.local/bin/hermes" "$HERMES_HOME/bin/hermes"; do
+    for candidate in "$HOME/.local/bin/zeus" "$ZEUS_HOME/bin/zeus"; do
       [ -x "$candidate" ] || continue
       version="$(run_bounded 60 "$candidate" --version)" || continue
       reported="$(printf '%s\n' "$version" | sed -n 's/^Install directory: //p')"
       [ -d "$reported" ] || continue
       [ "$(cd "$reported" && pwd -P)" = "$expected" ] || continue
-      HERMES_BIN="$candidate"
+      ZEUS_BIN="$candidate"
       UPDATE_INVOKE=("$candidate")
       return 0
     done
   fi
   if [ "$LEGACY_INSTALL" -eq 1 ] && [ ! -d "$INSTALL_ROOT/pm" ]; then
-    HERMES_BIN="$INSTALL_ROOT/venv/bin/hermes"
-    [ -x "$HERMES_BIN" ] || return 1
+    ZEUS_BIN="$INSTALL_ROOT/venv/bin/zeus"
+    [ -x "$ZEUS_BIN" ] || return 1
     if [ "$(uname)" = Darwin ]; then
       tcc_anchor_heal "$INSTALL_ROOT/venv/bin" || log "TCC anchor rescue failed ($TCC_HEAL_STATE)"
     fi
@@ -1168,9 +1168,9 @@ select_update_invoke() {
   fi
   return 1
 }
-select_update_invoke || { FINAL_CODE=3 FINAL_MSG="Update aborted: the installation launcher at $HERMES_BIN is missing. Repair this installation."; log "$FINAL_MSG"; exit 3; }
+select_update_invoke || { FINAL_CODE=3 FINAL_MSG="Update aborted: the installation launcher at $ZEUS_BIN is missing. Repair this installation."; log "$FINAL_MSG"; exit 3; }
 
-# Run FROM the install root: `hermes update` resolves the tree it mutates
+# Run FROM the install root: `zeus update` resolves the tree it mutates
 # from the working directory, and we inherit the Desktop's cwd (which can be
 # an unrelated repo — updating THAT instead of the install is the failure
 # the sandbox repro caught). FAIL CLOSED: set -u without set -e means a
@@ -1181,33 +1181,33 @@ cd "$INSTALL_ROOT" || {
   log "$FINAL_MSG"; exit 3
 }
 export PYTHONUNBUFFERED=1
-# The takeover children (hermes update -> _update_takeover/update_finish and
+# The takeover children (zeus update -> _update_takeover/update_finish and
 # the PM sync / build stages they drive) publish their stages back into the
 # shim's UI through this file; without a watching UI the variable is simply
 # absent and the helper no-ops.
-export HERMES_UPDATE_STATUS_FILE="$STATUS"
-# `hermes update` runs under OUR marker claim (contract C1 rule 4/6).
+export ZEUS_UPDATE_STATUS_FILE="$STATUS"
+# `zeus update` runs under OUR marker claim (contract C1 rule 4/6).
 # The claim's owner is not this script. marker_refresher_start hands line 1 to a custodian
 # subshell that outlives us, so the owner is a *sibling* of this script: never our own pid,
-# and never an ancestor of the `hermes update` we spawn. update_lock._is_partner can only
+# and never an ancestor of the `zeus update` we spawn. update_lock._is_partner can only
 # match it through this variable, so exporting `$$` left the custodian unrecognisable and
 # every desktop-initiated update refused its own claim with exit code 2
-# ("Another Hermes update is already running (started Ns ago, process <custodian>)").
+# ("Another Zeus update is already running (started Ns ago, process <custodian>)").
 # $MY_PID is the custodian once the handover succeeded, and our own pid when it did not.
-export HERMES_UPDATE_HANDOFF_PID="$MY_PID"
+export ZEUS_UPDATE_HANDOFF_PID="$MY_PID"
 # The update's receipt carries this id (update_receipt._launcher_correlation_id),
 # which is how update_committed_after_exit finds THIS run's receipt.
-export HERMES_UPDATE_CORRELATION_ID="$UPDATE_CORRELATION"
+export ZEUS_UPDATE_CORRELATION_ID="$UPDATE_CORRELATION"
 # --keep-stash: never re-apply local source edits after the update (they stay
 # parked in git stash). Probe --help first: older installed backends don't
 # know the flag and argparse would abort with exit 2, which collides with the
-# "close all Hermes windows" sentinel. The probe is bounded: a hung launcher
+# "close all Zeus windows" sentinel. The probe is bounded: a hung launcher
 # must not hold the marker forever.
 KEEP_STASH=""
 if run_bounded 60 "${UPDATE_INVOKE[@]}" update --help | grep -q -- '--keep-stash'; then
   KEEP_STASH="--keep-stash"
 else
-  log "installed hermes predates --keep-stash (or the probe failed); running without it"
+  log "installed zeus predates --keep-stash (or the probe failed); running without it"
 fi
 # --gateway restarts the local messaging gateway after the update. The
 # Desktop omits it (--no-gateway) when it is served by a remote gateway
@@ -1230,7 +1230,7 @@ run_update() { # streams straight into the log (a killed run keeps its output);
   # but the marker names neither a live owner nor a live delegate. A
   # HUP/INT/QUIT that lands meanwhile is handled once it exits, exactly like a
   # foreground child.
-  local offset pid sig go="${TMPDIR:-/tmp}/hermes-update-go.$$"
+  local offset pid sig go="${TMPDIR:-/tmp}/zeus-update-go.$$"
   offset="$(wc -c < "$LOG" 2>/dev/null | tr -d '[:space:]')"
   PENDING_SIGNAL=""
   for sig in HUP INT QUIT; do trap "PENDING_SIGNAL=\${PENDING_SIGNAL:-$sig}" "$sig"; done
@@ -1263,11 +1263,11 @@ run_update() { # streams straight into the log (a killed run keeps its output);
 log "running: ${UPDATE_INVOKE[*]} update --yes $GATEWAY_FLAG $KEEP_STASH ${TARGET_ARGS[*]}"
 publish_stage "Updating code and dependencies"
 run_update
-log "hermes update exit code: $CODE"
+log "zeus update exit code: $CODE"
 
 if [ "$LEGACY_INSTALL" -eq 1 ] && [ "$CODE" -ne 0 ] && [ "$CODE" -ne 2 ]; then
   # Retry once: update-boundary class (fresh code on disk, stale in memory).
-  # Exit 2 ("close all Hermes windows") is not retryable.
+  # Exit 2 ("close all Zeus windows") is not retryable.
   #
   # A parked-branch SKIP (checkout on a feature branch with unmerged
   # commits) is also deterministic — the retry would hit the exact same
@@ -1276,7 +1276,7 @@ if [ "$LEGACY_INSTALL" -eq 1 ] && [ "$CODE" -ne 0 ] && [ "$CODE" -ne 2 ]; then
   # dedicated exit code (8) so callers can distinguish "skipped" from a
   # real failure.
   if printf '%s' "$OUT" | grep -q "CODE UPDATE SKIPPED"; then
-    log "hermes update skipped (checkout parked on a non-target branch); not retrying"
+    log "zeus update skipped (checkout parked on a non-target branch); not retrying"
     FINAL_CODE=8
     FINAL_MSG="Update skipped: the git checkout is on a branch that isn't fully merged into $BRANCH. Switch to the target branch and update again (see the terminal output for the exact commands)."
     exit 8
@@ -1291,13 +1291,13 @@ trap 'on_signal TERM' TERM
 
 if [ "$CODE" -eq 0 ]; then FINAL_CODE=0 FINAL_MSG="Update complete." UPDATE_COMMITTED=1
   # Contract C3: a Desktop build that fails after the code committed is an owed
-  # follow-up (hermes update exits 0 and prints one whole "Desktop app build
+  # follow-up (zeus update exits 0 and prints one whole "Desktop app build
   # owed:" line for it; the follow-up text itself is truncated). The user is on
-  # the new Hermes, but this app was not rebuilt: say so and say how to fix it,
+  # the new Zeus, but this app was not rebuilt: say so and say how to fix it,
   # never "finished OK" and never "still on the previous version".
   if printf '%s\n' "$OUT" | grep -Eq '^[[:space:]]*Desktop app build owed: '; then
     APP_REBUILD_FAILED=1
-    DONE_NOTE="Hermes was updated, but the Desktop app could not be rebuilt, so it still runs its old build. Run hermes desktop --force-build in a terminal to rebuild it; the update log has the build error."
+    DONE_NOTE="Zeus was updated, but the Desktop app could not be rebuilt, so it still runs its old build. Run zeus desktop --force-build in a terminal to rebuild it; the update log has the build error."
     add_warning "build" "the Desktop app build is owed by the committed update"
   fi
   # Every other owed follow-up (a gateway still on the old code, a Windows
@@ -1307,30 +1307,30 @@ if [ "$CODE" -eq 0 ]; then FINAL_CODE=0 FINAL_MSG="Update complete." UPDATE_COMM
   OWED_STEPS="$(owed_followup_steps)"
   if [ -n "$OWED_STEPS" ]; then
     # A gateway_restart owed only for serve/dashboard units (the reason then starts with
-    # "serve/dashboard ", hermes_cli/update_cmd_fleet_verify.SERVE_ONLY_REASON_PREFIX) names their own
+    # "serve/dashboard ", zeus_cli/update_cmd_fleet_verify.SERVE_ONLY_REASON_PREFIX) names their own
     # command in the log. The hint drops only when EVERY gateway_restart line is serve-only; any other
     # reason, including a raw restart-phase error, keeps it (#141071).
-    case " $OWED_STEPS " in *" gateway_restart "*) OWED_HINT=" Run hermes gateway restart to move the messaging gateway onto the new code now." ;; *) OWED_HINT="" ;; esac
+    case " $OWED_STEPS " in *" gateway_restart "*) OWED_HINT=" Run zeus gateway restart to move the messaging gateway onto the new code now." ;; *) OWED_HINT="" ;; esac
     GW_REASONS="$(printf '%s\n' "$OUT" | grep "Update follow-up 'gateway_restart' did not finish: ")"
     if [ -n "$GW_REASONS" ] && ! printf '%s\n' "$GW_REASONS" | grep -vq "did not finish: serve/dashboard " \
-      && ! printf '%s\n' "$GW_REASONS" | grep -q "hermes gateway restart"; then
+      && ! printf '%s\n' "$GW_REASONS" | grep -q "zeus gateway restart"; then
       OWED_HINT=""
     fi
     if [ -n "$DONE_NOTE" ]; then DONE_NOTE="$DONE_NOTE Follow-up steps still owed: $OWED_STEPS.$OWED_HINT"
-    else DONE_NOTE="Hermes was updated, but some follow-up steps did not finish ($OWED_STEPS). The next launch or hermes update retries them; the update log has the details.$OWED_HINT"; fi
+    else DONE_NOTE="Zeus was updated, but some follow-up steps did not finish ($OWED_STEPS). The next launch or zeus update retries them; the update log has the details.$OWED_HINT"; fi
     add_warning "followup" "owed by the committed update: $OWED_STEPS"
   fi
 elif [ "$CODE" -ne 2 ] && update_committed_after_exit; then
   # Past the commit point: installed, with an owed follow-up (contract C3).
   FINAL_CODE=0 FINAL_MSG="Update complete." UPDATE_COMMITTED=1
   case "$RECEIPT_OUTCOME" in
-    partial) DONE_NOTE="Hermes was updated, but one step is left for you: your local source changes may still be parked in git stash. Run hermes update in a terminal for the exact commands." ;;
-    interrupted) DONE_NOTE="Hermes was updated, but its post-update steps were interrupted. The next launch or hermes update finishes them." ;;
-    *) DONE_NOTE="Hermes was updated, but hermes update exited with code $CODE afterwards. Run hermes update in a terminal to finish any remaining steps." ;;
+    partial) DONE_NOTE="Zeus was updated, but one step is left for you: your local source changes may still be parked in git stash. Run zeus update in a terminal for the exact commands." ;;
+    interrupted) DONE_NOTE="Zeus was updated, but its post-update steps were interrupted. The next launch or zeus update finishes them." ;;
+    *) DONE_NOTE="Zeus was updated, but zeus update exited with code $CODE afterwards. Run zeus update in a terminal to finish any remaining steps." ;;
   esac
-  add_warning "update" "hermes update exited $CODE after the commit point (receipt outcome: $RECEIPT_OUTCOME)"
+  add_warning "update" "zeus update exited $CODE after the commit point (receipt outcome: $RECEIPT_OUTCOME)"
 else
-  FINAL_CODE="$CODE" FINAL_MSG="Update failed (exit $CODE). Run hermes debug share in a terminal to send a report."
+  FINAL_CODE="$CODE" FINAL_MSG="Update failed (exit $CODE). Run zeus debug share in a terminal to send a report."
   # Name the failing layer where the user can see it: the updater's own tail
   # rides the result file and the shim message (empty output keeps the
   # original generic copy, byte-identical).
@@ -1341,7 +1341,7 @@ else
   # succeed — tell the user what is actually wrong (#95759).
   if [ "$LEGACY_INSTALL" -eq 1 ] && ! tcc_probe_python "$INSTALL_ROOT/venv/bin/python3" \
       && ! tcc_probe_python "$INSTALL_ROOT/venv/bin/python"; then
-    FINAL_MSG="Update failed: the Python interpreter inside $INSTALL_ROOT/venv cannot start (heal state: $TCC_HEAL_STATE). Reinstall the runtime with the Hermes installer, or run hermes doctor --fix from a terminal if any hermes command still works."
+    FINAL_MSG="Update failed: the Python interpreter inside $INSTALL_ROOT/venv cannot start (heal state: $TCC_HEAL_STATE). Reinstall the runtime with the Zeus installer, or run zeus doctor --fix from a terminal if any zeus command still works."
   fi
 fi
 
@@ -1350,12 +1350,12 @@ fi
 # The code already committed: a failed rebuild is a follow-up warning on an
 # ok:true result (contract C3), never "you're still on the previous version".
 if [ "$LEGACY_INSTALL" -eq 1 ] && [ "$CODE" -eq 0 ] && printf '%s' "$OUT" | grep -q "Desktop build failed"; then
-  log "desktop build failed inside hermes update; retrying build"
+  log "desktop build failed inside zeus update; retrying build"
   publish_stage "Rebuilding Desktop"
   if ! ( trap - TERM; exec "${UPDATE_INVOKE[@]}" desktop --force-build --build-only ) >> "$LOG" 2>&1; then
     APP_REBUILD_FAILED=1
-    DONE_NOTE="Hermes was updated, but the Desktop app rebuild failed - you are running the previous app build. Run hermes desktop --force-build from a terminal to retry."
-    add_warning "desktop-rebuild" "hermes desktop --force-build --build-only failed"
+    DONE_NOTE="Zeus was updated, but the Desktop app rebuild failed - you are running the previous app build. Run zeus desktop --force-build from a terminal to retry."
+    add_warning "desktop-rebuild" "zeus desktop --force-build --build-only failed"
   fi
 fi
 exit "$FINAL_CODE"

@@ -1,6 +1,6 @@
 """A Desktop pick of a custom endpoint named like a built-in freezes the endpoint's own route (#140107).
 
-The Desktop picker identifies a custom endpoint's row by its bare key (``hermes_cli.inventory``), and
+The Desktop picker identifies a custom endpoint's row by its bare key (``zeus_cli.inventory``), and
 ``session.create`` carries that pick. An entry named ``deepseek`` is shadowed by the built-in in raw
 provider resolution, so a bare ``deepseek`` frozen as the session's route ran on the native provider
 (no key, or an OpenRouter fallback with the private model name).
@@ -23,7 +23,7 @@ async def test_session_create_with_the_entrys_bare_pick_freezes_its_custom_route
     from gateway.config import GatewayConfig
     from gateway.session import SessionStore
     from gateway.session_authority import initialize_session_authority
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
 
     for var in ('DEEPSEEK_API_KEY', 'OPENAI_API_KEY'):
         monkeypatch.delenv(var, raising=False)
@@ -68,7 +68,7 @@ async def test_only_the_held_entrys_own_key_keeps_its_route(tmp_path, monkeypatc
     from gateway.config import GatewayConfig
     from gateway.session import SessionStore
     from gateway.session_authority import initialize_session_authority
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
 
     for var in ('DEEPSEEK_API_KEY', 'OPENROUTER_API_KEY', 'OPENAI_API_KEY'):
         monkeypatch.delenv(var, raising=False)

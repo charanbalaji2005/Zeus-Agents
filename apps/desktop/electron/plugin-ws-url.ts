@@ -10,7 +10,7 @@ export interface PluginWsUrlRequest {
   profile?: unknown
 }
 
-/** `hermes:plugin:ws-url`'s reply: a one-use URL, null to stay on polling (not a local gateway), or
+/** `zeus:plugin:ws-url`'s reply: a one-use URL, null to stay on polling (not a local gateway), or
  *  the one refusal main can name, which the renderer stops on. Any other failure rejects, and the
  *  renderer keeps its capped retry: it cannot tell a refusal from a gateway that is away. */
 export type PluginWsUrlReply = null | string | { refused: 'permission' }
@@ -69,7 +69,7 @@ export function pluginWsPath(pluginId: unknown, path: unknown): string {
 /** A fresh one-use plugin socket URL for a local gateway, null for any other backend (those keep
  *  the renderer's token path). The grant is the `native-http` one the plugin's REST calls already
  *  carry, minted for the routed profile and attached by `prepare` to that one dial as a header.
- *  The route resolves exactly as `hermes:gateway:ws-url(-for)` does: registry-scoped when the
+ *  The route resolves exactly as `zeus:gateway:ws-url(-for)` does: registry-scoped when the
  *  renderer names a connection, else the profile-keyed local pool. */
 export function createPluginWsUrlHandler(deps: {
   ensureBackend: (profile: unknown) => Promise<ResolvedBackend>

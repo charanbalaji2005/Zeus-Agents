@@ -3,8 +3,8 @@
 // `session.mutate` rename / rewind (`gateway/session_mutations.py`), the committed admission
 // result (`prompt.receipt include_result`) and the frozen launch policy (`session.info`).
 
-import type { SessionStats } from '@hermes/shared/gateway-events'
-import { JsonRpcGatewayError } from '@hermes/shared/json-rpc-channel'
+import type { SessionStats } from '@zeus/shared/gateway-events'
+import { JsonRpcGatewayError } from '@zeus/shared/json-rpc-channel'
 
 import { CANONICAL_REASONING_EFFORTS } from '../../domain/slash.js'
 import { usageFromTick } from '../../domain/usage.js'
@@ -256,7 +256,7 @@ interface ToolsShowResult {
   total?: number
 }
 
-/** Main's `/tools` text (hermes_cli/cli_info_mixin.py show_tools): kawaii header box, one
+/** Main's `/tools` text (zeus_cli/cli_info_mixin.py show_tools): kawaii header box, one
  *  `[toolset]` block per section with the first description sentence, then the total. */
 export function renderToolsListing(result: ToolsShowResult): string {
   const sections = result.sections ?? []

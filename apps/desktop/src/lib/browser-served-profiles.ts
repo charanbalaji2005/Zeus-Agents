@@ -1,4 +1,4 @@
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { browserLaunchProfileOrDefault } from '@/lib/platform'
 import { isSignedOutStatus } from '@/lib/signed-out-status'
 
@@ -34,7 +34,7 @@ export class UnservedProfileError extends Error {
  * and never waits on the network. Until a gateway reports the set, every installed profile counts
  * as served, which is how the tab treated them before the set was read.
  */
-export function createServedProfiles(api: <T>(request: HermesApiRequest) => Promise<T>) {
+export function createServedProfiles(api: <T>(request: ZeusApiRequest) => Promise<T>) {
   let served: null | Set<string> = null
   // The installed list the last read went with. A reconnect clears it so the next read re-reads.
   let readFor: null | string = null

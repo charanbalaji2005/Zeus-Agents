@@ -6,14 +6,14 @@ import pytest
 
 from tools.environments.base_session_env import _split_cwd_marker, _wrap_command_script
 
-CWD_MARKER = "__HERMES_CWD_test__"
-PIPE_MARKER = "__HERMES_PIPE_test__"
+CWD_MARKER = "__ZEUS_CWD_test__"
+PIPE_MARKER = "__ZEUS_PIPE_test__"
 
 
 def _script(command: str, pipe_marker: str = PIPE_MARKER) -> str:
     return _wrap_command_script(
         command, quoted_cwd="/tmp", quoted_snap="/nonexistent-snapshot",
-        snap_tmp_template="/tmp/hermes-snap.XXXXXX", passthrough_names=(),
+        snap_tmp_template="/tmp/zeus-snap.XXXXXX", passthrough_names=(),
         snapshot_ready=False, cwd_marker=CWD_MARKER, pipe_marker=pipe_marker,
     )
 
@@ -71,4 +71,4 @@ def test_capturing_pipestatus_changes_nothing_the_model_sees(command, exit_code,
     seen_code, seen_stdout, seen_stderr = _seen(_run_result(command))
 
     assert (seen_code, seen_stdout) == (exit_code, stdout)
-    assert "__hermes" not in seen_stderr
+    assert "__zeus" not in seen_stderr

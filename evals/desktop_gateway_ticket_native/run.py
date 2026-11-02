@@ -16,7 +16,7 @@ import psutil
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
-from hermes_cli.gateway_runtime_discovery import query_identify
+from zeus_cli.gateway_runtime_discovery import query_identify
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +69,7 @@ def main():
     args = parser.parse_args()
     # Keep the venv launcher path; resolving symlinks would discard the venv.
     python = os.path.abspath(args.python)
-    from hermes_constants import find_node_executable
+    from zeus_constants import find_node_executable
     node = find_node_executable('node')
     if not node:
         parser.error('node is required')
@@ -85,14 +85,14 @@ def main():
         temporary = temporary_directory.name
         base = Path(temporary).resolve()
         home, state = base / 'home', base / 'state'
-        sibling = home / '.hermes' / 'profiles' / 'sibling'
+        sibling = home / '.zeus' / 'profiles' / 'sibling'
         for directory in (home, state, sibling, base / 'user-data', base / 'tmp'):
             directory.mkdir(parents=True, mode=0o700, exist_ok=True)
         env = {key: value for key, value in os.environ.items() if key.upper() in {
             'PATH', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'PATHEXT', 'SYSTEMDRIVE',
             'DISPLAY', 'WAYLAND_DISPLAY', 'XDG_RUNTIME_DIR', 'XAUTHORITY',
             'LD_LIBRARY_PATH', 'LANG', 'TZ'}}
-        env.update(HOME=str(home), USERPROFILE=str(home), HERMES_HOME=str(state),
+        env.update(HOME=str(home), USERPROFILE=str(home), ZEUS_HOME=str(state),
                    APPDATA=str(home / 'AppData' / 'Roaming'),
                    LOCALAPPDATA=str(home / 'AppData' / 'Local'),
                    XDG_CONFIG_HOME=str(home / '.config'), XDG_CACHE_HOME=str(home / '.cache'),
@@ -107,7 +107,7 @@ def main():
             log = (output / f'daemon-{index}.log').open('w', encoding='utf-8')
             logs.append(log)
             process = subprocess.Popen([python, '-m', 'gateway.run'], cwd=REPO,
-                                       env={**env, 'HERMES_HOME': str(profile)},
+                                       env={**env, 'ZEUS_HOME': str(profile)},
                                        stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT)
             processes.append(process)
             endpoints.append(ready(process, profile))

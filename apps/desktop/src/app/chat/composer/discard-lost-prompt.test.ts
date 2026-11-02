@@ -1,21 +1,21 @@
 import { afterEach, expect, test, vi } from 'vitest'
 
 import type { GatewayRequest } from '@/app/session/hooks/use-prompt-actions/utils'
-import { HermesGateway } from '@/hermes'
+import { ZeusGateway } from '@/zeus'
 import { closeSecondaryGateways, requestGatewayForAgent, retainGatewayForAgent } from '@/store/gateway'
 import { $activeGatewayProfile } from '@/store/profile'
 import { $sessions } from '@/store/session'
 
 import { discardLostPrompt } from './discard-lost-prompt'
 
-const originalBridge = window.hermesDesktop
+const originalBridge = window.zeusDesktop
 const originalWebSocket = globalThis.WebSocket
 
 afterEach(() => {
   closeSecondaryGateways()
   $sessions.set([])
   $activeGatewayProfile.set('default')
-  window.hermesDesktop = originalBridge
+  window.zeusDesktop = originalBridge
   globalThis.WebSocket = originalWebSocket
 })
 
@@ -42,7 +42,7 @@ async function fixture() {
   })
   const { port } = server.address() as { port: number }
   const url = (route: string) => `ws://127.0.0.1:${port}/${route}?native_dial=fixture&ticket=one-use`
-  window.hermesDesktop = {
+  window.zeusDesktop = {
     connections: { list: async () => ({}) },
     getConnection: async () => ({ mode: 'local' }),
     getConnectionFor: async ({ connectionId, profile }: { connectionId: string; profile: string }) => ({ connectionId, profile, mode: 'remote' }),
@@ -50,7 +50,7 @@ async function fixture() {
   } as never
   $sessions.set([{ id: 'stored', connection_id: 'owner', profile: 'background' }] as never)
   $activeGatewayProfile.set('foreground')
-  const ambient = new HermesGateway()
+  const ambient = new ZeusGateway()
   await ambient.connect(url('ambient'))
   await ambient.request('session.resume', { session_id: 'stored' })
   const ambientRequest = vi.fn(ambient.request.bind(ambient)) as unknown as GatewayRequest
@@ -93,7 +93,7 @@ test('Discard refuses unresolved or unavailable owners instead of falling back t
     await expect(discardLostPrompt('stored', 'stored', 'lost', f.ambientRequest)).rejects.toThrow('owner')
     $sessions.set([{ id: 'stored', connection_id: 'owner', profile: 'background' }] as never)
 
-    window.hermesDesktop!.getConnectionFor = async () => { throw new Error('owner unavailable') }
+    window.zeusDesktop!.getConnectionFor = async () => { throw new Error('owner unavailable') }
     await expect(discardLostPrompt('stored', 'stored', 'lost', f.ambientRequest)).rejects.toThrow('owner unavailable')
     expect(f.ambientRequest).not.toHaveBeenCalled()
     expect(f.frames.filter(frame => frame.method === 'prompt.resolve_unknown')).toEqual([])

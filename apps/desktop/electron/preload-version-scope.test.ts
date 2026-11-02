@@ -18,18 +18,18 @@ type VersionBridge = { getVersion: (scope?: { connectionId?: string; profile?: s
 
 async function bridge(): Promise<VersionBridge> {
   await import('./preload')
-  const registration = host.exposeInMainWorld.mock.calls.find(([name]): boolean => name === 'hermesDesktop')
+  const registration = host.exposeInMainWorld.mock.calls.find(([name]): boolean => name === 'zeusDesktop')
 
   return registration![1] as VersionBridge
 }
 
 // The renderer scopes the version request to the selected connection/profile;
 // dropping it here makes main answer from the primary route instead.
-it('forwards the connection/profile scope to hermes:version', async (): Promise<void> => {
+it('forwards the connection/profile scope to zeus:version', async (): Promise<void> => {
   const exposed = await bridge()
   host.invoke.mockClear()
 
   await exposed.getVersion({ connectionId: 'remote-box', profile: 'work' })
 
-  expect(host.invoke).toHaveBeenCalledExactlyOnceWith('hermes:version', { connectionId: 'remote-box', profile: 'work' })
+  expect(host.invoke).toHaveBeenCalledExactlyOnceWith('zeus:version', { connectionId: 'remote-box', profile: 'work' })
 })

@@ -72,7 +72,7 @@ MODIFY_VERB_RE = (
     r'|\breplac(?:e|es|ed|ing)\b|\balter(?:s|ed|ing)?\b|\badd(?:s|ed|ing)\b)')
 
 _AGENT_CONFIG_FILES = r'(?:AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules)'
-_HERMES_CONFIG_FILES = r'\.hermes/(?:config\.yaml|SOUL\.md)'
+_ZEUS_CONFIG_FILES = r'\.zeus/(?:config\.yaml|SOUL\.md)'
 # Path prefixes (real files are e.g. .claude/settings.json): consume trailing filename chars.
 _OTHER_AGENT_CONFIG_FILES = r'\.(?:claude/settings|codex/config)[\w.]*'
 
@@ -174,8 +174,8 @@ THREAT_PATTERNS = [
     (r'\$HOME/\.kube|\~/\.kube', "kube_dir_access", "high", "exfiltration", "references Kubernetes config directory"),
     (r'\$HOME/\.docker|\~/\.docker',
      "docker_dir_access", "high", "exfiltration", "references Docker config (may contain registry creds)"),
-    (r'\$HOME/\.hermes/\.env|\~/\.hermes/\.env',
-     "hermes_env_access", "critical", "exfiltration", "directly references Hermes secrets file"),
+    (r'\$HOME/\.zeus/\.env|\~/\.zeus/\.env',
+     "zeus_env_access", "critical", "exfiltration", "directly references Zeus secrets file"),
     # `cat <secrets-file>` reads credentials; `cat >`/`cat >>` WRITES one (setup heredocs) — not exfil.
     (r'cat\s+(?!>)[^\n]*(\.env|credentials|\.netrc|\.pgpass|\.npmrc|\.pypirc)',
      "read_secrets_file", "critical", "exfiltration", "reads known secrets file"),
@@ -291,7 +291,7 @@ THREAT_PATTERNS = [
      r'|(?:tmp|var/tmp|dev/shm|run|var/lib/apt/lists|var/cache/(?:apt|apk|yum|dnf))/(?:[^/\s]*/)*\.\.(?=/|[\s;&|]|$))',
      "destructive_root_rm", "critical", "destructive", "recursive delete from root"),
     # ``rm`` / ``rmdir`` need a left boundary that excludes letters/digits: without it the ``rm`` in
-    # English prose (``the platfoRM rOute to ~/.hermes/config.yaml``) matched a recursive home delete.
+    # English prose (``the platfoRM rOute to ~/.zeus/config.yaml``) matched a recursive home delete.
     (r'(?<![A-Za-z0-9])rm\s+(-[^\s]*)?r.*(?:\$HOME|~[/\s*]|~$)|(?<![A-Za-z0-9])rmdir\s+.*(?:\$HOME|~[/\s*]|~$)',
      "destructive_home_rm", "critical", "destructive", "recursive delete targeting home directory ($HOME or ~)"),
     (r'chmod\s+777', "insecure_perms", "medium", "destructive", "sets world-writable permissions"),
@@ -430,10 +430,10 @@ THREAT_PATTERNS = [
     (r'^allowed-tools\s*:',
      "allowed_tools_field", "low", "privilege_escalation", "skill declares allowed-tools (standard frontmatter; informational)"),
     # `sudo.request` / `sudo.respond` are gateway wire events (the masked sudo-password prompt), not an
-    # invocation: any client plugin that relays Hermes' secure prompts has to name them, and a bare
+    # invocation: any client plugin that relays Zeus' secure prompts has to name them, and a bare
     # `\bsudo\b` made every such plugin `caution`. A dotted event name is never a shell `sudo`.
     # ``sudo.request`` / ``sudo.respond`` / ``sudo.expire`` are gateway wire events (the masked
-    # sudo-password prompt lifecycle), not an invocation: any client plugin that relays Hermes' secure
+    # sudo-password prompt lifecycle), not an invocation: any client plugin that relays Zeus' secure
     # prompts has to name them, and a bare ``\bsudo\b`` made every such plugin ``caution``. A dotted
     # event name (``sudo.<verb>``) is never a shell ``sudo``.
     (r'\bsudo\b(?!\.\w)',
@@ -453,7 +453,7 @@ THREAT_PATTERNS = [
     # Bare mentions of config files are not threats (authoring guides, setup docs) — flagging them blocked
     # popular community skills. Tiers: mechanical shell writes = critical; prose modification intent =
     # critical for AGENT config files (exactly how persistence attacks instruct the agent; project-skill
-    # quarantine only acts on "dangerous") but high for Hermes/other config (setup docs routinely say
+    # quarantine only acts on "dangerous") but high for Zeus/other config (setup docs routinely say
     # "edit config.yaml"); bare references = low.
     # Flagging any mention as critical produced permanent false-positive blocks for popular community skills
     # (#92021). * Mechanical persistence (shell redirection, sed -i, tee, cp/mv into the file) is critical —
@@ -467,12 +467,12 @@ THREAT_PATTERNS = [
      "agent_config_contract", "high", "persistence", "dictates agent config file contents (verify intent — authoring guides use this shape too)"),
     (r'AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules',
      "agent_config_ref", "low", "persistence", "references agent config files (informational; only modification intent is scored)"),
-    (_prose_modify_re(_HERMES_CONFIG_FILES),
-     "hermes_config_mod", "high", "persistence", "modification language aimed at Hermes configuration files (verify intent)"),
-    (_shell_write_re(_HERMES_CONFIG_FILES),
-     "hermes_config_mod_shell", "critical", "persistence", "shell write (redirect/sed -i/tee/cp/mv) targeting Hermes configuration files"),
-    (r'\.hermes/config\.yaml|\.hermes/SOUL\.md',
-     "hermes_config_ref", "low", "persistence", "references Hermes configuration files (informational; only modification intent is scored)"),
+    (_prose_modify_re(_ZEUS_CONFIG_FILES),
+     "zeus_config_mod", "high", "persistence", "modification language aimed at Zeus configuration files (verify intent)"),
+    (_shell_write_re(_ZEUS_CONFIG_FILES),
+     "zeus_config_mod_shell", "critical", "persistence", "shell write (redirect/sed -i/tee/cp/mv) targeting Zeus configuration files"),
+    (r'\.zeus/config\.yaml|\.zeus/SOUL\.md',
+     "zeus_config_ref", "low", "persistence", "references Zeus configuration files (informational; only modification intent is scored)"),
     (_prose_modify_re(_OTHER_AGENT_CONFIG_FILES),
      "other_agent_config_mod", "high", "persistence", "modifies other agents' configuration files"),
     (_shell_write_re(_OTHER_AGENT_CONFIG_FILES),
@@ -893,7 +893,7 @@ def _check_structure(skill_dir: Path, ignore=None) -> list[Finding]:
     return findings
 
 
-# `.skillignore` is Hermes-native; `.clawhubignore` is honored for skills published through ClawHub.
+# `.skillignore` is Zeus-native; `.clawhubignore` is honored for skills published through ClawHub.
 _SKILL_IGNORE_FILENAMES = (".skillignore", ".clawhubignore")
 
 

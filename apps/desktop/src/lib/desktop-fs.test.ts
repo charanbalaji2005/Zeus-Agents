@@ -59,7 +59,7 @@ const api = vi.fn(async ({ path }: { path: string }) => {
 
 function stubBridge() {
   vi.stubGlobal('window', {
-    hermesDesktop: {
+    zeusDesktop: {
       api,
       gitRoot,
       readDir,
@@ -75,7 +75,7 @@ describe('desktop filesystem facade', () => {
     stubBridge()
     $connection.set(null)
     setApiRequestConnection(null)
-    delete document.documentElement.dataset.hermesDesktopHost
+    delete document.documentElement.dataset.zeusDesktopHost
   })
 
   afterEach(() => {
@@ -83,7 +83,7 @@ describe('desktop filesystem facade', () => {
     vi.clearAllMocks()
     $connection.set(null)
     setApiRequestConnection(null)
-    delete document.documentElement.dataset.hermesDesktopHost
+    delete document.documentElement.dataset.zeusDesktopHost
     setDesktopFsRemotePicker(null)
   })
 
@@ -108,7 +108,7 @@ describe('desktop filesystem facade', () => {
 
   it('treats browser-hosted local Desktop as backend filesystem mode', async () => {
     $connection.set({ mode: 'local', profile: 'phone' } as never)
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
     const remoteSelect = vi.fn(async () => ['/backend/project'])
     setDesktopFsRemotePicker({ selectPaths: remoteSelect })
 

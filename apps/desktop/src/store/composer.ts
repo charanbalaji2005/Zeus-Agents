@@ -1,7 +1,7 @@
-import { randomUuid } from '@hermes/shared'
+import { randomUuid } from '@zeus/shared'
 import { atom } from 'nanostores'
 
-import type { HermesStagedUpload } from '@/global'
+import type { ZeusStagedUpload } from '@/global'
 import { deriveDraftTitle } from '@/lib/draft-title'
 import { triggerHaptic } from '@/lib/haptics'
 import { persistString, storedString } from '@/lib/storage'
@@ -87,10 +87,10 @@ export interface ComposerAttachment {
   thumbnailUrl?: string
   path?: string
   /** Ownership of browser-staged bytes; survives failed uploads and draft clones. */
-  stagedUpload?: HermesStagedUpload
+  stagedUpload?: ZeusStagedUpload
   /** Validated MIME returned by canonical owner staging. */
   mime?: string
-  /** Bounded source text from a Hermes-generated large paste, sent only to the title path. */
+  /** Bounded source text from a Zeus-generated large paste, sent only to the title path. */
   titlePreview?: string
   attachedSessionId?: string
   /** Set while the file/image bytes are being staged into the session
@@ -255,7 +255,7 @@ export const mainComposerScope = createComposerAttachmentScope($composerAttachme
 // Per-thread draft stash for the decoupled composer. Session lifecycle never
 // touches this — only ChatBar's scope swap reads/writes it. Text mirrors to
 // localStorage; attachments are memory-only (blobs, upload state).
-export const SESSION_DRAFTS_STORAGE_KEY = 'hermes:composer-drafts:v3'
+export const SESSION_DRAFTS_STORAGE_KEY = 'zeus:composer-drafts:v3'
 
 export const NEW_SESSION_DRAFT_KEY = '__new__'
 const MAX_PERSISTED_DRAFTS = 50
@@ -272,7 +272,7 @@ export interface SessionDraft {
 // the key (rather than just its text) lets a reload restore that exact fresh
 // draft; starting another new chat rotates the key so abandoned unsent drafts
 // cannot bleed into the next lifecycle.
-const FRESH_DRAFT_STORAGE_KEY = 'hermes.desktop.freshDraftKey'
+const FRESH_DRAFT_STORAGE_KEY = 'zeus.desktop.freshDraftKey'
 
 const createFreshDraftKey = (): string => `__new__:${randomUuid()}`
 
@@ -508,7 +508,7 @@ if (typeof window !== 'undefined') {
  * Dispatched synchronously, unlike the focus bus: the flush must complete
  * before the HUD window is created.
  */
-const DRAFT_SYNC_EVENT = 'hermes:composer-draft-sync'
+const DRAFT_SYNC_EVENT = 'zeus:composer-draft-sync'
 
 export type ComposerDraftSyncMode = 'flush' | 'reload'
 

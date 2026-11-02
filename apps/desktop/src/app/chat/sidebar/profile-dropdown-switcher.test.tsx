@@ -72,7 +72,7 @@ afterEach(() => {
   $profileRailVisible.set(true)
   vi.clearAllMocks()
   vi.unstubAllGlobals()
-  delete window.document.documentElement.dataset.hermesDesktopHost
+  delete window.document.documentElement.dataset.zeusDesktopHost
 })
 
 async function openDropdown() {
@@ -86,13 +86,13 @@ async function openDropdown() {
   await screen.findByRole('menuitemradio', { name: /clippy/ })
 }
 
-const launchMenuTriggers = () => window.document.querySelectorAll('[data-hermes-context-menu-trigger]')
+const launchMenuTriggers = () => window.document.querySelectorAll('[data-zeus-context-menu-trigger]')
 
 // Native Desktop's statusbar picker is main's: its rows carry no right-click
 // launch menu, and it leaves refreshing the profile list to the rail and
 // Manage Profiles.
 it('adds no right-click launch menu and no focus refresh in native Desktop', async () => {
-  vi.stubGlobal('hermesDesktop', {})
+  vi.stubGlobal('zeusDesktop', {})
   act(() => $profileRailVisible.set(false))
   await openDropdown()
 
@@ -103,7 +103,7 @@ it('adds no right-click launch menu and no focus refresh in native Desktop', asy
 // The Webapp always shows this dropdown instead of the rail's squares, so it
 // carries the rail's right-click launch menu and refreshes the list on focus.
 it('carries the rail\'s launch menu and focus refresh in browser-hosted Desktop', async () => {
-  window.document.documentElement.dataset.hermesDesktopHost = 'browser'
+  window.document.documentElement.dataset.zeusDesktopHost = 'browser'
   act(() => $profileRailVisible.set(false))
   await openDropdown()
 

@@ -11,11 +11,11 @@ const challenge = {
 }
 
 function installBridge(run: (request: unknown) => Promise<string>) {
-  ;(window as unknown as { hermesDesktop?: unknown }).hermesDesktop = { freeTierChallenge: { run } }
+  ;(window as unknown as { zeusDesktop?: unknown }).zeusDesktop = { freeTierChallenge: { run } }
 }
 
 afterEach(() => {
-  delete (window as unknown as { hermesDesktop?: unknown }).hermesDesktop
+  delete (window as unknown as { zeusDesktop?: unknown }).zeusDesktop
 })
 
 describe('runFreeTierChallenge', () => {

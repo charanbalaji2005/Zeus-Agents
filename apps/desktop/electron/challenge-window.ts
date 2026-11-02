@@ -6,7 +6,7 @@ import { createWindowOpenHandler } from './window-open-policy'
  * The free tier's browser challenge, desktop half.
  *
  * The Nous account service can ask an anonymous install to clear a challenge
- * before it mints a token (`hermes_cli/anon_challenge.py`). The challenge is a
+ * before it mints a token (`zeus_cli/anon_challenge.py`). The challenge is a
  * portal page; everything it does (bot detection, an in-browser proof of work,
  * an interactive fallback) belongs to the portal and changes without a Desktop
  * release. Desktop's whole job is this file: load that page in a HIDDEN
@@ -27,7 +27,7 @@ import { createWindowOpenHandler } from './window-open-policy'
  * no permissions. It is pinned to the portal origin three ways: navigations
  * and SERVER REDIRECTS off-origin are cancelled, a main-frame commit anywhere
  * else ends the run, and a phase is only ever read from a portal URL — a
- * foreign page must never be able to get this window revealed under a Hermes
+ * foreign page must never be able to get this window revealed under a Zeus
  * title. Only `<portal>/challenge…` URLs are ever loaded — the URL arrives from the
  * network by way of the backend and the renderer, and "open this URL" must not
  * become "open any URL".
@@ -58,7 +58,7 @@ export interface ChallengeWindowDependencies {
   now?: () => number
 }
 
-export const CHALLENGE_PARTITION = 'persist:hermes-challenge'
+export const CHALLENGE_PARTITION = 'persist:zeus-challenge'
 export const CHALLENGE_PATH = '/challenge'
 
 // While hidden nobody can see it hang: BotID plus a CPU-fallback proof of work
@@ -115,7 +115,7 @@ export function challengeWindowOptions(session: Session): BrowserWindowConstruct
     width: 520,
     height: 720,
     show: false,
-    title: 'Hermes — quick check',
+    title: 'Zeus — quick check',
     autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,

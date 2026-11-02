@@ -60,8 +60,8 @@ interface SpawnLock {
   pid: number
   port: number
   profile: string
-  hermesPath: string
-  hermesHome: string
+  zeusPath: string
+  zeusHome: string
   logPath: string
   tokenFingerprint: string
   protocolVersion: number
@@ -82,19 +82,19 @@ interface SpawnFixture {
 }
 
 async function spawnFixture(launcher: 'setsid' | 'nohup', owned: boolean): Promise<SpawnFixture> {
-  const root: string = await mkdtemp(path.join(os.tmpdir(), 'hermes-spawn-'))
+  const root: string = await mkdtemp(path.join(os.tmpdir(), 'zeus-spawn-'))
   const bin: string = path.join(root, 'bin')
   const shell: string = (await exec('command -v sh', { shell: 'sh' })).stdout.trim()
   const localPath = (remotePath: string): string => remotePath.replace(/^~/, root)
-  const env: NodeJS.ProcessEnv = { HOME: root, HERMES_HOME: path.join(root, '.hermes'), PATH: bin, LANG: 'C.UTF-8' }
+  const env: NodeJS.ProcessEnv = { HOME: root, ZEUS_HOME: path.join(root, '.zeus'), PATH: bin, LANG: 'C.UTF-8' }
 
   const run = async (command: string): Promise<{ stdout: string; stderr: string }> => shellExec(command, { shell, env })
 
   const ssh: Pick<SshConnection, 'exec'> = shellSshDouble({ shell, env })
 
-  const hermesPath: string = path.join(root, 'fake hermes')
-  const hermesHome: string = path.join(root, '.hermes')
-  const marker: string = path.join(hermesHome, '.hermes-update-in-progress')
+  const zeusPath: string = path.join(root, 'fake zeus')
+  const zeusHome: string = path.join(root, '.zeus')
+  const marker: string = path.join(zeusHome, '.zeus-update-in-progress')
 
   const lock: SpawnLock = {
     schemaVersion: LOCKFILE_SCHEMA_VERSION,
@@ -103,8 +103,8 @@ async function spawnFixture(launcher: 'setsid' | 'nohup', owned: boolean): Promi
     pid: 0,
     port: 0,
     profile: 'ops__PID__',
-    hermesPath,
-    hermesHome,
+    zeusPath,
+    zeusHome,
     logPath: spawnLogPath(ownershipId, spawnNonce),
     tokenFingerprint: fingerprintToken('fixture-token'),
     protocolVersion: PROTOCOL_VERSION,
@@ -112,7 +112,7 @@ async function spawnFixture(launcher: 'setsid' | 'nohup', owned: boolean): Promi
   }
 
   await mkdir(bin)
-  await mkdir(hermesHome)
+  await mkdir(zeusHome)
   await mkdir(path.join(root, 'reports'))
 
   // Restrict capability discovery, not the reported host OS. The fallback runs
@@ -137,12 +137,12 @@ async function spawnFixture(launcher: 'setsid' | 'nohup', owned: boolean): Promi
   }
 
   await writeFile(
-    hermesPath,
+    zeusPath,
     `#!${path.join(bin, 'python3')}
 import json,os,signal,time
 from pathlib import Path
 pid=os.getpid()
-mutex=Path(os.environ['HERMES_HOME'])/'.hermes-update-in-progress.lock'
+mutex=Path(os.environ['ZEUS_HOME'])/'.zeus-update-in-progress.lock'
 identity=mutex.stat()
 fds=[]
 for fd in range(3,256):
@@ -159,8 +159,8 @@ time.sleep(30)
     { encoding: 'utf8', mode: 0o700 }
   )
 
-  const command: string = buildSpawnCommand(hermesPath, lock.profile, {
-    hermesHome,
+  const command: string = buildSpawnCommand(zeusPath, lock.profile, {
+    zeusHome,
     logPath: lock.logPath,
     spawnNonce,
     tokenFilePath: spawnTokenPath(ownershipId, spawnNonce),
@@ -178,7 +178,7 @@ time.sleep(30)
       const report: ChildReport = JSON.parse(await readFile(path.join(root, 'reports', name), 'utf8'))
 
       try {
-        if (await pidIsOurDashboard(ssh, report.pid, spawnNonce, hermesPath, hermesHome, ownershipId, lock.profile)) {
+        if (await pidIsOurDashboard(ssh, report.pid, spawnNonce, zeusPath, zeusHome, ownershipId, lock.profile)) {
           process.kill(report.pid, 'SIGKILL')
         }
       } catch (error) {
@@ -344,13 +344,13 @@ test.skipIf(process.platform === 'win32')(
 
     try {
       await writeFile(fixture.marker, `${dead}\n${now}\nct:${ct}\ndelegate:${dead} ct:${ct}\nrun:desk-1\n`)
-      await assertRemoteInstallUpdateClear(fixture.ssh, fixture.lock.hermesHome)
+      await assertRemoteInstallUpdateClear(fixture.ssh, fixture.lock.zeusHome)
       await assert.rejects(readFile(fixture.marker), { code: 'ENOENT' })
 
       const live: string = `${dead}\n${now}\nct:${ct}\ndelegate:${delegate.pid} ct:${ct}\n`
       await writeFile(fixture.marker, live)
       await assert.rejects(
-        assertRemoteInstallUpdateClear(fixture.ssh, fixture.lock.hermesHome),
+        assertRemoteInstallUpdateClear(fixture.ssh, fixture.lock.zeusHome),
         (error: any) => error.kind === 'update-in-progress' && error.message.includes(`process ${delegate.pid}`)
       )
       await assert.rejects(fixture.run(fixture.command), { code: 75, stdout: '' })

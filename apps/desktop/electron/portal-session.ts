@@ -24,12 +24,12 @@ interface CookieWindowOptions {
 type CookieWindowOutcome = 'landed' | 'closed' | 'timeout' | Error
 
 // Canonical Nous portal base URL, overridable for staging/dev. Mirrors the CLI
-// convention (hermes_cli/auth.py DEFAULT_NOUS_PORTAL_URL + the same env names)
-// so a single override flips every Hermes surface to the same portal.
+// convention (zeus_cli/auth.py DEFAULT_NOUS_PORTAL_URL + the same env names)
+// so a single override flips every Zeus surface to the same portal.
 const DEFAULT_NOUS_PORTAL_URL = 'https://portal.nousresearch.com'
 
 export function resolvePortalBaseUrl() {
-  const raw = process.env.HERMES_PORTAL_BASE_URL || process.env.NOUS_PORTAL_BASE_URL || DEFAULT_NOUS_PORTAL_URL
+  const raw = process.env.ZEUS_PORTAL_BASE_URL || process.env.NOUS_PORTAL_BASE_URL || DEFAULT_NOUS_PORTAL_URL
 
   return String(raw).trim().replace(/\/+$/, '')
 }
@@ -233,7 +233,7 @@ export function createPortalSession({
       // hang the discovery call behind an invisible window.
       const outcome = await driveCookieWindow(sess, previous, {
         kind: 'portal-renew',
-        title: 'Renewing Hermes Cloud session…',
+        title: 'Renewing Zeus Cloud session…',
         show: false,
         pollMs: 500,
         deadlineMs: 12_000
@@ -259,7 +259,7 @@ export function createPortalSession({
   // must not close the window before the portal can replace it.
   async function openPortalLoginWindow(): Promise<void> {
     if (!isReady()) {
-      throw new Error('Desktop is not ready to start a Hermes Cloud sign-in.')
+      throw new Error('Desktop is not ready to start a Zeus Cloud sign-in.')
     }
 
     const sess = getOauthSession()
@@ -270,7 +270,7 @@ export function createPortalSession({
 
     const outcome = await driveCookieWindow(sess, await readAccessCookies(), {
       kind: 'portal',
-      title: 'Sign in to Hermes Cloud',
+      title: 'Sign in to Zeus Cloud',
       show: true,
       pollMs: 750
     })

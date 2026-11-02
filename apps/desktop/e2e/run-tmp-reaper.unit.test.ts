@@ -29,7 +29,7 @@ function exited(child: ChildProcess): Promise<NodeJS.Signals | null> {
 /** A stand-in backend: a real process whose environment names `root` the way a sandbox gateway's does. */
 function backendUnder(root: string): ChildProcess {
   const child = spawn('sleep', ['300'], {
-    env: { PATH: process.env.PATH, HERMES_E2E_RUN_TMP: root, HERMES_HOME: path.join(root, 'sandbox', 'hermes-home') },
+    env: { PATH: process.env.PATH, ZEUS_E2E_RUN_TMP: root, ZEUS_HOME: path.join(root, 'sandbox', 'zeus-home') },
     stdio: 'ignore'
   })
 

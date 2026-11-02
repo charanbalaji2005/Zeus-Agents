@@ -101,20 +101,20 @@ RULES: tuple[Rule, ...] = (
     Rule("HX009", "isinstance(r, Exception) on gather results", "check `BaseException`:"
          " `gather(return_exceptions=True)` also returns CancelledError", "ast"),
     # Profile scope (one process serves many profiles).
-    Rule("HX001", "hardcoded Hermes home", "`get_hermes_home()` for paths,"
-         " `display_hermes_home()` for user-facing text (`hermes_constants`); a path that"
+    Rule("HX001", "hardcoded Zeus home", "`get_zeus_home()` for paths,"
+         " `display_zeus_home()` for user-facing text (`zeus_constants`); a path that"
          " deliberately lives under the user's home, not the profile (e.g. the profiles root),"
          " takes `# health: allow HX001 -- <why>`", "ast",
          blocking=WARN_UNTIL_REPLAYED,
-         exclude=SINGLE_PROFILE + ("hermes_constants.py",)),
-    Rule("HX002", "new HERMES_* environment variable", "behavioural settings go in"
+         exclude=SINGLE_PROFILE + ("zeus_constants.py",)),
+    Rule("HX002", "new ZEUS_* environment variable", "behavioural settings go in"
          " config.yaml, secrets through the secret scope; `.env` is for credentials only",
          "ast", exclude=SINGLE_PROFILE),
     Rule("HX004", "UnscopedSecretError falls back to os.getenv", "bind the owning profile's"
          " secret scope at the spawn site; never read the launch profile's environment",
          "ast", exclude=SINGLE_PROFILE),
     Rule("HX005", "home/config/env captured at import time", "resolve it at call time"
-         " (`get_hermes_home()`, `load_config()`) or key the slot by `hermes_home_key()`;"
+         " (`get_zeus_home()`, `load_config()`) or key the slot by `zeus_home_key()`;"
          " module constants hold the launch profile's value", "ast",
          exclude=SINGLE_PROFILE),
     Rule("HX012", "raw threading.Thread", "`spawn_context_thread(...)` so the thread keeps"
@@ -130,7 +130,7 @@ RULES: tuple[Rule, ...] = (
     # Process identity.
     Rule("HX003", "process identity from argv substrings", "use"
          " `gateway.status.looks_like_gateway_command_line` /"
-         " `hermes_cli.update_cmd._hermes_holder_subcommand` and match full cmdlines", "ast",
+         " `zeus_cli.update_cmd._zeus_holder_subcommand` and match full cmdlines", "ast",
          blocking=WARN_UNTIL_REPLAYED),
     # Config truthiness.
     Rule("HX010", "bool() of a config/env string", "`bool(\"false\")` is True. Is it set?"

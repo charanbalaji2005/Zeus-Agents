@@ -1,6 +1,6 @@
 """Named custom routes use the same reasoning contract as bare custom.
 
-Regression for https://github.com/NousResearch/hermes-agent/issues/119681
+Regression for https://github.com/charanbalaji2005/Zeus-Agents/issues/119681
 """
 from providers import get_provider_profile, register_provider
 from providers.base import ProviderProfile
@@ -10,7 +10,7 @@ from agent.transports.chat_completions import ChatCompletionsTransport
 def test_bare_named_custom_provider_gets_custom_profile(monkeypatch):
     """Bare name (no ``custom:`` prefix) configured in providers: resolves to custom profile.
 
-    Regression for https://github.com/NousResearch/hermes-agent/issues/119681
+    Regression for https://github.com/charanbalaji2005/Zeus-Agents/issues/119681
     """
     import providers
     get_provider_profile("custom")
@@ -24,7 +24,7 @@ def test_bare_named_custom_provider_gets_custom_profile(monkeypatch):
         return name == "my-endpoint"
 
     with monkeypatch.context() as m:
-        m.setattr("hermes_cli.runtime_provider_custom.has_named_custom_provider", fake_has_named)
+        m.setattr("zeus_cli.runtime_provider_custom.has_named_custom_provider", fake_has_named)
         result = get_provider_profile("my-endpoint")
     assert result is custom_profile
 
@@ -62,9 +62,9 @@ def test_bare_named_custom_memo_caches_the_helper_result(monkeypatch):
     which lands inside per-model prefix loops.
     """
     import providers
-    from hermes_constants import get_hermes_home, hermes_home_key
+    from zeus_constants import get_zeus_home, zeus_home_key
 
-    home, hkey = get_hermes_home(), hermes_home_key()
+    home, hkey = get_zeus_home(), zeus_home_key()
     calls = []
 
     def fake(name):
@@ -72,7 +72,7 @@ def test_bare_named_custom_memo_caches_the_helper_result(monkeypatch):
         return False
 
     with monkeypatch.context() as m:
-        m.setattr("hermes_cli.runtime_provider_custom.has_named_custom_provider", fake)
+        m.setattr("zeus_cli.runtime_provider_custom.has_named_custom_provider", fake)
         assert providers._has_named_custom_provider("zzz-unknown", home, hkey) is False
         assert providers._has_named_custom_provider("zzz-unknown", home, hkey) is False
     assert calls == ["zzz-unknown"], f"second lookup must be a memo hit, got calls={calls}"
@@ -81,9 +81,9 @@ def test_bare_named_custom_memo_caches_the_helper_result(monkeypatch):
 def test_bare_named_custom_memo_invalidates_on_config_change(monkeypatch):
     """A config edit re-arms the memo: the signature is the same signal load_config uses."""
     import providers
-    from hermes_constants import get_hermes_home, hermes_home_key
+    from zeus_constants import get_zeus_home, zeus_home_key
 
-    home, hkey = get_hermes_home(), hermes_home_key()
+    home, hkey = get_zeus_home(), zeus_home_key()
     cfg = home / "config.yaml"
 
     # No config file: nothing configured.
@@ -99,9 +99,9 @@ def test_bare_named_custom_memo_invalidates_on_config_change(monkeypatch):
 def test_bare_named_custom_memo_is_keyed_by_home(monkeypatch):
     """Two home keys never borrow each other's answers (multiplex isolation)."""
     import providers
-    from hermes_constants import get_hermes_home
+    from zeus_constants import get_zeus_home
 
-    home = get_hermes_home()
+    home = get_zeus_home()
     answers = {"key-a": True, "key-b": False}
     current = {"k": "key-a"}
 
@@ -109,7 +109,7 @@ def test_bare_named_custom_memo_is_keyed_by_home(monkeypatch):
         return answers[current["k"]]
 
     with monkeypatch.context() as m:
-        m.setattr("hermes_cli.runtime_provider_custom.has_named_custom_provider", fake)
+        m.setattr("zeus_cli.runtime_provider_custom.has_named_custom_provider", fake)
         assert providers._has_named_custom_provider("n", home, "key-a") is True
         current["k"] = "key-b"
         assert providers._has_named_custom_provider("n", home, "key-b") is False

@@ -1,4 +1,4 @@
-import { JsonRpcGatewayError } from '@hermes/shared'
+import { JsonRpcGatewayError } from '@zeus/shared'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
@@ -71,7 +71,7 @@ describe('installAgentPlugin', () => {
       if ('inspected_sha' in params) {
         throw new JsonRpcGatewayError(
           'invalid params for plugins.manage: inspected_sha: Extra inputs are not permitted — the client and the ' +
-            'Hermes backend are out of sync (different versions); run `hermes update` and restart both',
+            'Zeus backend are out of sync (different versions); run `zeus update` and restart both',
           { code: 4000 }
         )
       }

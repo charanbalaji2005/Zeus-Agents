@@ -1,4 +1,4 @@
-"""A cold messaging-platform session mounts for a local viewer (TUI-8, NousResearch/hermes-agent#134889).
+"""A cold messaging-platform session mounts for a local viewer (TUI-8, charanbalaji2005/Zeus-Agents#134889).
 
 Before its first post-restart inbound nothing publishes a messaging-platform lane (Telegram, Weixin,
 Discord, ...) into the authority, so ``session.resume`` of its row answered ``not_found`` until
@@ -71,7 +71,7 @@ def _seed(tmp_path, sid, source, *, routed=True, row_origin=_ROUTE, row_source=N
         entry = SessionEntry(entry_key or route, sid, now, now, origin=entry_source or None,
                              platform=source.platform, transport_profile=transport_profile)
         # The routing index lives in the store's routing home, which is cached per process: write where
-        # the cold store will read, not where this test's HERMES_HOME happens to point.
+        # the cold store will read, not where this test's ZEUS_HOME happens to point.
         store._routing_db.save_gateway_routing_entry(
             route, json.dumps(entry.to_dict()), scope=store._routing_scope())
     return route
@@ -97,7 +97,7 @@ def _ref(sid, profile_id='fixture'):
 
 
 async def _refused(tmp_path, sid, reason='not_found', **cold_args):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     cold = await _cold(tmp_path, **cold_args)
     with pytest.raises(RuntimeStoreError, match=reason):
         cold.authority.authorize(cold.actor, _ref(sid), 'session:read')
@@ -106,7 +106,7 @@ async def _refused(tmp_path, sid, reason='not_found', **cold_args):
 
 @pytest.fixture(autouse=True)
 def _home(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
 
 
 @pytest.mark.asyncio
@@ -187,7 +187,7 @@ async def test_an_entry_without_an_origin_falls_back_to_the_row(tmp_path):
 async def test_a_row_with_neither_origin_nor_chat_id_cannot_be_rebuilt(tmp_path):
     cold = await _cold(tmp_path)
     cold.authority.db.create_session('hollow', source='telegram', session_key='agent:main:telegram:dm:x')
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     with pytest.raises(RuntimeStoreError, match='not_found'):
         cold.authority.authorize(cold.actor, _ref('hollow'), 'session:read')
     assert 'hollow' not in cold.authority.sessions
@@ -217,7 +217,7 @@ async def test_an_origin_that_contradicts_the_row_is_not_trusted(tmp_path):
 
 @pytest.mark.asyncio
 async def test_a_foreign_profile_ref_is_still_refused(tmp_path):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     _seed(tmp_path, 'lane-foreign', _source())
     cold = await _cold(tmp_path)
     with pytest.raises(RuntimeStoreError, match='profile_mismatch'):
@@ -260,7 +260,7 @@ async def test_a_lane_of_another_profile_is_not_mounted_by_this_authority(tmp_pa
 
 @pytest.mark.asyncio
 async def test_a_draining_gateway_mounts_nothing(tmp_path):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     _seed(tmp_path, 'lane-drain', _source())
     cold = await _cold(tmp_path)
     cold.authority.runner._draining = True

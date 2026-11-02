@@ -1,6 +1,6 @@
 name: Docs Search Monitor
 
-# Live check that search works on hermes-agent.nousresearch.com/docs. Search
+# Live check that search works on charanbalaji2005.github.io/Zeus-Agents/docs. Search
 # broke in production twice in one month with every build green (a deleted
 # Algolia search key, then Vercel access controls), because nothing ever
 # exercised the deployed site.
@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   probe:
-    if: github.repository == 'NousResearch/hermes-agent'
+    if: github.repository == 'charanbalaji2005/Zeus-Agents'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -61,7 +61,7 @@ def _is_ephemeral_scaffolding(msg: Any) -> bool:
 
 
 def _safe_session_filename_component(session_id: str) -> str:
-    """Path-safe component for a (possibly untrusted ``X-Hermes-Session-Id``) ID: non ``[A-Za-z0-9_-]`` → ``_``,
+    """Path-safe component for a (possibly untrusted ``X-Zeus-Session-Id``) ID: non ``[A-Za-z0-9_-]`` → ``_``,
     capped, plus a content hash when changed so distinct IDs cannot collide."""
     raw = str(session_id or "").strip()
     sanitized = re.sub(r"[^\w-]", "_", raw).strip("._")[:96] or "session"
@@ -286,7 +286,7 @@ def sync_rewritten_tool_rows(agent, batch: list[dict], contents_before: list[Any
         return 0
     rows = [(_db_flush_row(agent, {**msg, "content": before}, False), _db_flush_row(agent, msg, False))
             for msg, before in changed]
-    from hermes_state_errors import PruneRowUnresolvedError, SessionTurnLeaseLostError
+    from zeus_state_errors import PruneRowUnresolvedError, SessionTurnLeaseLostError
     try:
         with _persist_lock(agent):
             written = rewrite(
@@ -422,11 +422,11 @@ def _db_flush_failed(agent, e: Exception, batch_rows: list[dict[str, Any]], adop
     agent._db_flush_scan_prefix = None  # full re-scan next flush: an exception mid-loop leaves mixed dispositions
     # The only place the SQLite error is visible before it becomes a bare False — classify it so the turn-end
     # explanation names the real cause.
-    from hermes_state import StateDbCorruptError, StateDbReplacedError, classify_persistence_error, divert_session_transcript_jsonl
-    from hermes_state_errors import CompressionSessionClosedError
+    from zeus_state import StateDbCorruptError, StateDbReplacedError, classify_persistence_error, divert_session_transcript_jsonl
+    from zeus_state_errors import CompressionSessionClosedError
     agent._last_persistence_error_cause = classify_persistence_error(e)
     if agent._last_persistence_error_cause == "session_row_missing":
-        # The session row was removed under this live agent (`hermes sessions delete`, the Desktop/web
+        # The session row was removed under this live agent (`zeus sessions delete`, the Desktop/web
         # delete, bulk prune, a profile-repair move, an in-place store rebuild — none visible to the
         # cached agent, so the cached `_session_db_created` flag is stale and every later append hits
         # the FK). The deletion already erased the session's message rows with it, so the durable

@@ -11,14 +11,14 @@ import { CDP, sleep } from './perf/lib/cdp.mjs'
 import { shownStartupTitlesExpression, startupScreenFailures } from './smoke-browser-host-screens.mjs'
 import { ViewportTab } from './smoke-browser-host-tab.mjs'
 
-const url = process.env.HERMES_BROWSER_HOST_URL || process.argv[2] || 'http://127.0.0.1:9120/'
-const allowGatewayFailure = process.env.HERMES_BROWSER_ALLOW_GATEWAY_FAILURE === '1'
-const requireTerminal = process.env.HERMES_BROWSER_REQUIRE_TERMINAL === '1'
+const url = process.env.ZEUS_BROWSER_HOST_URL || process.argv[2] || 'http://127.0.0.1:9120/'
+const allowGatewayFailure = process.env.ZEUS_BROWSER_ALLOW_GATEWAY_FAILURE === '1'
+const requireTerminal = process.env.ZEUS_BROWSER_REQUIRE_TERMINAL === '1'
 // The gateway serving the page is already up, so its socket opens shortly after the shell paints.
 const GATEWAY_SOCKET_TIMEOUT_MS = 30_000
 
 function findExecutable() {
-  const explicit = process.env.HERMES_BROWSER_EXECUTABLE?.trim()
+  const explicit = process.env.ZEUS_BROWSER_EXECUTABLE?.trim()
   if (explicit) return explicit
 
   const candidates =
@@ -39,7 +39,7 @@ function findExecutable() {
     }
   }
 
-  throw new Error('No Chromium-compatible browser found; set HERMES_BROWSER_EXECUTABLE')
+  throw new Error('No Chromium-compatible browser found; set ZEUS_BROWSER_EXECUTABLE')
 }
 
 const ignoredConsoleError = text =>
@@ -112,23 +112,23 @@ const stateExpression = `(() => {
   ]
   const text = document.body.innerText || ''
   return {
-    authRequired: window.__HERMES_AUTH_REQUIRED__ === true,
+    authRequired: window.__ZEUS_AUTH_REQUIRED__ === true,
     bodyScrollWidth: document.body.scrollWidth,
-    bridge: Boolean(window.hermesDesktop),
+    bridge: Boolean(window.zeusDesktop),
     clientWidth: document.documentElement.clientWidth,
     desktopBootFailed: text.includes('Desktop boot failed'),
-    host: document.documentElement.dataset.hermesDesktopHost || '',
-    requiredBridgeMethods: requiredBridgeMethods.every(key => typeof window.hermesDesktop?.[key] === 'function'),
+    host: document.documentElement.dataset.zeusDesktopHost || '',
+    requiredBridgeMethods: requiredBridgeMethods.every(key => typeof window.zeusDesktop?.[key] === 'function'),
     rootError: text.includes('Something broke in the interface'),
     scrollWidth: document.documentElement.scrollWidth,
     startupTitles: ${shownStartupTitlesExpression},
-    privateSession: window.__HERMES_UI_SURFACE__ === 'webapp',
+    privateSession: window.__ZEUS_UI_SURFACE__ === 'webapp',
     title: document.title
   }
 })()`
 
 const terminalExpression = `(async () => {
-  const terminal = window.hermesDesktop?.terminal
+  const terminal = window.zeusDesktop?.terminal
   if (!terminal) return { error: 'terminal bridge missing', ok: false, skipped: false }
   let session
   try {
@@ -152,7 +152,7 @@ const terminalExpression = `(async () => {
       'ModuleNotFoundError:',
       'Traceback (most recent call last)'
     ].find(marker => output.includes(marker))
-    const hostShellStarted = session.shell !== 'hermes-tui' && Boolean(output)
+    const hostShellStarted = session.shell !== 'zeus-tui' && Boolean(output)
     return {
       cwd,
       error: fatalOutput
@@ -172,9 +172,9 @@ const terminalExpression = `(async () => {
 })()`
 
 const htmlSandboxExpression = `(async () => {
-  const bridge = window.hermesDesktop
+  const bridge = window.zeusDesktop
   if (!bridge?.saveImageBuffer) return { error: 'buffer bridge missing', ok: false }
-  const marker = 'hermesSandboxEscape'
+  const marker = 'zeusSandboxEscape'
   delete document.documentElement.dataset[marker]
   const attack = '<script>try{top.document.documentElement.dataset.' + marker + '="escaped"}catch(_error){}</script>'
   const url = await bridge.saveImageBuffer(new TextEncoder().encode(attack), '.html')
@@ -233,7 +233,7 @@ const layoutExpression = `(async () => {
     await new Promise(resolve => setTimeout(resolve, 50))
     state = read()
   }
-  const activePreset = localStorage.getItem('hermes.desktop.layoutPreset.active')
+  const activePreset = localStorage.getItem('zeus.desktop.layoutPreset.active')
   return {
     activePreset,
     ...state,
@@ -259,7 +259,7 @@ const mobileViewportExpression = `(() => {
 
 const executable = findExecutable()
 const debugPort = await freePort()
-const profile = mkdtempSync(join(tmpdir(), 'hermes-browser-smoke-'))
+const profile = mkdtempSync(join(tmpdir(), 'zeus-browser-smoke-'))
 const stderrChunks = []
 const browser = spawn(
   executable,
@@ -367,7 +367,7 @@ try {
     const state = await evaluate(stateExpression)
     const authenticated = await evaluate(`(async () => {
       try {
-        await window.hermesDesktop.api({ path: '/api/profiles' })
+        await window.zeusDesktop.api({ path: '/api/profiles' })
         return true
       } catch { return false }
     })()`)
@@ -391,7 +391,7 @@ try {
     if (!state.requiredBridgeMethods) failures.push('required browser Desktop bridge methods are missing')
     if (state.rootError) failures.push('renderer reached its root error boundary')
     if (!allowGatewayFailure && state.desktopBootFailed)
-      failures.push('Desktop could not connect to the Hermes gateway')
+      failures.push('Desktop could not connect to the Zeus gateway')
     failures.push(...startupScreenFailures(state.startupTitles, { allowGatewayFailure }))
     // The gateway serves the page and the live socket: it speaks the canonical contract (native_dial)
     // and never carries the session token.

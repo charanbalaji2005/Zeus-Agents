@@ -40,9 +40,9 @@ const electronNative: TestProjectConfiguration = {
     // case corpus; pwsh alone takes several seconds to start on a loaded CI
     // runner, so vitest's 5s default timed the Windows marker judge out.
     testTimeout: 30_000,
-    // Only these contracts need the Hermes test interpreter; resolving it may
+    // Only these contracts need the Zeus test interpreter; resolving it may
     // sync the Python environment, which UI-only runs must not wait for.
-    globalSetup: ['./vitest.hermes-python.ts']
+    globalSetup: ['./vitest.zeus-python.ts']
   }
 }
 

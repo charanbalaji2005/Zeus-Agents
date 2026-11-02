@@ -39,7 +39,7 @@ def test_models_download_once_per_profile_and_reject_bad_bytes(tmp_path, monkeyp
     monkeypatch.setattr(downloader, "_sha256_file", hash_file)
     try:
         for profile in ("A", "B", "A"):
-            monkeypatch.setenv("HERMES_HOME", str(tmp_path / profile))
+            monkeypatch.setenv("ZEUS_HOME", str(tmp_path / profile))
             before = len(requests)
             hashes_before = len(hashes)
             cached = cpp._model_dir() / "model.bin"
@@ -71,8 +71,8 @@ def test_local_resolution_is_passive_and_command_override_wins(tmp_path, monkeyp
 
     package = WhisperCppCpu()
     assert [t for t in ALL_TARGETS if package.missing_reason(t) is None] == ["win32-arm64"]
-    monkeypatch.delenv("HERMES_LOCAL_STT_COMMAND", raising=False)
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path / "profile with spaces"))
+    monkeypatch.delenv("ZEUS_LOCAL_STT_COMMAND", raising=False)
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path / "profile with spaces"))
     binary = tmp_path / "program files" / "whisper-cli.exe"
     monkeypatch.setattr(pm, "installed_package",
                         lambda name: SimpleNamespace(binary=binary) if name == "whispercpp-cpu" else None)
@@ -95,5 +95,5 @@ def test_local_resolution_is_passive_and_command_override_wins(tmp_path, monkeyp
     result = local._transcribe_local_command(str(audio), "base", language="en")
     assert result["success"] and result["transcript"] == "hello"
     assert calls == ["base"]
-    monkeypatch.setenv("HERMES_LOCAL_STT_COMMAND", "custom-command {input_path}")
+    monkeypatch.setenv("ZEUS_LOCAL_STT_COMMAND", "custom-command {input_path}")
     assert local._get_local_command_template() == "custom-command {input_path}"

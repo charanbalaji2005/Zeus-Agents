@@ -17,7 +17,7 @@ function publish(route: DesktopProfileRoute | null): void {
 }
 
 export async function refreshDefaultProfile(): Promise<DesktopProfileRoute | null> {
-  const getDefault = window.hermesDesktop?.profile?.getDefault
+  const getDefault = window.zeusDesktop?.profile?.getDefault
 
   if (!getDefault) {
     return $defaultProfileRoute.get()
@@ -34,7 +34,7 @@ export async function refreshDefaultProfile(): Promise<DesktopProfileRoute | nul
 }
 
 export async function setDefaultProfile(route: DesktopProfileRoute): Promise<DesktopProfileRoute> {
-  const setDefault = window.hermesDesktop?.profile?.setDefault
+  const setDefault = window.zeusDesktop?.profile?.setDefault
 
   if (!setDefault) {
     throw new Error('This Desktop version cannot save a default profile.')
@@ -57,7 +57,7 @@ export function noteDefaultProfileRoute(route: DesktopProfileRoute | null): void
 }
 
 export function subscribeDefaultProfile(): (() => void) | undefined {
-  return window.hermesDesktop?.profile?.onDefaultChanged?.(route => {
+  return window.zeusDesktop?.profile?.onDefaultChanged?.(route => {
     revision += 1
     publish(route)
   })

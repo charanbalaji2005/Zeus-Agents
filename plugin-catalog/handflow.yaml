@@ -6,7 +6,7 @@ description: Manus-style planning flow — the agent plans in steps and marks th
 maintainer: DECRUX9812
 tier: community
 category: automation
-requires_hermes: ">=0.19"
+requires_zeus: ">=0.19"
 docs_url: https://github.com/DECRUX9812/hermes-handflow#readme
 platforms: []
 capabilities:

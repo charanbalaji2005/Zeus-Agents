@@ -70,13 +70,13 @@ def codex_account_offers_tier(
     base = str(base_url or "").strip() or CODEX_AUX_BASE_URL
     if not is_official_codex_base_url(base):
         return None
-    from hermes_cli.auth_constants import AuthError, _decode_jwt_claims
+    from zeus_cli.auth_constants import AuthError, _decode_jwt_claims
     # Only a ChatGPT OAuth JWT reads this catalog; a caller's pre-init key (an OpenAI API key on a
     # profile that also has one) is not this account's credential, so use the stored Codex login.
     token = access_token if isinstance(access_token, str) and _decode_jwt_claims(access_token) else None
     if not token:
         try:
-            from hermes_cli.auth_codex import resolve_codex_runtime_credentials
+            from zeus_cli.auth_codex import resolve_codex_runtime_credentials
             token = resolve_codex_runtime_credentials(read_only=True).get("api_key")
         except AuthError:  # no Codex login on this profile: unknown, never a refusal
             return None
@@ -95,7 +95,7 @@ def ultrafast_offered(model: Any, *, provider: Any = None, base_url: Any = None,
     blocks (request-time negotiation still clamps per credential)."""
     from urllib.parse import urlparse
 
-    from hermes_cli.models import normalize_provider, resolve_fast_mode_overrides
+    from zeus_cli.models import normalize_provider, resolve_fast_mode_overrides
     if resolve_fast_mode_overrides(model, provider=provider, base_url=base_url, tier="ultrafast") is None:
         return False
     on_codex_sub = (provider and normalize_provider(provider) == "openai-codex") or (

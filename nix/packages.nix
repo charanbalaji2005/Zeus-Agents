@@ -1,4 +1,4 @@
-# nix/packages.nix — Hermes Agent package built with uv2nix
+# nix/packages.nix — Zeus Agents package built with uv2nix
 { inputs, ... }:
 {
   perSystem =
@@ -34,7 +34,7 @@
       branch = if rawRef != null then builtins.replaceStrings [ "refs/heads/" ] [ "" ] rawRef else null;
       dirty = dirtyRevision != null;
       lastModified = inputs.self.lastModified or null;
-      minimal = pkgs.callPackage ./hermes-agent.nix {
+      minimal = pkgs.callPackage ./zeus-agents.nix {
         inherit (inputs) uv2nix pyproject-nix pyproject-build-systems;
         # Passed explicitly so `override (prev: ...)` sees it: a function form that appends to
         # `prev.extraDependencyGroups` worked before the shipped groups moved to
@@ -96,12 +96,12 @@
           defaultDependencyGroups = [ "messaging" ];
         };
 
-        tui = full.hermesTui;
-        web = full.hermesWeb;
-        webapp = full.hermesWebapp;
-        desktop = full.hermesDesktop;
+        tui = full.zeusTui;
+        web = full.zeusWeb;
+        webapp = full.zeusWebapp;
+        desktop = full.zeusDesktop;
 
-        update-npm-lockfile = full.hermesNpmLib.updateNpmLockfile;
+        update-npm-lockfile = full.zeusNpmLib.updateNpmLockfile;
       }
       # Every pm lockfile tool as its own installable derivation:
       # `nix build .#pm-ripgrep`, `nix build .#pm-gh`, ...

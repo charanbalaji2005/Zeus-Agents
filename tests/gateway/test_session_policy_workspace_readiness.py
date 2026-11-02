@@ -5,7 +5,7 @@ import pytest
 @pytest.mark.asyncio
 async def test_removed_workspace_reads_and_moves_but_refuses_a_turn(tmp_path, monkeypatch):
     from gateway.session_policy import policy_for_source, policy_scope
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     from tests.gateway.test_session_policy_verbs import _mutation, _owner
 
     store, db, authority, owner, ref = _owner(tmp_path, monkeypatch, None)
@@ -92,7 +92,7 @@ def test_managed_turn_in_removed_workspace_settles_failed_and_never_parks_the_qu
         'gateway': {'multiplex_profiles': False}, 'model': {'provider': 'custom', 'default': 'm', 'base_url': url},
         'auxiliary': {'title_generation': {'enabled': False}}, 'platform_toolsets': {'cli': []}}))
     env = child_env()
-    env.update(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home), PYTHONPATH=str(root),
+    env.update(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home), PYTHONPATH=str(root),
                OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=url, PYTHONUNBUFFERED='1')
 
     def admission(name):

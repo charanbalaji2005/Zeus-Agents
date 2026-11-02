@@ -7,7 +7,7 @@ description: Know the moment OpenAI resets your Codex usage limits. A status-bar
 maintainer: sxuff
 tier: community
 category: desktop
-requires_hermes: ">=0.21"
+requires_zeus: ">=0.21"
 docs_url: https://github.com/sxuff/hermes-codex-resets#readme
 image: https://raw.githubusercontent.com/sxuff/hermes-codex-resets/008f4fe2549bedd5a09ef0ce9615594ea388ffed/artifacts/banner.png
 screenshots:

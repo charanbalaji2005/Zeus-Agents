@@ -1,7 +1,7 @@
 import { useStore } from '@nanostores/react'
 import { useEffect, useState } from 'react'
 
-import type { ProfileScope } from '@/hermes'
+import type { ProfileScope } from '@/zeus'
 import { translateNow } from '@/i18n'
 import { openFreeTierSignIn } from '@/store/free-tier-sign-in'
 import { notify } from '@/store/notifications'

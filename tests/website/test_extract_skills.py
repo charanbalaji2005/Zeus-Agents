@@ -36,7 +36,7 @@ def mod():
 
 
 @pytest.mark.parametrize("directory,source,prefix", [
-    ("skills", "built-in", "NousResearch/hermes-agent/skills"),
+    ("skills", "built-in", "charanbalaji2005/Zeus-Agents/skills"),
     ("optional-skills", "optional", "official"),
 ])
 def test_local_skills_publish_exact_install_target(mod, tmp_path, monkeypatch, directory, source, prefix):
@@ -47,7 +47,7 @@ def test_local_skills_publish_exact_install_target(mod, tmp_path, monkeypatch, d
     [entry] = mod.extract_local_skills()
     expected = f"{prefix}/creative/nested/example"
     assert entry["installIdentifier"] == expected
-    assert entry["installCmd"] == f"hermes skills install {expected}"
+    assert entry["installCmd"] == f"zeus skills install {expected}"
     assert "image" not in entry
 
 
@@ -68,7 +68,7 @@ def test_local_skills_publish_mapped_artwork_only(mod, tmp_path, monkeypatch, di
     entries = {entry["name"]: entry for entry in mod.extract_local_skills()}
 
     assert entries["illustrated"]["image"] == (
-        "https://hermes-agent.nousresearch.com/docs/img/catalog/art.jpg"
+        "https://charanbalaji2005.github.io/Zeus-Agents/docs/img/catalog/art.jpg"
     )
     assert "image" not in entries["plain"]
     # Curated hero ranks follow the manifest's order, 1-based.
@@ -94,7 +94,7 @@ def test_unified_skills_keep_source_identifiers_and_match_cli_install_targets(mo
         expected = f"clawhub/{identifier}" if source["source"] == "clawhub" else identifier
         assert published["identifier"] == identifier
         assert published["installIdentifier"] == expected
-        assert published["installCmd"] == f"hermes skills install {expected}"
+        assert published["installCmd"] == f"zeus skills install {expected}"
 
 
 # --------------------------------------------------------------------------

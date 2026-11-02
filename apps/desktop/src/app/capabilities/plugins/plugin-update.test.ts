@@ -6,7 +6,7 @@ import { $confirmRequest, settleConfirm } from '@/store/confirm'
 import { runPluginUpdate } from './plugin-update'
 
 const p = en.skills.plugins
-const tern = { catalog_name: undefined, name: 'hermes-tern' }
+const tern = { catalog_name: undefined, name: 'zeus-tern' }
 
 const caution = {
   ok: false,
@@ -23,7 +23,7 @@ describe('runPluginUpdate scan override', () => {
 
     const done = runPluginUpdate(request, tern, null, p)
 
-    await vi.waitFor(() => expect($confirmRequest.get()?.title).toBe(p.updateScanTitle('hermes-tern')))
+    await vi.waitFor(() => expect($confirmRequest.get()?.title).toBe(p.updateScanTitle('zeus-tern')))
     expect($confirmRequest.get()?.description).toContain('HIGH  helper.py:1  eval')
     expect($confirmRequest.get()?.destructive).toBe(true)
     expect(request).toHaveBeenCalledTimes(1)
@@ -34,7 +34,7 @@ describe('runPluginUpdate scan override', () => {
     expect(request).toHaveBeenNthCalledWith(
       2,
       'plugins.manage',
-      expect.objectContaining({ action: 'update', force: true, name: 'hermes-tern' }),
+      expect.objectContaining({ action: 'update', force: true, name: 'zeus-tern' }),
       expect.any(Number)
     )
   })

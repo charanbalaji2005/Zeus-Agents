@@ -1,14 +1,14 @@
-import { compactNumber } from '@hermes/shared'
+import { compactNumber } from '@zeus/shared'
 import { useCallback, useMemo, useState } from 'react'
 
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
-import { type ProfileScope, setToolsetEnabled } from '@/hermes'
+import { type ProfileScope, setToolsetEnabled } from '@/zeus'
 import { useI18n } from '@/i18n'
 import { isDesktopToolsetVisible } from '@/lib/desktop-toolsets'
 import { queryClient } from '@/lib/query-client'
 import { invalidateSlashCompletions } from '@/lib/slash-completion-cache'
 import { notify, notifyError } from '@/store/notifications'
-import type { ToolsetInfo } from '@/types/hermes'
+import type { ToolsetInfo } from '@/types/zeus'
 
 import { asText, toolNames, toolsetDisplayLabel } from '../../settings/helpers'
 import { CatalogSwitch } from '../catalog/catalog-switch'

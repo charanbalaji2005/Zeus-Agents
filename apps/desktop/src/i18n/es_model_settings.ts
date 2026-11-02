@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import { esAuxTasks } from './es_aux_tasks'
 import { esDelegationRouting } from './es_delegation_routing'

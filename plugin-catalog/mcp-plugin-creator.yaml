@@ -11,7 +11,7 @@ maintainer: tonbistudio
 tier: community
 category: tools
 title: MCP Plugin Creator
-requires_hermes: ">=0.22.0"
+requires_zeus: ">=0.22.0"
 version: "0.2.1"
 docs_url: https://github.com/tonbistudio/hermes-mcp-plugin-creator#readme
 platforms: []

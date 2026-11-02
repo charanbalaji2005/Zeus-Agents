@@ -28,14 +28,14 @@ afterEach(cleanupFakeCheckouts)
 
 describe('protocol negotiation', () => {
   test.each([
-    ['exact protocol 2 line', '#!/bin/sh\n# hermes-handoff-protocol: 2\n', 2],
-    ['trailing whitespace', '# hermes-handoff-protocol: 2  \r\n', 2],
-    ['a later protocol', 'x\n# hermes-handoff-protocol: 3\n', 3],
-    ['protocol 1 is legacy', '# hermes-handoff-protocol: 1\n', 1],
+    ['exact protocol 2 line', '#!/bin/sh\n# zeus-handoff-protocol: 2\n', 2],
+    ['trailing whitespace', '# zeus-handoff-protocol: 2  \r\n', 2],
+    ['a later protocol', 'x\n# zeus-handoff-protocol: 3\n', 3],
+    ['protocol 1 is legacy', '# zeus-handoff-protocol: 1\n', 1],
     ['no line (origin/main scripts)', '#!/usr/bin/env bash\necho hi\n', 1],
-    ['indented line does not count', '  # hermes-handoff-protocol: 2\n', 1],
-    ['mid-line mention does not count', 'echo "# hermes-handoff-protocol: 2"\n', 1],
-    ['two spaces after the colon', '# hermes-handoff-protocol:  2\n', 1]
+    ['indented line does not count', '  # zeus-handoff-protocol: 2\n', 1],
+    ['mid-line mention does not count', 'echo "# zeus-handoff-protocol: 2"\n', 1],
+    ['two spaces after the colon', '# zeus-handoff-protocol:  2\n', 1]
   ])('%s', (_label, text, expected) => {
     const file = path.join(fakeHelperCheckout().root, 'script.sh')
     fs.writeFileSync(file, text)
@@ -81,7 +81,7 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
 
     const got = await runMarkerHelper('withdraw', {
       updateRoot: root,
-      hermesHome: home,
+      zeusHome: home,
       desktopPid: 4242,
       runId: 'desk-4242-abc-0001',
       isWindows: false
@@ -91,7 +91,7 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
     assert.equal(
       fs.readFileSync(path.join(home, 'helper-calls.log'), 'utf8'),
       `--marker-op withdraw --install-root ${root} --desktop-pid 4242 --handoff-run desk-4242-abc-0001\n`,
-      'exact argv, and HERMES_HOME reached the script'
+      'exact argv, and ZEUS_HOME reached the script'
     )
   })
 
@@ -99,7 +99,7 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
     const { root, home } = fakeHelperCheckout()
     fs.writeFileSync(path.join(home, 'helper-verdict'), 'absent')
 
-    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false }), {
+    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false }), {
       kind: 'absent'
     })
     assert.equal(
@@ -118,14 +118,14 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
     fs.writeFileSync(path.join(home, 'helper-verdict'), verdict)
     fs.writeFileSync(path.join(home, 'helper-exit'), exit)
 
-    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false }), {
+    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false }), {
       kind: 'error'
     })
   })
 
   test('a verdict only the other op can give is an error, never clearance (R8 m7)', async () => {
     const { root, home } = fakeHelperCheckout()
-    const opts = { updateRoot: root, hermesHome: home, desktopPid: 4242, runId: 'desk-4242-abc-0001', isWindows: false }
+    const opts = { updateRoot: root, zeusHome: home, desktopPid: 4242, runId: 'desk-4242-abc-0001', isWindows: false }
 
     for (const [op, verdict, expected] of [
       ['reclaim', 'live 31337', 'live'],
@@ -150,7 +150,7 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
       fs.writeFileSync(path.join(home, 'helper-verdict'), 'reclaimed')
       fs.chmodSync(path.join(root, 'scripts', 'desktop-update', 'posix.sh'), 0o000)
 
-      assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false }), {
+      assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false }), {
         kind: 'error'
       })
     }
@@ -163,7 +163,7 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
     const started = Date.now()
 
     assert.deepEqual(
-      await runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false, timeoutMs: 300 }),
+      await runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false, timeoutMs: 300 }),
       { kind: 'error' }
     )
     assert.ok(Date.now() - started < 4000, 'bounded by the timeout')
@@ -172,17 +172,17 @@ describe.skipIf(process.platform === 'win32')('runMarkerHelper against a real sc
   test('a checkout without the script is unsupported', async () => {
     const root = scratchRoot('marker-helper-none')
 
-    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, hermesHome: root, isWindows: false }), {
+    assert.deepEqual(await runMarkerHelper('reclaim', { updateRoot: root, zeusHome: root, isWindows: false }), {
       kind: 'unsupported'
     })
   })
 })
 
-test('the Windows command line: powershell -File windows.ps1 -MarkerOp ... (hidden, HERMES_HOME set)', async () => {
+test('the Windows command line: powershell -File windows.ps1 -MarkerOp ... (hidden, ZEUS_HOME set)', async () => {
   const root = scratchRoot('marker-helper-win')
   const script = path.join(root, 'scripts', 'desktop-update', 'windows.ps1')
   fs.mkdirSync(path.dirname(script), { recursive: true })
-  fs.writeFileSync(script, '# hermes-handoff-protocol: 2\n')
+  fs.writeFileSync(script, '# zeus-handoff-protocol: 2\n')
   const calls: Parameters<HelperSpawn>[] = []
 
   const spawn: HelperSpawn = async (...args) => {
@@ -193,7 +193,7 @@ test('the Windows command line: powershell -File windows.ps1 -MarkerOp ... (hidd
 
   const got = await runMarkerHelper('withdraw', {
     updateRoot: root,
-    hermesHome: path.join(root, 'home'),
+    zeusHome: path.join(root, 'home'),
     desktopPid: 12,
     runId: 'desk-12-a-beef',
     isWindows: true,
@@ -220,7 +220,7 @@ test('the Windows command line: powershell -File windows.ps1 -MarkerOp ... (hidd
     '-HandoffRun',
     'desk-12-a-beef'
   ])
-  assert.equal(options.env.HERMES_HOME, path.join(root, 'home'))
+  assert.equal(options.env.ZEUS_HOME, path.join(root, 'home'))
   assert.equal(options.windowsHide, true)
   assert.equal(options.timeout, 20_000)
   assert.deepEqual(markerHelperCommand('reclaim', script, { updateRoot: root, isWindows: true }).args.slice(-4), [

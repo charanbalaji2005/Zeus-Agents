@@ -143,7 +143,7 @@ def _response_status(result):
     return 'completed'
 
 
-def _hermes_extras(completed, is_partial, is_failed, err_msg, finish_reason: str, *,
+def _zeus_extras(completed, is_partial, is_failed, err_msg, finish_reason: str, *,
                    budget_exhausted: bool = False) -> dict[str, Any]:
     error_code = ("iteration_budget_exhausted" if budget_exhausted and finish_reason == "length"
                   else "output_truncated" if finish_reason == "length" else "agent_error")
@@ -538,8 +538,8 @@ class _ResponsesStream:
 
     async def emit_status(self, payload: dict[str, Any]) -> None:
         """Lifecycle/warning status (provider wait, auto-recovery countdown, fallback switch) as a
-        ``hermes.status`` custom event; not a Responses output item."""
-        await self.response.write(self._api._sse_frame(payload, event="hermes.status"))
+        ``zeus.status`` custom event; not a Responses output item."""
+        await self.response.write(self._api._sse_frame(payload, event="zeus.status"))
 
     # queue tag -> (method name, payload adapter)
     _TAG_HANDLERS = {
@@ -677,7 +677,7 @@ class _ResponsesStream:
             # Only the publisher recorded the deltas; a replay observer winning the
             # INSERT OR IGNORE would leave every later replay without them. Built here, on the
             # loop, so the worker never reads headers or events the loop may still append to.
-            headers = {k: v for k, v in self.response.headers.items() if k.startswith('X-Hermes-')}
+            headers = {k: v for k, v in self.response.headers.items() if k.startswith('X-Zeus-')}
             terminal_event = {'type': 'response.' + status, 'response': env, 'sequence_number': self.sequence_number}
             record = {'fingerprint': self.durable_key[1], 'response': env, 'headers': headers,
                       'events': [*self.recorded_events, ('response.' + status, terminal_event)]}
@@ -842,7 +842,7 @@ class OpenAICompatRoutesMixin:
                 stream_q.put_threadsafe(("__reasoning__", text))
         def _on_status(kind, message=None):
             # Lifecycle/warning status (provider wait, auto-recovery countdown, fallback switch) as a
-            # ``hermes.status`` event, so a client sees why the stream is silent instead of a dead socket.
+            # ``zeus.status`` event, so a client sees why the stream is silent instead of a dead socket.
             from gateway.platforms.api_server import _redact_api_error_text
             text = _redact_api_error_text(message if message is not None else kind or "").strip()
             if text:
@@ -891,18 +891,18 @@ class OpenAICompatRoutesMixin:
         if not _content_has_visible_payload(user_message):
             return _invalid_request("No user message found in messages")
 
-        # X-Hermes-Session-Key scopes long-term memory per channel; independent of
-        # X-Hermes-Session-Id (the key persists across transcripts, the id rotates on /new).
+        # X-Zeus-Session-Key scopes long-term memory per channel; independent of
+        # X-Zeus-Session-Id (the key persists across transcripts, the id rotates on /new).
         gateway_session_key, key_err = self._parse_session_key_header(request)
         if key_err is not None:
             return key_err
-        # X-Hermes-Session-Id continues an existing session (history from state.db, not the body);
+        # X-Zeus-Session-Id continues an existing session (history from state.db, not the body);
         # requires a configured API key or any client could read history by guessing ids.
-        provided_session_id = request.headers.get("X-Hermes-Session-Id", "").strip()
+        provided_session_id = request.headers.get("X-Zeus-Session-Id", "").strip()
         if provided_session_id:
             if not self._api_key:
                 logger.warning(
-                    "Session continuation via X-Hermes-Session-Id rejected: "
+                    "Session continuation via X-Zeus-Session-Id rejected: "
                     "no API key configured.  Set API_SERVER_KEY to enable "
                     "session continuity.")
                 return _error_response("Session continuation requires API key authentication. "
@@ -930,7 +930,7 @@ class OpenAICompatRoutesMixin:
                 history = []
         else:
             # Stable id from the conversation fingerprint so Open WebUI-style clients map onto
-            # one Hermes session; namespaced by the routed profile (#123989).
+            # one Zeus session; namespaced by the routed profile (#123989).
             first_user = next(
                 (cm.get("content", "") for cm in conversation_messages if cm.get("role") == "user"), "")
             session_id = _derive_chat_session_id(system_prompt, first_user, _api_request_profile.get())
@@ -950,7 +950,7 @@ class OpenAICompatRoutesMixin:
             ephemeral_system_prompt=system_prompt, session_id=session_id,
             gateway_session_key=gateway_session_key, **agent_overrides, route=route,
             relay_metadata=relay_metadata,
-            # #98619: only an explicitly provided X-Hermes-Session-Id is wake-capable (the
+            # #98619: only an explicitly provided X-Zeus-Session-Id is wake-capable (the
             # header is 403-gated on API_SERVER_KEY, so the wake self-post can authenticate
             # and the client can resume the session by sending it again). A fingerprint-derived
             # id from a header-less client is NOT: delegate_task keeps its forced-sync fallback
@@ -959,7 +959,7 @@ class OpenAICompatRoutesMixin:
         run_kwargs.update(self._authority_chat_kwargs(request, provided_session_id))
         # This is presentation only. The ordinary API-key/session authorization
         # above still applies; it grants no internal ingress or control authority.
-        if provided_session_id and body.get("hermes_notification_category") == "diagnostic":
+        if provided_session_id and body.get("zeus_notification_category") == "diagnostic":
             run_kwargs["notification_category"] = "diagnostic"
         if stream:
             _stream_q = ThreadSafeAsyncQueue()
@@ -968,7 +968,7 @@ class OpenAICompatRoutesMixin:
             _started_tool_call_ids: set[str] = set()
 
             def _on_tool_start(tool_call_id, function_name, function_args):
-                """``hermes.tool.progress`` status=running; ``_``-prefixed tools stay off the wire."""
+                """``zeus.tool.progress`` status=running; ``_``-prefixed tools stay off the wire."""
                 if not tool_call_id or function_name.startswith("_"):
                     return
                 _started_tool_call_ids.add(tool_call_id)
@@ -1010,7 +1010,7 @@ class OpenAICompatRoutesMixin:
         outcome, err = await self._run_idempotent(
             request, body, _compute_completion, log_label="chat completions",
             fingerprint_keys=["model", "provider", "model_options", "messages", "tools", "tool_choice", "stream",
-                              "hermes_notification_category"],
+                              "zeus_notification_category"],
             route="chat_completions",
         )
         if err is not None:
@@ -1026,21 +1026,21 @@ class OpenAICompatRoutesMixin:
         # Same #13437 identity contract as the SSE path: an explicit-header client is echoed
         # the stable id it sent; a fingerprint-derived (header-less) turn keeps reporting the
         # id the agent actually resolved, so headerless clients still learn where the turn went.
-        response_headers = {"X-Hermes-Session-Id": (provided_session_id or result.get("session_id", session_id))}
+        response_headers = {"X-Zeus-Session-Id": (provided_session_id or result.get("session_id", session_id))}
         if gateway_session_key:
-            response_headers["X-Hermes-Session-Key"] = gateway_session_key
+            response_headers["X-Zeus-Session-Key"] = gateway_session_key
         # Hard fail (no usable text AND a real failure) -> 502 OpenAI error envelope so SDK
         # clients raise instead of rendering the failure string as message.content.
         if not final_response and (is_failed or is_partial):
             err_body = _openai_error(
                 "" if presentation_muted else (err_msg or "Agent run did not produce a response."), err_type="server_error",
                 code="agent_incomplete")
-            err_body["error"]["hermes"] = {
+            err_body["error"]["zeus"] = {
                 "completed": completed, "partial": is_partial, "failed": is_failed}
-            response_headers["X-Hermes-Completed"] = "false"
-            response_headers["X-Hermes-Partial"] = "true" if is_partial else "false"
+            response_headers["X-Zeus-Completed"] = "false"
+            response_headers["X-Zeus-Partial"] = "true" if is_partial else "false"
             return web.json_response(err_body, status=502, headers=response_headers)
-        # Soft partial (some text, run incomplete): 200 + finish_reason="length"/Hermes extras.
+        # Soft partial (some text, run incomplete): 200 + finish_reason="length"/Zeus extras.
         response_data = {
             "id": completion_id, "object": "chat.completion", "created": created,
             "model": model_name,
@@ -1052,13 +1052,13 @@ class OpenAICompatRoutesMixin:
         if reasoning_text and not presentation_muted:
             response_data["choices"][0]["message"]["reasoning_content"] = reasoning_text
         if is_partial or is_failed or not completed:
-            response_data["hermes"] = _hermes_extras(
+            response_data["zeus"] = _zeus_extras(
                 completed, is_partial, is_failed, "" if presentation_muted else err_msg, finish_reason,
                 budget_exhausted=budget_exhausted)
-            response_headers["X-Hermes-Completed"] = "false"
-            response_headers["X-Hermes-Partial"] = "true" if is_partial else "false"
+            response_headers["X-Zeus-Completed"] = "false"
+            response_headers["X-Zeus-Partial"] = "true" if is_partial else "false"
             if err_msg and not presentation_muted:
-                response_headers["X-Hermes-Error"] = _redact_api_error_text(err_msg, limit=200)
+                response_headers["X-Zeus-Error"] = _redact_api_error_text(err_msg, limit=200)
         return web.json_response(response_data, headers=response_headers)
 
     def _chat_request_id(self, request: web.Request) -> Optional[str]:
@@ -1089,7 +1089,7 @@ class OpenAICompatRoutesMixin:
         if authority is None:
             return session_id, None  # admission refuses the unserved profile with its own verdict
         import sqlite3
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         try:
             return await asyncio.to_thread(implicit_api_session, authority.db, session_id,
                                            self._chat_request_id(request)), None
@@ -1116,7 +1116,7 @@ class OpenAICompatRoutesMixin:
         route), folded into the key because the store keeps the fingerprint only as the slot's value.
         """
         from gateway.platforms.api_server import _error_response, _idem_cache, _make_request_fingerprint
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         idempotency_key = request.headers.get("Idempotency-Key")
         try:
             # Durable /v1/runs admissions own idempotency under session authority; the in-memory
@@ -1145,9 +1145,9 @@ class OpenAICompatRoutesMixin:
         can't inject headers after ``prepare()`` flushes them, so they are resolved here)."""
         sse_headers = self._sse_headers(request)
         if session_id:
-            sse_headers["X-Hermes-Session-Id"] = session_id
+            sse_headers["X-Zeus-Session-Id"] = session_id
         if gateway_session_key:
-            sse_headers["X-Hermes-Session-Key"] = gateway_session_key
+            sse_headers["X-Zeus-Session-Key"] = gateway_session_key
         response = web.StreamResponse(status=200, headers=sse_headers)
         await response.prepare(request)
         return response
@@ -1176,13 +1176,13 @@ class OpenAICompatRoutesMixin:
                     # Custom event: tool lifecycle for frontends without markers in history.
                     if not self._tool_progress_events:
                         continue  # opted out for strict OpenAI clients (#12020)
-                    await response.write(_sse_frame(delta[1], event="hermes.tool.progress"))
+                    await response.write(_sse_frame(delta[1], event="zeus.tool.progress"))
                 elif isinstance(delta, tuple) and len(delta) == 2 and delta[0] == "__reasoning__":
                     # DeepSeek-style ``delta.reasoning_content`` (#99552), the field Open WebUI,
                     # opencode and the Vercel AI SDK render as a thinking block.
                     await response.write(_sse_frame(_chunk({"reasoning_content": delta[1]})))
                 elif isinstance(delta, tuple) and len(delta) == 2 and delta[0] == "__status__":
-                    await response.write(_sse_frame(delta[1], event="hermes.status"))
+                    await response.write(_sse_frame(delta[1], event="zeus.status"))
                 elif isinstance(delta, tuple) and len(delta) == 2 and delta[0] == "__approval__":
                     await response.write(_sse_frame(delta[1], event="approval.request"))
                 else:
@@ -1229,7 +1229,7 @@ class OpenAICompatRoutesMixin:
                     finish_chunk["error"] = {
                         "message": err_msg,
                         "type": type(agent_error).__name__ if agent_error else "agent_error"}
-                finish_chunk["hermes"] = _hermes_extras(
+                finish_chunk["zeus"] = _zeus_extras(
                     completed, is_partial, is_failed, "" if presentation_muted else err_msg, finish_reason,
                     budget_exhausted=budget_exhausted)
             await response.write(_sse_frame(finish_chunk))
@@ -1313,7 +1313,7 @@ class OpenAICompatRoutesMixin:
         from gateway.platforms.api_server import _sse_frame
         headers = replay.get('headers') or {}
         response = await self._prepare_sse_response(
-            request, headers.get('X-Hermes-Session-Id'), headers.get('X-Hermes-Session-Key'))
+            request, headers.get('X-Zeus-Session-Id'), headers.get('X-Zeus-Session-Key'))
         events = replay.get('events')
         if not events:
             env = replay['response']
@@ -1396,7 +1396,7 @@ class OpenAICompatRoutesMixin:
         if replayed is not None:
             return replayed
         from gateway.platforms.api_server_response_admissions import prepare_context
-        from hermes_state_runtime import RuntimeStoreError
+        from zeus_state_runtime import RuntimeStoreError
         try:
             context, error = await prepare_context(
                 self, request, body, gateway_session_key, durable_key, idempotency_scope, idempotency_key)
@@ -1492,9 +1492,9 @@ class OpenAICompatRoutesMixin:
                 result.get('error') or 'The admitted turn failed.')}
         snapshot = (response_id, {"response": response_data, "conversation_history": full_history,
                     "instructions": instructions, "session_id": _effective_session_id}) if store else None
-        response_headers = {"X-Hermes-Session-Id": _effective_session_id}
+        response_headers = {"X-Zeus-Session-Id": _effective_session_id}
         if gateway_session_key:
-            response_headers["X-Hermes-Session-Key"] = gateway_session_key
+            response_headers["X-Zeus-Session-Key"] = gateway_session_key
         replay_record = (durable_key[0], {'fingerprint': durable_key[1], 'response': response_data,
                          'headers': response_headers}) if durable_key is not None else None
         if snapshot is not None or replay_record is not None:

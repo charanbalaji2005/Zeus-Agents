@@ -1,4 +1,4 @@
-import { KANBAN_CARD_AREAS, type KanbanCardBadgeContribution } from '@hermes/plugin-sdk'
+import { KANBAN_CARD_AREAS, type KanbanCardBadgeContribution } from '@zeus/plugin-sdk'
 /**
  * The board paints plugin card badges (#140026): the REAL board page, the REAL
  * plugin context and registry, with only the kanban REST layer mocked. A

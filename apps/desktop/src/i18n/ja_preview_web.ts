@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import type { Translations } from './types'
 
@@ -11,11 +11,11 @@ export const jaPreviewWeb: TranslationOverride<Translations['preview']['web']> =
     'このアドレスはエージェントを実行しているマシンを指しており、このマシンではありません。ブラウザペインはページをローカルで読み込むため、リモートの開発サーバーにはポート転送か到達可能なホスト名が必要です。',
   failedToLoad: 'プレビューの読み込みに失敗しました',
   tryAgain: '再試行',
-  restarting: 'Hermes を再起動中...',
-  askRestart: 'Hermes にサーバーの再起動を依頼',
-  lookingRestart: taskId => `Hermes は再起動するプレビューサーバーを検索中です (${taskId})`,
+  restarting: 'Zeus を再起動中...',
+  askRestart: 'Zeus にサーバーの再起動を依頼',
+  lookingRestart: taskId => `Zeus は再起動するプレビューサーバーを検索中です (${taskId})`,
   restartingTitle: 'プレビューサーバーを再起動中',
-  restartingMessage: 'Hermes はバックグラウンドで作業中です。進捗はプレビューコンソールで確認してください。',
+  restartingMessage: 'Zeus はバックグラウンドで作業中です。進捗はプレビューコンソールで確認してください。',
   startRestartFailed: message => `サーバー再起動を開始できませんでした: ${message}`,
   restartFailed: 'サーバーの再起動に失敗しました',
   hideConsole: 'プレビューコンソールを非表示',
@@ -27,16 +27,16 @@ export const jaPreviewWeb: TranslationOverride<Translations['preview']['web']> =
   reload: 'ページを再読み込み',
   address: 'アドレス',
   addressPlaceholder: 'アドレスを入力',
-  blankPageBody: '上のアドレス欄に入力するか、Hermes にページを開くよう頼んでください。',
-  finishedRestarting: message => `Hermes がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
+  blankPageBody: '上のアドレス欄に入力するか、Zeus にページを開くよう頼んでください。',
+  finishedRestarting: message => `Zeus がプレビューサーバーの再起動を完了しました${message ? `: ${message}` : ''}`,
   failedRestarting: message => `サーバーの再起動に失敗しました: ${message}`,
   unknownError: '不明なエラー',
   restartedTitle: 'プレビューサーバーが再起動しました',
   reloadingNow: 'プレビューを再読み込み中です。',
   restartFailedTitle: 'プレビューの再起動に失敗しました',
-  restartFailedMessage: 'Hermes がサーバーを再起動できませんでした。',
+  restartFailedMessage: 'Zeus がサーバーを再起動できませんでした。',
   stillWorking:
-    'Hermes はまだ作業中ですが、再起動の結果がまだ届いていません。サーバーコマンドがフォアグラウンドで実行されている可能性があります。',
+    'Zeus はまだ作業中ですが、再起動の結果がまだ届いていません。サーバーコマンドがフォアグラウンドで実行されている可能性があります。',
   workspaceReloading: 'ワークスペースが変更され、プレビューを再読み込み中',
   fileChanged: url => `ファイルが変更され、プレビューを再読み込み中: ${url}`,
   filesChanged: (count, url) => `${count} 件のファイルが変更され、プレビューを再読み込み中: ${url}`,

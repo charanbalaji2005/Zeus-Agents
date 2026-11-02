@@ -22,7 +22,7 @@ vi.mock('@/store/gateway', () => ({
   ensureGatewayForProfile,
   openGatewayForProfile: vi.fn(async () => undefined)
 }))
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   setApiRequestProfile: vi.fn()
 }))
@@ -32,24 +32,24 @@ vi.mock('@/store/starmap', () => ({ reloadOpenStarmapGraph: vi.fn(), resetStarma
 const { $activeGatewayProfile, selectProfile } = await import('./profile')
 const { installBrowserDesktopBridge } = await import('@/lib/browser-desktop-bridge')
 
-const bootstrap = window as Window & { __HERMES_BASE_PATH__?: string; }
+const bootstrap = window as Window & { __ZEUS_BASE_PATH__?: string; }
 const savedDefault = { connectionId: 'local', profile: 'research' }
 const urlProfile = () => new URLSearchParams(window.location.search).get('profile')
 
 beforeEach(async () => {
-  bootstrap.__HERMES_BASE_PATH__ = '/hermes'
+  bootstrap.__ZEUS_BASE_PATH__ = '/zeus'
   seedWebappSession('served-token')
-  window.history.replaceState(null, '', '/hermes?profile=arrived#/')
+  window.history.replaceState(null, '', '/zeus?profile=arrived#/')
   expect(installBrowserDesktopBridge()).toBe(true)
-  await window.hermesDesktop.profile.setDefault(savedDefault)
+  await window.zeusDesktop.profile.setDefault(savedDefault)
   $activeGatewayProfile.set('arrived')
 })
 
 afterEach(() => {
-  Reflect.deleteProperty(window, 'hermesDesktop')
-  delete bootstrap.__HERMES_BASE_PATH__
+  Reflect.deleteProperty(window, 'zeusDesktop')
+  delete bootstrap.__ZEUS_BASE_PATH__
   clearWebappSession()
-  document.documentElement.removeAttribute('data-hermes-desktop-host')
+  document.documentElement.removeAttribute('data-zeus-desktop-host')
   window.localStorage.clear()
   window.history.replaceState(null, '', '/#/')
   vi.clearAllMocks()
@@ -63,7 +63,7 @@ it.each([
 ])('records a live switch in the tab that booted on $boot, and only there', async ({ source }) => {
   activeGatewayConnectionId.mockReturnValue(source)
   const defaultChanged = vi.fn()
-  const unsubscribe = window.hermesDesktop.profile.onDefaultChanged(defaultChanged)
+  const unsubscribe = window.zeusDesktop.profile.onDefaultChanged(defaultChanged)
 
   selectProfile('ops')
   await vi.waitFor(() => expect(urlProfile()).toBe('ops'))
@@ -72,11 +72,11 @@ it.each([
   selectProfile('default')
   await vi.waitFor(() => expect(urlProfile()).toBe('default'))
 
-  expect(window.location.pathname).toBe('/hermes')
+  expect(window.location.pathname).toBe('/zeus')
   expect(window.location.hash).toBe('#/')
-  await expect(window.hermesDesktop.profile.getDefault()).resolves.toEqual(savedDefault)
+  await expect(window.zeusDesktop.profile.getDefault()).resolves.toEqual(savedDefault)
   expect(defaultChanged).not.toHaveBeenCalled()
-  const own = await window.hermesDesktop.getConnection()
+  const own = await window.zeusDesktop.getConnection()
   expect(own.profile).toBeUndefined()
   expect(own.sharedPrimary).toBe(false)
   unsubscribe()

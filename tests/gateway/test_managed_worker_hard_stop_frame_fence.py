@@ -68,7 +68,7 @@ def test_worker_stop_hard_cancels_the_agent_before_and_after_construction(tmp_pa
 
 
 CHILD = """import json, os, sys, psutil
-from hermes_cli.process_identity import worker_birth
+from zeus_cli.process_identity import worker_birth
 me = psutil.Process()
 out = os.fdopen(os.dup(sys.stdout.fileno()), 'wb', buffering=0)
 send = lambda f: out.write((json.dumps(f) + '\\n').encode())
@@ -87,10 +87,10 @@ def test_worker_frames_read_no_ledger_per_frame(tmp_path, monkeypatch):
     from gateway.session_authority import LiveSession, SessionAuthority
     from gateway.session_contract import Submission
     from gateway.session_policy import build_policy
-    from hermes_state import SessionDB
-    from hermes_state_runtime import begin_runtime_epoch, claim_session_input
+    from zeus_state import SessionDB
+    from zeus_state_runtime import begin_runtime_epoch, claim_session_input
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     db = SessionDB(db_path=tmp_path / 'state.db')
     db.create_session('s', source='test')
     runner = SimpleNamespace(_draining=False, _cached_agent_for=lambda route: None,

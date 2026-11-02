@@ -67,7 +67,7 @@ def test_every_judge_case(tmp_path):
 def test_every_release_case(tmp_path):
     lines = []
     for i, case in enumerate(CORPUS["release"]):
-        marker = tmp_path / f"{i}" / ".hermes-update-in-progress"
+        marker = tmp_path / f"{i}" / ".zeus-update-in-progress"
         marker.parent.mkdir()
         marker.write_bytes(case["text"].encode("utf-8"))
         lines.append(
@@ -78,7 +78,7 @@ def test_every_release_case(tmp_path):
     assert out == ["rc=0"] * len(CORPUS["release"])
     wrong = []
     for i, case in enumerate(CORPUS["release"]):
-        marker = tmp_path / f"{i}" / ".hermes-update-in-progress"
+        marker = tmp_path / f"{i}" / ".zeus-update-in-progress"
         if not marker.exists():
             got = {"action": "delete"}
         elif marker.read_bytes() == case["text"].encode("utf-8"):
@@ -87,5 +87,5 @@ def test_every_release_case(tmp_path):
             got = {"action": "rewrite", "text": marker.read_text(encoding="utf-8-sig")}
         if got != case["expect"]:
             wrong.append((case["name"], got, case["expect"]))
-        assert (marker.parent / ".hermes-update-in-progress.lock").exists()  # the sidecar is never deleted
+        assert (marker.parent / ".zeus-update-in-progress.lock").exists()  # the sidecar is never deleted
     assert not wrong

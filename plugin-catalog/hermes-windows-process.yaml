@@ -25,7 +25,7 @@ description: >-
 maintainer: Yicheng-Mark
 tier: community
 category: tools
-requires_hermes: ">=0.21.4"
+requires_zeus: ">=0.21.4"
 docs_url: https://github.com/Yicheng-Mark/hermes-windows-plugins/tree/main/windows-process
 version: "0.1.0"
 platforms:

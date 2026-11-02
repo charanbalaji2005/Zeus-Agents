@@ -6,7 +6,7 @@ description: "@b64: context references that decode encoded text for the model: @
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/b64-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/89b15726e6f44bc072bd6af5fc6a1402e50aafa3/docs/b64-ref-card.png

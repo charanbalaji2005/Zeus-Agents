@@ -13,7 +13,7 @@ from gateway.config import Platform, PlatformConfig
 from gateway.platforms.base import BasePlatformAdapter, SendResult
 from gateway.session import SessionSource
 from gateway.session_contract import CANONICAL_GATEWAY_PROTOCOL
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -116,7 +116,7 @@ class LocalSessionAdapter(BasePlatformAdapter):
         with live.event_stream.lock:
             if any('session:respond' in member.capabilities for member in live.subscribers.values()):
                 return None
-        from hermes_state_runtime import list_session_admissions
+        from zeus_state_runtime import list_session_admissions
         started = next((row for row in list_session_admissions(self.authority.db, session_id=chat_id)
                         if row['status'] == 'started'), None)
         if started is not None and 'local_automation_v1' in started['payload']:
@@ -150,7 +150,7 @@ def _bypass_policy(params, *, private_secrets, client_local=False):
     block or shape the session; there is no default model to inherit, so one must be explicit."""
     import copy
     from gateway.session_policy import build_policy
-    from hermes_cli.config_defaults import DEFAULT_CONFIG
+    from zeus_cli.config_defaults import DEFAULT_CONFIG
     if not params.get('model'):
         raise RuntimeStoreError('invalid_params', field='model',
                                 detail='a bypass launch has no profile to inherit a model from')
@@ -192,28 +192,28 @@ def profile_env_scope(home=None):
 
 def project_plugins_warning(policy):
     """The plain notice for a session whose client opted into project plugins (its forwarded
-    ``HERMES_ENABLE_PROJECT_PLUGINS``) in a folder that has some: the gateway never loads them."""
+    ``ZEUS_ENABLE_PROJECT_PLUGINS``) in a folder that has some: the gateway never loads them."""
     from pathlib import Path
     from utils import is_truthy_value
     # The client's folder is a path on this host only for a client the gateway proved local.
     env = policy.client_env() if policy is not None and not policy.client_env_remote else None
-    folder = Path(policy.cwd) / '.hermes' / 'plugins' if env else None
-    if not env or not is_truthy_value(env.get('HERMES_ENABLE_PROJECT_PLUGINS')) or not folder.is_dir():
+    folder = Path(policy.cwd) / '.zeus' / 'plugins' if env else None
+    if not env or not is_truthy_value(env.get('ZEUS_ENABLE_PROJECT_PLUGINS')) or not folder.is_dir():
         return None
     try:
         if not any(folder.iterdir()):
             return None
     except OSError:  # an unlistable folder skips the optional notice, never the session
         return None
-    return (f'project plugins in {folder} are not loaded: the gateway that runs Hermes sessions does not '
-            'load ./.hermes/plugins, so HERMES_ENABLE_PROJECT_PLUGINS has no effect here.')
+    return (f'project plugins in {folder} are not loaded: the gateway that runs Zeus sessions does not '
+            'load ./.zeus/plugins, so ZEUS_ENABLE_PROJECT_PLUGINS has no effect here.')
 
 
 def create_local_session(authority, actor, params, *, trusted_policy=None, trusted_secrets=None, skills_prompt=None,
                          client_local=False):
     """Stage, commit and publish a local session inline (synchronous callers)."""
     from gateway.session_local_recovery import restore_local_session
-    from hermes_state_local import commit_local_session
+    from zeus_state_local import commit_local_session
     staged = stage_local_session(authority, actor, params, trusted_policy=trusted_policy,
                                  trusted_secrets=trusted_secrets, skills_prompt=skills_prompt,
                                  client_local=client_local)
@@ -234,7 +234,7 @@ def staged_creation_follows(authority, actor, request_id):
     if not isinstance(request_id, str) or not request_id:
         return True
     from gateway.session_local_recovery import local_identity
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     sid = local_identity(authority.profile_id, actor.subject, request_id)
     if authority.db.get_session(sid) is None:
         return True
@@ -286,7 +286,7 @@ def stage_local_session(authority, actor, params, *, trusted_policy=None, truste
                 sort_keys=True))
         marks = {LOCAL_DESKTOP_CHAT: True} if desktop_local and policy.source == 'gui' else {}
         if policy.model is None:
-            from hermes_cli.anon_auth import GUEST_MODEL
+            from zeus_cli.anon_auth import GUEST_MODEL
             policy = replace(policy, model=_resolve_gateway_model(policy.config()) or None)
             if policy.model == GUEST_MODEL:
                 # Follows its profile, so the provider the user connects later replaces the trial model.
@@ -306,10 +306,10 @@ def stage_local_session(authority, actor, params, *, trusted_policy=None, truste
     sid = local_identity(authority.profile_id, actor.subject, request_id)
     from gateway.session_policy import bind_launch_key, restore_policy, launch_key
     if authority.db.get_session(sid) is not None:
-        from hermes_state_local import local_receipt
+        from zeus_state_local import local_receipt
         saved = local_receipt(authority.db, sid)
         original = restore_policy(saved['policy'])
-        from hermes_state_local import same_create_retry
+        from zeus_state_local import same_create_retry
         if not same_create_retry(saved['policy'], policy.request_json, params):
             raise RuntimeStoreError('invalid_params', field='request_id',
                                     detail='a resumed request_id must carry the same frozen request')
@@ -357,7 +357,7 @@ def stage_local_session(authority, actor, params, *, trusted_policy=None, truste
 
 
 def publish_local_policy(authority, session_id, *, evict=True):
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     from gateway.session_policy import restore_policy
     live = authority.sessions[session_id]
     from gateway.session_local_recovery import local_adapter_map
@@ -376,7 +376,7 @@ def _lazy_model(authority, policy):
             or str(policy.provider or '').strip().lower() not in {'', 'auto'}):
         return model
     from gateway.session_authorities import owner_scope
-    from hermes_cli.anon_auth import GUEST_MODEL, free_tier_route
+    from zeus_cli.anon_auth import GUEST_MODEL, free_tier_route
     with owner_scope(authority):
         return GUEST_MODEL if free_tier_route() else model
 
@@ -391,7 +391,7 @@ def _reasoning_fields(agent, policy, model, authority=None, override=None):
         return {}
     view = session_runtime_view(agent) if agent is not None else None
     if view is None:
-        from hermes_constants import resolve_reasoning_config
+        from zeus_constants import resolve_reasoning_config
         effective, next_model = policy.effective(authority, secrets=False)
         route = effective.get('model') or {}
     config = (getattr(view, 'reasoning_config', None) if view is not None
@@ -407,7 +407,7 @@ def effort_fields(config, tier, model, provider, base_url, api_mode=None):
     """Session-info ``reasoning_effort`` / ``_wire`` / ``service_tier`` / ``fast`` for one resolved route."""
     from agent.fast_mode import STATIC_TIERS
     from agent.reasoning_effort import clamp_effort, route_supported_efforts
-    from hermes_cli.models import resolve_fast_mode_overrides
+    from zeus_cli.models import resolve_fast_mode_overrides
     tier = tier or ''
     effort = ''
     if isinstance(config, dict):
@@ -468,13 +468,13 @@ def local_session_info(authority, ref):
 
 
 def _classic_cli_fields(authority, ref, live, agent, policy):
-    """What main's HermesCLI read off itself for /status, the status bar and the exit summary: the
+    """What main's ZeusCLI read off itself for /status, the status bar and the exit summary: the
     stored title and times, the session's yolo, api_mode, the loaded tool count and a masked
     credential hint (never the key). Lazy sessions report what is known without building an agent."""
     import contextlib
     stored_id = ref.session_id
     with contextlib.suppress(Exception):
-        from hermes_state_local import local_receipt
+        from zeus_state_local import local_receipt
         stored_id = local_receipt(authority.db, ref.session_id)['entry']['session_id'] or stored_id
     row = {}
     with contextlib.suppress(Exception):

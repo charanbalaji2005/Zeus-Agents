@@ -62,7 +62,7 @@ const lostCard = (page: Page) => page.locator('[data-slot="queue-lost-note"]')
 const lostDiscard = (page: Page) => page.locator('[data-slot="queue-lost-discard"]')
 const queueHeader = (page: Page) => page.locator('.status-section-trigger').filter({ hasText: /Queued/ })
 
-const OUT = process.env.HERMES_E2E_NF2_OUT
+const OUT = process.env.ZEUS_E2E_NF2_OUT
 
 async function dump(page: Page, name: string, extra: Record<string, unknown> = {}) {
   if (!OUT) {
@@ -279,7 +279,7 @@ function setup(label: string) {
   return async () => {
     const provider = await startScriptedProvider()
     const sandbox = createCoreSandbox(label)
-    writeProviderHome(sandbox.hermesHome, provider.url)
+    writeProviderHome(sandbox.zeusHome, provider.url)
     const { app, page } = await launchCoreApp(coreAppEnv(sandbox))
     const ws = recordWebSockets(page)
     const timeline = recordTimeline(page)

@@ -5,7 +5,7 @@ description: 'Keyless local web extract: fetches pages from this machine with ht
 maintainer: enzo-adami
 tier: community
 category: web
-requires_hermes: ">=0.22"
+requires_zeus: ">=0.22"
 docs_url: https://github.com/enzo-adami/hermes-plugin-web-local#readme
 version: "1.0.0"
 platforms: []

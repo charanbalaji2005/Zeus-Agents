@@ -59,7 +59,7 @@ def main():
             'gateway:\n  multiplex_profiles: false\nauxiliary:\n  title_generation:\n    enabled: false\n',
             encoding='utf-8')
         env = {key: os.environ[key] for key in ('PATH', 'LANG', 'TZ') if key in os.environ}
-        env.update(HOME=str(home), USERPROFILE=str(home), HERMES_HOME=str(state),
+        env.update(HOME=str(home), USERPROFILE=str(home), ZEUS_HOME=str(state),
                    PYTHONPATH=str(repo), PYTHONUNBUFFERED='1')
         with args.output.with_suffix('.log').open('w', encoding='utf-8') as log:
             process = subprocess.Popen(

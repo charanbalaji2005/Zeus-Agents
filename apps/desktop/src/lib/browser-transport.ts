@@ -1,6 +1,6 @@
-import { BROWSER_NATIVE_DIAL, buildHermesWebSocketUrl, normalizeBasePath } from '@hermes/shared'
+import { BROWSER_NATIVE_DIAL, buildZeusWebSocketUrl, normalizeBasePath } from '@zeus/shared'
 
-import type { HermesApiRequest } from '@/global'
+import type { ZeusApiRequest } from '@/global'
 import { readWebappSession, webappSignInRequired } from '@/lib/browser-launch-session'
 import { type BrowserHostGlobals, hasBrowserHostBootstrap } from '@/lib/platform'
 
@@ -12,9 +12,9 @@ export interface BrowserBootstrap {
   token: string
 }
 
-const SESSION_HEADER = 'X-Hermes-Session-Token'
+const SESSION_HEADER = 'X-Zeus-Session-Token'
 const DEFAULT_TIMEOUT_MS = 30_000
-const REAUTH_EVENT = 'hermes:browser-reauth-required'
+const REAUTH_EVENT = 'zeus:browser-reauth-required'
 
 export class BrowserReauthRequiredError extends Error {
   readonly loginUrl: string
@@ -31,9 +31,9 @@ export function browserBootstrap(): BrowserBootstrap | null {
   if (!hasBrowserHostBootstrap()) {return null}
 
   const win = window as Window & BrowserHostGlobals
-  const authRequired = win.__HERMES_AUTH_REQUIRED__ === true
-  const basePath = normalizeBasePath(win.__HERMES_BASE_PATH__)
-  const privateSession = !authRequired && win.__HERMES_UI_SURFACE__ === 'webapp'
+  const authRequired = win.__ZEUS_AUTH_REQUIRED__ === true
+  const basePath = normalizeBasePath(win.__ZEUS_BASE_PATH__)
+  const privateSession = !authRequired && win.__ZEUS_UI_SURFACE__ === 'webapp'
   const token = privateSession ? readWebappSession(basePath) : ''
 
   return {
@@ -50,7 +50,7 @@ export function endpointUrl(path: string, basePath: string, profile?: null | str
   const url = new URL(`${normalizedBase}${suffix}`, window.location.origin)
 
   if (url.origin !== window.location.origin) {
-    throw new Error('Hermes API paths must remain on the Webapp origin')
+    throw new Error('Zeus API paths must remain on the Webapp origin')
   }
 
   if (
@@ -58,7 +58,7 @@ export function endpointUrl(path: string, basePath: string, profile?: null | str
     url.pathname !== normalizedBase &&
     !url.pathname.startsWith(`${normalizedBase}/`)
   ) {
-    throw new Error('Hermes API paths must remain inside the configured base path')
+    throw new Error('Zeus API paths must remain inside the configured base path')
   }
 
   if (profile && !url.searchParams.has('profile')) {
@@ -75,7 +75,7 @@ export function websocketUrl(
   credential: { ticket?: string },
   profile?: null | string
 ): string {
-  return buildHermesWebSocketUrl({
+  return buildZeusWebSocketUrl({
     authParam: credential.ticket ? ['ticket', credential.ticket] : undefined,
     basePath,
     params: profile ? { profile } : undefined,
@@ -179,7 +179,7 @@ export async function browserFetch(
   }
 }
 
-export async function browserApi<T>(bootstrap: BrowserBootstrap, request: HermesApiRequest): Promise<T> {
+export async function browserApi<T>(bootstrap: BrowserBootstrap, request: ZeusApiRequest): Promise<T> {
   const headers = new Headers()
   let body: BodyInit | undefined
 
@@ -213,7 +213,7 @@ export async function browserApi<T>(bootstrap: BrowserBootstrap, request: Hermes
   if (!text) {return null as T}
 
   if (/^\s*<(?:!doctype|html)/i.test(text)) {
-    throw new Error(`Hermes API returned HTML for ${request.path}`)
+    throw new Error(`Zeus API returned HTML for ${request.path}`)
   }
 
   return JSON.parse(text) as T
@@ -258,7 +258,7 @@ export async function fileEndpointUrl(
 
     const ticket = String(result?.ticket || '')
 
-    if (!ticket) {throw new Error('Hermes did not return a file ticket')}
+    if (!ticket) {throw new Error('Zeus did not return a file ticket')}
     url.searchParams.set('ticket', ticket)
   }
 
@@ -301,7 +301,7 @@ export async function ticketedWebsocketUrl(
 
   const ticket = String(result?.ticket || '').trim()
 
-  if (!ticket) {throw new Error(`Hermes did not return a ticket for ${path}`)}
+  if (!ticket) {throw new Error(`Zeus did not return a ticket for ${path}`)}
 
   if (!gateway) {return websocketUrl(bootstrap.basePath, path, { ticket }, profile)}
 

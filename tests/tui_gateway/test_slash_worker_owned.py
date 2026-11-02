@@ -24,7 +24,7 @@ import psutil
 import pytest
 
 from tests.waiting import wait_until
-from hermes_cli import process_identity
+from zeus_cli import process_identity
 from tui_gateway import server, slash_worker
 
 _REPO = Path(__file__).resolve().parents[2]
@@ -66,11 +66,11 @@ def _cmdline(proc: psutil.Process) -> list[str]:
 
 def _home(tmp_path: Path, name: str) -> dict:
     home = tmp_path / name
-    (home / ".hermes").mkdir(parents=True)
-    (home / ".hermes" / "config.yaml").write_text(
+    (home / ".zeus").mkdir(parents=True)
+    (home / ".zeus" / "config.yaml").write_text(
         "quick_commands:\n  linger:\n    type: exec\n    command: sleep 120\n", encoding="utf-8")
     env = {k: v for k, v in os.environ.items() if not k.endswith("_API_KEY")}
-    env.update(HOME=str(home), HERMES_HOME=str(home / ".hermes"), PYTHONPATH=str(_REPO))
+    env.update(HOME=str(home), ZEUS_HOME=str(home / ".zeus"), PYTHONPATH=str(_REPO))
     return env
 
 
@@ -167,11 +167,11 @@ def test_a_worker_that_already_died_is_never_group_signalled(monkeypatch):
 
 
 def test_main_arms_the_legacy_watchdog_then_imports_cli_before_runtime_prep(monkeypatch):
-    """``cli`` loads ~/.hermes/.env, which MCP discovery in the runtime prep needs. A gateway started
+    """``cli`` loads ~/.zeus/.env, which MCP discovery in the runtime prep needs. A gateway started
     before an update still passes ``--parent-pid``; its death guard starts before the slow import."""
     events = []
 
-    class FakeHermesCLI:
+    class FakeZeusCLI:
         def __init__(self, **kwargs):
             events.append(("cli", kwargs["resume"]))
 
@@ -184,7 +184,7 @@ def test_main_arms_the_legacy_watchdog_then_imports_cli_before_runtime_prep(monk
 
         def exec_module(self, module):
             events.append(("cli-import",))
-            module.HermesCLI = FakeHermesCLI
+            module.ZeusCLI = FakeZeusCLI
 
     # setitem first so teardown also removes the stub module the import below inserts.
     monkeypatch.setitem(sys.modules, "cli", None)

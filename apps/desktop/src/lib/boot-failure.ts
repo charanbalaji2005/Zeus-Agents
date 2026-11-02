@@ -8,7 +8,7 @@ type BootPalette = Record<'accent' | 'accentForeground' | 'background' | 'foregr
  *  imported, so the renderer entry never needs another chunk before it can show this notice. */
 export function readBootPalette(): BootPalette | null {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem('hermes-boot-palette') ?? 'null')
+    const value: unknown = JSON.parse(localStorage.getItem('zeus-boot-palette') ?? 'null')
     const fields = ['accent', 'accentForeground', 'background', 'foreground'] as const
 
     const standalone = (field: (typeof fields)[number]) => {
@@ -39,7 +39,7 @@ async function loadWordmarkFont(): Promise<void> {
 
 // Keep this independent of the app graph: its JavaScript or CSS may have failed to load.
 export function showBootFailure(error: unknown, reload: () => void = () => location.reload()): void {
-  console.error('Hermes failed to load', error)
+  console.error('Zeus failed to load', error)
 
   const root = document.getElementById('root')
 
@@ -76,7 +76,7 @@ export function showBootFailure(error: unknown, reload: () => void = () => locat
   })
 
   const wordmark = document.createElement('p')
-  wordmark.textContent = 'HERMES AGENT'
+  wordmark.textContent = 'ZEUS AGENTS'
   wordmark.setAttribute('aria-hidden', 'true')
   Object.assign(wordmark.style, {
     color: palette?.accent ?? 'currentColor',
@@ -91,7 +91,7 @@ export function showBootFailure(error: unknown, reload: () => void = () => locat
 
   // English is intentional: i18n lives in the app graph that failed to load.
   const heading = document.createElement('h1')
-  heading.textContent = 'Hermes couldn’t load'
+  heading.textContent = 'Zeus couldn’t load'
   heading.style.cssText = 'color: inherit; font-size: 1.125rem; font-weight: 600; margin: 0'
 
   const message = document.createElement('p')

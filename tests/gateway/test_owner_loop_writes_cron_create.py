@@ -11,12 +11,12 @@ from gateway import run, session_cron
 from gateway.config import GatewayConfig
 from gateway.session import SessionStore
 from gateway.session_authority import SessionAuthority
-from hermes_state import SessionDB
-from hermes_state_runtime import begin_runtime_epoch, list_session_admissions
+from zeus_state import SessionDB
+from zeus_state_runtime import begin_runtime_epoch, list_session_admissions
 
 
 def test_cron_submit_creation_commit_waits_off_the_owner_loop(tmp_path, monkeypatch):
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'model': {}, 'platform_toolsets': {'cli': []}})
     with jobs.use_cron_store(tmp_path / 'cron'):
         job = jobs.create_job(prompt='report', schedule='every 1h', deliver='local', model='fixture')

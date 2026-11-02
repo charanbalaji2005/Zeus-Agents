@@ -1,4 +1,4 @@
-import { SLASH_COMMAND_RE } from '@hermes/shared'
+import { SLASH_COMMAND_RE } from '@zeus/shared'
 
 /**
  * Every fact the app derives from the assistant-ui composer text through

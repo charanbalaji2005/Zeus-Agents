@@ -1,4 +1,4 @@
-import type { HermesApiRequest, HermesSelectPathsOptions, HermesStagedUpload } from '@/global'
+import type { ZeusApiRequest, ZeusSelectPathsOptions, ZeusStagedUpload } from '@/global'
 import { blobToDataUrl } from '@/lib/base64'
 import { type BrowserBootstrap, browserFetch, endpointUrl } from '@/lib/browser-transport'
 
@@ -6,7 +6,7 @@ const STAGED_UPLOAD_CACHE_LIMIT = 256
 
 /** The largest file the browser stages on the host, and the largest image it can send: sending reads
  *  a staged image back through /api/fs/read-data-url. Mirrors WEBAPP_ATTACHMENT_MAX_BYTES
- *  (hermes_constants.py), the cap on both. */
+ *  (zeus_constants.py), the cap on both. */
 export const BROWSER_UPLOAD_MAX_BYTES = 16 * 1024 * 1024
 
 const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
@@ -96,7 +96,7 @@ function sandboxedHtmlBlob(bytes: Uint8Array, bootstrap: BrowserBootstrap): Blob
 interface StageResponse {
   detail?: unknown
   path?: string
-  staged_upload?: HermesStagedUpload
+  staged_upload?: ZeusStagedUpload
 }
 
 /** A proxy's own error page (nginx's 413, a 502/504) is HTML, not the server's JSON. */
@@ -118,7 +118,7 @@ function uploadFailure(status: number, detail: unknown): string {
     : `File upload failed (${status})`
 }
 
-type OnStaged = (path: string, name: string, staged?: HermesStagedUpload) => void
+type OnStaged = (path: string, name: string, staged?: ZeusStagedUpload) => void
 
 async function stageBrowserFile(
   bootstrap: BrowserBootstrap,
@@ -158,7 +158,7 @@ async function stageBrowserFile(
 
 function selectBrowserFiles(
   bootstrap: BrowserBootstrap,
-  options: HermesSelectPathsOptions | undefined,
+  options: ZeusSelectPathsOptions | undefined,
   fallbackProfile: null | string,
   onStaged: OnStaged
 ): Promise<string[]> {
@@ -203,7 +203,7 @@ function selectBrowserFiles(
 }
 
 interface BrowserUploadsOptions {
-  api: <T>(request: HermesApiRequest) => Promise<T>
+  api: <T>(request: ZeusApiRequest) => Promise<T>
   bootstrap: BrowserBootstrap
   currentProfile: () => string | null
   /** Blob URLs handed to the page; the installer revokes them on unload. */
@@ -220,11 +220,11 @@ export function createBrowserUploadsBridge({
   objectUrls,
   previewUrls
 }: BrowserUploadsOptions): Pick<
-  Window['hermesDesktop'],
+  Window['zeusDesktop'],
   'getStagedFileDisplayName' | 'getStagedFileForAttach' | 'saveImageBuffer' | 'savePastedText' | 'selectPaths' | 'stageFileForAttach'
 > {
   const displayNames = new Map<string, string>()
-  const stagedUploads = new Map<string, HermesStagedUpload>()
+  const stagedUploads = new Map<string, ZeusStagedUpload>()
 
   const rememberStaged: OnStaged = (path, name, staged) => {
     // Keep the existing string-path bridge for pickers and drops. Composer chips

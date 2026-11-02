@@ -30,7 +30,7 @@ def owner(tmp_path, monkeypatch, server_spec):
     from gateway.session_controls import AuthorityConnection
     from gateway.session_local import create_local_session
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'acp': []}})
     discovered = []
     real = session_local_mcp.rebind_editor_mcp
@@ -79,7 +79,7 @@ async def test_stale_branch_starts_no_editor_server(owner):
 
 @pytest.mark.asyncio
 async def test_busy_branch_starts_no_editor_server(owner):
-    from hermes_state_runtime import admit_session_input
+    from zeus_state_runtime import admit_session_input
     build, discovered, payload = owner
     authority, client, sid = await build()
     # A queued input: the branch commit's own idle rule refuses it (require_idle).

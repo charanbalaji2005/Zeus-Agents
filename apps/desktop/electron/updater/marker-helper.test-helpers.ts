@@ -23,28 +23,28 @@ export function scratchRoot(tag: string): string {
 
 /**
  * Text of a REAL fake hand-off script: it records its argv to
- * `$HERMES_HOME/helper-calls.log`, prints the verdict staged in
- * `$HERMES_HOME/helper-verdict`, exits with `$HERMES_HOME/helper-exit`
+ * `$ZEUS_HOME/helper-calls.log`, prints the verdict staged in
+ * `$ZEUS_HOME/helper-verdict`, exits with `$ZEUS_HOME/helper-exit`
  * (default 0), and — like the real helper — removes the marker when it
  * answers `reclaimed`/`withdrawn`.
  */
-export function fakeHelperScript(protocolLine = '# hermes-handoff-protocol: 2'): string {
+export function fakeHelperScript(protocolLine = '# zeus-handoff-protocol: 2'): string {
   return [
     '#!/usr/bin/env bash',
     protocolLine,
-    'printf "%s\\n" "$*" >> "$HERMES_HOME/helper-calls.log"',
+    'printf "%s\\n" "$*" >> "$ZEUS_HOME/helper-calls.log"',
     'if [ "$1" != "--marker-op" ]; then exit 3; fi',
-    '[ -f "$HERMES_HOME/helper-sleep" ] && sleep "$(cat "$HERMES_HOME/helper-sleep")"',
-    'verdict="$(cat "$HERMES_HOME/helper-verdict" 2>/dev/null)"',
-    'case "$verdict" in reclaimed|withdrawn) rm -f "$HERMES_HOME/.hermes-update-in-progress" ;; esac',
+    '[ -f "$ZEUS_HOME/helper-sleep" ] && sleep "$(cat "$ZEUS_HOME/helper-sleep")"',
+    'verdict="$(cat "$ZEUS_HOME/helper-verdict" 2>/dev/null)"',
+    'case "$verdict" in reclaimed|withdrawn) rm -f "$ZEUS_HOME/.zeus-update-in-progress" ;; esac',
     'printf "%s\\n" "$verdict"',
-    'exit "$(cat "$HERMES_HOME/helper-exit" 2>/dev/null || echo 0)"',
+    'exit "$(cat "$ZEUS_HOME/helper-exit" 2>/dev/null || echo 0)"',
     ''
   ].join('\n')
 }
 
 /** A checkout whose posix.sh is `fakeHelperScript`. */
-export function fakeHelperCheckout(protocolLine = '# hermes-handoff-protocol: 2'): { root: string; home: string } {
+export function fakeHelperCheckout(protocolLine = '# zeus-handoff-protocol: 2'): { root: string; home: string } {
   const root = scratchRoot('marker-helper')
   const home = path.join(root, 'home')
   fs.mkdirSync(home)

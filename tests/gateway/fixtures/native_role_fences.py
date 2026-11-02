@@ -9,9 +9,9 @@ from types import SimpleNamespace
 async def fences(runner, authority, adapter, guild, event, peer, mode):
     from gateway.config import Platform
     from gateway.session_ingress_context import native_callback
-    from hermes_state_runtime import RuntimeStoreError, cancel_session_input, list_session_admissions
+    from zeus_state_runtime import RuntimeStoreError, cancel_session_input, list_session_admissions
 
-    state = Path(os.environ['HERMES_HOME'])
+    state = Path(os.environ['ZEUS_HOME'])
 
     def rows(sid):
         return list_session_admissions(authority.db, session_id=sid, pending_only=False)

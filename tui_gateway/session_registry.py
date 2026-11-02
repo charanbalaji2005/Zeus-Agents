@@ -73,7 +73,7 @@ def _wait_agent_for_prompt(session: dict, rid: str, sid: str) -> dict | None:
 
 
 def _bind_build_profile_scopes(profile_home: str | None) -> _TurnScopes | None:
-    """Bind a session profile's HERMES_HOME / secret / terminal scopes for an agent build. ``None`` is the
+    """Bind a session profile's ZEUS_HOME / secret / terminal scopes for an agent build. ``None`` is the
     launch profile: its own launch-env secret scope (live env while single-profile, frozen once
     multiplexing is active — a hosted-room turn for a default member otherwise died at build with
     ``UnscopedSecretError`` because the launch profile was treated as "no scope"). Fail-open per scope (the build must not die on
@@ -83,7 +83,7 @@ def _bind_build_profile_scopes(profile_home: str | None) -> _TurnScopes | None:
     with contextlib.suppress(Exception):
         return _profile_runtime_scope_tokens(profile_home)
     if profile_home:  # secret/terminal helper failed: keep at least the home + terminal refusal scope
-        scopes.home = set_hermes_home_override(profile_home)
+        scopes.home = set_zeus_home_override(profile_home)
         with contextlib.suppress(Exception):
             from tools.terminal_scope import install_profile_terminal_scope
             scopes.terminal = install_profile_terminal_scope(Path(profile_home))
@@ -250,7 +250,7 @@ def _start_agent_build(sid: str, session: dict) -> None:
                 current["agent_error"] = AGENT_BUILD_ABANDONED
                 return
             tokens = _set_session_context(key, cwd=_session_cwd(current))
-            # Global-remote: bind the session profile's HERMES_HOME and hand the agent that profile's db —
+            # Global-remote: bind the session profile's ZEUS_HOME and hand the agent that profile's db —
             # DEDICATED and ours until _transfer_db_to_agent in the finally; FAIL CLOSED rather than
             # binding the launch DB and bleeding rows into the wrong state.db.
             scopes = _bind_build_profile_scopes(profile_home)
@@ -347,7 +347,7 @@ def _init_session(
             "explicit_cwd": bool(explicit_cwd), "cols": cols, "slash_worker": None,
             "show_reasoning": _load_show_reasoning(), "source": _resolve_session_source(source),
             "tool_progress_mode": _load_tool_progress_mode(), "edit_snapshots": {}, "tool_started_at": {},
-            # Profile-scoped HERMES_HOME (None = launch); SessionBranch copies the parent's (same state.db).
+            # Profile-scoped ZEUS_HOME (None = launch); SessionBranch copies the parent's (same state.db).
             "profile_home": profile_home,
             # In-session /model switch, honored on rebuild (/new, resume) — never leaks to siblings via env vars.
             "model_override": None,
@@ -371,9 +371,9 @@ def _maybe_notify_auto_prune(sid: str, profile_home: str | None) -> None:
     """Low disk + auto-prune never decided: a sticky notice (TUI status line / Desktop toast) per
     profile per snooze window, on session create and cold resume. The cheap gate runs inline;
     the DB estimate runs off-thread."""
-    from hermes_cli import prune_advisor
-    from hermes_constants import get_hermes_home
-    home = Path(profile_home) if profile_home else get_hermes_home()
+    from zeus_cli import prune_advisor
+    from zeus_constants import get_zeus_home
+    home = Path(profile_home) if profile_home else get_zeus_home()
     if not prune_advisor.notice_due(home, _AUTO_PRUNE_NOTIFIED):
         return
     _AUTO_PRUNE_NOTIFIED[str(home)] = time.time()
@@ -556,7 +556,7 @@ def _schedule_agent_build(sid: str, delay: float = 0.05) -> None:
 def _load_resume_transcript(db, stored_id: str, *, model_history_only: bool = False) -> tuple[list, list, list]:
     """(raw_history, display_history, ancestor_prefix) for a cold resume. The full lineage is materialized
     only while it fits sessions.max_resume_messages (the transcript is REST-paginated), else the tip alone."""
-    from hermes_state import SessionResumeTooLargeError
+    from zeus_state import SessionResumeTooLargeError
     if model_history_only:
         raw_history = db.get_messages_as_conversation(
             stored_id, repair_alternation=True, include_row_ids=True)

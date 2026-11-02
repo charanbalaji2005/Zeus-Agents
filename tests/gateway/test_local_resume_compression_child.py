@@ -46,7 +46,7 @@ async def _compressed(tmp_path, monkeypatch):
     from gateway.session_contract import Principal
     from gateway.session_local import create_local_session
     monkeypatch.setattr(run, '_load_gateway_config', lambda: {'platform_toolsets': {'cli': []}})
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     authority = await initialize_session_authority(_runner(tmp_path), profile_id='fixture', instance_id='first')
     actor = Principal('owner', 'fixture', frozenset({'session:create', 'session:read'}), 'socket')
     ref = create_local_session(authority, actor, dict(request_id='lc12', source='gui', cwd=str(tmp_path),

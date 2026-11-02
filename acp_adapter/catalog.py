@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from hermes_state import SessionDB
+from zeus_state import SessionDB
 from acp_adapter.session import (
     _normalize_cwd_for_compare, _parse_model_config, _session_info, _updated_at_sort_key,
 )
@@ -12,7 +12,7 @@ def read_catalog_rows(path):
     path = Path(path)
     if not path.exists():
         return {}
-    from hermes_cli.gateway_session_store import SurfaceLabelReader
+    from zeus_cli.gateway_session_store import SurfaceLabelReader
     # The owner stores an editor thread as ``local`` with ``created_source='acp'``; the surface
     # reader matches both labels in SQL, before the LIMIT.
     with SessionDB(db_path=path, read_only=True) as db:
@@ -24,7 +24,7 @@ def _local_owners(db):
     """Physical id -> retained logical owner, from each private local creation receipt's lineage.
     A canonical reset or compression advances the receipt's physical target but keeps policy/FIFO
     on the creation id. Legacy reset histories have no receipt and stay independent chats."""
-    from hermes_state_local import POLICY_PREFIX
+    from zeus_state_local import POLICY_PREFIX
     owners = {}
     with db._read_ctx() as conn:
         rows = conn.execute('SELECT value FROM state_meta WHERE key GLOB ?', (POLICY_PREFIX + '*',)).fetchall()

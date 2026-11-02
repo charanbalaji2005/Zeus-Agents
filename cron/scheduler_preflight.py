@@ -101,11 +101,11 @@ def _preflight_check_provider_key(job: dict, cfg: dict) -> Optional[str]:
         return None  # fail-open: never block on a preflight-internal error
 
     requested = job.get("provider") or cron_default_provider(cfg) or None
-    model = job.get("model") or cron_env_setting("HERMES_MODEL") or ""
+    model = job.get("model") or cron_env_setting("ZEUS_MODEL") or ""
 
-    from hermes_cli.auth import AuthError, is_rate_limited_auth_error
+    from zeus_cli.auth import AuthError, is_rate_limited_auth_error
     try:
-        from hermes_cli.runtime_provider import resolve_runtime_provider
+        from zeus_cli.runtime_provider import resolve_runtime_provider
         kwargs = {"requested": requested, "target_model": model}
         if job.get("base_url"):
             kwargs["explicit_base_url"] = job.get("base_url")
@@ -117,8 +117,8 @@ def _preflight_check_provider_key(job: dict, cfg: dict) -> Optional[str]:
             return None
         return (
             f"provider credential missing: {exc} {_credential_store_scope_label()}. "
-            "Set the provider API key in .env (or `hermes setup`) for that home, or pin a "
-            "working provider via `hermes cron edit "
+            "Set the provider API key in .env (or `zeus setup`) for that home, or pin a "
+            "working provider via `zeus cron edit "
             f"{job.get('id')} --provider <p>`."
         )
     except Exception:
@@ -127,16 +127,16 @@ def _preflight_check_provider_key(job: dict, cfg: dict) -> Optional[str]:
 
 
 def _credential_store_scope_label() -> str:
-    """``[profile '<name>', HERMES_HOME <path>]`` for the home this preflight read credentials from.
+    """``[profile '<name>', ZEUS_HOME <path>]`` for the home this preflight read credentials from.
 
     The verdict must name the store it judged: a scheduler process whose home differs from the
-    shell where "the same credential works" (Docker HOME vs HERMES_HOME, a multiplexed satellite
+    shell where "the same credential works" (Docker HOME vs ZEUS_HOME, a multiplexed satellite
     profile, a gateway launched without the shell's env) otherwise reports a bare "No credentials
     stored" that cannot be told apart from a real login gap (#116213).
     """
-    from hermes_cli.profiles import get_active_profile_name
-    from hermes_constants import get_hermes_home
-    return f"[profile '{get_active_profile_name() or 'default'}', HERMES_HOME {get_hermes_home()}]"
+    from zeus_cli.profiles import get_active_profile_name
+    from zeus_constants import get_zeus_home
+    return f"[profile '{get_active_profile_name() or 'default'}', ZEUS_HOME {get_zeus_home()}]"
 
 
 def _primary_profile_routes_for_current_home() -> list:
@@ -153,9 +153,9 @@ def _primary_profile_routes_for_current_home() -> list:
     ``duplicate_credential`` fatal).
     """
     try:
-        from hermes_constants import get_default_hermes_root, get_hermes_home
-        primary_home = get_default_hermes_root()
-        current_home = _sched.Path(get_hermes_home())
+        from zeus_constants import get_default_zeus_root, get_zeus_home
+        primary_home = get_default_zeus_root()
+        current_home = _sched.Path(get_zeus_home())
         if (
             primary_home.expanduser().resolve(strict=False)
             == current_home.expanduser().resolve(strict=False)
@@ -163,7 +163,7 @@ def _primary_profile_routes_for_current_home() -> list:
             return []  # this IS the primary home — nothing to consult
 
         # Same layers the primary gateway's own loader reads: routes pinned in the managed scope
-        # (/etc/hermes/config.yaml) never reached the raw user-file read (#121212), so preflight
+        # (/etc/zeus/config.yaml) never reached the raw user-file read (#121212), so preflight
         # false-blocked and routed delivery failed closed on centrally-managed installs.
         from gateway.config_loader import read_yaml_layers
         layered = read_yaml_layers(primary_home.expanduser())
@@ -174,7 +174,7 @@ def _primary_profile_routes_for_current_home() -> list:
             return []
 
         from gateway.profile_routing import parse_profile_routes
-        from hermes_cli.profiles import profile_matches_home
+        from zeus_cli.profiles import profile_matches_home
         return [
             route for route in parse_profile_routes(routes_raw)
             if route.enabled and profile_matches_home(route.profile)
@@ -302,7 +302,7 @@ def _preflight_check_delivery(job: dict) -> Optional[str]:
             return (
                 f"delivery platform '{platform_name}' has no gateway "
                 "credentials configured (not connected). Configure it via "
-                "`hermes setup` or change the job's `deliver` target."
+                "`zeus setup` or change the job's `deliver` target."
             )
     return None
 
@@ -359,7 +359,7 @@ def _empty_requested_mcp_toolsets(job: dict, cfg: dict) -> Optional[str]:
     requested = [str(name) for name in (job.get("enabled_toolsets") or [])]
     if not requested:
         return None
-    from hermes_cli.tools_config import enabled_mcp_server_names
+    from zeus_cli.tools_config import enabled_mcp_server_names
     from toolsets import resolve_toolset
     from tools.mcp_tool_discovery import mcp_server_reconnecting
     missing = [name for name in requested

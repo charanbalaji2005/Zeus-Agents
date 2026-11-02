@@ -19,7 +19,7 @@ async def _authority(tmp_path, monkeypatch, answer):
     from gateway.session import SessionSource, SessionStore
     from gateway.session_authority import LiveSession, initialize_session_authority
 
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     store = SessionStore(tmp_path / 'sessions', GatewayConfig())
     runner = SimpleNamespace(_session_db=store._db, session_store=store, _draining=False,
                              _handle_message=answer, _adapter_for_source=lambda source: None)
@@ -33,7 +33,7 @@ async def _authority(tmp_path, monkeypatch, answer):
 async def test_surface_fields_are_admitted_and_scoped_to_their_own_turn(tmp_path, monkeypatch):
     from gateway.session_controls import AuthorityConnection
     from gateway.session_surface import surface_turn_note
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
     from tools.voice_live import VOICE_LIVE_TURN_NOTE
 
     seen = []
@@ -77,7 +77,7 @@ async def test_voice_turn_is_admitted_and_scoped_to_its_own_turn(tmp_path, monke
     that runs on ``auxiliary.voice_chat``; the next typed turn stays on the main model."""
     from gateway.session_controls import AuthorityConnection
     from gateway.session_surface import surface_turn_note, surface_voice_turn
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
 
     seen = []
     async def answer(event):
@@ -124,7 +124,7 @@ def test_real_daemon_accepts_hud_and_voice_live_submits_and_notes_the_model(tmp_
     home, user = tmp_path / 'state', tmp_path / 'user'
     home.mkdir(mode=0o700)
     user.mkdir()
-    monkeypatch.setenv('HERMES_HOME', str(home))
+    monkeypatch.setenv('ZEUS_HOME', str(home))
     monkeypatch.setenv('HOME', str(user))
     monkeypatch.setenv('USERPROFILE', str(user))
     model = ThreadingHTTPServer(('127.0.0.1', 0), Model)
@@ -139,7 +139,7 @@ def test_real_daemon_accepts_hud_and_voice_live_submits_and_notes_the_model(tmp_
         'auxiliary': {'title_generation': {'enabled': False}},
         'platform_toolsets': {'gui': []}, 'terminal': {'cwd': str(home)},
     }))
-    env = child_env() | dict(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home),
+    env = child_env() | dict(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home),
         PYTHONPATH=str(root), OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=base, PYTHONUNBUFFERED='1')
 
     async def drive(desc):
@@ -204,7 +204,7 @@ def test_managed_worker_turn_carries_the_committed_surface_to_the_model(tmp_path
             'provider': 'custom', 'model': 'voice-model', 'base_url': base, 'api_key': 'loopback-only'}},
         'platform_toolsets': {'cli': []},
     }))
-    env = child_env() | dict(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home),
+    env = child_env() | dict(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home),
         PYTHONPATH=str(root), OPENAI_API_KEY='loopback-only', OPENAI_BASE_URL=base, PYTHONUNBUFFERED='1')
 
     async def drive(desc):

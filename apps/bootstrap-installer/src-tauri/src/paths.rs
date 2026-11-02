@@ -1,12 +1,12 @@
 //! Filesystem paths + logging setup.
 //!
-//! Mirrors `hermes_constants.get_hermes_home()` from the Python CLI:
-//!   Windows: %LOCALAPPDATA%\hermes
-//!   macOS:   ~/.hermes
-//!   Linux:   ~/.hermes  (override via $HERMES_HOME)
+//! Mirrors `zeus_constants.get_zeus_home()` from the Python CLI:
+//!   Windows: %LOCALAPPDATA%\zeus
+//!   macOS:   ~/.zeus
+//!   Linux:   ~/.zeus  (override via $ZEUS_HOME)
 //!
-//! NOTE (macOS): Python's get_hermes_home(), scripts/install.sh, and the
-//! Electron desktop's resolveHermesHome() ALL use ~/.hermes on macOS — there
+//! NOTE (macOS): Python's get_zeus_home(), scripts/install.sh, and the
+//! Electron desktop's resolveZeusHome() ALL use ~/.zeus on macOS — there
 //! is no ~/Library/Application Support branch anywhere else. An earlier
 //! version of this file used Application Support, which drifted from every
 //! other component: the installer wrote the install to one dir and the
@@ -21,9 +21,9 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tracing_appender::non_blocking::WorkerGuard;
 
-/// Returns the canonical Hermes home directory, respecting $HERMES_HOME if set.
-pub fn hermes_home() -> PathBuf {
-    if let Ok(override_path) = std::env::var("HERMES_HOME") {
+/// Returns the canonical Zeus home directory, respecting $ZEUS_HOME if set.
+pub fn zeus_home() -> PathBuf {
+    if let Ok(override_path) = std::env::var("ZEUS_HOME") {
         if !override_path.trim().is_empty() {
             return PathBuf::from(override_path);
         }
@@ -32,17 +32,17 @@ pub fn hermes_home() -> PathBuf {
 }
 
 /// Root of the profile tree that holds this process's home. Mirrors
-/// `hermes_constants.get_default_hermes_root()`: a HERMES_HOME under the
+/// `zeus_constants.get_default_zeus_root()`: a ZEUS_HOME under the
 /// platform default resolves to the default; otherwise a
-/// `<root>/profiles/<name>` home resolves to `<root>`; any other HERMES_HOME
+/// `<root>/profiles/<name>` home resolves to `<root>`; any other ZEUS_HOME
 /// is its own root; unset means the platform default. Host-wide state (the
 /// update marker) must live here, never in a per-profile home.
-pub fn hermes_root() -> PathBuf {
-    let env_home = std::env::var("HERMES_HOME").ok();
-    hermes_root_from(env_home.as_deref(), &platform_default_home())
+pub fn zeus_root() -> PathBuf {
+    let env_home = std::env::var("ZEUS_HOME").ok();
+    zeus_root_from(env_home.as_deref(), &platform_default_home())
 }
 
-fn hermes_root_from(env_home: Option<&str>, native_home: &Path) -> PathBuf {
+fn zeus_root_from(env_home: Option<&str>, native_home: &Path) -> PathBuf {
     let Some(env_home) = env_home.map(str::trim).filter(|s| !s.is_empty()) else {
         return native_home.to_path_buf();
     };
@@ -62,35 +62,35 @@ fn hermes_root_from(env_home: Option<&str>, native_home: &Path) -> PathBuf {
 }
 
 fn platform_default_home() -> PathBuf {
-    platform_default_home_with(&std::env::var("HERMES_DATA_DIR_SUFFIX").unwrap_or_default())
+    platform_default_home_with(&std::env::var("ZEUS_DATA_DIR_SUFFIX").unwrap_or_default())
 }
 
-/// `suffix` is HERMES_DATA_DIR_SUFFIX, appended literally to the leaf exactly as
-/// `hermes_constants._get_platform_default_hermes_home()` and the desktop's
-/// `platformDefaultHermesHome()` do: channel builds keep their own data dir,
+/// `suffix` is ZEUS_DATA_DIR_SUFFIX, appended literally to the leaf exactly as
+/// `zeus_constants._get_platform_default_zeus_home()` and the desktop's
+/// `platformDefaultZeusHome()` do: channel builds keep their own data dir,
 /// and with it their own update marker.
 fn platform_default_home_with(suffix: &str) -> PathBuf {
     #[cfg(target_os = "windows")]
     {
-        // %LOCALAPPDATA%\hermes — matches scripts/install.ps1's $HermesHome.
+        // %LOCALAPPDATA%\zeus — matches scripts/install.ps1's $ZeusHome.
         if let Some(local_app_data) = dirs::data_local_dir() {
-            return local_app_data.join(format!("hermes{suffix}"));
+            return local_app_data.join(format!("zeus{suffix}"));
         }
     }
 
-    // macOS + Linux + fallback: ~/.hermes (matches Python get_hermes_home(),
-    // install.sh, and the Electron desktop's resolveHermesHome()).
+    // macOS + Linux + fallback: ~/.zeus (matches Python get_zeus_home(),
+    // install.sh, and the Electron desktop's resolveZeusHome()).
     if let Some(home) = dirs::home_dir() {
-        return home.join(format!(".hermes{suffix}"));
+        return home.join(format!(".zeus{suffix}"));
     }
 
     // Last resort — current dir, almost certainly wrong but at least
     // doesn't panic.
-    PathBuf::from(format!(".hermes{suffix}"))
+    PathBuf::from(format!(".zeus{suffix}"))
 }
 
 pub fn log_dir() -> PathBuf {
-    hermes_home().join("logs")
+    zeus_home().join("logs")
 }
 
 pub fn log_path() -> PathBuf {
@@ -98,38 +98,38 @@ pub fn log_path() -> PathBuf {
 }
 
 pub fn bootstrap_cache_dir() -> PathBuf {
-    hermes_home().join("bootstrap-cache")
+    zeus_home().join("bootstrap-cache")
 }
 
 /// Stable location the installer copies itself to after a successful install.
 /// The desktop app re-invokes this with `--update`, and the start-menu /
 /// desktop shortcuts can point users back to it. Lives directly under
-/// HERMES_HOME so it survives repo checkout deletion (unlike anything under
-/// hermes-agent/).
+/// ZEUS_HOME so it survives repo checkout deletion (unlike anything under
+/// zeus-agents/).
 ///
-/// On Windows this is `%LOCALAPPDATA%\hermes\hermes-setup.exe`; on other
+/// On Windows this is `%LOCALAPPDATA%\zeus\zeus-setup.exe`; on other
 /// platforms the extension differs but the directory is the same.
 pub fn installer_dest() -> PathBuf {
     let name = if cfg!(target_os = "windows") {
-        "hermes-setup.exe"
+        "zeus-setup.exe"
     } else {
-        "hermes-setup"
+        "zeus-setup"
     };
-    hermes_home().join(name)
+    zeus_home().join(name)
 }
 
 /// Marker the updater writes for the duration of an in-app update and removes
 /// when it finishes (see update.rs `UpdateMarkerGuard`). A freshly-launched
 /// desktop checks this before spawning its own local backend: spawning one
-/// mid-update re-locks the venv shim and triggers `force_kill_other_hermes`,
+/// mid-update re-locks the venv shim and triggers `force_kill_other_zeus`,
 /// which then kills that legitimate backend in a respawn loop (#50238).
 ///
-/// Lives directly under the profile-tree ROOT (`hermes_root`), never a
+/// Lives directly under the profile-tree ROOT (`zeus_root`), never a
 /// `profiles/<name>` home: it is one host-wide lock shared with
-/// `hermes_cli/update_lock.py` and the Electron gate, so a profile-scoped
-/// HERMES_HOME must not split it into a second, unguarded file.
+/// `zeus_cli/update_lock.py` and the Electron gate, so a profile-scoped
+/// ZEUS_HOME must not split it into a second, unguarded file.
 pub fn update_in_progress_marker() -> PathBuf {
-    hermes_root().join(".hermes-update-in-progress")
+    zeus_root().join(".zeus-update-in-progress")
 }
 
 /// Copy the currently-running installer binary to `installer_dest()` so it's
@@ -146,7 +146,7 @@ pub fn update_in_progress_marker() -> PathBuf {
 /// so an installer-protocol change can strand the whole installed base on a
 /// binary that predates it (see `restage_from_checkout`, which repairs this
 /// from the freshly-updated checkout).
-pub fn copy_self_to_hermes_home() -> std::io::Result<()> {
+pub fn copy_self_to_zeus_home() -> std::io::Result<()> {
     let src = std::env::current_exe()?;
     let dest = installer_dest();
 
@@ -167,7 +167,7 @@ pub fn copy_self_to_hermes_home() -> std::io::Result<()> {
     }
     std::fs::copy(&src, &dest)?;
     repair_macos_installer_helper(&dest);
-    tracing::info!(?src, ?dest, "copied installer to HERMES_HOME");
+    tracing::info!(?src, ?dest, "copied installer to ZEUS_HOME");
     Ok(())
 }
 
@@ -199,14 +199,14 @@ fn repair_macos_installer_helper(_path: &Path) {}
 
 /// Where the bootstrap-complete marker lives (existence-only for the Rust
 /// installer fast path; JSON schema-checked by the Electron app). Per main.ts:
-///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_HERMES_ROOT, '.hermes-bootstrap-complete')
-/// We don't always know ACTIVE_HERMES_ROOT until install.ps1 reports it, so
+///   const BOOTSTRAP_COMPLETE_MARKER = path.join(ACTIVE_ZEUS_ROOT, '.zeus-bootstrap-complete')
+/// We don't always know ACTIVE_ZEUS_ROOT until install.ps1 reports it, so
 /// this is a probe helper, not a definitive path.
 pub fn likely_bootstrap_marker(install_root: &Path) -> PathBuf {
-    install_root.join(".hermes-bootstrap-complete")
+    install_root.join(".zeus-bootstrap-complete")
 }
 
-/// Initializes tracing to bootstrap-installer.log under HERMES_HOME/logs/.
+/// Initializes tracing to bootstrap-installer.log under ZEUS_HOME/logs/.
 /// Returns a guard that flushes the appender on drop — keep it alive for
 /// the lifetime of the process.
 pub fn init_logging() -> Option<WorkerGuard> {
@@ -214,14 +214,14 @@ pub fn init_logging() -> Option<WorkerGuard> {
     if let Err(err) = std::fs::create_dir_all(&dir) {
         // No log dir → log to stderr only. Don't panic; the installer
         // should still be usable on an exotic filesystem.
-        eprintln!("[hermes-setup] could not create log dir {dir:?}: {err}");
+        eprintln!("[zeus-setup] could not create log dir {dir:?}: {err}");
         return None;
     }
 
     let file_appender = tracing_appender::rolling::never(&dir, "bootstrap-installer.log");
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
-    let env_filter = tracing_subscriber::EnvFilter::try_from_env("HERMES_BOOTSTRAP_LOG")
+    let env_filter = tracing_subscriber::EnvFilter::try_from_env("ZEUS_BOOTSTRAP_LOG")
         .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"));
 
     tracing_subscriber::fmt()
@@ -244,8 +244,8 @@ pub fn get_log_path() -> String {
 }
 
 #[tauri::command]
-pub fn get_hermes_home() -> String {
-    hermes_home().to_string_lossy().into_owned()
+pub fn get_zeus_home() -> String {
+    zeus_home().to_string_lossy().into_owned()
 }
 
 #[tauri::command]
@@ -263,23 +263,23 @@ mod tests {
 
     #[test]
     fn profile_home_resolves_to_its_tree_root() {
-        let native = Path::new("/nonexistent-native/.hermes");
+        let native = Path::new("/nonexistent-native/.zeus");
         assert_eq!(
-            hermes_root_from(Some("/srv/hermes-root/profiles/work"), native),
-            PathBuf::from("/srv/hermes-root"),
+            zeus_root_from(Some("/srv/zeus-root/profiles/work"), native),
+            PathBuf::from("/srv/zeus-root"),
             "a profiles/<name> home must share the root's single update marker"
         );
         assert_eq!(
-            hermes_root_from(Some("/srv/hermes-root"), native),
-            PathBuf::from("/srv/hermes-root")
+            zeus_root_from(Some("/srv/zeus-root"), native),
+            PathBuf::from("/srv/zeus-root")
         );
         assert_eq!(
-            hermes_root_from(Some("/nonexistent-native/.hermes/profiles/work"), native),
+            zeus_root_from(Some("/nonexistent-native/.zeus/profiles/work"), native),
             native.to_path_buf(),
             "a home under the platform default resolves to the default"
         );
-        assert_eq!(hermes_root_from(None, native), native.to_path_buf());
-        assert_eq!(hermes_root_from(Some("  "), native), native.to_path_buf());
+        assert_eq!(zeus_root_from(None, native), native.to_path_buf());
+        assert_eq!(zeus_root_from(Some("  "), native), native.to_path_buf());
     }
 
     #[test]
@@ -295,6 +295,6 @@ mod tests {
             ),
             "the suffix is appended to the leaf, as Python and the desktop do"
         );
-        assert_eq!(hermes_root_from(None, &channel), channel);
+        assert_eq!(zeus_root_from(None, &channel), channel);
     }
 }

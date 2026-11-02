@@ -5,7 +5,7 @@ description: "Meta web search — routes web_search through the server-side web_
 maintainer: ajaynomics
 tier: community
 category: web
-requires_hermes: ">=0.21.3"
+requires_zeus: ">=0.21.3"
 docs_url: https://github.com/ajaynomics/hermes-web-meta-ai#readme
 version: "0.1.0"
 capabilities:

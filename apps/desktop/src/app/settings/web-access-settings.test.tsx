@@ -13,7 +13,7 @@ vi.mock('@/store/profile', async (): Promise<object> => {
     normalizeProfileKey: (profile: string | null): string => profile || 'default'
   }
 })
-vi.mock('@/hermes', () => ({
+vi.mock('@/zeus', () => ({
   getProfiles: vi.fn(async () => ({ profiles: [] })),
   getWebAccessStatus: vi.fn(),
   restartWebAccess: vi.fn(),
@@ -27,14 +27,14 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { WebAccessStatus } from '@/api/webapp-access'
-import * as hermes from '@/hermes'
+import * as zeus from '@/zeus'
 import { I18nProvider } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
 import { $notifications, clearNotifications } from '@/store/notifications'
 
 import { WebAccessSettings } from './web-access-settings'
 
-const mocked = vi.mocked(hermes)
+const mocked = vi.mocked(zeus)
 
 const OFF: WebAccessStatus = {
   enabled: false,
@@ -111,7 +111,7 @@ describe('WebAccessSettings', () => {
   })
 
   it('shows a web app served on this computer only as local, never as your own URL', async () => {
-    // `webapp.enabled: true` on loopback (the `hermes webapp` setup): reachable from this computer only.
+    // `webapp.enabled: true` on loopback (the `zeus webapp` setup): reachable from this computer only.
     renderPane({
       ...OFF,
       enabled: true,
@@ -164,8 +164,8 @@ describe('WebAccessSettings', () => {
     expect(JSON.stringify(toast)).not.toMatch(/Refusing|interrupt|Couldn't change/)
   })
 
-  // `hermes config set webapp.*` (or another window) changes the status while the pane is open.
-  const EDITED_ELSEWHERE: WebAccessStatus = { ...OFF, enabled: true, mode: 'public', public_url: 'https://hermes.example.org' }
+  // `zeus config set webapp.*` (or another window) changes the status while the pane is open.
+  const EDITED_ELSEWHERE: WebAccessStatus = { ...OFF, enabled: true, mode: 'public', public_url: 'https://zeus.example.org' }
 
   it('picks up a web access change saved elsewhere when the window regains focus', async () => {
     renderPane(OFF)
@@ -176,13 +176,13 @@ describe('WebAccessSettings', () => {
 
     expect(await screen.findByText('Restart needed')).toBeTruthy()
     // The address choice follows the saved config, not the one the pane opened with.
-    expect(screen.getByDisplayValue('https://hermes.example.org')).toBeTruthy()
+    expect(screen.getByDisplayValue('https://zeus.example.org')).toBeTruthy()
   })
 
   it('keeps an unsaved address choice through a refetch that changes nothing', async () => {
     renderPane(OFF)
     fireEvent.click(await screen.findByRole('button', { name: 'My own URL' }))
-    fireEvent.change(screen.getByPlaceholderText('https://hermes.example.com'), {
+    fireEvent.change(screen.getByPlaceholderText('https://zeus.example.com'), {
       target: { value: 'https://typed.example.net' }
     })
     mocked.getWebAccessStatus.mockClear()
@@ -301,14 +301,14 @@ describe('WebAccessSettings', () => {
     const start = await screen.findByRole('button', { name: 'Start' })
     mocked.getWebAccessStatus
       .mockResolvedValueOnce({ ...pending, restart_failure: failure(1111, 'an older restart') })
-      .mockResolvedValue({ ...pending, restart_failure: failure(4242, 'run `hermes pm repair`') })
+      .mockResolvedValue({ ...pending, restart_failure: failure(4242, 'run `zeus pm repair`') })
 
     fireEvent.click(start)
 
     await waitFor(() => expect($notifications.get()).toHaveLength(1), { timeout: 8000 })
     const [toast] = $notifications.get()
     expect(toast.kind).toBe('error')
-    expect(toast.message).toBe("The gateway couldn't restart: run `hermes pm repair`")
+    expect(toast.message).toBe("The gateway couldn't restart: run `zeus pm repair`")
   }, 15_000)
 
   it('names the cause when a Stop restart fails while the gateway could not serve the web app', async () => {
@@ -320,13 +320,13 @@ describe('WebAccessSettings', () => {
     const stop = await screen.findByRole('button', { name: 'Stop' })
     mocked.getWebAccessStatus.mockResolvedValue({
       ...unavailable,
-      restart_failure: { exit_code: 1, pid: 7, reason: 'run `hermes pm repair`' }
+      restart_failure: { exit_code: 1, pid: 7, reason: 'run `zeus pm repair`' }
     })
 
     fireEvent.click(stop)
 
     await waitFor(() => expect($notifications.get()).toHaveLength(1), { timeout: 8000 })
-    expect($notifications.get()[0].message).toBe("The gateway couldn't restart: run `hermes pm repair`")
+    expect($notifications.get()[0].message).toBe("The gateway couldn't restart: run `zeus pm repair`")
   }, 15_000)
 
   it('shows no LAN address under My own URL while the URL is empty', async () => {
@@ -335,11 +335,11 @@ describe('WebAccessSettings', () => {
 
     expect(screen.queryByText(/192\.168\.1\.50/)).toBeNull()
 
-    fireEvent.change(screen.getByPlaceholderText('https://hermes.example.com'), {
-      target: { value: 'https://hermes.tail.ts.net' }
+    fireEvent.change(screen.getByPlaceholderText('https://zeus.example.com'), {
+      target: { value: 'https://zeus.tail.ts.net' }
     })
 
-    expect(screen.getByText('https://hermes.tail.ts.net')).toBeTruthy()
+    expect(screen.getByText('https://zeus.tail.ts.net')).toBeTruthy()
   })
 
   it('says that network access is not encrypted', async () => {

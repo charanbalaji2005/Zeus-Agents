@@ -1,7 +1,7 @@
 // `host.warmProfile` and `host.dropLeftoverProfilePrefs`: profile verbs that
 // touch only this window's pool and storage, never the profile itself.
 
-import { LOCAL_CONNECTION_ID } from '@hermes/shared'
+import { LOCAL_CONNECTION_ID } from '@zeus/shared'
 
 import { dropBrowserProfilePrefs } from '@/lib/browser-profile-prefs'
 import { prewarmProfileBackend } from '@/store/profile'

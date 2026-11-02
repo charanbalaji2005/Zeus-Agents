@@ -53,7 +53,7 @@ def _git(repo: Path, *args: str) -> str:
 
 
 def _stage(origin: Path, home: Path, *extra: str, **env_extra: str) -> tuple[subprocess.CompletedProcess, dict]:
-    env = dict(os.environ, HERMES_REPO_URL=str(origin), HERMES_HOME=str(home), **env_extra)
+    env = dict(os.environ, ZEUS_REPO_URL=str(origin), ZEUS_HOME=str(home), **env_extra)
     result = subprocess.run([_powershell(), "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(INSTALLER),
                              "-Stage", "repository", "-Json", *extra],
                             env=env, capture_output=True, text=True, timeout=180, check=False)
@@ -70,7 +70,7 @@ def test_rerun_parks_local_work_and_pins_only_branch_commits(tmp_path):
     _git(origin, "add", "README")
     _git(origin, "commit", "-qm", "one")
     home = tmp_path / "home"
-    install = home / "hermes-agent"
+    install = home / "zeus-agents"
     assert _stage(origin, home)[1]["ok"] is True
     (install / "README").write_text("local edit", encoding="utf-8")
     (origin / "README").write_text("two", encoding="utf-8")
@@ -123,11 +123,11 @@ def test_pinned_fresh_clone_never_materializes_the_branch_tip(tmp_path):
         home, trace = tmp_path / name, tmp_path / f"{name}.trace"
         result, frame = _stage(origin, home, *extra, GIT_TRACE=str(trace))
         assert frame["ok"] is True, result.stdout + result.stderr
-        install = home / "hermes-agent"
+        install = home / "zeus-agents"
         assert (install / "README").read_text(encoding="utf-8-sig") == readme
         assert _git(install, "status", "--porcelain") == ""
         assert ("--no-checkout" in _clone_argv(trace)) is no_checkout
-    assert _git(tmp_path / "pinned" / "hermes-agent", "rev-parse", "HEAD") == pin
+    assert _git(tmp_path / "pinned" / "zeus-agents", "rev-parse", "HEAD") == pin
 
 
 def test_pinned_fresh_clone_publishes_nothing_when_the_pin_is_refused(tmp_path):
@@ -136,5 +136,5 @@ def test_pinned_fresh_clone_publishes_nothing_when_the_pin_is_refused(tmp_path):
     _, frame = _stage(origin, home, "-Commit", off_branch)
     assert frame["ok"] is False
     assert "is not on branch main" in frame["reason"]
-    assert not (home / "hermes-agent").exists()
-    assert not list(home.glob(".hermes-clone-*"))
+    assert not (home / "zeus-agents").exists()
+    assert not list(home.glob(".zeus-clone-*"))

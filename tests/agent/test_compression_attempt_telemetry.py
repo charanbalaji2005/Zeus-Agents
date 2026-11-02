@@ -204,8 +204,8 @@ def test_aux_call_telemetry_records_content_free_phase_timings():
 
 
 def test_automatic_compaction_counts_once_in_shared_metrics(monkeypatch):
-    from hermes_cli.observability import shared_metrics_events
-    from hermes_cli.observability.shared_metrics_fields import compression_fields
+    from zeus_cli.observability import shared_metrics_events
+    from zeus_cli.observability.shared_metrics_fields import compression_fields
 
     calls = []
     monkeypatch.setattr(shared_metrics_events, "record_compression", lambda **kw: calls.append(kw))
@@ -229,8 +229,8 @@ def test_structural_no_op_is_counted_skipped_with_the_compressors_class(caplog, 
     """A transcript that fits inside the protected tail makes no summary call: the attempt log names
     ``no_compressible_window`` (not the caller's generic ``no_progress``) and the shared metric counts
     it ``skipped``, not ``failed`` (#131412)."""
-    from hermes_cli.observability import shared_metrics_events
-    from hermes_cli.observability.shared_metrics_fields import compression_fields
+    from zeus_cli.observability import shared_metrics_events
+    from zeus_cli.observability.shared_metrics_fields import compression_fields
 
     recorded = []
     monkeypatch.setattr(shared_metrics_events, "record_compression", lambda **kw: recorded.append(kw))
@@ -268,7 +268,7 @@ def test_structural_no_op_is_counted_skipped_with_the_compressors_class(caplog, 
     ],
 )
 def test_generic_caller_verdicts_defer_to_the_recorded_failure_class(caplog, monkeypatch, recorded, caller, expected):
-    from hermes_cli.observability import shared_metrics_events
+    from zeus_cli.observability import shared_metrics_events
 
     recorded, attempt_id = recorded if isinstance(recorded, tuple) else (recorded, "this-attempt")
     monkeypatch.setattr(shared_metrics_events, "finish_compression_attempt", lambda *_args, **_kwargs: None)
@@ -295,7 +295,7 @@ def test_in_place_commit_preserves_seeded_telemetry_fields(caplog):
     from agent.conversation_compression import CompressionCommitFence, run_compress_context_with_progress_timeout
 
     with tempfile.TemporaryDirectory() as tmp:
-        from hermes_state import SessionDB
+        from zeus_state import SessionDB
         from run_agent import AIAgent
 
         db = SessionDB(db_path=Path(tmp) / "t.db")
@@ -374,7 +374,7 @@ def test_a_lock_contended_call_keeps_the_running_attempts_telemetry(tmp_path):
     contender logs its own ``lock_contended`` record from its seed."""
     import os
 
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
 
     db = SessionDB(db_path=tmp_path / "state.db")
     db.create_session("S", source="cli")

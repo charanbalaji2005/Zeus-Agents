@@ -29,7 +29,7 @@ def _run_owned_job(job, tmp_path, db=None):
     """Run the production owner bridge, preserving each test's agent/DB probes."""
     from gateway.session_contract import SessionRef
     from gateway.session_cron import current_execution, execute
-    from hermes_state_registry import acquire, release
+    from zeus_state_registry import acquire, release
 
     ref = SessionRef("test-profile", "canonical-cron-session")
     admission_id = "cron-owner-admission"
@@ -173,7 +173,7 @@ class TestPerJobToolsetMcpMerge:
     def test_resolver_keeps_memory_from_platform_fallback(self):
         job = {"enabled_toolsets": None}
         with patch(
-            "hermes_cli.tools_config._get_platform_tools",
+            "zeus_cli.tools_config._get_platform_tools",
             return_value={"web", "memory", "file"},
         ):
             result = _resolve_cron_enabled_toolsets(job, {})
@@ -551,13 +551,13 @@ class TestRunJobSessionPersistence:
         fake_db = MagicMock()
         fake_db.get_compression_tip.side_effect = lambda session_id: session_id
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "test-key",
                      "base_url": "https://example.invalid/v1",
@@ -615,13 +615,13 @@ class TestRunJobSessionPersistence:
         fake_db.close.side_effect = close_db
         fake_db.end_session.side_effect = end_session
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "test-key",
                      "base_url": "https://example.invalid/v1",
@@ -663,13 +663,13 @@ class TestRunJobSessionPersistence:
         mock_agent = MagicMock()
         mock_agent.run_conversation.return_value = {"final_response": "ok"}
         base = [
-            patch("cron.scheduler._hermes_home", tmp_path),
+            patch("cron.scheduler._zeus_home", tmp_path),
             patch("cron.scheduler_delivery._resolve_origin", return_value=None),
-            patch("hermes_cli.env_loader.load_hermes_dotenv"),
-            patch("hermes_cli.env_loader.reset_secret_source_cache"),
-            patch("hermes_state_registry.acquire", return_value=fake_db),
+            patch("zeus_cli.env_loader.load_zeus_dotenv"),
+            patch("zeus_cli.env_loader.reset_secret_source_cache"),
+            patch("zeus_state_registry.acquire", return_value=fake_db),
             patch(
-                "hermes_cli.runtime_provider.resolve_runtime_provider",
+                "zeus_cli.runtime_provider.resolve_runtime_provider",
                 return_value={
                     "api_key": "test-key",
                     "base_url": "https://example.invalid/v1",
@@ -744,7 +744,7 @@ class TestRunJobSessionPersistence:
             "last_status": None,
         }
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler.get_due_jobs", return_value=[job]), \
              patch("cron.scheduler.claim_job_for_fire", return_value=True), \
              patch("cron.scheduler.mark_job_run") as mock_mark, \
@@ -772,9 +772,9 @@ class TestRunJobSessionPersistence:
 
         (tmp_path / ".env").write_text("TELEGRAM_HOME_CHANNEL=-2002\n")
         monkeypatch.delenv("TELEGRAM_HOME_CHANNEL", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_PLATFORM", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
 
         class FakeAgent:
             def __init__(self, *args, **kwargs):
@@ -782,16 +782,16 @@ class TestRunJobSessionPersistence:
 
             def run_conversation(self, *args, **kwargs):
                 from gateway.session_context import get_session_env
-                seen["platform"] = get_session_env("HERMES_CRON_AUTO_DELIVER_PLATFORM") or None
-                seen["chat_id"] = get_session_env("HERMES_CRON_AUTO_DELIVER_CHAT_ID") or None
-                seen["thread_id"] = get_session_env("HERMES_CRON_AUTO_DELIVER_THREAD_ID") or None
+                seen["platform"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_PLATFORM") or None
+                seen["chat_id"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") or None
+                seen["thread_id"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") or None
                 return {"final_response": "ok"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler._preflight_job_config", return_value=None), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "***",
                      "base_url": "https://example.invalid/v1",
@@ -811,9 +811,9 @@ class TestRunJobSessionPersistence:
             "chat_id": "-2002",
             "thread_id": None,
         }
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_PLATFORM") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") is None
         fake_db.close.assert_called_once()
 
     def test_run_job_preserves_slack_origin_thread_for_same_explicit_channel(self, tmp_path, monkeypatch):
@@ -831,9 +831,9 @@ class TestRunJobSessionPersistence:
         fake_db = MagicMock()
         seen = {}
 
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_PLATFORM", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
 
         class FakeAgent:
             def __init__(self, *args, **kwargs):
@@ -842,16 +842,16 @@ class TestRunJobSessionPersistence:
             def run_conversation(self, *args, **kwargs):
                 from gateway.session_context import get_session_env
 
-                seen["platform"] = get_session_env("HERMES_CRON_AUTO_DELIVER_PLATFORM") or None
-                seen["chat_id"] = get_session_env("HERMES_CRON_AUTO_DELIVER_CHAT_ID") or None
-                seen["thread_id"] = get_session_env("HERMES_CRON_AUTO_DELIVER_THREAD_ID") or None
+                seen["platform"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_PLATFORM") or None
+                seen["chat_id"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") or None
+                seen["thread_id"] = get_session_env("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") or None
                 return {"final_response": "ok"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler._preflight_job_config", return_value=None), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "***",
                      "base_url": "https://example.invalid/v1",
@@ -871,9 +871,9 @@ class TestRunJobSessionPersistence:
             "chat_id": "C0B3KEP3SD6",
             "thread_id": "1778485067.844139",
         }
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_PLATFORM") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") is None
         fake_db.close.assert_called_once()
 
     @pytest.mark.parametrize("timeout_value", ["600", "0"])
@@ -895,7 +895,7 @@ class TestRunJobSessionPersistence:
         fake_pool.submit.return_value = fake_future
         wait_results = [(set(), set()), ({fake_future}, set())]
         monotonic_ticks = itertools.count(step=61.0)
-        monkeypatch.setenv("HERMES_CRON_TIMEOUT", timeout_value)
+        monkeypatch.setenv("ZEUS_CRON_TIMEOUT", timeout_value)
 
         with patch("cron.scheduler.concurrent.futures.ThreadPoolExecutor", return_value=fake_pool), \
              patch("cron.scheduler.concurrent.futures.wait", side_effect=wait_results), \
@@ -913,10 +913,10 @@ class TestRunJobSessionPersistence:
         instead of leaving the startup .env placeholder in place (#33465).
 
         A bare ``load_dotenv`` re-load can't do this: startup already recorded
-        this HERMES_HOME in ``_APPLIED_HOMES``, so the external-secret pull
+        this ZEUS_HOME in ``_APPLIED_HOMES``, so the external-secret pull
         no-ops and only the placeholder is re-applied. The scheduler must call
         ``reset_secret_source_cache()`` (forcing the re-pull) and route through
-        ``load_hermes_dotenv`` (which then re-applies external secret sources).
+        ``load_zeus_dotenv`` (which then re-applies external secret sources).
         """
         job = {"id": "bsm-job", "name": "bsm", "prompt": "hello"}
         fake_db = MagicMock()
@@ -929,13 +929,13 @@ class TestRunJobSessionPersistence:
             call_order.append("load")
             return []
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache", _record_reset), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv", _record_load), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache", _record_reset), \
+             patch("zeus_cli.env_loader.load_zeus_dotenv", _record_load), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "***",
                      "base_url": "https://example.invalid/v1",
@@ -972,9 +972,9 @@ class TestRunJobSessionPersistence:
         fake_db = MagicMock()
         seen = []
 
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_PLATFORM", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
-        monkeypatch.delenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID", raising=False)
+        monkeypatch.delenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID", raising=False)
 
         class FakeAgent:
             def __init__(self, *args, **kwargs):
@@ -985,18 +985,18 @@ class TestRunJobSessionPersistence:
 
                 seen.append(
                     {
-                        "platform": get_session_env("HERMES_CRON_AUTO_DELIVER_PLATFORM") or None,
-                        "chat_id": get_session_env("HERMES_CRON_AUTO_DELIVER_CHAT_ID") or None,
-                        "thread_id": get_session_env("HERMES_CRON_AUTO_DELIVER_THREAD_ID") or None,
+                        "platform": get_session_env("ZEUS_CRON_AUTO_DELIVER_PLATFORM") or None,
+                        "chat_id": get_session_env("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") or None,
+                        "thread_id": get_session_env("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") or None,
                     }
                 )
                 return {"final_response": "ok"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler._preflight_job_config", return_value=None), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "***",
                      "base_url": "https://example.invalid/v1",
@@ -1024,9 +1024,9 @@ class TestRunJobSessionPersistence:
                 "thread_id": None,
             },
         ]
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_PLATFORM") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_CHAT_ID") is None
-        assert os.getenv("HERMES_CRON_AUTO_DELIVER_THREAD_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_PLATFORM") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_CHAT_ID") is None
+        assert os.getenv("ZEUS_CRON_AUTO_DELIVER_THREAD_ID") is None
         assert fake_db.close.call_count == 2
 
 class TestRunJobConfigEnvVarExpansion:
@@ -1043,19 +1043,19 @@ class TestRunJobConfigEnvVarExpansion:
         """${VAR} in config.yaml model: is expanded from the PROFILE's own secret scope. The owner
         bridge runs the job under that profile's runtime scope, where a process-env value would be
         another profile's leak, so the ref resolves from ``<home>/.env`` and never os.environ."""
-        (tmp_path / "config.yaml").write_text("model: ${_HERMES_TEST_CRON_MODEL}\n")
-        (tmp_path / ".env").write_text("_HERMES_TEST_CRON_MODEL=gpt-4o-mini-cron-test\n")
-        monkeypatch.setenv("_HERMES_TEST_CRON_MODEL", "leaked-from-process-env")
+        (tmp_path / "config.yaml").write_text("model: ${_ZEUS_TEST_CRON_MODEL}\n")
+        (tmp_path / ".env").write_text("_ZEUS_TEST_CRON_MODEL=gpt-4o-mini-cron-test\n")
+        monkeypatch.setenv("_ZEUS_TEST_CRON_MODEL", "leaked-from-process-env")
 
         job = {"id": "env-job", "name": "env test", "prompt": "hi"}
         fake_db = MagicMock()
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    return_value=self._RUNTIME), \
              patch("run_agent.AIAgent") as mock_agent_cls:
             mock_agent = MagicMock()
@@ -1113,12 +1113,12 @@ class TestRunJobConfigEnvVarExpansion:
             assert kwargs["target_model"] == "grok-4.5"
             return {**self._RUNTIME, "provider": "xai", "api_mode": "chat_completions"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    side_effect=resolve_runtime), \
              patch("tools.mcp_tool_discovery.discover_mcp_tools", return_value=[]), \
              patch("run_agent.AIAgent") as mock_agent_cls:
@@ -1137,7 +1137,7 @@ class TestRunJobConfigEnvVarExpansion:
     def test_auth_fallback_switches_provider_and_model_together(self, tmp_path):
         """Codex auth failure must produce OpenRouter+GLM, never OpenRouter+GPT (unpinned job:
         a pinned one does not walk the global chain, #100437)."""
-        from hermes_cli.auth import AuthError
+        from zeus_cli.auth import AuthError
 
         (tmp_path / "config.yaml").write_text(
             "model:\n"
@@ -1165,12 +1165,12 @@ class TestRunJobConfigEnvVarExpansion:
             assert kwargs["target_model"] == "z-ai/glm-5.2"
             return {**self._RUNTIME, "provider": "openrouter"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    side_effect=resolve_runtime), \
              patch("tools.mcp_tool_discovery.discover_mcp_tools", return_value=[]), \
              patch("run_agent.AIAgent") as mock_agent_cls:
@@ -1191,7 +1191,7 @@ class TestRunJobModelResolution:
 
     Issue #23979: a cron job created without an explicit model is stored as
     ``model: null``. At fire time the scheduler must:
-      1. fall back to ``HERMES_MODEL`` env if set,
+      1. fall back to ``ZEUS_MODEL`` env if set,
       2. else fall back to config.yaml ``model.default`` if set,
       3. else fail fast with an actionable error — never let an empty string
          reach the provider where it surfaces as an opaque 400.
@@ -1205,19 +1205,19 @@ class TestRunJobModelResolution:
     }
 
     def test_null_job_model_falls_back_to_env(self, tmp_path, monkeypatch):
-        """``model: null`` on the job uses HERMES_MODEL when set."""
+        """``model: null`` on the job uses ZEUS_MODEL when set."""
         (tmp_path / "config.yaml").write_text("")
-        monkeypatch.setenv("HERMES_MODEL", "env-model")
+        monkeypatch.setenv("ZEUS_MODEL", "env-model")
 
         job = {"id": "null-model-job", "name": "null model", "prompt": "hi", "model": None}
         fake_db = MagicMock()
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    return_value=self._RUNTIME), \
              patch("run_agent.AIAgent") as mock_agent_cls:
             mock_agent = MagicMock()
@@ -1232,17 +1232,17 @@ class TestRunJobModelResolution:
     def test_no_model_anywhere_fails_with_actionable_error(self, tmp_path, monkeypatch):
         """All three sources empty → fail fast with a clear message, not an opaque 400."""
         (tmp_path / "config.yaml").write_text("")
-        monkeypatch.delenv("HERMES_MODEL", raising=False)
+        monkeypatch.delenv("ZEUS_MODEL", raising=False)
 
         job = {"id": "no-model-job", "name": "no model anywhere", "prompt": "hi", "model": None}
         fake_db = MagicMock()
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    return_value=self._RUNTIME), \
              patch("run_agent.AIAgent") as mock_agent_cls:
             success, _, _, error = _run_owned_job(job, tmp_path, fake_db)
@@ -1256,23 +1256,23 @@ class TestRunJobModelResolution:
     def test_config_model_alias_key_resolves(self, tmp_path, monkeypatch):
         """A ``model: {model: ...}`` alias key resolves like the CLI sibling.
 
-        ``hermes_cli/oneshot.py``, ``fallback_cmd.py`` and ``prompt_size.py``
+        ``zeus_cli/oneshot.py``, ``fallback_cmd.py`` and ``prompt_size.py``
         all accept ``model.model`` as an alias for ``model.default``. The cron
         resolver mirrors that so a config that works in the CLI also works in
         cron.
         """
         (tmp_path / "config.yaml").write_text("model:\n  model: alias-key-model\n")
-        monkeypatch.delenv("HERMES_MODEL", raising=False)
+        monkeypatch.delenv("ZEUS_MODEL", raising=False)
 
         job = {"id": "alias-job", "name": "alias", "prompt": "hi", "model": None}
         fake_db = MagicMock()
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    return_value=self._RUNTIME), \
              patch("run_agent.AIAgent") as mock_agent_cls:
             mock_agent = MagicMock()
@@ -1287,17 +1287,17 @@ class TestRunJobModelResolution:
     def test_corrupt_config_yaml_refuses_even_with_job_model(self, tmp_path, monkeypatch):
         """An explicit model cannot bypass invalid terminal/tool configuration."""
         (tmp_path / "config.yaml").write_text("{{{invalid yaml!!!")
-        monkeypatch.delenv("HERMES_MODEL", raising=False)
+        monkeypatch.delenv("ZEUS_MODEL", raising=False)
 
         job = {"id": "corrupt-job", "name": "corrupt", "prompt": "hi", "model": "explicit-model"}
         fake_db = MagicMock()
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
-             patch("hermes_cli.runtime_provider.resolve_runtime_provider",
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.runtime_provider.resolve_runtime_provider",
                    return_value=self._RUNTIME), \
              patch("run_agent.AIAgent") as mock_agent_cls:
             mock_agent = MagicMock()
@@ -1306,7 +1306,7 @@ class TestRunJobModelResolution:
             success, _, _, error = _run_owned_job(job, tmp_path, fake_db)
 
         assert success is False
-        assert "Hermes stopped because your settings file" in error
+        assert "Zeus stopped because your settings file" in error
         mock_agent_cls.assert_not_called()
 
 class TestRunJobSkillBacked:
@@ -1335,13 +1335,13 @@ class TestRunJobSkillBacked:
             assert "NOTION_API_KEY" in get_all_passthrough()
             return {"final_response": "ok"}
 
-        with patch("cron.scheduler._hermes_home", tmp_path), \
+        with patch("cron.scheduler._zeus_home", tmp_path), \
              patch("cron.scheduler_delivery._resolve_origin", return_value=None), \
-             patch("hermes_cli.env_loader.load_hermes_dotenv"), \
-             patch("hermes_cli.env_loader.reset_secret_source_cache"), \
-             patch("hermes_state_registry.acquire", return_value=fake_db), \
+             patch("zeus_cli.env_loader.load_zeus_dotenv"), \
+             patch("zeus_cli.env_loader.reset_secret_source_cache"), \
+             patch("zeus_state_registry.acquire", return_value=fake_db), \
              patch(
-                 "hermes_cli.runtime_provider.resolve_runtime_provider",
+                 "zeus_cli.runtime_provider.resolve_runtime_provider",
                  return_value={
                      "api_key": "***",
                      "base_url": "https://example.invalid/v1",
@@ -1554,7 +1554,7 @@ class TestRunJobWakeGate:
             "requested_provider": None,
         }
         with patch(
-            "hermes_cli.runtime_provider.resolve_runtime_provider",
+            "zeus_cli.runtime_provider.resolve_runtime_provider",
             return_value=fake_runtime,
         ):
             yield
@@ -1762,8 +1762,8 @@ class TestParallelTick:
         assert max(starts) < min(ends), f"Jobs not concurrent: {call_order}"
 
     def test_max_parallel_env_var(self, monkeypatch):
-        """HERMES_CRON_MAX_PARALLEL=1 should restore serial behaviour."""
-        monkeypatch.setenv("HERMES_CRON_MAX_PARALLEL", "1")
+        """ZEUS_CRON_MAX_PARALLEL=1 should restore serial behaviour."""
+        monkeypatch.setenv("ZEUS_CRON_MAX_PARALLEL", "1")
         call_times = []
 
         def mock_run_job(job, *, defer_agent_teardown=None, **_kw):

@@ -4,7 +4,7 @@
 multi-profile runtimes (dashboard console, TUI/Desktop backend, cron, kanban
 workers) kept writing synthesized audio into the launch profile's
 ``cache/audio`` even while the request was scoped to a different profile via
-``HERMES_HOME`` or ``set_hermes_home_override()``. The call-time accessor
+``ZEUS_HOME`` or ``set_zeus_home_override()``. The call-time accessor
 ``_default_output_dir()`` re-resolves from the live profile-scoped home;
 these pins keep the synthesis paths from re-freezing the launch profile.
 """
@@ -13,13 +13,13 @@ import importlib
 from pathlib import Path
 
 def _reload_tts_tool(import_home: Path, monkeypatch):
-    monkeypatch.setenv("HERMES_HOME", str(import_home))
+    monkeypatch.setenv("ZEUS_HOME", str(import_home))
     from tools import tts_tool
 
     return importlib.reload(tts_tool)
 
 def test_default_output_dir_follows_contextvar_profile_override(tmp_path, monkeypatch):
-    """The web server scopes profiles via set_hermes_home_override() rather
+    """The web server scopes profiles via set_zeus_home_override() rather
     than mutating the process env; the accessor must follow that override."""
     default_home = tmp_path / "default-home"
     profile_home = tmp_path / "profiles" / "ramona"
@@ -28,18 +28,18 @@ def test_default_output_dir_follows_contextvar_profile_override(tmp_path, monkey
 
     tts_tool = _reload_tts_tool(default_home, monkeypatch)
 
-    from hermes_constants import (
-        reset_hermes_home_override,
-        set_hermes_home_override,
+    from zeus_constants import (
+        reset_zeus_home_override,
+        set_zeus_home_override,
     )
 
-    token = set_hermes_home_override(str(profile_home))
+    token = set_zeus_home_override(str(profile_home))
     try:
         assert tts_tool._default_output_dir() == str(
             profile_home / "cache" / "audio"
         )
     finally:
-        reset_hermes_home_override(token)
+        reset_zeus_home_override(token)
 
     # Outside the override scope the launch home applies again.
     assert tts_tool._default_output_dir() == str(default_home / "cache" / "audio")

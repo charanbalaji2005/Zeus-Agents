@@ -152,7 +152,7 @@ function RepositoryEntry({ request }: { request: PluginInstallRequest }) {
 }
 
 /**
- * THE plugin install dialog, for every door: a reviewed catalog pick (Plugins tab, `hermes://` link,
+ * THE plugin install dialog, for every door: a reviewed catalog pick (Plugins tab, `zeus://` link,
  * the setup chat's plugins card) and a raw git URL. A catalog entry shows its name, one line, "Verified"
  * and Install; its particulars wait behind Advanced. A git URL is marked Unverified with the same
  * particulars open, because there they are the security check. Install always turns the plugin on

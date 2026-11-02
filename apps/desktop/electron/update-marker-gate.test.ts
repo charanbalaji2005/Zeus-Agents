@@ -59,8 +59,8 @@ describe.skipIf(process.platform === 'win32')('gate over a dead marker (R6)', ()
     } = {}
   ) {
     return liveMarkerProbe({
-      hermesHome: home,
-      reclaim: () => runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false }),
+      zeusHome: home,
+      reclaim: () => runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false }),
       now,
       ...extra
     })
@@ -330,14 +330,14 @@ describe.skipIf(process.platform === 'win32')('gate over a dead marker (R6)', ()
 
     const probe = () =>
       liveMarkerProbe({
-        hermesHome: home,
-        reclaim: () => runMarkerHelper('reclaim', { updateRoot: root, hermesHome: home, isWindows: false }),
+        zeusHome: home,
+        reclaim: () => runMarkerHelper('reclaim', { updateRoot: root, zeusHome: home, isWindows: false }),
         checkoutLockMayBeHeld: () => checkoutLockMayBeHeld(root, false)
       })()
 
     assert.equal(await probe(), false)
     assert.deepEqual(helperCalls(home), [], 'nothing to ask: the boot path spawns no helper')
-    fs.writeFileSync(path.join(root, '.hermes-update.lock'), '')
+    fs.writeFileSync(path.join(root, '.zeus-update.lock'), '')
     assert.equal(await probe(), true, 'the lock file exists: only the script can tell whether it is held')
     assert.equal(helperCalls(home).length, 1)
   })
@@ -393,7 +393,7 @@ test("a pool/profile hold reaches the screen when the primary shows none; the pr
   assert.equal(board.shown(), null)
 })
 
-// Review K132345 (#122206 fast exit): until the lock PR lands, `hermes update`
+// Review K132345 (#122206 fast exit): until the lock PR lands, `zeus update`
 // writes v1 markers, which read live on a bare alive (possibly recycled) pid for
 // 20 minutes. A failed receipt finished after the marker started ends the wait.
 describe('a live v1 marker and the latest failed receipt', () => {
@@ -413,7 +413,7 @@ describe('a live v1 marker and the latest failed receipt', () => {
     receipt(home, 'failed', minutesAgo(1))
     const logs: string[] = []
 
-    assert.equal(await liveMarkerProbe({ hermesHome: home, reclaim: null, log: l => logs.push(l) })(), false)
+    assert.equal(await liveMarkerProbe({ zeusHome: home, reclaim: null, log: l => logs.push(l) })(), false)
     assert.equal(fs.readFileSync(markerPath(home), 'utf8'), body)
     assert.equal(logs.length, 1)
   })
@@ -421,7 +421,7 @@ describe('a live v1 marker and the latest failed receipt', () => {
   test('a retry (marker newer than the failure), a success, or a v2 owner still waits', async () => {
     const home = tmpHome('gate-v1-retry')
     const owner = await liveOwner()
-    const probe = () => liveMarkerProbe({ hermesHome: home, reclaim: null })()
+    const probe = () => liveMarkerProbe({ zeusHome: home, reclaim: null })()
 
     fs.writeFileSync(markerPath(home), `${owner.pid}\n${minutesAgo(1)}\n`)
     receipt(home, 'failed', minutesAgo(10))
@@ -444,7 +444,7 @@ test('without a protocol-2 script the gate judges dead = not running and deletes
   const body = `${await deadPid()}\n${minutesAgo(1)}\n`
   fs.writeFileSync(markerPath(home), body)
 
-  assert.equal(await liveMarkerProbe({ hermesHome: home, reclaim: null })(), false)
+  assert.equal(await liveMarkerProbe({ zeusHome: home, reclaim: null })(), false)
   assert.equal(fs.readFileSync(markerPath(home), 'utf8'), body)
 })
 

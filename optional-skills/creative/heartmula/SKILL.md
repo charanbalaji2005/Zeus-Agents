@@ -2,11 +2,11 @@
 name: heartmula
 description: "HeartMuLa: Suno-like song generation from lyrics + tags."
 version: 1.0.0
-author: Teknium (teknium1), Hermes Agent
+author: Teknium (teknium1), Zeus Agents
 license: MIT
 platforms: [linux, macos]
 metadata:
-  hermes:
+  zeus:
     tags: [music, audio, generation, ai, heartmula, heartcodec, lyrics, songs]
     related_skills: [songwriting-and-ai-music]
 ---

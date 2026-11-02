@@ -115,7 +115,7 @@ class Socket {
         ? { shell: 'fish', cwd: '/work', terminalId: this.url.searchParams.get('attach') || `shell-${Socket.instances.length}`, closed: this.url.searchParams.get('action') === 'close' }
         : { shell: 'fish' }
 
-      this.onmessage?.({ data: '\u0000HERMES_TERMINAL_META:' + JSON.stringify(metadata) } as MessageEvent)
+      this.onmessage?.({ data: '\u0000ZEUS_TERMINAL_META:' + JSON.stringify(metadata) } as MessageEvent)
 
       if ('closed' in metadata && metadata.closed) {this.close()}
     })
@@ -172,7 +172,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup()
   window.dispatchEvent(new Event('beforeunload'))
-  Reflect.deleteProperty(window, 'hermesDesktop')
+  Reflect.deleteProperty(window, 'zeusDesktop')
   clearWebappSession()
   $terminals.set([])
   Socket.instances = []
@@ -214,7 +214,7 @@ it.each(['attach', 'disconnect'])('cleans up the %s attempt before retry and ign
   seedWebappSession('test-token')
   vi.stubGlobal('WebSocket', Socket)
   installBrowserDesktopBridge()
-  const api = window.hermesDesktop!.terminal!
+  const api = window.zeusDesktop!.terminal!
   const listeners = new Set<symbol>()
   const exits: Array<Parameters<typeof api.onExit>[1]> = []
   const onData = api.onData.bind(api)
@@ -272,7 +272,7 @@ it('replays server history once, suppresses parser replies, and detaches on remo
   Socket.persistent = true
   vi.stubGlobal('WebSocket', Socket)
   installBrowserDesktopBridge()
-  const api = window.hermesDesktop!.terminal
+  const api = window.zeusDesktop!.terminal
   const detach = vi.spyOn(api, 'detach')
   const dispose = vi.spyOn(api, 'dispose')
   const id = createTerminal('/work')
@@ -345,7 +345,7 @@ it('close others and close all terminate mounted and unmounted persisted shells'
   Socket.persistent = true
   vi.stubGlobal('WebSocket', Socket)
   installBrowserDesktopBridge()
-  const api = window.hermesDesktop!.terminal
+  const api = window.zeusDesktop!.terminal
   const kept = createTerminal('/work')
   const other = createTerminal('/work')
   const session = await api.start({ cwd: '/work', restoreKey: other })
@@ -387,7 +387,7 @@ it('keeps a signed-out tab and says to sign in again instead of reconnecting', a
   act(() => Socket.instances[0].close(4401, 'signed out'))
 
   await waitFor(() => expect(screen.getByText('closed')).toBeTruthy())
-  expect(emulator.output).toMatch(/Signed out of Hermes\. Sign this browser in again/)
+  expect(emulator.output).toMatch(/Signed out of Zeus\. Sign this browser in again/)
   expect(emulator.output).not.toMatch(/Reconnecting/)
   expect(Socket.instances).toHaveLength(1)
   expect($terminals.get().some(tab => tab.id === id)).toBe(true)
@@ -400,8 +400,8 @@ it('keeps a signed-out tab and says to sign in again instead of reconnecting', a
 it('native Desktop: a failed start shows main\'s error and Enter does not start another shell', async () => {
   const start = vi.fn().mockRejectedValue(new Error('spawn /bin/nope ENOENT'))
 
-  delete window.document.documentElement.dataset.hermesDesktopHost
-  ;(window as unknown as { hermesDesktop: unknown }).hermesDesktop = {
+  delete window.document.documentElement.dataset.zeusDesktopHost
+  ;(window as unknown as { zeusDesktop: unknown }).zeusDesktop = {
     terminal: {
       attach: vi.fn(),
       cwd: vi.fn(async () => null),
@@ -435,8 +435,8 @@ it("native Desktop: xterm's reply to the shell's cursor query is not activity; t
   let shellOutput: ((data: string) => void) | null = null
   const write = vi.fn(async () => true)
 
-  delete window.document.documentElement.dataset.hermesDesktopHost
-  ;(window as unknown as { hermesDesktop: unknown }).hermesDesktop = {
+  delete window.document.documentElement.dataset.zeusDesktopHost
+  ;(window as unknown as { zeusDesktop: unknown }).zeusDesktop = {
     terminal: {
       attach: vi.fn(async () => true),
       cwd: vi.fn(async () => null),

@@ -33,7 +33,7 @@ def _no_background_titles(monkeypatch):
 
 
 def _agent():
-    home = Path(tempfile.mkdtemp(prefix="hermes-test-home-"))
+    home = Path(tempfile.mkdtemp(prefix="zeus-test-home-"))
     (home / "logs").mkdir(parents=True, exist_ok=True)
     tool = {"type": "function", "function": {"name": "web_search", "description": "search",
                                              "parameters": {"type": "object", "properties": {}}}}
@@ -41,7 +41,7 @@ def _agent():
         patch("model_tools.get_tool_definitions", return_value=[tool]),
         patch("model_tools.check_toolset_requirements", return_value={}),
         patch("agent.process_bootstrap.OpenAI"),
-        patch("run_agent._hermes_home", home),
+        patch("run_agent._zeus_home", home),
         patch("agent.model_metadata.fetch_model_metadata", return_value={}),
     ):
         agent = AIAgent(api_key="test-key", base_url="https://openrouter.ai/api/v1", quiet_mode=True,
@@ -105,7 +105,7 @@ def test_a_plugin_installed_during_a_tool_is_told_in_its_result_and_not_again_ne
 
     in_turn = requests[1]  # the model call right after the tool result
     tool_row = next(m for m in in_turn if m.get("role") == "tool")
-    # After the tool's output and outside the untrusted-data wrapper a web result gets: Hermes' own note.
+    # After the tool's output and outside the untrusted-data wrapper a web result gets: Zeus' own note.
     assert TOOL_OUTPUT in tool_row["content"]
     assert tool_row["content"].endswith(f"</untrusted_tool_result>\n\n{NOTE}")
     assert OLD_NOTE not in json.dumps(in_turn)  # a reinstall replaces the plugin's older notice

@@ -300,7 +300,7 @@ async def test_room_grant_answers_the_clarify_prompt_its_run_raised(api, owner, 
         issued_at=now, ttl_seconds=300, status_expires_at=now + 1000)
     claims = decode_room_grant(api._room_grant_secret(), grant, permission='status')
     hosted_rooms.reserve_peer_room(hosted_rooms.default_db_path(), claims=claims, expires_at=now + 1000)
-    headers = {'Authorization': f'HermesRoom {grant}'}
+    headers = {'Authorization': f'ZeusRoom {grant}'}
     admitted = admit_api_turn(api, session_id='room-clarify', request_id='run_room', user_message='hello',
                               conversation_history=[])
     _, ref, _row = admitted
@@ -340,7 +340,7 @@ def test_run_status_reports_waiting_for_approval_while_a_prompt_is_pending(api, 
     """GET /v1/runs/{id} said `running` while an approval was pending; the documented run state
     (and main's in-memory run store) is `waiting_for_approval`, which UIs key their prompt on."""
     from gateway.platforms.api_server_authority_runs import run_projection
-    from hermes_state_runtime import claim_session_input
+    from zeus_state_runtime import claim_session_input
     _, ref, _ = admit_api_turn(api, session_id='approval-status', request_id='run_wait', user_message='hello',
                                conversation_history=[])
     row = claim_session_input(owner.db, epoch=owner.epoch, session_id=ref.session_id)

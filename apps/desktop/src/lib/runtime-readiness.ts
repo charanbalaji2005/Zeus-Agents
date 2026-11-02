@@ -119,7 +119,7 @@ export async function fetchRuntimeReadinessSignals(
 }
 
 // The checks' own failure sentences. With nothing set up they only restate that in CLI terms
-// (`hermes model`, the home path), so every surface gets the caller's default instead; a requested
+// (`zeus model`, the home path), so every surface gets the caller's default instead; a requested
 // provider keeps its cause, since that check was about that provider.
 function reportedFailure(
   signals: RuntimeReadinessSignals,

@@ -13,7 +13,7 @@ from agent.usage_pricing import (
     estimate_usage_cost,
     with_served_service_tier,
 )
-from hermes_cli.models import model_supports_ultrafast, resolve_fast_mode_overrides
+from zeus_cli.models import model_supports_ultrafast, resolve_fast_mode_overrides
 
 ASTRA_SPELLINGS = ("gpt-6-astra", "openai/gpt-6-astra", "gpt-6-astra-900k", "openai/gpt-6-astra-900k")
 SOL_SPELLINGS = ("gpt-6.1-sol", "openai/gpt-6.1-sol", "gpt-6.1-sol-900k", "openai/gpt-6.1-sol-900k")
@@ -21,7 +21,7 @@ SOL_SPELLINGS = ("gpt-6.1-sol", "openai/gpt-6.1-sol", "gpt-6.1-sol-900k", "opena
 
 def test_every_config_loader_parses_tiers_through_the_same_table(monkeypatch):
     from gateway.run import GatewayRunner
-    from hermes_cli.cli_config_load import _parse_service_tier_config
+    from zeus_cli.cli_config_load import _parse_service_tier_config
     import tui_gateway.server as tui
 
     for word, tier in {**SERVICE_TIER_WORDS, "normal": None, "off": None, "bogus": None}.items():
@@ -56,7 +56,7 @@ def test_ultrafast_is_requested_only_for_ultrafast_models_on_first_party_routes(
 
 
 def test_desktop_surfaces_carry_the_exact_tier_ultrafast_is_never_plain_fast():
-    from hermes_cli.inventory import _apply_capabilities
+    from zeus_cli.inventory import _apply_capabilities
     from tui_gateway.methods_session_model_guard import create_overrides
 
     rows = [{"slug": "openai-codex", "models": ["gpt-6-astra-900k", *SOL_SPELLINGS[::2], "gpt-6-sol", "gpt-daybreak-blue-latest-900k"]},
@@ -85,7 +85,7 @@ def test_cli_and_gateway_turn_routes_send_the_static_tier(provider):
     stub = SimpleNamespace(model="gpt-6-astra", api_key="k", base_url="https://api.openai.com/v1", provider=provider,
                            api_mode="codex_responses", acp_command=None, acp_args=[], _credential_pool=None,
                            service_tier="ultrafast")
-    assert cli_mod.HermesCLI._resolve_turn_agent_config(stub, "hi")["request_overrides"] == {"service_tier": "ultrafast"}
+    assert cli_mod.ZeusCLI._resolve_turn_agent_config(stub, "hi")["request_overrides"] == {"service_tier": "ultrafast"}
     runner = object.__new__(GatewayRunner)
     runner._service_tier = "ultrafast"
     rk = {"api_key": "k", "base_url": "https://api.openai.com/v1", "provider": provider, "api_mode": "codex_responses",
@@ -100,10 +100,10 @@ def test_cli_refuses_ultrafast_on_a_model_without_it(monkeypatch):
     stub = SimpleNamespace(service_tier="priority", model="gpt-6-sol", agent=MagicMock(model="gpt-6-sol"),
                            _fast_command_available=lambda: True)
     monkeypatch.setattr(cli_mod, "_cprint", lambda *a, **k: None)
-    cli_mod.HermesCLI._handle_fast_command(stub, "/fast ultrafast")
+    cli_mod.ZeusCLI._handle_fast_command(stub, "/fast ultrafast")
     assert stub.service_tier == "priority"
     stub.model = stub.agent.model = "gpt-6-astra"
-    cli_mod.HermesCLI._handle_fast_command(stub, "/fast ultra")  # typed shorthand
+    cli_mod.ZeusCLI._handle_fast_command(stub, "/fast ultra")  # typed shorthand
     assert stub.service_tier == "ultrafast"
 
 
@@ -154,7 +154,7 @@ def test_context_alias_pricing_preserves_custom_endpoint_rates(monkeypatch, prov
 def test_sol_ultrafast_codex_request_uses_the_wire_slug_and_keeps_subscription_accounting(model):
     from agent.fast_mode import effective_request_overrides
     from agent.transports.codex import ResponsesApiTransport
-    from hermes_cli.model_normalize import normalize_model_for_provider
+    from zeus_cli.model_normalize import normalize_model_for_provider
 
     base_url = "https://chatgpt.com/backend-api/codex"
     runtime_model = normalize_model_for_provider(model, "openai-codex")

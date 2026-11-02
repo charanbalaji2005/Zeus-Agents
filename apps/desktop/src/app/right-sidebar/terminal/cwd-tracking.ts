@@ -3,7 +3,7 @@ import type { RefObject } from 'react'
 
 import { updateTerminalRestoreCwd } from './terminals'
 
-type TerminalApi = Window['hermesDesktop']['terminal']
+type TerminalApi = Window['zeusDesktop']['terminal']
 
 // Minimum gap between main-side PTY cwd probes. The probe spawns lsof on macOS,
 // so keep it well throttled — cwd only changes on a `cd`, which the reporter

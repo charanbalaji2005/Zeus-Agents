@@ -16,7 +16,7 @@ import threading
 import uuid
 
 from gateway.session_busy_controls import authorize
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def _admit(connection, ref, params, prefix, required='text', optional=()):
 @contextlib.contextmanager
 def _side_scope(authority, policy, task_id):
     """The owning profile's home/secrets, the session's frozen policy, and the task's own session
-    identity (approval key, HERMES_SESSION_ID) for the side agent's thread."""
+    identity (approval key, ZEUS_SESSION_ID) for the side agent's thread."""
     from gateway.session_authorities import owner_scope, served_profile_name
     from gateway.session_context import clear_session_vars, set_session_vars
     from gateway.session_policy import bind_turn_workspace, policy_scope, unbind_turn_workspace

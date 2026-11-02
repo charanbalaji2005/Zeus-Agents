@@ -23,7 +23,7 @@ beforeEach((): void => {
 
 function handler(): () => MachineProfile {
   registerMachineProfile()
-  const registration = host.handle.mock.calls.find(([channel]): boolean => channel === 'hermes:machine:profile')
+  const registration = host.handle.mock.calls.find(([channel]): boolean => channel === 'zeus:machine:profile')
   expect(registration).toBeDefined()
 
   return registration![1] as () => MachineProfile

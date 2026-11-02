@@ -2,8 +2,8 @@
 
 ``--start`` ensures the owner (first launch). A reconnect discovers only, except ``--recover``
 (a bounded slot, ``gatewayClient.ts`` ``OWNER_RECOVERY_LIMIT`` per window) re-ensures whenever the
-owner is not ready: it crashed, ended by its idle exit, was stopped with ``hermes gateway stop``
-while this TUI was open, or an older Hermes's gateway answers (ensure replaces that one). Main's TUI
+owner is not ready: it crashed, ended by its idle exit, was stopped with ``zeus gateway stop``
+while this TUI was open, or an older Zeus's gateway answers (ensure replaces that one). Main's TUI
 ran its own sidecar and never depended on an external daemon, so an open TUI comes back on its own.
 """
 import contextlib
@@ -16,14 +16,14 @@ import sys
 # dist/scripts/ (a separate Nix store path), so parents[2] is only right in a source tree.
 # gatewayClient.ts passes the root it put on PYTHONPATH.
 def python_root() -> Path:
-    return Path(os.environ.get("HERMES_PYTHON_SRC_ROOT") or Path(__file__).resolve().parents[2])
+    return Path(os.environ.get("ZEUS_PYTHON_SRC_ROOT") or Path(__file__).resolve().parents[2])
 
 
 sys.path.insert(0, str(python_root()))
 
 # The terminal verdict's next step: the client stops retrying on it, so the user needs one. A
 # verdict line like the rest, so the TUI echoes it inline (userMessages.ts STDERR_PROBLEM_RE).
-BOOTSTRAP_REMEDY = "gateway unavailable: run `hermes pm repair`, then restart the TUI"
+BOOTSTRAP_REMEDY = "gateway unavailable: run `zeus pm repair`, then restart the TUI"
 
 
 def failure_message(receipt) -> str:
@@ -42,10 +42,10 @@ def failure_message(receipt) -> str:
 def bootstrap(start: bool, recover: bool = False) -> dict:
     from pm.environments import NoCommittedEnvironment, activate_dependencies
 
-    # Ink runs this on HERMES_PYTHON with PYTHONPATH=<root> only. On a source install that is PM's
+    # Ink runs this on ZEUS_PYTHON with PYTHONPATH=<root> only. On a source install that is PM's
     # store Python, which owns no packages, and the no-owner discovery fallback already imports one
-    # (gateway.status -> utils -> hermes_yaml -> ruamel): boot the committed generation first, as
-    # hermes_bootstrap does for every other entry point.
+    # (gateway.status -> utils -> zeus_yaml -> ruamel): boot the committed generation first, as
+    # zeus_bootstrap does for every other entry point.
     try:
         activate_dependencies(python_root())
     except NoCommittedEnvironment as exc:
@@ -53,21 +53,21 @@ def bootstrap(start: bool, recover: bool = False) -> dict:
         # or a damaged record (RuntimeError) reaches the ordinary failure path below, which the
         # client retries: a one-off read error must not end the TUI's gateway for its lifetime.
         raise ImportError(f"dependency environment unavailable: {exc}") from exc
-    from hermes_constants import get_hermes_home
-    from hermes_cli.gateway_runtime import (attachable, control_home_for, discover_gateway_endpoint,
+    from zeus_constants import get_zeus_home
+    from zeus_cli.gateway_runtime import (attachable, control_home_for, discover_gateway_endpoint,
                                            ensure_gateway_runtime)
-    from hermes_cli.gateway_runtime_discovery import connect_private
+    from zeus_cli.gateway_runtime_discovery import connect_private
 
-    home = get_hermes_home().resolve()
+    home = get_zeus_home().resolve()
     # Launch policy travels in session.create, not into daemon-wide defaults. That includes the
-    # Kanban board `hermes --tui` pins at launch (_pin_kanban_board_env): a daemon started from
+    # Kanban board `zeus --tui` pins at launch (_pin_kanban_board_env): a daemon started from
     # here would otherwise resolve every later chat's, Desktop window's and cron job's board to
     # this terminal's launch-time board instead of the profile's `kanban/current`.
-    for key in ("HERMES_MODEL", "HERMES_INFERENCE_MODEL", "HERMES_TUI_PROVIDER",
-                "HERMES_INFERENCE_PROVIDER", "HERMES_TUI_TOOLSETS", "HERMES_TUI_SKILLS",
-                "HERMES_CWD", "TERMINAL_CWD", "HERMES_YOLO", "HERMES_ACCEPT_HOOKS",
-                "HERMES_TUI_CHECKPOINTS", "HERMES_TUI_PASS_SESSION_ID", "HERMES_KANBAN_BOARD",
-                "HERMES_TUI_CLIENT_ENV"):
+    for key in ("ZEUS_MODEL", "ZEUS_INFERENCE_MODEL", "ZEUS_TUI_PROVIDER",
+                "ZEUS_INFERENCE_PROVIDER", "ZEUS_TUI_TOOLSETS", "ZEUS_TUI_SKILLS",
+                "ZEUS_CWD", "TERMINAL_CWD", "ZEUS_YOLO", "ZEUS_ACCEPT_HOOKS",
+                "ZEUS_TUI_CHECKPOINTS", "ZEUS_TUI_PASS_SESSION_ID", "ZEUS_KANBAN_BOARD",
+                "ZEUS_TUI_CLIENT_ENV"):
         os.environ.pop(key, None)
     receipt = (ensure_gateway_runtime(home, timeout=30, idle_exit=True) if start
                else discover_gateway_endpoint(home, timeout=5))
@@ -98,7 +98,7 @@ def bootstrap(start: bool, recover: bool = False) -> dict:
             or grant.get("profile_id") != endpoint.profile_id
             or not isinstance(grant.get("ticket"), str)):
         raise RuntimeError("gateway private bootstrap rejected")
-    from hermes_cli.gateway_client import gateway_ws_target
+    from zeus_cli.gateway_client import gateway_ws_target
     url, protocols = gateway_ws_target(endpoint, grant["ticket"])
     return {"url": url, "protocols": protocols,
             "profile_id": endpoint.profile_id, "instance_id": endpoint.instance_id}
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     # bad JSON (ValueError), rejected grants (RuntimeError), malformed reply shapes. Anything else
     # still exits 1, with a traceback.
     except ImportError as exc:
-        # This interpreter cannot load Hermes at all: no reconnect fixes that, so name it
+        # This interpreter cannot load Zeus at all: no reconnect fixes that, so name it
         # (gatewayClient.ts stops retrying on this verdict).
         print(f"gateway unavailable: bootstrap_dependencies\n{exc}\n{BOOTSTRAP_REMEDY}", file=sys.stderr)
         raise SystemExit(1)

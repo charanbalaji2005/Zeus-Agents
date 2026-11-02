@@ -340,7 +340,7 @@ describe('detectBundleSkew against a real git repo', () => {
     expect(result).toEqual(expected)
   })
 
-  // A change and its revert in one update range: `hermes update` reuses the packaged app because
+  // A change and its revert in one update range: `zeus update` reuses the packaged app because
   // its inputs are byte-identical, so a commit count alone would warn until some later desktop
   // change happened to rebuild it.
   it('is quiet when runtime commits since the stamp net to no change', async () => {

@@ -6,7 +6,7 @@ description: "@ts: context references that turn timestamps into readable times f
 maintainer: olric3015
 tier: community
 category: tools
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/olric3015/hermes-plugins/tree/main/timestamp-ref
 version: "1.0.0"
 image: https://raw.githubusercontent.com/olric3015/hermes-plugins/241fccb904c63c6d7540b0b8f932a9c810343572/docs/timestamp-ref-card.png

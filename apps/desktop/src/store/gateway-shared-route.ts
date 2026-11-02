@@ -10,7 +10,7 @@ import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 // poisons the active gateway with "not connected" even though the primary is
 // open right next to it.
 export async function sharedPrimaryRoute(profile: string): Promise<boolean> {
-  const desktop = window.hermesDesktop
+  const desktop = window.zeusDesktop
 
   if (!desktop) {
     return false

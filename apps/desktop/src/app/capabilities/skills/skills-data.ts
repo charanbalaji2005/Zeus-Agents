@@ -1,8 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 
-import { getSkills, type ProfileScope, profileScopeKey } from '@/hermes'
+import { getSkills, type ProfileScope, profileScopeKey } from '@/zeus'
 import { normalize } from '@/lib/text'
-import type { OfficialSkillInfo, SkillInfo } from '@/types/hermes'
+import type { OfficialSkillInfo, SkillInfo } from '@/types/zeus'
 
 import { asText, includesQuery } from '../../settings/helpers'
 

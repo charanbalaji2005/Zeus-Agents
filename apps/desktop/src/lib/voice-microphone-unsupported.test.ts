@@ -30,13 +30,13 @@ describe('on an insecure origin', () => {
   beforeEach(() => Object.defineProperty(window, 'isSecureContext', { configurable: true, value: false }))
   afterEach(() => {
     Reflect.deleteProperty(window, 'isSecureContext')
-    delete document.documentElement.dataset.hermesDesktopHost
+    delete document.documentElement.dataset.zeusDesktopHost
   })
 
   const unsupported = () => micError(new DOMException('no mic here', 'NotSupportedError'), en.notifications.voice)
 
   it('the Webapp says HTTPS or a tunnel brings the microphone back', () => {
-    document.documentElement.dataset.hermesDesktopHost = 'browser'
+    document.documentElement.dataset.zeusDesktopHost = 'browser'
 
     expect(unsupported().message).toBe(en.notifications.voice.microphoneNeedsHttps)
   })

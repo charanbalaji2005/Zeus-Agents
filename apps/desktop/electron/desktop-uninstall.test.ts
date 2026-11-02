@@ -71,24 +71,24 @@ test('nativeRemovalInstructions names the steward per kind and OS', () => {
   assert.match(nativeRemovalInstructions('nix', 'darwin'), /flake or profile/)
 
   for (const platform of ['linux', 'darwin', 'win32']) {
-    const steps = nativeRemovalInstructions('external', platform, '/usr/lib/hermes/hermes')
+    const steps = nativeRemovalInstructions('external', platform, '/usr/lib/zeus/zeus')
     assert.match(steps, /with that package manager/)
     assert.doesNotMatch(steps, /Delete|Trash/)
   }
 
   assert.match(nativeRemovalInstructions('bundled', 'win32'), /Installed apps/)
   assert.equal(
-    nativeRemovalInstructions('bundled', 'darwin', '/Applications/Hermes Agent Canary.app'),
-    'Quit the app and drag Hermes Agent Canary.app from /Applications to the Trash.'
+    nativeRemovalInstructions('bundled', 'darwin', '/Applications/Zeus Agents Canary.app'),
+    'Quit the app and drag Zeus Agents Canary.app from /Applications to the Trash.'
   )
-  assert.match(nativeRemovalInstructions('bundled', 'darwin'), /drag the Hermes app from Applications to the Trash/)
+  assert.match(nativeRemovalInstructions('bundled', 'darwin'), /drag the Zeus app from Applications to the Trash/)
   assert.match(
-    nativeRemovalInstructions('bundled', 'linux', '/home/x/Apps/Hermes.AppImage'),
-    /\/home\/x\/Apps\/Hermes\.AppImage/
+    nativeRemovalInstructions('bundled', 'linux', '/home/x/Apps/Zeus.AppImage'),
+    /\/home\/x\/Apps\/Zeus\.AppImage/
   )
   assert.match(
-    nativeRemovalInstructions('bundled', 'linux', '/opt/hermes/linux-unpacked'),
-    /app directory at \/opt\/hermes\/linux-unpacked/
+    nativeRemovalInstructions('bundled', 'linux', '/opt/zeus/linux-unpacked'),
+    /app directory at \/opt\/zeus\/linux-unpacked/
   )
   assert.match(nativeRemovalInstructions('bundled', 'linux'), /wherever you saved it/)
 })
@@ -111,12 +111,12 @@ test('mode predicates classify what each mode removes', () => {
 
 test('resolveRemovableAppPath finds the .app bundle on macOS', () => {
   assert.equal(
-    resolveRemovableAppPath('/Applications/Hermes.app/Contents/MacOS/Hermes', 'darwin'),
-    '/Applications/Hermes.app'
+    resolveRemovableAppPath('/Applications/Zeus.app/Contents/MacOS/Zeus', 'darwin'),
+    '/Applications/Zeus.app'
   )
   assert.equal(
-    resolveRemovableAppPath('/Users/x/Applications/Hermes.app/Contents/MacOS/Hermes', 'darwin'),
-    '/Users/x/Applications/Hermes.app'
+    resolveRemovableAppPath('/Users/x/Applications/Zeus.app/Contents/MacOS/Zeus', 'darwin'),
+    '/Users/x/Applications/Zeus.app'
   )
 })
 
@@ -135,39 +135,39 @@ test('resolveRemovableAppPath: dev-run .app resolves (safety is shouldRemoveAppB
 
 test('resolveRemovableAppPath finds the install dir on Windows', () => {
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\Hermes\\Hermes.exe', 'win32'),
-    'C:\\Users\\x\\AppData\\Local\\Programs\\Hermes'
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\Programs\\Zeus\\Zeus.exe', 'win32'),
+    'C:\\Users\\x\\AppData\\Local\\Programs\\Zeus'
   )
   assert.equal(
-    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\hermes-desktop\\Hermes.exe', 'win32'),
-    'C:\\Users\\x\\AppData\\Local\\hermes-desktop'
+    resolveRemovableAppPath('C:\\Users\\x\\AppData\\Local\\zeus-desktop\\Zeus.exe', 'win32'),
+    'C:\\Users\\x\\AppData\\Local\\zeus-desktop'
   )
 })
 
 test('resolveRemovableAppPath returns null for an unrecognized Windows dir', () => {
-  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\Hermes.exe', 'win32'), null)
+  assert.equal(resolveRemovableAppPath('C:\\Temp\\foo\\Zeus.exe', 'win32'), null)
 })
 
 test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   assert.equal(
-    resolveRemovableAppPath('/tmp/.mount_HermesXXXX/hermes', 'linux', { APPIMAGE: '/home/x/Apps/Hermes.AppImage' }),
-    '/home/x/Apps/Hermes.AppImage'
+    resolveRemovableAppPath('/tmp/.mount_ZeusXXXX/zeus', 'linux', { APPIMAGE: '/home/x/Apps/Zeus.AppImage' }),
+    '/home/x/Apps/Zeus.AppImage'
   )
 })
 
 // AppImage apps (terminals, IDEs) export APPIMAGE to everything they start;
-// uninstalling an unpacked Hermes launched from one must never rm -rf that app.
+// uninstalling an unpacked Zeus launched from one must never rm -rf that app.
 test('resolveRemovableAppPath ignores an APPIMAGE inherited from another AppImage', () => {
   assert.equal(
-    resolveRemovableAppPath('/opt/hermes/linux-unpacked/hermes', 'linux', { APPIMAGE: '/home/x/Apps/Other.AppImage' }),
-    '/opt/hermes/linux-unpacked'
+    resolveRemovableAppPath('/opt/zeus/linux-unpacked/zeus', 'linux', { APPIMAGE: '/home/x/Apps/Other.AppImage' }),
+    '/opt/zeus/linux-unpacked'
   )
 })
 
 test('resolveRemovableAppPath finds the unpacked dir on Linux', () => {
-  assert.equal(resolveRemovableAppPath('/opt/hermes/linux-unpacked/hermes', 'linux', {}), '/opt/hermes/linux-unpacked')
+  assert.equal(resolveRemovableAppPath('/opt/zeus/linux-unpacked/zeus', 'linux', {}), '/opt/zeus/linux-unpacked')
   // A system-package install (/usr/bin) → null, left to apt/dnf.
-  assert.equal(resolveRemovableAppPath('/usr/bin/hermes', 'linux', {}), null)
+  assert.equal(resolveRemovableAppPath('/usr/bin/zeus', 'linux', {}), null)
 })
 
 test('resolveRemovableAppPath returns null for an empty exe path', () => {
@@ -178,8 +178,8 @@ test('resolveRemovableAppPath returns null for an empty exe path', () => {
 // --- shouldRemoveAppBundle ---
 
 test('shouldRemoveAppBundle requires packaged AND a resolved path', () => {
-  assert.equal(shouldRemoveAppBundle(true, '/Applications/Hermes.app'), true)
-  assert.equal(shouldRemoveAppBundle(false, '/Applications/Hermes.app'), false)
+  assert.equal(shouldRemoveAppBundle(true, '/Applications/Zeus.app'), true)
+  assert.equal(shouldRemoveAppBundle(false, '/Applications/Zeus.app'), false)
   assert.equal(shouldRemoveAppBundle(true, null), false)
   assert.equal(shouldRemoveAppBundle(false, null), false)
 })
@@ -200,7 +200,7 @@ test.skipIf(process.platform === 'win32').each(['gui', 'lite', 'full'] as const)
       fs.mkdirSync(sibling)
       fs.writeFileSync(
         recorder,
-        `require('node:fs').writeFileSync(${JSON.stringify(resultFile)}, JSON.stringify({argv:process.argv.slice(2), home:process.env.HERMES_HOME, pythonPath:process.env.PYTHONPATH, cwd:process.cwd()}))`
+        `require('node:fs').writeFileSync(${JSON.stringify(resultFile)}, JSON.stringify({argv:process.argv.slice(2), home:process.env.ZEUS_HOME, pythonPath:process.env.PYTHONPATH, cwd:process.cwd()}))`
       )
       fs.writeFileSync(
         script,
@@ -211,17 +211,17 @@ test.skipIf(process.platform === 'win32').each(['gui', 'lite', 'full'] as const)
           agentRoot: root,
           uninstallArgs: [recorder, ...uninstallArgsForMode(mode)],
           appPath: mode === 'lite' ? null : app,
-          hermesHome: root
+          zeusHome: root
         })
       )
       child = spawn('bash', [script], {
-        env: { ...process.env, PYTHONPATH: 'inherited', HERMES_HOME: root },
+        env: { ...process.env, PYTHONPATH: 'inherited', ZEUS_HOME: root },
         stdio: 'ignore'
       })
       await once(child, 'close')
       assert.equal(child.exitCode, 0)
       assert.deepEqual(JSON.parse(fs.readFileSync(resultFile, 'utf8')), {
-        argv: ['-m', 'hermes_cli.uninstall', '--mode', mode],
+        argv: ['-m', 'zeus_cli.uninstall', '--mode', mode],
         home: root,
         pythonPath: mode === 'gui' ? 'inherited' : `${root}:inherited`,
         cwd: root
@@ -243,20 +243,20 @@ test.skipIf(process.platform === 'win32').each(['gui', 'lite', 'full'] as const)
 test('buildPosixCleanupScript waits for the PID, runs the uninstall module, removes bundle', (): void => {
   const script = buildPosixCleanupScript({
     desktopPid: 4321,
-    pythonExe: '/home/x/.hermes/hermes-agent/venv/bin/python',
+    pythonExe: '/home/x/.zeus/zeus-agents/venv/bin/python',
     pythonPath: null,
-    agentRoot: '/home/x/.hermes/hermes-agent',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
-    appPath: '/opt/hermes/linux-unpacked',
-    hermesHome: '/home/x/.hermes'
+    agentRoot: '/home/x/.zeus/zeus-agents',
+    uninstallArgs: ['-m', 'zeus_cli.uninstall', '--mode', 'gui'],
+    appPath: '/opt/zeus/linux-unpacked',
+    zeusHome: '/home/x/.zeus'
   })
 
   assert.match(script, /^#!\/usr\/bin\/env bash\n/)
   assert.match(script, /pid=4321/)
   assert.match(script, /kill -0 "\$pid"/)
-  assert.match(script, /'-m' 'hermes_cli\.uninstall' '--mode' 'gui'/)
-  assert.match(script, /rm -rf '\/opt\/hermes\/linux-unpacked'/)
-  assert.match(script, /export HERMES_HOME='\/home\/x\/\.hermes'/)
+  assert.match(script, /'-m' 'zeus_cli\.uninstall' '--mode' 'gui'/)
+  assert.match(script, /rm -rf '\/opt\/zeus\/linux-unpacked'/)
+  assert.match(script, /export ZEUS_HOME='\/home\/x\/\.zeus'/)
 })
 
 // --- buildWindowsCleanupScript ---
@@ -265,24 +265,24 @@ test('buildWindowsCleanupScript waits (bounded) for PID, runs uninstall, rmdir b
   const script = buildWindowsCleanupScript({
     desktopPid: 9988,
     pythonExe: 'C:\\Python313\\python.exe',
-    pythonPath: 'C:\\hermes',
-    agentRoot: 'C:\\hermes',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'full'],
-    appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\Hermes',
-    hermesHome: 'C:\\Users\\x\\AppData\\Local\\hermes'
+    pythonPath: 'C:\\zeus',
+    agentRoot: 'C:\\zeus',
+    uninstallArgs: ['-m', 'zeus_cli.uninstall', '--mode', 'full'],
+    appPath: 'C:\\Users\\x\\AppData\\Local\\Programs\\Zeus',
+    zeusHome: 'C:\\Users\\x\\AppData\\Local\\zeus'
   })
 
   assert.match(script, /@echo off/)
   assert.match(script, /set "PID=9988"/)
-  // PYTHONPATH set so a system python can import hermes_cli from source.
-  assert.match(script, /set "PYTHONPATH=C:\\hermes;%PYTHONPATH%"/)
-  assert.match(script, /"C:\\Python313\\python.exe" "-m" "hermes_cli\.uninstall" "--mode" "full"/)
+  // PYTHONPATH set so a system python can import zeus_cli from source.
+  assert.match(script, /set "PYTHONPATH=C:\\zeus;%PYTHONPATH%"/)
+  assert.match(script, /"C:\\Python313\\python.exe" "-m" "zeus_cli\.uninstall" "--mode" "full"/)
   // Bounded wait-loop (no infinite loop), whole-token PID match (no substring).
   assert.match(script, /if %waited% geq 60 goto waited_done/)
   assert.match(script, /findstr \/r \/c:" %PID% "/)
   // Removal is a retry loop (Windows releases dir handles lazily).
   assert.match(script, /:rmloop/)
-  assert.match(script, /rmdir \/s \/q "C:\\Users\\x\\AppData\\Local\\Programs\\Hermes" >nul 2>&1/)
+  assert.match(script, /rmdir \/s \/q "C:\\Users\\x\\AppData\\Local\\Programs\\Zeus" >nul 2>&1/)
   assert.match(script, /if %tries% geq 10 goto rmdone/)
   assert.match(script, /del "%~f0"/)
 })
@@ -293,9 +293,9 @@ test('buildWindowsCleanupScript omits PYTHONPATH + rmdir when not needed (gui, n
     pythonExe: 'C:\\h\\venv\\Scripts\\python.exe',
     pythonPath: null,
     agentRoot: 'C:\\h',
-    uninstallArgs: ['-m', 'hermes_cli.uninstall', '--mode', 'gui'],
+    uninstallArgs: ['-m', 'zeus_cli.uninstall', '--mode', 'gui'],
     appPath: null,
-    hermesHome: 'C:\\h'
+    zeusHome: 'C:\\h'
   })
 
   assert.doesNotMatch(script, /rmdir/)

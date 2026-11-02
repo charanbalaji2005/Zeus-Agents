@@ -21,7 +21,7 @@ def test_usage_slash_shows_account_limits_before_first_turn_inside_session_scope
     from tui_gateway import server
 
     # Fresh chat whose composer picked Codex under an OpenRouter-default profile.
-    session = {"agent": None, "profile_home": "/nonexistent/hermes-profiles/coder", "history": [],
+    session = {"agent": None, "profile_home": "/nonexistent/zeus-profiles/coder", "history": [],
                "running": False, "session_key": "sess-usage",
                "model_override": {"model": "gpt-5.3-codex", "provider": "openai-codex"}}
     fetched: list[str] = []

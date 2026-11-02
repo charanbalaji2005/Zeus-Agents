@@ -1,6 +1,6 @@
 """Peer turns into the canonical Bot Chat under session authority.
 
-``hermes peer dm`` (``/api/sessions/{id}/chat[/stream]``) and ``hermes peer run`` (``/v1/runs``)
+``zeus peer dm`` (``/api/sessions/{id}/chat[/stream]``) and ``zeus peer run`` (``/v1/runs``)
 aim at the profile's Bot Chat. Under session authority that chat is a LOCAL session whose only
 writer is the authority FIFO — a Desktop showing it is a viewer, never a lease-holding executor —
 so the API edge admits the turn through the same door as ``bot_relay.deliver``
@@ -15,14 +15,14 @@ from types import SimpleNamespace
 import uuid
 
 from gateway.session_contract import Principal
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
 _PENDING = ('queued', 'claimed')
 # Owner of a Bot Chat the gateway mints for a peer's create-if-missing (no native client asked).
 _PEER_SUBJECT = 'api-peer'
-# The whole body ``hermes peer dm`` sends (``hermes_cli/subcommands/peer.py::_ensure_bot_chat``).
+# The whole body ``zeus peer dm`` sends (``zeus_cli/subcommands/peer.py::_ensure_bot_chat``).
 _PEER_CREATE_FIELDS = frozenset({'title', 'source'})
 
 
@@ -32,7 +32,7 @@ def _authority(runner):
 
 
 async def create_peer_bot_chat(adapter, body):
-    """``POST /api/sessions`` titled "Bot Chat" (``hermes peer dm``'s create-if-missing) under session
+    """``POST /api/sessions`` titled "Bot Chat" (``zeus peer dm``'s create-if-missing) under session
     authority: the owner mints the chat through the step a first ``bot_relay.deliver`` takes
     (``session_bot._create_bot_chat``), so a headless gateway's Bot Chat is a LOCAL session its FIFO
     owns, not an API row no remote sender can ever bind (#139370). None when the ordinary handler
@@ -63,7 +63,7 @@ async def create_peer_bot_chat(adapter, body):
     if ref is None:
         return None
     row = await asyncio.to_thread(authority.db.get_session, ref.session_id)
-    return web.json_response({'object': 'hermes.session', 'session': adapter._session_response(row)}, status=201)
+    return web.json_response({'object': 'zeus.session', 'session': adapter._session_response(row)}, status=201)
 
 
 def _refusal(authority, tip, exc):
@@ -72,10 +72,10 @@ def _refusal(authority, tip, exc):
     peer nothing to act on. The full clause stays in gateway.log."""
     reason = exc.reason
     if reason == 'not_found' and not str(tip.get('chat_id') or '').startswith('local-'):
-        from hermes_state_local_migration import validate_legacy_row
+        from zeus_state_local_migration import validate_legacy_row
         try:
             validate_legacy_row(authority.db, tip)
-            reason, hint = 'bot_chat_unbound', 'open it once with `hermes chat -c "Bot Chat"` on that host'
+            reason, hint = 'bot_chat_unbound', 'open it once with `zeus chat -c "Bot Chat"` on that host'
         except RuntimeStoreError:
             from gateway.session_bot import displaceable_bot_chat
             reason = 'bot_chat_not_local'
@@ -92,7 +92,7 @@ def _refusal(authority, tip, exc):
 async def reset_local_title_owner(db, title, include_hidden, source=None):
     """``[row]`` for the exact-title lookup of a LOCAL conversation that was reset (``/new``, the
     compression-exhaustion auto-reset), else ``[]``. The listing shows a reset lineage as its latest,
-    untitled segment, so ``hermes peer dm`` stopped finding its Bot Chat and its create collided
+    untitled segment, so ``zeus peer dm`` stopped finding its Bot Chat and its create collided
     with the title. The titled creation id still owns the FIFO and is what the chat door admits.
     It applies the listing's own filters: hidden only with ``include_hidden``, never an archived
     row (a deliberate archive stays put; the reaper-archive resurrection is the caller's), and
@@ -105,7 +105,7 @@ def _reset_local_title_owner(db, title, include_hidden, source=None):
     if (row is None or row.get('end_reason') != 'session_reset' or row.get('archived')
             or (row.get('hidden') and not include_hidden) or (source and row.get('source') != source)):
         return []
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     try:
         lineage = local_receipt(db, row['id']).get('lineage') or []
     except RuntimeStoreError:

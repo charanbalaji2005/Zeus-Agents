@@ -108,10 +108,10 @@ class TestScopedLockTakeoverReapsChildren:
         target_home.mkdir(parents=True, exist_ok=True)
         record = {
             "pid": pid,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
+            "kind": "zeus-gateway",
+            "argv": ["python", "-m", "zeus_cli.main", "gateway", "run"],
             "start_time": start_time,
-            "hermes_home": str(target_home),
+            "zeus_home": str(target_home),
         }
         (target_home / "gateway.pid").write_text(json.dumps(record))
         return record
@@ -120,7 +120,7 @@ class TestScopedLockTakeoverReapsChildren:
         replacer_home = tmp_path / "replacer"
         target_home = tmp_path / "target"
         replacer_home.mkdir()
-        monkeypatch.setenv("HERMES_HOME", str(replacer_home))
+        monkeypatch.setenv("ZEUS_HOME", str(replacer_home))
         record = self._owner_record(target_home)
         alive = iter(alive_polls)
         monkeypatch.setattr(status, "_pid_exists", lambda _pid: next(alive))
@@ -128,7 +128,7 @@ class TestScopedLockTakeoverReapsChildren:
         monkeypatch.setattr(
             status,
             "_read_process_cmdline",
-            lambda _pid: "python -m hermes_cli.main gateway run",
+            lambda _pid: "python -m zeus_cli.main gateway run",
         )
         return record
 
@@ -172,7 +172,7 @@ async def test_start_gateway_replace_reaps_old_gateway_children_posix(
 ):
     """--replace snapshots the old gateway's children before SIGTERM and
     reaps them after the main PID is confirmed dead (POSIX path)."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    monkeypatch.setenv("ZEUS_HOME", str(tmp_path))
 
     events = []
     kids = [_FakeChild(401, ppid=1)]
@@ -180,10 +180,10 @@ async def test_start_gateway_replace_reaps_old_gateway_children_posix(
     class _CleanExitRunner:
         def __init__(self, config):
             from gateway.session import SessionStore
-            from hermes_state import SessionDB
-            from hermes_constants import get_hermes_home
-            self.session_store = SessionStore(get_hermes_home() / 'sessions', config)
-            self._session_db = SessionDB(get_hermes_home() / 'state.db')
+            from zeus_state import SessionDB
+            from zeus_constants import get_zeus_home
+            self.session_store = SessionStore(get_zeus_home() / 'sessions', config)
+            self._session_db = SessionDB(get_zeus_home() / 'state.db')
             self.session_store._db = self._session_db
             self._draining = False
             self.config = config
@@ -215,10 +215,10 @@ async def test_start_gateway_replace_reaps_old_gateway_children_posix(
         "gateway.status._read_pid_record",
         lambda path=None: {
             "pid": 42,
-            "kind": "hermes-gateway",
-            "argv": ["python", "-m", "hermes_cli.main", "gateway", "run"],
+            "kind": "zeus-gateway",
+            "argv": ["python", "-m", "zeus_cli.main", "gateway", "run"],
             "start_time": 0,
-            "hermes_home": str(tmp_path),
+            "zeus_home": str(tmp_path),
         },
     )
     monkeypatch.setattr(
@@ -251,10 +251,10 @@ async def test_start_gateway_replace_reaps_old_gateway_children_posix(
     monkeypatch.setattr("time.sleep", lambda _: None)
     monkeypatch.setattr("tools.skills_sync.sync_skills", lambda quiet=True: None)
     monkeypatch.setattr(
-        "hermes_logging.setup_logging", lambda hermes_home, mode: tmp_path
+        "zeus_logging.setup_logging", lambda zeus_home, mode: tmp_path
     )
     monkeypatch.setattr(
-        "hermes_logging._add_rotating_handler", lambda *args, **kwargs: None
+        "zeus_logging._add_rotating_handler", lambda *args, **kwargs: None
     )
     monkeypatch.setattr("gateway.run.GatewayRunner", _CleanExitRunner)
 

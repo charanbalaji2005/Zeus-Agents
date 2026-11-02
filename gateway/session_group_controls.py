@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import weakref
 
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ async def dispatch_group_control(connection, method, params):
     db_path = await asyncio.to_thread(Path(authority.db.db_path).resolve)
     if db_path.parent != await asyncio.to_thread(home.resolve):
         raise RuntimeStoreError('profile_mismatch')
-    from hermes_cli.profiles import profile_matches_home
+    from zeus_cli.profiles import profile_matches_home
     profile = params.get('profile')
     if profile is not None and not isinstance(profile, str):
         raise RuntimeStoreError('invalid_params')
@@ -315,8 +315,8 @@ def _bot_sessions(authority, actor):
 
 
 def _read_bot_sessions(db, subject, operator):
-    from hermes_state_local_migration import LEGACY_PREFIX
-    from hermes_state_sessions import INTERNAL_LISTING_SOURCES
+    from zeus_state_local_migration import LEGACY_PREFIX
+    from zeus_state_sessions import INTERNAL_LISTING_SOURCES
     hidden_sources = ','.join('?' * len(INTERNAL_LISTING_SOURCES))
     owner_filter, owner_params = ('', ()) if operator else ('user_id=? AND ', (subject,))
     # One read connection for the whole row. A store closed meanwhile (its profile unserved
@@ -391,8 +391,8 @@ def _sibling_sessions(authority, reader):
 def _profiles(authority, actor, home, params, siblings=()):
     """The Bots roster: this profile's row, then every profile it can name. ``siblings`` is
     ``_roster_siblings``' snapshot; a sibling with a reader carries the same session fields."""
-    from hermes_cli.profiles import _profile_info
-    import hermes_yaml as yaml
+    from zeus_cli.profiles import _profile_info
+    import zeus_yaml as yaml
     include_sessions = params.get('include_sessions', True)
     if type(include_sessions) is not bool:
         raise RuntimeStoreError('invalid_params')
@@ -451,8 +451,8 @@ def _profiles(authority, actor, home, params, siblings=()):
     # (RT-38): a host running one gateway per profile serves no siblings, and Desktop drops every
     # union agent the active source leaves out, so a default-only answer hid the other bots.
     # Metadata only, like any discovery above.
-    from hermes_cli.profiles import _get_default_hermes_home
-    root = _get_default_hermes_home()
+    from zeus_cli.profiles import _get_default_zeus_home
+    root = _get_default_zeus_home()
     if root.is_dir():
         discovered('default', root)
     for target in _named_profile_dirs():
@@ -460,7 +460,7 @@ def _profiles(authority, actor, home, params, siblings=()):
     # ``install_id`` (same value as /api/status) lets a multi-connection client prove which
     # machine answered; the roster trace logged ``answered=-`` without it. It already returns
     # None for an unreadable root.
-    from hermes_cli.install_identity import get_install_id
+    from zeus_cli.install_identity import get_install_id
     return {'profiles': profiles, 'bot_mode_protocol': True, 'install_id': get_install_id() or ''}
 
 
@@ -490,8 +490,8 @@ def _lstat_key(path):
 
 
 def _named_profile_dirs():
-    from hermes_cli.profiles import _get_profiles_root, _iter_named_profile_dirs
-    from hermes_constants import _PROFILE_IDENTITY_MARKERS, profile_tombstone_path
+    from zeus_cli.profiles import _get_profiles_root, _iter_named_profile_dirs
+    from zeus_constants import _PROFILE_IDENTITY_MARKERS, profile_tombstone_path
     profiles_root = _get_profiles_root()
     try:
         with os.scandir(profiles_root) as entries:
@@ -523,7 +523,7 @@ def _named_profile_dirs():
 def _discovered_profile_meta(name, meta_path):
     """A sibling's parsed ``profile.yaml``, or ``{}``. One unreadable file (a legacy code page,
     bad YAML, a permission error) degrades that row to basic metadata; it never fails the roster."""
-    import hermes_yaml as yaml
+    import zeus_yaml as yaml
     try:
         raw = meta_path.read_bytes()
     except (FileNotFoundError, NotADirectoryError, IsADirectoryError):

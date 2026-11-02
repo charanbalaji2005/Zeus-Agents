@@ -4,7 +4,7 @@
 // every missing-capability case into `false`.
 
 async function dictionary(op: 'add' | 'remove', word: string): Promise<boolean> {
-  const bridge = typeof window === 'undefined' ? undefined : window.hermesDesktop
+  const bridge = typeof window === 'undefined' ? undefined : window.zeusDesktop
 
   if (typeof word !== 'string' || !bridge?.spellcheckDictionary) {
     return false

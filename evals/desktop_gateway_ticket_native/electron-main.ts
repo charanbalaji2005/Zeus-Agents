@@ -19,7 +19,7 @@ app.disableHardwareAcceleration()
 async function describe(ticket: string, replay = false) {
   return new Promise<any>((resolve, reject) => {
     const ws = new WebSocket(input.endpoint.api_origin.replace(/^http/, 'ws') + '/api/ws',
-      ['hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket], { handshakeTimeout: 10_000 })
+      ['zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket], { handshakeTimeout: 10_000 })
     const timer = setTimeout(() => { ws.terminate(); reject(new Error('WS response deadline')) }, 15_000)
     const done = (error: Error | null, result?: unknown) => {
       clearTimeout(timer)
@@ -34,7 +34,7 @@ async function describe(ticket: string, replay = false) {
     })
     ws.on('open', () => {
       if (replay) { done(new Error('Replayed WS ticket accepted')); return }
-      assert.equal(ws.protocol, 'hermes-gateway-v1')
+      assert.equal(ws.protocol, 'zeus-gateway-v1')
       ws.send(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'runtime.describe', params: {} }))
     })
     ws.on('message', raw => {

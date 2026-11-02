@@ -13,8 +13,8 @@ async def test_refused_followups_are_each_told_they_were_not_answered(tmp_path, 
     from gateway.session_contract import SessionRef
     from gateway.session_ingress import admit_message
     from gateway.session_ingress_context import native_callback
-    from hermes_constants import get_hermes_home
-    from hermes_state_runtime import list_session_admissions
+    from zeus_constants import get_zeus_home
+    from zeus_state_runtime import list_session_admissions
     from plugins.platforms.discord.adapter import DiscordAdapter
 
     monkeypatch.setattr(SessionAuthority, '_schedule', lambda self, ref: None)  # B and C wait queued
@@ -28,7 +28,7 @@ async def test_refused_followups_are_each_told_they_were_not_answered(tmp_path, 
     waiters = []
     for name in ('B', 'C'):
         event = MessageEvent(text=name, source=source, message_id=name)
-        with native_callback(runner, event, get_hermes_home()):
+        with native_callback(runner, event, get_zeus_home()):
             waiters.append(asyncio.create_task(admit_message(authority, event)))
             for _ in range(200):
                 if len(authority.waiters) == len(waiters):
@@ -42,7 +42,7 @@ async def test_refused_followups_are_each_told_they_were_not_answered(tmp_path, 
     db.append_message('older', 'user', 'earlier')
     db.set_session_title('older', 'older-chat')
     resume = MessageEvent(text='/resume older-chat', source=source)
-    with native_callback(runner, resume, get_hermes_home()):
+    with native_callback(runner, resume, get_zeus_home()):
         await runner._handle_message(resume)
     ran = []
 

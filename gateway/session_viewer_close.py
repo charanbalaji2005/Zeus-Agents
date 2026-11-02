@@ -23,9 +23,9 @@ from functools import partial
 from pathlib import Path
 
 from gateway.session_history_mount import is_history_mount
-from hermes_state_local import local_receipt
-from hermes_state_mutation_retirement import VIEWER_CLOSE_PREFIX
-from hermes_state_runtime import RuntimeStoreError
+from zeus_state_local import local_receipt
+from zeus_state_mutation_retirement import VIEWER_CLOSE_PREFIX
+from zeus_state_runtime import RuntimeStoreError
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ async def _store_and_settle(authority, session_id, live, close):
 
 
 def _persist_close(authority, session_id, record):
-    from hermes_state_runtime import _epoch
+    from zeus_state_runtime import _epoch
 
     def write(conn):
         _epoch(conn, authority.epoch)
@@ -121,7 +121,7 @@ def forget_persisted_close(authority, session_id, record):
     """Blocking: drop *session_id*'s stored close only if it is still exactly *record* (that close
     completed or was cancelled), and only while this authority owns the store. Returns whether a
     row went."""
-    from hermes_state_runtime import _epoch
+    from zeus_state_runtime import _epoch
 
     def write(conn):
         _epoch(conn, authority.epoch)
@@ -181,8 +181,8 @@ def orphan_close_grace(authority, *, startup=False):
     """Blocking: ``sessions.orphan_end_grace_s`` of the profile that owns *authority*'s store (0 = never).
     Unset, the legacy backend's switches for the same reaping still opt out: ``dashboard.
     ws_orphan_reap_grace_s: 0`` (park forever) and, for *startup* arms, ``startup_orphan_sweep: false``."""
-    from hermes_cli.config_defaults import DEFAULT_CONFIG
-    from hermes_cli.config_effective import load_user_config_effective
+    from zeus_cli.config_defaults import DEFAULT_CONFIG
+    from zeus_cli.config_effective import load_user_config_effective
     from gateway.session_local import profile_env_scope
     from utils import is_truthy_value
     default = DEFAULT_CONFIG['sessions']['orphan_end_grace_s']
@@ -237,7 +237,7 @@ async def arm_detached_orphan_close(authority, session_id):
 
 
 def _idle_s(authority, session_id):
-    from hermes_state_common import _sql_session_last_active
+    from zeus_state_common import _sql_session_last_active
     # Resolve the target BEFORE opening a read context: ``_physical_target`` reads the receipt, and
     # a read that lands on the degraded path (non-WAL, or every read permit spent) waits on the
     # writer's non-reentrant lock. Nested inside this block it would wait on the lock this thread
@@ -325,7 +325,7 @@ async def _resolve_abandoned_unknown(authority, session_id, live, close):
     transcript boundary written) and the drain moves on; a queued successor still runs before the
     close. A viewer back first cancels the close and keeps the decision. Returns whether the
     close may go on to its idle check (no ``unknown`` turn is left)."""
-    from hermes_state_runtime import list_session_admissions
+    from zeus_state_runtime import list_session_admissions
     rows = await asyncio.to_thread(list_session_admissions, authority.db, session_id=session_id)
     unknown = [row for row in rows if row['status'] == 'unknown']
     if not unknown:

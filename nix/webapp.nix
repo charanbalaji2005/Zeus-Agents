@@ -1,8 +1,8 @@
 # The Webapp: the Desktop renderer built for a browser. The npm hook has
 # already installed the locked workspace, so it compiles there, with no
 # private workspace and no Electron.
-{ hermesNpmLib, ... }:
-hermesNpmLib.buildNpmPackage {
+{ zeusNpmLib, ... }:
+zeusNpmLib.buildNpmPackage {
   dirs = [
     "apps/desktop"
     "apps/shared"
@@ -11,7 +11,7 @@ hermesNpmLib.buildNpmPackage {
     "scripts/build/freshness.mjs"
     "scripts/build/frontend-common.mjs"
   ];
-  pname = "hermes-webapp";
+  pname = "zeus-webapp";
 
   # The browser bundle loads no native module (node-pty belongs to Desktop),
   # so none is compiled.

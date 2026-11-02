@@ -1,5 +1,5 @@
 """A gateway-owned session runs with ``provider_routing`` and ``prefill_messages_file`` from its own
-profile's config as of its creation, as a new ``hermes chat`` process read them once at startup on
+profile's config as of its creation, as a new ``zeus chat`` process read them once at startup on
 pre-merge main (CFG-6, CFG-7). The daemon-start snapshot on the runner never reaches it, and the
 in-process turn and a managed worker get the same values."""
 import json
@@ -55,7 +55,7 @@ def test_each_new_session_reads_its_profiles_prefill_once_and_workers_match(tmp_
     from gateway.session_local import _bypass_policy
     from gateway.session_policy import build_policy
     from gateway.session_worker_construct import construct_inputs
-    monkeypatch.delenv('HERMES_PREFILL_MESSAGES_FILE', raising=False)
+    monkeypatch.delenv('ZEUS_PREFILL_MESSAGES_FILE', raising=False)
     _prefill(tmp_path, 'prefill.json', 'FIRST')
     runner = SimpleNamespace(config=None, _prefill_messages=STALE, _refresh_fallback_model=lambda: None,
                              _get_system_prompt_for_channel=lambda *a: None)
@@ -100,7 +100,7 @@ def test_an_open_sessions_prefill_survives_cache_pressure_and_file_edits(tmp_pat
     started with on every later construction: a managed worker's and an in-process rebuild's."""
     from gateway.session_policy import build_policy
     from gateway.session_worker_construct import construct_inputs, session_prefill
-    monkeypatch.delenv('HERMES_PREFILL_MESSAGES_FILE', raising=False)
+    monkeypatch.delenv('ZEUS_PREFILL_MESSAGES_FILE', raising=False)
     _prefill(tmp_path, 'prefill.json', 'ORIGINAL')
     runner = SimpleNamespace(config=None, _prefill_messages=STALE, _refresh_fallback_model=lambda: None,
                              _get_system_prompt_for_channel=lambda *a: None)
@@ -121,7 +121,7 @@ async def test_prefill_is_read_when_the_session_is_created_and_dropped_with_it(t
     from gateway.session_mutations import retire_live_sessions
     from gateway.session_worker_construct import construct_inputs
     from tests.gateway.test_local_create_env_refs import _owner
-    monkeypatch.delenv('HERMES_PREFILL_MESSAGES_FILE', raising=False)
+    monkeypatch.delenv('ZEUS_PREFILL_MESSAGES_FILE', raising=False)
     home = tmp_path / 'home'
     home.mkdir()
     (home / 'config.yaml').write_text(CONFIG + 'prefill_messages_file: prefill.json\n')
@@ -192,7 +192,7 @@ CONFIG = ('platform_toolsets: {cli: []}\n'
 def _create(owner, connection, home, request_id):
     from gateway.session_local import create_local_session
     from gateway.session_policy import restore_policy
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     ref = create_local_session(owner, connection.actor, {'request_id': request_id, 'source': 'cli',
                                                          'cwd': str(home), 'toolsets': []})
     return ref, restore_policy(local_receipt(owner.db, ref.session_id)['policy'])
@@ -200,7 +200,7 @@ def _create(owner, connection, home, request_id):
 
 async def _prefill_owner(tmp_path, monkeypatch):
     from tests.gateway.test_local_create_env_refs import _owner
-    monkeypatch.delenv('HERMES_PREFILL_MESSAGES_FILE', raising=False)
+    monkeypatch.delenv('ZEUS_PREFILL_MESSAGES_FILE', raising=False)
     home = tmp_path / 'home'
     home.mkdir()
     (home / 'config.yaml').write_text(CONFIG + 'prefill_messages_file: prefill.json\n')
@@ -218,7 +218,7 @@ def _stage(owner, connection, cwd, request_id):
 def _commit(owner, staged):
     """The off-loop commit and publication every async create runs after staging."""
     from gateway.session_local_recovery import restore_local_session
-    from hermes_state_local import commit_local_session
+    from zeus_state_local import commit_local_session
     commit_local_session(owner.db, epoch=owner.epoch, receipt=staged)
     return restore_local_session(owner, staged['session_id'])
 
@@ -231,8 +231,8 @@ async def test_the_prefill_file_is_read_by_the_off_loop_commit_not_while_staging
     from functools import partial
     from gateway.session_local_recovery import restore_local_session
     from gateway.session_runtime_workers import tracked_write
-    from hermes_cli import cli_config_load
-    from hermes_state_local import commit_local_session
+    from zeus_cli import cli_config_load
+    from zeus_state_local import commit_local_session
     home, owner, connection = await _prefill_owner(tmp_path, monkeypatch)
     readers, real = [], cli_config_load._load_prefill_messages
     monkeypatch.setattr(cli_config_load, '_load_prefill_messages',
@@ -253,7 +253,7 @@ def _seen(owner, monkeypatch, sid):
     """The prefill a managed worker and an in-process build of ``sid`` get (they must agree)."""
     from gateway.session_policy import restore_policy
     from gateway.session_worker_construct import construct_inputs
-    from hermes_state_local import local_receipt
+    from zeus_state_local import local_receipt
     policy = restore_policy(local_receipt(owner.db, sid)['policy'])
     worker = construct_inputs(owner, policy, sid)['prefill_messages'][0]['content']
     assert _in_process_prefill(owner, policy, monkeypatch, sid)[0]['content'] == worker
@@ -284,7 +284,7 @@ async def test_overlapping_exact_creates_keep_the_committed_attempts_prefill(tmp
 
 @pytest.mark.asyncio
 async def test_a_conflicting_losing_create_never_replaces_the_winners_prefill(tmp_path, monkeypatch):
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     home, owner, connection = await _prefill_owner(tmp_path, monkeypatch)
     try:
         winner = _stage(owner, connection, home, 'conflict')
@@ -306,7 +306,7 @@ async def test_a_create_refused_by_a_retirement_tombstone_holds_no_prefill(tmp_p
     """Retrying the create of a deleted session is refused at commit (``not_found``); the attempt
     must not leave a snapshot behind for a session that cannot exist."""
     from gateway.session_mutations import mutate_session
-    from hermes_state_runtime import RuntimeStoreError
+    from zeus_state_runtime import RuntimeStoreError
     home, owner, connection = await _prefill_owner(tmp_path, monkeypatch)
     owner.runner.session_store._db = owner.db  # one routing store: the delete's live guard requires it
     try:

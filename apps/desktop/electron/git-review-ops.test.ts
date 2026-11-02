@@ -35,12 +35,12 @@ afterEach(() => {
 })
 
 function makeRepo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-desktop-git-status-'))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-desktop-git-status-'))
 
   tempDirs.push(dir)
   execFileSync('git', ['init', '-q'], { cwd: dir })
-  execFileSync('git', ['config', 'user.email', 'hermes-test@example.com'], { cwd: dir })
-  execFileSync('git', ['config', 'user.name', 'Hermes Test'], { cwd: dir })
+  execFileSync('git', ['config', 'user.email', 'zeus-test@example.com'], { cwd: dir })
+  execFileSync('git', ['config', 'user.name', 'Zeus Test'], { cwd: dir })
   fs.writeFileSync(path.join(dir, 'tracked.txt'), 'tracked\n')
   execFileSync('git', ['add', 'tracked.txt'], { cwd: dir })
   execFileSync('git', ['commit', '-qm', 'initial'], { cwd: dir })
@@ -63,7 +63,7 @@ test('gitFor accepts internally resolved git paths with restricted non-space cha
   const restrictedBinaries = [
     String.raw`C:\Git(x86)\cmd\git.exe`,
     String.raw`C:\tools\git+portable\cmd\git.exe`,
-    String.raw`C:\Users\João\AppData\Local\hermes\git\cmd\git.exe`
+    String.raw`C:\Users\João\AppData\Local\zeus\git\cmd\git.exe`
   ]
 
   for (const binary of restrictedBinaries) {
@@ -81,7 +81,7 @@ test('gitFor accepts a Windows no-console host tuple with restricted characters'
       windowsGitHost: () => ({
         isWindows: true,
         pythonBin: String.raw`C:\Tools\python-3.14+build\python.exe`,
-        scriptPath: String.raw`C:\Hermes\hermes-no-console-git.py`
+        scriptPath: String.raw`C:\Zeus\zeus-no-console-git.py`
       })
     }
   })
@@ -126,7 +126,7 @@ test('simpleGitHostEnv forwards the allow-listed git variables and drops the oth
     GIT_ASKPASS: '/usr/bin/askpass',
     SSH_ASKPASS: '/usr/bin/ssh-askpass',
     GIT_TERMINAL_PROMPT: '1',
-    HERMES_GIT_ARGV0: '"git"'
+    ZEUS_GIT_ARGV0: '"git"'
   })
 })
 
@@ -138,7 +138,7 @@ test('simpleGitHostEnv still defaults GIT_TERMINAL_PROMPT off for the host tuple
 // test can tell whether the user's GIT_SSH_COMMAND reached the git process.
 function makeRepoWithSshRemote() {
   const dir = makeRepo()
-  const toolDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-fake-ssh-'))
+  const toolDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-fake-ssh-'))
   const marker = path.join(toolDir, 'ssh-command-ran')
   const sshScript = path.join(toolDir, 'fake-ssh.sh')
 
@@ -179,7 +179,7 @@ test.skipIf(process.platform === 'win32')(
 )
 
 const HOST_PYTHON =
-  process.env.HERMES_PYTHON || process.env.UV_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
+  process.env.ZEUS_PYTHON || process.env.UV_PYTHON || (process.platform === 'win32' ? 'python' : 'python3')
 
 test.skipIf(process.platform === 'win32')(
   "gitFor's Windows host-tuple path forwards GIT_SSH_COMMAND and does not throw on inherited guarded variables",
@@ -191,7 +191,7 @@ test.skipIf(process.platform === 'win32')(
 
     const { dir, marker, sshScript } = makeRepoWithSshRemote()
     const actualNoConsole = await vi.importActual<typeof NoConsoleGit>('./no-console-git')
-    const scriptDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-git-host-'))
+    const scriptDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-git-host-'))
 
     tempDirs.push(scriptDir)
 

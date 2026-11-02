@@ -62,7 +62,7 @@ async def burst_gate(adapter, event, session_key):
     if adapter._shared_runtime_owns_input(event):
         return holds_busy_burst(adapter, session_key)
     if (cmd := event.get_command()) and _serial(adapter):
-        from hermes_cli.commands import is_interrupt_then_dispatch
+        from zeus_cli.commands import is_interrupt_then_dispatch
         if is_interrupt_then_dispatch(cmd):
             discard_busy_burst(adapter, session_key)
         for key, burst in list(adapter.__dict__.get('_shared_bursts', {}).items()):

@@ -127,7 +127,7 @@ def test_interrupt_before_any_wait_does_not_blame_another_process():
     agent = _agent(_Db(acquired=False), _interrupt_requested=True)
     agent.clear_interrupt = lambda: None
     reply = _admit(agent).early_result["final_response"]
-    assert "another Hermes process" not in reply and "not processed" in reply
+    assert "another Zeus process" not in reply and "not processed" in reply
 
     class _HeldDb(_Db):
         def acquire_session_turn_lease(self, session_id, holder, **kwargs):
@@ -136,7 +136,7 @@ def test_interrupt_before_any_wait_does_not_blame_another_process():
 
     agent = _agent(_HeldDb(), _interrupt_requested=True)
     agent.clear_interrupt = lambda: None
-    assert "another Hermes process" in _admit(agent).early_result["final_response"]
+    assert "another Zeus process" in _admit(agent).early_result["final_response"]
 
 
 def _active_lease(db):
@@ -183,17 +183,17 @@ def test_lock_tolerance_never_outlives_the_committed_row_expiry(tmp_path, monkey
     row's committed expiry (a renewal that waited for the lock), and a renewal blocked near expiry
     gives up and stops the turn BEFORE the row becomes reclaimable, never after a successor could
     take it. Control: the lock clearing lets the delayed renewal succeed with no interrupt."""
-    import hermes_state
-    import hermes_state_compression
+    import zeus_state
+    import zeus_state_compression
     from agent import turn_facade_lease
 
     clock = _MovingClock(1000.0)
     fake_time = SimpleNamespace(time=clock.time, monotonic=time.monotonic, sleep=time.sleep)
     monkeypatch.setattr(turn_facade_lease, "time", fake_time)
-    monkeypatch.setattr(hermes_state_compression, "time", fake_time)
+    monkeypatch.setattr(zeus_state_compression, "time", fake_time)
 
     path = tmp_path / "state.db"
-    db = hermes_state.SessionDB(path)
+    db = zeus_state.SessionDB(path)
     db.create_session("s1", source="test")
     assert db.try_acquire_session_turn_lease("s1", "h")
     events = []

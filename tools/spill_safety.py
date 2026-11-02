@@ -1,4 +1,4 @@
-"""Symlink-safe creation helpers for spill/cache files under ``~/.hermes``, where a plain
+"""Symlink-safe creation helpers for spill/cache files under ``~/.zeus``, where a plain
 ``open(path, "w")`` would follow a pre-planted symlink onto ``~/.bashrc`` etc. New files use
 ``O_CREAT | O_EXCL`` (fails on ANY existing path, even a dangling link); overwrites ``lstat`` +
 ``unlink`` first (removes the link, never its target) then create exclusively, so the pair
@@ -12,7 +12,7 @@ import os
 import stat
 from pathlib import Path
 from typing import IO
-from hermes_dir_acl import make_user_dir
+from zeus_dir_acl import make_user_dir
 
 __all__ = ["ensure_spill_dir", "open_exclusive", "write_text_exclusive"]
 

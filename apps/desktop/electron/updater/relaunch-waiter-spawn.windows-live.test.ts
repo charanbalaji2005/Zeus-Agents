@@ -106,7 +106,7 @@ const { startRelaunchWaiter } = require(${JSON.stringify(bundle)});
       }
 
       const stage = fs.readFileSync(completed + '.stage', 'utf8').trim()
-      expect(path.basename(stage)).toMatch(/^hermes-relaunch-/)
+      expect(path.basename(stage)).toMatch(/^zeus-relaunch-/)
       expect(fs.existsSync(stage), `${stage} is left behind`).toBe(false)
     } finally {
       if (fs.existsSync(completed + '.pid')) {

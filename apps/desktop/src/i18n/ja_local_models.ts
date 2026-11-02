@@ -1,4 +1,4 @@
-import type { TranslationOverride } from '@hermes/shared/i18n'
+import type { TranslationOverride } from '@zeus/shared/i18n'
 
 import type { Translations } from './types'
 
@@ -10,7 +10,7 @@ export const jaLocalModels: TranslationOverride<Translations['settings']['localM
   serverRunning: '実行中',
   runtimeInstalled: 'llama.cpp ランタイムをインストール済み',
   runtimeInstalledDetail: (tag, backend) =>
-    `ビルド ${tag}、${backend} バックエンド。サーバーは Hermes が起動・管理します。`,
+    `ビルド ${tag}、${backend} バックエンド。サーバーは Zeus が起動・管理します。`,
   installTitle: 'ローカルランタイムをインストール',
   installDetail:
     'llama.cpp 推論エンジン（数百 MB）をダウンロードします。ダウンロードしたモデルはすべてこのマシン上で動作します——アカウント不要、データが外部に送られることはありません。',

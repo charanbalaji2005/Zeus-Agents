@@ -3,7 +3,7 @@ repo: https://github.com/xiaohei-info/hermes-muse
 sha: 0dade28130b6901dfa2dd81a067856441948d33c
 version: "0.3.1"
 description: >-
-  A proactive companion for Hermes: follows accepted goals (active/done/cancelled),
+  A proactive companion for Zeus: follows accepted goals (active/done/cancelled),
   prepares sourced research and Feed articles,
   maintains memory, and assembles rolling 30-day or natural-month calendar views.
   Read-only local Dashboard/Desktop pages show Feed, Ideas and Goals; profile
@@ -35,7 +35,7 @@ description: >-
 maintainer: xiaohei-info
 tier: community
 category: automation
-requires_hermes: ">=0.21.5"
+requires_zeus: ">=0.21.5"
 docs_url: https://github.com/xiaohei-info/hermes-muse/blob/0dade28130b6901dfa2dd81a067856441948d33c/README.md
 platforms: [linux, macos]
 capabilities:

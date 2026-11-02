@@ -25,7 +25,7 @@ from tests.gateway.test_normal_runtime_boot import control
 
 def _seed(home, rows):
     """Rows as the pre-authority clients wrote them: no route, no owner binding."""
-    from hermes_state import SessionDB
+    from zeus_state import SessionDB
     db = SessionDB(db_path=home / 'state.db')
     try:
         for sid, source, user_id in rows:
@@ -52,7 +52,7 @@ def test_per_profile_grants_edit_old_local_rows_of_their_own_profile(tmp_path):
                  ('old-desktop-nous', 'desktop', 'nous:account'), ('old-desktop-foreign', 'desktop', 'telegram:42')])
     root = Path(__file__).resolve().parents[2]
     env = {k: os.environ[k] for k in ('PATH', 'LANG', 'TZ', 'TIRITH_ENABLED') if k in os.environ}
-    env.update(HOME=str(user), USERPROFILE=str(user), HERMES_HOME=str(home), PYTHONPATH=str(root),
+    env.update(HOME=str(user), USERPROFILE=str(user), ZEUS_HOME=str(home), PYTHONPATH=str(root),
                PYTHONUNBUFFERED='1')
     with (tmp_path / 'gateway.log').open('w+') as log:
         process = subprocess.Popen([sys.executable, '-m', 'gateway.run'], cwd=root, env=env,
@@ -76,7 +76,7 @@ def test_per_profile_grants_edit_old_local_rows_of_their_own_profile(tmp_path):
                                                        'instance_id': descriptor['instance_id']})['ticket']
 
             def grant(profile):
-                return {'X-Hermes-Gateway-Ticket': ticket(profile)}
+                return {'X-Zeus-Gateway-Ticket': ticket(profile)}
 
             with httpx.Client(base_url=descriptor['api_origin'], trust_env=False, timeout=30) as client:
                 def pin(sid, profile, minted_for):
@@ -99,7 +99,7 @@ def test_per_profile_grants_edit_old_local_rows_of_their_own_profile(tmp_path):
 
             async def stored_picker():
                 async with connect(descriptor['api_origin'].replace('http:', 'ws:') + '/api/ws', subprotocols=[
-                        'hermes-gateway-v1', 'hermes-gateway-ticket.' + ticket('default', 'interactive')]) as ws:
+                        'zeus-gateway-v1', 'zeus-gateway-ticket.' + ticket('default', 'interactive')]) as ws:
                     await ws.send(json.dumps({'jsonrpc': '2.0', 'id': 1, 'method': 'session.list',
                                               'params': {'scope': 'stored', 'limit': 50}}))
                     while (reply := json.loads(await asyncio.wait_for(ws.recv(), 30))).get('id') != 1:

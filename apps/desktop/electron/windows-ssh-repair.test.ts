@@ -6,12 +6,12 @@ import path from 'node:path'
 
 import { test } from 'vitest'
 
-import { listRemoteHermesProfiles, readRemoteInstallId } from './remote-lifecycle'
+import { listRemoteZeusProfiles, readRemoteInstallId } from './remote-lifecycle'
 import { assertWindowsRemoteInstallUpdateClear, connectWindowsRemote, decodePowerShellCommand, probeWindowsFiles, probeWindowsRemote, windowsHelperOwnsRuntime } from './windows-remote-lifecycle'
 
 const runtime = {
-  os: 'Windows', arch: 'AMD64', hermesHome: 'C:\\Users\\A\\AppData\\Local\\hermes',
-  hermesPath: 'C:\\Users\\A\\AppData\\Local\\hermes\\bin\\hermes.exe',
+  os: 'Windows', arch: 'AMD64', zeusHome: 'C:\\Users\\A\\AppData\\Local\\zeus',
+  zeusPath: 'C:\\Users\\A\\AppData\\Local\\zeus\\bin\\zeus.exe',
   python: 'C:\\Python\\python.exe'
 }
 
@@ -30,8 +30,8 @@ test('platform and marker scripts survive outer-shell parsing as one compressed 
     return calls.length === 1 ? JSON.stringify(runtime) : 'CLEAR'
   } }
 
-  await probeWindowsRemote(ssh, 'C:\\用户\\Hermes\\hermes.exe')
-  await assertWindowsRemoteInstallUpdateClear(ssh, runtime.hermesHome, runtime.python)
+  await probeWindowsRemote(ssh, 'C:\\用户\\Zeus\\zeus.exe')
+  await assertWindowsRemoteInstallUpdateClear(ssh, runtime.zeusHome, runtime.python)
 
   for (const { command, options } of calls) {
     const outer = Buffer.from(command.split(' ').at(-1)!, 'base64').toString('utf16le')
@@ -50,37 +50,37 @@ test('Windows roster and install id never dispatch POSIX syntax or hide a failed
     assert.doesNotMatch(command, /^echo|^if \[/)
     const script = decode(command)
 
-    if (script.includes('.hermes-update-in-progress')) {return 'CLEAR'}
+    if (script.includes('.zeus-update-in-progress')) {return 'CLEAR'}
 
     return JSON.stringify({ profiles: ['default', 'bob', 'not legal', '.rollback', 'bob'], installId: 'a'.repeat(32) })
   } }
 
-  assert.deepEqual(await listRemoteHermesProfiles(ssh, runtime), ['default', 'bob'])
+  assert.deepEqual(await listRemoteZeusProfiles(ssh, runtime), ['default', 'bob'])
   assert.equal(await readRemoteInstallId(ssh, runtime), 'a'.repeat(32))
   assert.ok(calls.length > 0)
   const failed = { exec: async () => { throw new Error('fixture disconnected') } }
-  await assert.rejects(() => listRemoteHermesProfiles(failed, runtime))
+  await assert.rejects(() => listRemoteZeusProfiles(failed, runtime))
 })
 
 test('Windows inventory rejects malformed helper output instead of fabricating default', async () => {
   const ssh = { exec: async (command: string) => {
     const script = decodePowerShellCommand(command)
 
-    return script.includes('.hermes-update-in-progress') ? 'CLEAR' : '{}'
+    return script.includes('.zeus-update-in-progress') ? 'CLEAR' : '{}'
   } }
 
-  await assert.rejects(() => listRemoteHermesProfiles(ssh, runtime))
+  await assert.rejects(() => listRemoteZeusProfiles(ssh, runtime))
 })
 
 test('a bin launcher does not require a nonexistent sibling Python and resolves after the update gate', async () => {
-  const bootstrap = "import os, sys, runpy; runpy.run_module('hermes_cli.main', run_name='__main__', alter_sys=True)"
+  const bootstrap = "import os, sys, runpy; runpy.run_module('zeus_cli.main', run_name='__main__', alter_sys=True)"
 
   const ssh = { exec: async (command: string) => {
     const script = decodePowerShellCommand(command)
 
-    if (script.includes('Get-Command hermes -CommandType Application')) {return JSON.stringify({ ...runtime, python: '', launcherPath: runtime.hermesPath })}
+    if (script.includes('Get-Command zeus -CommandType Application')) {return JSON.stringify({ ...runtime, python: '', launcherPath: runtime.zeusPath })}
 
-    if (script.includes('.hermes-update-in-progress')) {return 'CLEAR'}
+    if (script.includes('.zeus-update-in-progress')) {return 'CLEAR'}
 
     return JSON.stringify({ python: runtime.python, runtimeCommand: [runtime.python, '-I', '-c', bootstrap] })
   } }
@@ -88,7 +88,7 @@ test('a bin launcher does not require a nonexistent sibling Python and resolves 
   const result = await probeWindowsRemote(ssh)
 
   assert.equal(result.python, runtime.python)
-  assert.equal(result.hermesPath, runtime.hermesPath)
+  assert.equal(result.zeusPath, runtime.zeusPath)
 })
 
 test('the complete connect path keeps atomic spawn off argv and delivers the explicit caller JSON', async () => {
@@ -97,7 +97,7 @@ test('the complete connect path keeps atomic spawn off argv and delivers the exp
   const ssh = { exec: async (command: string, options: { stdinData?: string } = {}) => {
     const script = decodePowerShellCommand(command) || ''
 
-    if (script.includes('Get-Command hermes -CommandType Application')) {return JSON.stringify(runtime)}
+    if (script.includes('Get-Command zeus -CommandType Application')) {return JSON.stringify(runtime)}
 
     if (script.includes("'spawn'")) {
       assert.ok(command.length < 8191, "Connect's atomic spawn command must fit cmd.exe's limit")
@@ -109,22 +109,22 @@ test('the complete connect path keeps atomic spawn off argv and delivers the exp
       return JSON.stringify({ pid: 42, creationTimeNs: '1234567890123456789' })
     }
 
-    if (script.includes('.hermes-update-in-progress')) {return 'CLEAR'}
+    if (script.includes('.zeus-update-in-progress')) {return 'CLEAR'}
 
-    if (script.includes("'inspect'")) {return JSON.stringify({ supported: true, path: runtime.hermesPath, version: 'fixture' })}
+    if (script.includes("'inspect'")) {return JSON.stringify({ supported: true, path: runtime.zeusPath, version: 'fixture' })}
 
     if (script.includes("'read-lock'")) {return 'null'}
 
     if (script.includes("'process-state'")) {return JSON.stringify({ alive: true, owned: true, indeterminate: false })}
 
-    if (script.includes("'read-log'")) {return JSON.stringify({ content: 'HERMES_BACKEND_READY port=5555' })}
+    if (script.includes("'read-log'")) {return JSON.stringify({ content: 'ZEUS_BACKEND_READY port=5555' })}
 
     return '{"ok":true}'
   } }
 
   const result = await connectWindowsRemote({
     ssh, profile: 'bob', ownershipId: 'a'.repeat(32), pickLocalPort: async () => 4444,
-    forward: async () => {}, cancelForward: async () => {}, waitForHermes: async () => {}, probeReuseProof: async () => 'authenticated-ok'
+    forward: async () => {}, cancelForward: async () => {}, waitForZeus: async () => {}, probeReuseProof: async () => 'authenticated-ok'
   })
 
   assert.equal(spawned, true)
@@ -139,12 +139,12 @@ test('Test and Connect share one verdict on a helper too old for a boot-selected
   assert.equal(windowsHelperOwnsRuntime(runtime, { supported: true }), true)
 })
 
-test.runIf(process.platform === 'win32')('the real Windows probe finds a .cmd-only launcher in the Hermes home off PATH', async () => {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'hermes-probe-home-'))
+test.runIf(process.platform === 'win32')('the real Windows probe finds a .cmd-only launcher in the Zeus home off PATH', async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'zeus-probe-home-'))
   fs.mkdirSync(path.join(home, 'bin'))
-  fs.writeFileSync(path.join(home, 'bin', 'hermes.cmd'), '@echo off\r\n')
+  fs.writeFileSync(path.join(home, 'bin', 'zeus.cmd'), '@echo off\r\n')
   const system = process.env.SystemRoot || 'C:\\Windows'
-  const env = { ...process.env, HERMES_HOME: home, PATH: [path.join(system, 'System32'), system, path.join(system, 'System32', 'WindowsPowerShell', 'v1.0')].join(';') }
+  const env = { ...process.env, ZEUS_HOME: home, PATH: [path.join(system, 'System32'), system, path.join(system, 'System32', 'WindowsPowerShell', 'v1.0')].join(';') }
 
   const ssh = {
     exec: async (command: string, options: { stdinData?: string } = {}) => {
@@ -159,7 +159,7 @@ test.runIf(process.platform === 'win32')('the real Windows probe finds a .cmd-on
 
   try {
     const parsed = await probeWindowsFiles(ssh, '')
-    assert.equal(parsed.hermesPath.toLowerCase(), path.join(home, 'bin', 'hermes.cmd').toLowerCase())
+    assert.equal(parsed.zeusPath.toLowerCase(), path.join(home, 'bin', 'zeus.cmd').toLowerCase())
   } finally {
     fs.rmSync(home, { recursive: true, force: true })
   }

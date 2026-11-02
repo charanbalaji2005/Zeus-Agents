@@ -58,7 +58,7 @@ export async function writeClipboardText(text: string) {
   const native =
     clipboard && (nativeWrites.has(clipboard) ? nativeWrites.get(clipboard) : clipboard.writeText?.bind(clipboard))
 
-  const ipc = hostHas('clipboardIpc') ? window.hermesDesktop?.writeClipboard : undefined
+  const ipc = hostHas('clipboardIpc') ? window.zeusDesktop?.writeClipboard : undefined
 
   if (ipc) {
     try {
@@ -86,7 +86,7 @@ export async function writeClipboardText(text: string) {
 export function installClipboardShim() {
   const clipboard = navigator.clipboard
 
-  if (!window.hermesDesktop?.writeClipboard || !clipboard || nativeWrites.has(clipboard)) {
+  if (!window.zeusDesktop?.writeClipboard || !clipboard || nativeWrites.has(clipboard)) {
     return
   }
 

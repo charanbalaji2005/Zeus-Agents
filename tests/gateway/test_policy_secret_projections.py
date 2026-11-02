@@ -6,7 +6,7 @@ from types import SimpleNamespace
 def test_terminal_and_config_secret_projections_recover_without_durable_values(tmp_path, monkeypatch):
     from gateway.session_policy import build_policy, bind_launch_key, policy_scope
     from tools.terminal_scope import terminal_env
-    monkeypatch.setenv('HERMES_HOME', str(tmp_path))
+    monkeypatch.setenv('ZEUS_HOME', str(tmp_path))
     secret = 'opaque-terminal-header-secret'
     cfg = {'terminal': {'docker_env': {'UNCLASSIFIED': secret}},
            'providers': {'fixture': {'extra_headers': {'X-Custom-Auth': secret}}}}
