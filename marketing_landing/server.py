@@ -47,7 +47,7 @@ try:
         mongo_status = "not_configured"
         print("[MongoDB] MONGODB_URI is not set; using the local JSON user store.")
 except Exception as e:
-    mongo_status = f"error: {str(e)}"
+    mongo_status = f"error: {e!s}"
     print(f"[MongoDB] Connection notice: {e}")
 
 admin_api.record("INFO", f"Server starting; MongoDB {mongo_status}")
@@ -59,7 +59,7 @@ if os.path.exists(fallback_db_path):
     try:
         with open(fallback_db_path, "r", encoding="utf-8") as f:
             fallback_users = json.load(f)
-    except:
+    except (OSError, ValueError):
         fallback_users = {}
 
 def save_user_to_db(user_data):
@@ -97,7 +97,7 @@ def save_user_to_db(user_data):
     try:
         with open(fallback_db_path, "w", encoding="utf-8") as f:
             json.dump(fallback_users, f, indent=2)
-    except:
+    except OSError:
         pass
     return {"saved_to": "local_fallback", "status": "success"}
 

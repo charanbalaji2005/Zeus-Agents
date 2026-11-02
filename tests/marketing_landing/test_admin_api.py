@@ -92,7 +92,7 @@ def _login(base):
 
 
 def test_admin_api_is_closed_without_a_configured_secret(site, monkeypatch):
-    base, db = site
+    base, _ = site
     _login(base)
     monkeypatch.delenv("ADMIN_SECRET")
     for path in ("/api/admin/users", "/api/admin/overview", "/api/admin/logs"):
@@ -112,7 +112,7 @@ def test_wrong_secret_is_refused_and_repeated_guessing_locks_the_client_out(site
 
 
 def test_approving_from_the_panel_lets_zeus_login_succeed(site):
-    base, db = site
+    base, _ = site
     assert _login(base)[0] == 403  # new account waits for approval
 
     status, listing = _call(f"{base}/api/admin/users")

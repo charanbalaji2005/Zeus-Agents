@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Community — Zeus Agents</title>
+<meta name="description" content="Get help, report bugs, share skills and plugins, and follow Zeus Agents development.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/zeus-nav.css">
+<style>
+  :root {
+    --bg: #0b0b0b; --surface: #141414; --line: #262626; --text: #f1f1f1; --muted: #a3a3a3; --accent: #ffd257;
+    --display: "Oswald", "Arial Narrow", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --pad: clamp(16px, 4vw, 40px);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  a { color: inherit; }
+  .wrap { width: 100%; max-width: 1180px; margin: 0 auto; padding: 0 var(--pad); }
+
+  .top { position: sticky; top: 0; z-index: 50; background: rgba(11, 11, 11, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 72px; }
+  .brand { font-family: var(--display); font-weight: 500; font-size: 26px; line-height: 0.9; text-transform: uppercase; text-decoration: none; }
+  .links { display: flex; align-items: center; gap: 28px; }
+  .links a { font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; color: var(--muted); }
+  .links a:hover, .links a[aria-current="page"] { color: var(--text); }
+  .install { font-family: var(--display); font-size: 17px; text-transform: uppercase; text-decoration: none; background: var(--text); color: var(--bg) !important; padding: 10px 16px; }
+  .burger { display: none; width: 44px; height: 44px; margin-right: -10px; place-items: center; background: none; border: 0; color: var(--text); cursor: pointer; }
+  @media (max-width: 1023.98px) { .links { display: none; } .burger { display: grid; } }
+
+  .hero { padding: clamp(56px, 10vw, 120px) 0 clamp(40px, 6vw, 72px); border-bottom: 1px solid var(--line); }
+  .eyebrow { font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin: 0 0 18px; }
+  h1 { font-family: var(--display); font-weight: 300; font-size: clamp(48px, 9vw, 112px); line-height: 0.95; margin: 0; text-transform: none; }
+  .lede { max-width: 640px; margin: 24px 0 0; font-size: clamp(17px, 2vw, 20px); color: #d4d4d4; }
+
+  section { padding: clamp(44px, 7vw, 80px) 0; border-bottom: 1px solid var(--line); }
+  h2 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 4.5vw, 48px); line-height: 1; margin: 0 0 28px; text-transform: uppercase; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 899.98px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 599.98px) { .grid { grid-template-columns: 1fr; } }
+  .card { display: flex; flex-direction: column; gap: 10px; padding: 24px; background: var(--surface); border: 1px solid var(--line); text-decoration: none; min-height: 100%; transition: border-color 0.15s; }
+  a.card:hover { border-color: #4a4a4a; }
+  .card h3 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 26px; text-transform: uppercase; }
+  .card p { margin: 0; color: var(--muted); }
+  .card .go { margin-top: auto; padding-top: 8px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+
+  .steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 18px 20px; background: var(--surface); border: 1px solid var(--line); }
+  .steps li::before { content: counter(step, decimal-leading-zero); font-family: var(--mono); color: var(--accent); }
+  .steps strong { display: block; margin-bottom: 4px; }
+  .steps span { color: var(--muted); }
+  code { font-family: var(--mono); font-size: 0.92em; background: #1e1e1e; border: 1px solid var(--line); padding: 1px 6px; overflow-wrap: anywhere; }
+
+  .rules { columns: 2 280px; column-gap: 40px; margin: 0; padding-left: 20px; color: #d4d4d4; }
+  .rules li { margin: 0 0 12px; break-inside: avoid; }
+
+  footer { padding: 36px 0 calc(36px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/">Zeus<br>Agents</a>
+    <nav class="links" aria-label="Main">
+      <a href="/#install">Install</a>
+      <a href="/docs">Docs</a>
+      <a href="/cli">Web CLI</a>
+      <a href="/community.html" aria-current="page">Community</a>
+      <a class="install" href="/#install">Install Zeus CLI</a>
+    </nav>
+    <button class="burger" type="button" data-zeus-menu-open aria-label="Open menu">
+      <svg width="22" height="22" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M13.33 12H2.67v-1.33h10.66V12Zm0-3.33H2.67V7.33h10.66v1.34Zm0-3.34H2.67V4h10.66v1.33Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Community</p>
+      <h1>Build Zeus with us</h1>
+      <p class="lede">Zeus Agents is open source. Ask questions, report bugs, share the skills and plugins you build, and help shape what comes next.</p>
+    </div>
+  </div>
+
+  <section aria-labelledby="where">
+    <div class="wrap">
+      <h2 id="where">Where to find us</h2>
+      <div class="grid">
+        <a class="card" href="https://github.com/charanbalaji2005/Zeus-Agents" target="_blank" rel="noopener">
+          <h3>GitHub</h3>
+          <p>The source code, releases and roadmap. Star the repo to follow along.</p>
+          <span class="go">Open repository &rarr;</span>
+        </a>
+        <a class="card" href="https://github.com/charanbalaji2005/Zeus-Agents/issues" target="_blank" rel="noopener">
+          <h3>Issues</h3>
+          <p>Found a bug or want a feature? Search existing issues first, then open a new one.</p>
+          <span class="go">Browse issues &rarr;</span>
+        </a>
+        <a class="card" href="https://discord.com/users/1382355376539697272" target="_blank" rel="noopener">
+          <h3>Discord</h3>
+          <p>Message the maintainer directly for questions that don't fit an issue.</p>
+          <span class="go">Send a message &rarr;</span>
+        </a>
+        <a class="card" href="https://x.com/charan7719" target="_blank" rel="noopener">
+          <h3>X / Twitter</h3>
+          <p>Release announcements, previews and quick updates.</p>
+          <span class="go">Follow updates &rarr;</span>
+        </a>
+        <a class="card" href="/docs">
+          <h3>Docs</h3>
+          <p>Install guides, configuration, tools, skills and the CLI reference.</p>
+          <span class="go">Read the docs &rarr;</span>
+        </a>
+        <a class="card" href="/cli">
+          <h3>Web CLI</h3>
+          <p>Try the Zeus command line in your browser before you install it.</p>
+          <span class="go">Open Web CLI &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="contribute">
+    <div class="wrap">
+      <h2 id="contribute">Ways to contribute</h2>
+      <ol class="steps">
+        <li><div><strong>Report a bug</strong><span>Run <code>zeus doctor</code>, then open an issue with its output and the steps that reproduce the problem.</span></div></li>
+        <li><div><strong>Share a skill</strong><span>Skills are plain Markdown in <code>skills/</code>. Open a pull request with yours so everyone can use it.</span></div></li>
+        <li><div><strong>Build a plugin</strong><span>Add tools, hooks, commands or model providers without touching the core. See <code>plugins/</code> for examples.</span></div></li>
+        <li><div><strong>Improve the docs</strong><span>Fix a typo, clarify a step or add a guide. Small pull requests are welcome.</span></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="guidelines">
+    <div class="wrap">
+      <h2 id="guidelines">Community guidelines</h2>
+      <ul class="rules">
+        <li>Be kind and assume good intent. Everyone here is learning.</li>
+        <li>Keep issues focused: one problem or idea per issue.</li>
+        <li>Never post API keys, tokens or passwords, including in logs.</li>
+        <li>Report security problems privately to the maintainer on Discord, never in a public issue.</li>
+        <li>Credit others' work when you build on it.</li>
+        <li>No spam, harassment or self-promotion unrelated to Zeus.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Zeus Agents &middot; open source, built on Hermes Agent by Nous Research</span>
+    <a href="/">Back to home</a>
+  </div>
+</footer>
+<script src="/zeus-nav.js" defer></script>
+</body>
+</html>

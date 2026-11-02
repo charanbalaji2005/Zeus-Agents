@@ -300,7 +300,7 @@ def run_cli(args: list[str], timeout: int = COMMAND_TIMEOUT) -> dict[str, Any]:
     started = time.perf_counter()
     try:
         done = subprocess.run([sys.executable, "-m", "zeus_cli.main", *args], cwd=REPO_ROOT, env=env,
-                              stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                              stdin=subprocess.DEVNULL, capture_output=True, text=True, check=False,
                               encoding="utf-8", errors="replace", timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         return {"exit_code": None, "timed_out": True, "stdout": exc.stdout or "", "stderr": exc.stderr or "",
