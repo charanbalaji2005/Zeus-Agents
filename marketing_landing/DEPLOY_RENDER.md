@@ -12,7 +12,7 @@ This landing page is production-ready for deployment on **Render** ([https://ren
 4. Render will automatically detect [`render.yaml`](./render.yaml).
 5. In the environment variables prompt, replace `<cluster>` in `MONGODB_URI` with your actual MongoDB Atlas cluster hostname (e.g. `cluster0.abcde.mongodb.net`):
    ```
-   MONGODB_URI=mongodb+srv://charan:Charan1234@cluster0.abcde.mongodb.net/Zeus?retryWrites=true&w=majority
+   MONGODB_URI=mongodb+srv://<db-user>:<db-password>@cluster0.abcde.mongodb.net/Zeus?retryWrites=true&w=majority
    ```
 6. Click **Apply**. Render will install dependencies (`pymongo`, `certifi`) and launch the service!
 
@@ -34,8 +34,7 @@ This landing page is production-ready for deployment on **Render** ([https://ren
    | :--- | :--- |
    | `PORT` | `10000` |
    | `GOOGLE_CLIENT_ID` | `644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com` |
-   | `GOOGLE_CLIENT_SECRET` | `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` |
-   | `MONGODB_URI` | `mongodb+srv://charan:Charan1234@<your-cluster>.mongodb.net/Zeus?retryWrites=true&w=majority` |
+   | `MONGODB_URI` | `mongodb+srv://<db-user>:<db-password>@<your-cluster>.mongodb.net/Zeus?retryWrites=true&w=majority` |
 5. Click **Create Web Service**.
 
 ---

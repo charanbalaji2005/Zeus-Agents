@@ -1,0 +1,20 @@
+# Zeus landing page (marketing_landing/ + server.py) for Render.
+#
+# The root Dockerfile is the full Zeus agent image (gateway + loopback-only dashboard); a Render
+# web service built from it never opens $PORT on 0.0.0.0 and times out. Point the service's
+# "Dockerfile Path" at this file instead (render.yaml does).
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=10000
+
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY server.py ./
+COPY marketing_landing/ ./marketing_landing/
+
+EXPOSE 10000
+CMD ["python", "server.py"]

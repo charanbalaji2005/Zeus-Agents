@@ -13,17 +13,11 @@ GOOGLE_CLIENT_ID = os.environ.get(
     "GOOGLE_CLIENT_ID",
     "644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com"
 )
-GOOGLE_CLIENT_SECRET = os.environ.get(
-    "GOOGLE_CLIENT_SECRET",
-    "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"
-)
 GITHUB_CLIENT_ID = os.environ.get("GITHUB_CLIENT_ID", "")
 GITHUB_CLIENT_SECRET = os.environ.get("GITHUB_CLIENT_SECRET", "")
 
-MONGODB_URI = os.environ.get(
-    "MONGODB_URI",
-    "mongodb+srv://charan:Charan1234@<cluster>.mongodb.net/Zeus?retryWrites=true&w=majority"
-)
+# Secret: set MONGODB_URI in the Render dashboard (never commit it).
+MONGODB_URI = os.environ.get("MONGODB_URI", "")
 
 DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
@@ -35,7 +29,7 @@ mongo_status = "unconnected"
 try:
     import pymongo
     import certifi
-    if "<cluster>" not in MONGODB_URI:
+    if MONGODB_URI and "<cluster>" not in MONGODB_URI:
         mongo_client = pymongo.MongoClient(
             MONGODB_URI,
             tlsCAFile=certifi.where(),
@@ -160,7 +154,7 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
                     "status": mongo_status,
                     "database": "Zeus",
                     "collection": "users",
-                    "uriConfigured": "<cluster>" not in MONGODB_URI
+                    "uriConfigured": bool(MONGODB_URI) and "<cluster>" not in MONGODB_URI
                 }
             }).encode("utf-8"))
             return
