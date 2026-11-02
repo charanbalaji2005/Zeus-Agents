@@ -2688,7 +2688,7 @@ DEFAULT_CONFIG = {
     # sign-in on the Zeus Agents website. Both values are public identifiers, not secrets.
     "account": {
         # The deployed Zeus Agents site that hosts the Google sign-in page.
-        "portal_url": "https://zeus-agent-portal.onrender.com",
+        "portal_url": "https://zeus-agents.onrender.com",
         # Google OAuth web client id; Google must have issued the sign-in token to this id.
         "google_client_id": "644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com",
     },
