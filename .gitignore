@@ -34,12 +34,15 @@ __pycache__/model_tools.cpython-310.pyc
 __pycache__/web_tools.cpython-310.pyc
 logs/
 data/
+*users_local.json
 # Bundled community plugin index seed (shipped as package data) — the bare
 # `data/` pattern above would otherwise swallow it.
 !zeus_cli/data/
+*users_local.json
 # The Connectors page's wire layer (apps/desktop/src/app/capabilities/connectors/data/)
 # — same reason: the bare `data/` pattern above would otherwise swallow it.
 !apps/desktop/src/app/capabilities/connectors/data/
+*users_local.json
 .pytest_cache/
 test_durations.json
 .pytest-cache/
@@ -234,6 +237,7 @@ docs/superpowers/*
 /checkpoints/
 /pending_messages/
 /plugin-data/
+*users_local.json
 /kanban/
 /config.yaml
 /auth.json

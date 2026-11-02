@@ -1,58 +1,59 @@
-# Deploying Zeus Landing Page to Render
+# Deploying Zeus Landing Page to Render with MongoDB & OAuth
 
-This landing page is production-ready for deployment on **Render** ([https://render.com](https://render.com)).
-
----
-
-## Option 1: 1-Click Blueprint Deploy (Recommended)
-
-1. Push your repository to **GitHub** or **GitLab**.
-2. Log in to your [Render Dashboard](https://dashboard.render.com/).
-3. Click **New +** &rarr; **Blueprint**.
-4. Select your repository.
-5. Render will automatically detect [`render.yaml`](./render.yaml).
-6. Click **Apply**.
-   - Render automatically provisions the web service, configures environment variables, and enables SSL!
+This landing page is production-ready for deployment on **Render** ([https://render.com](https://render.com)) with integrated **Google OAuth 2.0**, **GitHub Login**, and **MongoDB Atlas** persistence.
 
 ---
 
-## Option 2: Deploy as a Web Service (Manual)
+## 1. Quick Deploy via Render Blueprint (Recommended)
+
+1. Push your repository to **GitHub**.
+2. Go to your [Render Dashboard](https://dashboard.render.com/) &rarr; **New +** &rarr; **Blueprint**.
+3. Select your repository.
+4. Render will automatically detect [`render.yaml`](./render.yaml).
+5. In the environment variables prompt, replace `<cluster>` in `MONGODB_URI` with your actual MongoDB Atlas cluster hostname (e.g. `cluster0.abcde.mongodb.net`):
+   ```
+   MONGODB_URI=mongodb+srv://charan:Charan1234@cluster0.abcde.mongodb.net/Zeus?retryWrites=true&w=majority
+   ```
+6. Click **Apply**. Render will install dependencies (`pymongo`, `certifi`) and launch the service!
+
+---
+
+## 2. Manual Web Service Deployment
 
 1. In the [Render Dashboard](https://dashboard.render.com/), click **New +** &rarr; **Web Service**.
 2. Connect your GitHub repository.
 3. Configure the following fields:
    - **Name**: `zeus-landing-page`
    - **Language / Runtime**: `Python 3`
-   - **Root Directory**: `marketing_landing` (or leave empty if deploying from repo root)
-   - **Build Command**: `pip install -r ../requirements.txt` (or leave empty)
+   - **Root Directory**: `marketing_landing` (or leave blank if deploying from repository root)
+   - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `python server.py`
    - **Plan**: `Free`
-4. Add Environment Variables:
-   - `PORT`: `10000`
-   - `GOOGLE_CLIENT_ID`: `644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com`
-   - `GOOGLE_CLIENT_SECRET`: `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`
+4. Add the following **Environment Variables**:
+   | Key | Value |
+   | :--- | :--- |
+   | `PORT` | `10000` |
+   | `GOOGLE_CLIENT_ID` | `644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com` |
+   | `GOOGLE_CLIENT_SECRET` | `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` |
+   | `MONGODB_URI` | `mongodb+srv://charan:Charan1234@<your-cluster>.mongodb.net/Zeus?retryWrites=true&w=majority` |
 5. Click **Create Web Service**.
 
 ---
 
-## Option 3: Deploy as a Free Static Site (Fastest)
+## 3. Whitelist Render URL in Google Cloud & MongoDB Atlas
 
-If you only need static hosting without backend server routes:
-1. In the Render Dashboard, click **New +** &rarr; **Static Site**.
-2. Connect your GitHub repository.
-3. Configure:
-   - **Name**: `zeus-landing`
-   - **Publish Directory**: `marketing_landing`
-   - **Build Command**: *(leave blank)*
-4. Click **Create Static Site**.
-   - Your site will be live instantly with a free `https://zeus-landing.onrender.com` URL.
+1. **Google Cloud Console**:
+   - Go to [Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials).
+   - Under **Authorized JavaScript origins**, add your Render URL: `https://your-service.onrender.com`.
+   - Under **Authorized redirect URIs**, add `https://your-service.onrender.com` and `https://your-service.onrender.com/`.
+2. **MongoDB Atlas**:
+   - In MongoDB Atlas, go to **Network Access** &rarr; **IP Access List**.
+   - Add `0.0.0.0/0` (Allow access from anywhere) so Render's cloud servers can connect to your database.
 
 ---
 
-## Configured Features
-- **Zero-Blur Footer Art**: The statue illustration in the footer is rendered with full 100% crisp sharpness without CSS Gaussian blur or dimming.
-- **Google OAuth 2.0**: Integrated with Client ID `644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com` and Client Secret `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`.
-- **GitHub Login**: Built with the matching brutalist monochrome theme.
-- **Zeus Branding & Black-and-White Theme**: Retains clean grayscale styling and Zeus agent identity.
-- **Fast Local & Cloud Server**: [`server.py`](./server.py) provides zero-dependency high performance static file delivery with health check endpoints.
-
+## Features
+- **ZEUS Auth & Access Section**: Replaced "Nous Portal" with an interactive authentication section directly offering Google OAuth 2.0 and GitHub Login.
+- **MongoDB Atlas Integration**: Automatically saves and updates users in the `Zeus.users` collection upon login.
+- **Zero-Blur Visuals**: Statue illustration in the footer is 100% crisp and sharp.
+- **Black-and-White Theme & ZEUS Branding**: Retains high-contrast styling and Zeus agent identity.

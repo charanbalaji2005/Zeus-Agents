@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     region: oregon
-    buildCommand: ""
+    buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     healthCheckPath: /health
     autoDeploy: true
@@ -15,8 +15,9 @@ services:
         value: 644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com
       - key: GOOGLE_CLIENT_SECRET
         value: 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
+      - key: MONGODB_URI
+        value: mongodb+srv://charan:Charan1234@<cluster>.mongodb.net/Zeus?retryWrites=true&w=majority
       - key: GITHUB_CLIENT_ID
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
-
