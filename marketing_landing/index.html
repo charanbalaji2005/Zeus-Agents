@@ -619,6 +619,28 @@ html {
 
 /* Mobile Devices (max-width: 768px) */
 @media (max-width: 768px) {
+  /* Mobile Zeus Desktop Watermark */
+  .zeus-desktop-watermark {
+    top: 35%;
+    width: 92%;
+    min-width: unset;
+    padding: 6px 10px 8px 10px;
+    gap: 4px;
+    box-shadow: 0 0 20px 10px #111115;
+  }
+  .zeus-watermark-status-row {
+    gap: 7px;
+    font-size: 8px;
+  }
+  .zeus-watermark-title {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+  .zeus-watermark-badge {
+    font-size: 7px;
+    padding: 1px 4px;
+  }
+
   html, body {
     overflow-x: hidden;
   }
@@ -743,66 +765,82 @@ html {
   }
 }
 
-/* Desktop Video Title Patch - Hides legacy name seamlessly */
-.zeus-desktop-video-patch {
+/* Permanent Zeus Desktop Hiding Watermark */
+.landing-desktop-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #09090b;
+  aspect-ratio: 16 / 9;
+}
+.landing-desktop-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+}
+.zeus-desktop-watermark {
   position: absolute;
-  top: 35.8%;
+  top: 34.5%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 22;
+  z-index: 35;
+  width: 45%;
+  min-width: 320px;
+  max-width: 720px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  padding: 8px 24px 10px 24px;
+  padding: 10px 22px 12px 22px;
   background: #111115;
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 6px;
-  box-shadow: 0 0 22px 12px #111115, 0 4px 16px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 0 32px 16px #111115, 0 6px 24px rgba(0, 0, 0, 0.95);
   pointer-events: none;
-  transition: opacity 0.35s ease-in-out;
-  opacity: 1;
+  opacity: 1 !important;
 }
-.zeus-patch-status-row {
+.zeus-watermark-status-row {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
   font-family: var(--font-mono, monospace);
-  font-size: clamp(10px, 1.1vw, 13px);
+  font-size: clamp(9.5px, 1.05vw, 12px);
   color: #a1a1aa;
 }
-.zeus-patch-title-row {
+.zeus-watermark-title-row {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.zeus-patch-brand-title {
+.zeus-watermark-title {
   font-family: 'Times New Roman', serif, Georgia, var(--font-display);
-  font-size: clamp(12px, 1.6vw, 18px);
+  font-size: clamp(12px, 1.5vw, 17px);
   letter-spacing: 0.22em;
   font-weight: 500;
   text-transform: uppercase;
   color: #f4f4f5;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
 }
-@media (max-width: 768px) {
-  .zeus-desktop-video-patch {
-    top: 36%;
-    padding: 5px 14px 7px 14px;
-    gap: 4px;
-    box-shadow: 0 0 16px 8px #111115;
-  }
-  .zeus-patch-status-row {
-    gap: 8px;
-    font-size: 8.5px;
-  }
-  .zeus-patch-brand-title {
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
-  }
+.zeus-watermark-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(8px, 0.9vw, 9.5px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: #10b981;
+  color: #000;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 2px;
+  white-space: nowrap;
 }
-
 </style>
 <script>
 // ZEUS Branding Engine - seamless client-side transformation
@@ -1107,32 +1145,23 @@ html[data-marketing-theme=dark],html[data-marketing-theme=dark] .hermes-web.hw-t
         <span class="zeus-preview-dot dot-y"></span>
         <span class="zeus-preview-dot dot-g"></span>
       </div>
-      <div class="zeus-preview-status-chips">
-        <span>⌘</span>
-        <span>⚡ Gateway ready</span>
-        <span>✨ Agents</span>
-        <span>🕒 Cron</span>
-      </div>
       <div class="zeus-preview-tags">
         <span class="zeus-preview-tag highlight">CLI AVAILABLE NOW</span>
         <span class="zeus-preview-tag">macOS / Windows / Linux</span>
       </div>
     </div>
-    <div class="zeus-preview-title-row">
-      <span class="zeus-preview-main-title">ZEUS DESKTOP — BETA PREVIEW</span>
-      <span class="zeus-preview-badge-coming">APP COMING SOON</span>
-    </div>
   </div>
-    <!-- Seamless Video Title Patch to hide legacy brand name -->
-  <div class="zeus-desktop-video-patch" aria-hidden="true" id="zeusDesktopTitlePatch">
-    <div class="zeus-patch-status-row">
+  <!-- Permanent Zeus Hiding Watermark Banner directly over legacy brand title -->
+  <div class="zeus-desktop-watermark" aria-hidden="true" id="zeusDesktopWatermark">
+    <div class="zeus-watermark-status-row">
       <span>⌘</span>
       <span>⚡ Gateway ready</span>
       <span>✨ Agents</span>
       <span>🕒 Cron</span>
     </div>
-    <div class="zeus-patch-title-row">
-      <span class="zeus-patch-brand-title">ZEUS DESKTOP — BETA PREVIEW</span>
+    <div class="zeus-watermark-title-row">
+      <span class="zeus-watermark-title">ZEUS DESKTOP — BETA PREVIEW</span>
+      <span class="zeus-watermark-badge">APP COMING SOON</span>
     </div>
   </div>
   <video class="landing-desktop-video" loop="" muted="" playsInline="" poster="https://web-assets.nousresearch.com/marketing/b6e121e2175ca968d0d566a80c335622b59ea6f9/assets/hermes-agent/desktop-preview.webp" preload="metadata">
@@ -1737,21 +1766,6 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <script src="/zeus-nav.js" defer></script>
-<script>
-(function() {
-  var vid = document.querySelector('.landing-desktop-video');
-  var patch = document.getElementById('zeusDesktopTitlePatch');
-  if (vid && patch) {
-    vid.addEventListener('timeupdate', function() {
-      // Intro scene with the title appears between 0s and 3.8s
-      if (vid.currentTime >= 0 && vid.currentTime < 3.8) {
-        patch.style.opacity = '1';
-      } else {
-        patch.style.opacity = '0';
-      }
-    });
-  }
-})();
-</script>
+
 
 </body></html>
