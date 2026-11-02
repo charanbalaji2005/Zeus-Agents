@@ -541,6 +541,7 @@ RUN mkdir -p /opt/data && chmod 0644 /opt/zeus/tools/facts.json && \
 # Build helpers use system Python above; TUI gateway children need the sealed runtime.
 ENV ZEUS_PYTHON=/opt/zeus/.venv/bin/python
 VOLUME [ "/opt/data" ]
+EXPOSE 10000 8080
 
 # The image ENTRYPOINT is a tiny dispatcher rather than `/init` directly.
 # When the image really owns PID 1 (normal Docker / Podman), the dispatcher

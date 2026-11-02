@@ -77,6 +77,11 @@ cd /opt/data
 cd "$_zeus_orig_cwd"
 
 if [ $# -eq 0 ]; then
+    if [ -n "${RENDER:-}" ] || [ -n "${PORT:-}" ]; then
+        echo "[zeus] Cloud web service detected (RENDER=${RENDER:-false}, PORT=${PORT:-10000}). Starting landing page web server..."
+        export PORT="${PORT:-10000}"
+        exec "${ZEUS_PYTHON:-python3}" /opt/zeus/server.py
+    fi
     drop zeus
 fi
 

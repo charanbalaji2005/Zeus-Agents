@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY server.py ./
 COPY marketing_landing/ ./marketing_landing/
 
-EXPOSE 10000
+EXPOSE 10000 8080
 CMD ["python", "server.py"]

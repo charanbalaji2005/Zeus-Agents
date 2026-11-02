@@ -243,11 +243,16 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
 
+class ThreadingTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 if __name__ == "__main__":
-    print(f"Starting Zeus Landing Page server on port {PORT}...")
-    with socketserver.TCPServer(("0.0.0.0", PORT), ZeusHandler) as httpd:
-        print(f"Server serving at http://0.0.0.0:{PORT}")
+    print(f"Starting Zeus Landing Page server on port {PORT}...", flush=True)
+    with ThreadingTCPServer(("0.0.0.0", PORT), ZeusHandler) as httpd:
+        print(f"Server serving at http://0.0.0.0:{PORT}", flush=True)
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("Server stopped.")
+            print("Server stopped.", flush=True)
