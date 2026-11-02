@@ -2367,13 +2367,6 @@ def _reset_config_provider() -> Path:
     return config_path
 
 
-def login_command(args) -> None:
-    """Deprecated: use 'zeus model' or 'zeus setup' instead."""
-    print("The 'zeus login' command has been removed.\nUse 'zeus auth' to manage credentials,\n"
-          "'zeus model' to select a provider, or 'zeus setup' for full setup.")
-    raise SystemExit(0)
-
-
 def get_minimax_oauth_auth_status() -> dict[str, Any]:
     """Return auth status dict for MiniMax OAuth provider."""
     state = get_provider_auth_state("minimax-oauth")

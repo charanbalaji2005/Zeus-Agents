@@ -49,31 +49,17 @@ def test_config_get_unset_subcommands_parse():
 
 
 
-# ── deprecated `zeus login` fails gracefully, not with argparse error ────
-#
-# `zeus login` is a removed command; its handler (`login_command` in
-# `zeus_cli/auth.py`) prints a deprecation notice pointing at `zeus auth` /
-# `zeus model` and exits 0.  Two behavior contracts guard the UX:
-#   1. ANY `--provider <value>` (including ones the user actually wants, like
-#      `anthropic`) must parse and reach the handler — never crash in argparse
-#      with `invalid choice` before the friendly redirect is printed (#24756).
-#   2. The subcommand must not advertise itself in the parser help row.
-
-
-
-
-
-
-def test_login_subparser_help_is_suppressed():
-    """The deprecated `login` row must not appear in `zeus --help`.
-
-    Must hold without leaking argparse's literal `==SUPPRESS==` placeholder,
-    which `help=argparse.SUPPRESS` emits for a top-level subparser on 3.12+.
-    The fix omits the `help=` kwarg entirely instead.
-    """
+def test_login_subcommand_is_listed_and_parses_flags():
+    """`zeus login` (Google account sign-in) is advertised and parses its flags."""
     parser = argparse.ArgumentParser(prog="zeus")
     sub = parser.add_subparsers(dest="command")
-    build_login_parser(sub, cmd_login=_h("login"))
-    help_text = parser.format_help()
-    # No leaked SUPPRESS placeholder row.
-    assert "==SUPPRESS==" not in help_text
+    handler = _h("login")
+    build_login_parser(sub, cmd_login=handler)
+    assert "login" in parser.format_help()
+
+    ns = parser.parse_args(["login", "--portal-url", "http://localhost:8080", "--no-browser"])
+    assert ns.func is handler
+    assert ns.portal_url == "http://localhost:8080"
+    assert ns.no_browser is True
+    assert parser.parse_args(["login", "--status"]).status is True
+    assert parser.parse_args(["login", "--sign-out"]).sign_out is True

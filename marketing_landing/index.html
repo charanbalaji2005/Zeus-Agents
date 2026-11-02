@@ -991,9 +991,9 @@ html[data-marketing-theme=dark],html[data-marketing-theme=dark] .hermes-web.hw-t
                 <td>Execute a task non-interactively and print the result.</td>
               </tr>
               <tr>
-                <td><code>zeus auth add nous --api-key &lt;KEY&gt;</code></td>
+                <td><code>zeus login</code></td>
                 <td><span class="font-mono text-[10px] text-zinc-400 uppercase">Auth</span></td>
-                <td>Connect your account using the API token from this website.</td>
+                <td>Sign your terminal in with your Zeus Agents Google account.</td>
               </tr>
               <tr>
                 <td><code>zeus auth add &lt;provider&gt; --api-key &lt;KEY&gt;</code></td>
@@ -1127,16 +1127,11 @@ html[data-marketing-theme=dark],html[data-marketing-theme=dark] .hermes-web.hw-t
     <div class="zeus-cli-token-banner" id="zeus-cli-token-panel" style="display: none;">
       <div class="zeus-cli-token-title">
         <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px;color:#4ade80;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-        Your Zeus CLI Auth Token
+        Connect your terminal
       </div>
-      <p class="zeus-cli-token-sub">Copy this token or run the command below to connect your terminal:</p>
+      <p class="zeus-cli-token-sub">Run this in your terminal and sign in with the same Google account:</p>
       <div class="zeus-token-display">
-        <code id="zeus-cli-token-text">zeus_live_...</code>
-        <button type="button" class="zeus-token-copy-btn" id="zeus-copy-token-action">COPY TOKEN</button>
-      </div>
-      <div style="font-size:10px;color:#888;margin:6px 0 3px 0;letter-spacing:0.05em;text-transform:uppercase;">Quick Login Command:</div>
-      <div class="zeus-token-display">
-        <code id="zeus-cli-cmd-text">zeus auth add nous --api-key ...</code>
+        <code id="zeus-cli-cmd-text">zeus login</code>
         <button type="button" class="zeus-token-copy-btn" id="zeus-copy-cmd-action">COPY COMMAND</button>
       </div>
     </div>
@@ -1160,6 +1155,49 @@ html[data-marketing-theme=dark],html[data-marketing-theme=dark] .hermes-web.hw-t
 window.ZEUS_CONFIG = {
   GOOGLE_CLIENT_ID: '644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com'
 };
+
+// `zeus login` opens this page with ?zeus_cli_port=&zeus_cli_state=. After Google sign-in the
+// Google token is POSTed to the terminal's one-time loopback listener, which re-verifies it with
+// Google (issued to our client id, verified email) before trusting it.
+const ZEUS_CLI_LOGIN_KEY = 'zeus_cli_login';
+
+function readCliLoginRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const port = params.get('zeus_cli_port');
+  const state = params.get('zeus_cli_state');
+  if (port !== null || state !== null) {
+    const portNum = Number(port);
+    if (/^[0-9]{4,5}$/.test(port || '') && portNum >= 1024 && portNum <= 65535 && /^[A-Za-z0-9_-]{16,128}$/.test(state || '')) {
+      try { sessionStorage.setItem(ZEUS_CLI_LOGIN_KEY, JSON.stringify({ port: portNum, state: state })); } catch(e) {}
+    }
+    params.delete('zeus_cli_port');
+    params.delete('zeus_cli_state');
+    const qs = params.toString();
+    history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+  }
+  try { return JSON.parse(sessionStorage.getItem(ZEUS_CLI_LOGIN_KEY) || 'null'); } catch(e) { return null; }
+}
+
+function handOffToCli(kind, token) {
+  let request = null;
+  try {
+    request = JSON.parse(sessionStorage.getItem(ZEUS_CLI_LOGIN_KEY) || 'null');
+    sessionStorage.removeItem(ZEUS_CLI_LOGIN_KEY);
+  } catch(e) {}
+  if (!request || !token) return;
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'http://127.0.0.1:' + request.port + '/callback';
+  [['state', request.state], [kind, token]].forEach(function(pair) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = pair[0];
+    input.value = pair[1];
+    form.appendChild(input);
+  });
+  document.body.appendChild(form);
+  form.submit();
+}
 
 function getSavedUser() {
   try {
@@ -1279,6 +1317,7 @@ function handleGoogleCredential(response) {
         id: profile.sub
       });
       closeAuthModal();
+      handOffToCli('credential', response.credential);
     } catch(e) {
       console.error('Error decoding Google credential:', e);
     }
@@ -1306,10 +1345,12 @@ function triggerGoogleOAuth() {
               id: profile.sub
             });
             closeAuthModal();
+            handOffToCli('access_token', tokenResponse.access_token);
           })
           .catch(() => {
             saveUser({ provider: 'google', name: 'Google User', email: 'user@gmail.com' });
             closeAuthModal();
+            handOffToCli('access_token', tokenResponse.access_token);
           });
         }
       }
@@ -1345,6 +1386,13 @@ function triggerGitHubOAuth() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+  const cliLogin = readCliLoginRequest();
+  if (cliLogin && !window.location.hash.includes('access_token=')) {
+    openAuthModal();
+    const sub = document.getElementById('zeus-auth-subtitle');
+    if (sub) sub.innerText = 'Sign in with Google to connect your terminal';
+  }
+
   // Check for Google OAuth callback in URL hash
   if (window.location.hash.includes('access_token=')) {
     const params = new URLSearchParams(window.location.hash.substring(1));
@@ -1363,6 +1411,7 @@ document.addEventListener('DOMContentLoaded', function() {
           id: profile.sub
         });
         history.replaceState(null, '', window.location.pathname + window.location.search);
+        handOffToCli('access_token', token);
       })
       .catch(() => {});
     }
@@ -1562,20 +1611,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // CLI Token Copy in Auth Modal
-  const copyTokBtn = document.getElementById('zeus-copy-token-action');
-  if (copyTokBtn) {
-    copyTokBtn.addEventListener('click', function() {
-      const tok = document.getElementById('zeus-cli-token-text');
-      if (tok) {
-        navigator.clipboard.writeText(tok.innerText.trim()).then(() => {
-          copyTokBtn.innerText = 'COPIED';
-          setTimeout(() => { copyTokBtn.innerText = 'COPY TOKEN'; }, 1500);
-        });
-      }
-    });
-  }
-
   const copyCmdBtn = document.getElementById('zeus-copy-cmd-action');
   if (copyCmdBtn) {
     copyCmdBtn.addEventListener('click', function() {
@@ -1589,29 +1624,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // Update token display when user logs in
+  // Signed-in visitors see how to connect their terminal (`zeus login`)
   function refreshCliTokenUI() {
-    const user = getSavedUser();
     const tokenPanel = document.getElementById('zeus-cli-token-panel');
     if (!tokenPanel) return;
-    if (user && user.email) {
-      // Deterministic token from email
-      let hash = 0;
-      for (let i = 0; i < user.email.length; i++) {
-        hash = ((hash << 5) - hash) + user.email.charCodeAt(i);
-        hash |= 0;
-      }
-      const hex = Math.abs(hash).toString(16).padStart(8, '0');
-      const token = 'zeus_live_' + hex + '8b9c4f1e0a2d';
-      
-      const tokVal = document.getElementById('zeus-cli-token-text');
-      const cmdVal = document.getElementById('zeus-cli-cmd-text');
-      if (tokVal) tokVal.innerText = token;
-      if (cmdVal) cmdVal.innerText = 'zeus auth add nous --api-key ' + token;
-      tokenPanel.style.display = 'block';
-    } else {
-      tokenPanel.style.display = 'none';
-    }
+    const user = getSavedUser();
+    tokenPanel.style.display = user && user.email ? 'block' : 'none';
   }
 
   // Hook into updateAuthUI

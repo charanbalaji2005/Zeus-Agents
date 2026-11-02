@@ -1824,7 +1824,8 @@ def _forward_command(name: str, module: str, attr: str, *, forward_return: bool 
 
 
 cmd_setup = _forward_command("cmd_setup", "zeus_cli.setup", "run_setup_wizard", doc='Interactive setup wizard.')
-cmd_login = _forward_command("cmd_login", "zeus_cli.auth", "login_command", doc='Authenticate Zeus CLI with a provider.')
+cmd_login = _forward_command("cmd_login", "zeus_cli.auth_google_account", "login_command",
+                             doc='Sign this terminal in with a Zeus Agents Google account.')
 cmd_logout = _forward_command("cmd_logout", "zeus_cli.auth", "logout_command", doc='Clear provider authentication.')
 cmd_auth = _forward_command("cmd_auth", "zeus_cli.auth_commands", "auth_command", doc='Manage pooled credentials.')
 cmd_status = _forward_command("cmd_status", "zeus_cli.status", "show_status", doc='Show status of all components.')
