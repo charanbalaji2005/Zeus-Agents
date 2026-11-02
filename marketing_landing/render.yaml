@@ -19,3 +19,7 @@ services:
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
+      # /admin control plane: set a long random value in the Render dashboard. No default:
+      # while it is unset the admin API is disabled (503).
+      - key: ADMIN_SECRET
+        sync: false

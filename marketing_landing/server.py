@@ -7,6 +7,8 @@ import urllib.request
 import urllib.parse
 from datetime import datetime
 
+import admin_api
+
 PORT = int(os.environ.get("PORT", 8080))
 INSTALL_SH_URL = "https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.sh"
 INSTALL_PS1_URL = "https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.ps1"
@@ -47,6 +49,8 @@ try:
 except Exception as e:
     mongo_status = f"error: {str(e)}"
     print(f"[MongoDB] Connection notice: {e}")
+
+admin_api.record("INFO", f"Server starting; MongoDB {mongo_status}")
 
 # In-memory / JSON fallback store for when cluster is not yet configured
 fallback_users = {}
@@ -121,12 +125,22 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Cache-Control", "no-cache, must-revalidate")
         super().end_headers()
 
+    def log_message(self, format, *args):
+        admin_api.record_request(getattr(self, "path", ""), format, args)  # unset on a malformed request line
+        super().log_message(format, *args)
+
+    def _admin_site(self):
+        return admin_api.Site(mongo_db, mongo_status, fallback_users, PORT)
+
     def do_OPTIONS(self):
         self.send_response(200)
         self.end_headers()
 
     def do_GET(self):
         url = urllib.parse.urlparse(self.path)
+
+        if admin_api.handle(self, "GET", self.path, "", self._admin_site()):
+            return
 
         # Health check for Render
         if url.path in ("/health", "/api/health"):
@@ -138,7 +152,8 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
                 "service": "zeus-cli-server",
                 "port": PORT,
                 "terminal_url": "/cli",
-                "docs_url": "/#docs",
+                "docs_url": "/docs",
+                "admin_url": "/admin",
                 "mongodb": mongo_status
             }).encode("utf-8"))
             return
@@ -146,11 +161,39 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
         # Interactive Web Terminal / CLI Interface
         if url.path in ("/terminal", "/cli", "/web-terminal", "/terminal/", "/cli/"):
             term_file = os.path.join(DIRECTORY, "terminal.html")
+            if not os.path.exists(term_file):
+                term_file = os.path.join(os.path.dirname(DIRECTORY), "terminal.html")
             if os.path.exists(term_file):
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.end_headers()
                 with open(term_file, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        # Dedicated Documentation Page
+        if url.path in ("/docs", "/docs/", "/documentation", "/documentation/"):
+            docs_file = os.path.join(DIRECTORY, "docs.html")
+            if not os.path.exists(docs_file):
+                docs_file = os.path.join(os.path.dirname(DIRECTORY), "docs.html")
+            if os.path.exists(docs_file):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                with open(docs_file, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
+        # Admin Control Plane
+        if url.path in ("/admin", "/admin/"):
+            admin_file = os.path.join(DIRECTORY, "admin.html")
+            if not os.path.exists(admin_file):
+                admin_file = os.path.join(os.path.dirname(DIRECTORY), "admin.html")
+            if os.path.exists(admin_file):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                with open(admin_file, "rb") as f:
                     self.wfile.write(f.read())
                 return
 
@@ -196,6 +239,9 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
         url = urllib.parse.urlparse(self.path)
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+
+        if admin_api.handle(self, "POST", self.path, body, self._admin_site()):
+            return
 
         # Google OAuth verification & MongoDB persistence
         if url.path == "/api/auth/google":

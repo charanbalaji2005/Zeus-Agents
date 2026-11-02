@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Zeus Admin</title>
+<link rel="icon" href="/favicon.png">
+<style>
+  :root {
+    --bg: #09090b;
+    --card: #111115;
+    --ink: #000000;
+    --line: rgba(255, 255, 255, 0.14);
+    --line-strong: rgba(255, 255, 255, 0.32);
+    --text: #f4f4f5;
+    --muted: #a1a1aa;
+    --dim: #71717a;
+    --green: #10b981;
+    --cyan: #38bdf8;
+    --amber: #f59e0b;
+    --red: #f87171;
+    --mono: 'SFMono-Regular', Consolas, Menlo, monospace;
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --gutter: 24px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); min-height: 100vh; }
+  [hidden] { display: none !important; }
+  button, input, select { font: inherit; color: inherit; }
+  a { color: var(--cyan); }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+  .dim { color: var(--dim); }
+  .label { font: 600 11px/1.2 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+  /* buttons & inputs */
+  .btn { background: var(--card); border: 1px solid var(--line-strong); padding: 8px 14px; cursor: pointer;
+         font: 600 12px/1.2 var(--mono); letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+         transition: transform .06s, box-shadow .06s, background .12s; box-shadow: 3px 3px 0 rgba(255,255,255,.1); }
+  .btn:hover { background: #1a1a20; }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(255,255,255,.1); }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .btn.primary:hover { background: #d4d4d8; }
+  .btn.danger { color: var(--red); border-color: rgba(248,113,113,.5); }
+  .btn.small { padding: 5px 9px; font-size: 11px; box-shadow: 2px 2px 0 rgba(255,255,255,.08); }
+  .input { background: var(--ink); border: 1px solid var(--line-strong); padding: 9px 12px; outline: none; min-width: 0; }
+  .input:focus { border-color: var(--cyan); }
+  select.input { padding-right: 28px; }
+
+  /* lock screen */
+  #lock { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+  .lock-card { width: 100%; max-width: 420px; background: var(--card); border: 1px solid var(--line-strong);
+               box-shadow: 8px 8px 0 rgba(255,255,255,.06); padding: 28px; }
+  .lock-card h1 { font: 700 20px/1.2 var(--mono); margin: 14px 0 4px; letter-spacing: .02em; }
+  .lock-card form { display: grid; gap: 12px; margin-top: 22px; }
+  .lock-error { color: var(--red); font: 12px/1.4 var(--mono); min-height: 1.4em; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 28px; height: 28px; display: block; }
+  .brand b { font: 700 14px/1 var(--mono); letter-spacing: .14em; }
+  .brand span { font: 12px/1 var(--mono); color: var(--dim); }
+
+  /* shell */
+  header.top { position: sticky; top: 0; z-index: 5; background: rgba(9,9,11,.92); backdrop-filter: blur(8px);
+               border-bottom: 1px solid var(--line); }
+  .bar { max-width: 1280px; margin: 0 auto; padding: 12px var(--gutter); display: flex; align-items: center; gap: 12px; }
+  .bar .spacer { flex: 1; }
+  nav.tabs { max-width: 1280px; margin: 0 auto; padding: 0 var(--gutter); display: flex; gap: 0; overflow-x: auto;
+             scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  .tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 10px 14px; cursor: pointer;
+         font: 600 12px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] { color: var(--text); border-bottom-color: var(--green); }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px var(--gutter) 64px; }
+  section.panel > h2 { font: 700 16px/1.2 var(--mono); margin: 0 0 4px; letter-spacing: .02em; }
+  section.panel > p.lede { margin: 0 0 18px; color: var(--muted); }
+  h3.sub { font: 700 13px/1.2 var(--mono); margin: 28px 0 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border: 1px solid var(--line);
+          font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .pill::before { content: ''; width: 7px; height: 7px; background: currentColor; }
+  .pill.ok { color: var(--green); border-color: rgba(16,185,129,.45); }
+  .pill.warn { color: var(--amber); border-color: rgba(245,158,11,.45); }
+  .pill.bad { color: var(--red); border-color: rgba(248,113,113,.45); }
+  .pill.info { color: var(--cyan); border-color: rgba(56,189,248,.45); }
+  .pill.off { color: var(--dim); }
+
+  /* cards */
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); padding: 16px; min-width: 0; }
+  .card .value { font: 700 26px/1.15 var(--mono); margin: 10px 0 6px; overflow-wrap: anywhere; }
+  .card .value.sm { font-size: 17px; }
+  .card .meta { font: 12px/1.6 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  .c-green { color: var(--green); } .c-cyan { color: var(--cyan); } .c-amber { color: var(--amber); } .c-red { color: var(--red); }
+
+  /* tables */
+  .table-wrap { border: 1px solid var(--line); overflow-x: auto; -webkit-overflow-scrolling: touch; background: var(--ink); }
+  table { width: 100%; border-collapse: collapse; font: 12.5px/1.4 var(--mono); }
+  table.wide { min-width: 960px; }
+  th { text-align: left; font: 600 11px/1.2 var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+       padding: 10px 12px; border-bottom: 1px solid var(--line-strong); background: var(--card); position: sticky; top: 0; white-space: nowrap; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: rgba(255,255,255,.025); }
+  .empty { padding: 28px 12px; text-align: center; color: var(--dim); }
+  .user-cell { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .avatar { width: 30px; height: 30px; flex: none; border: 1px solid var(--line-strong); background: #1c1c22; object-fit: cover;
+            display: grid; place-items: center; font: 700 12px/1 var(--mono); color: var(--muted); }
+  .actions { display: flex; gap: 6px; }
+
+  /* switch */
+  .switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font: 11px/1 var(--mono); }
+  .switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .switch .track { width: 36px; height: 18px; border: 1px solid var(--line-strong); background: var(--ink); position: relative; flex: none; }
+  .switch .track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--dim); transition: left .12s, background .12s; }
+  .switch input:checked + .track { border-color: var(--green); }
+  .switch input:checked + .track::after { left: 20px; background: var(--green); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .switch input:disabled + .track { opacity: .5; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 18px 0 12px; }
+  .toolbar .grow { flex: 1 1 220px; }
+  .notice { border: 1px solid rgba(245,158,11,.45); color: var(--amber); padding: 10px 12px; font: 12px/1.5 var(--mono); margin: 0 0 14px; }
+  .notice.info { border-color: rgba(56,189,248,.4); color: var(--cyan); }
+
+  /* toolsets */
+  .tool { display: flex; flex-direction: column; gap: 8px; }
+  .tool .name { font: 700 13px/1.2 var(--mono); }
+  .tool .desc { color: var(--muted); font-size: 13px; }
+  .tool.disabled { opacity: .62; }
+  details.raw { margin-top: 18px; }
+  details.raw summary { cursor: pointer; font: 600 12px/1 var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* terminal surfaces */
+  .term { background: var(--ink); border: 1px solid var(--line); font: 12.5px/1.55 var(--mono); padding: 12px 14px;
+          overflow: auto; -webkit-overflow-scrolling: touch; white-space: pre-wrap; overflow-wrap: anywhere; }
+  #log-feed { height: min(62vh, 640px); white-space: normal; padding: 6px 0; }
+  .log-line { display: grid; grid-template-columns: 74px 64px 1fr; gap: 10px; padding: 3px 14px; }
+  .log-line:hover { background: rgba(255,255,255,.03); }
+  .log-line .t { color: var(--dim); }
+  .log-line .m { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .lvl { font-weight: 700; }
+  .lvl-INFO { color: var(--green); } .lvl-WARN { color: var(--amber); } .lvl-ERROR { color: var(--red); } .lvl-AUTH { color: var(--cyan); }
+  #console-out { height: min(58vh, 600px); }
+  .cmd-echo { color: var(--green); font-weight: 700; }
+  .cmd-err { color: var(--amber); }
+  .cmd-foot { color: var(--dim); display: block; margin: 4px 0 14px; }
+  .prompt-row { display: flex; align-items: stretch; border: 1px solid var(--line-strong); border-top: 0; background: var(--ink); }
+  .prompt-row label { padding: 10px 0 10px 14px; color: var(--green); font: 700 12.5px/1.4 var(--mono); white-space: nowrap; }
+  .prompt-row input { flex: 1; min-width: 0; background: none; border: 0; outline: none; padding: 10px 10px; font: 12.5px/1.4 var(--mono); }
+  .presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .check { display: inline-flex; align-items: center; gap: 6px; font: 12px/1 var(--mono); color: var(--muted); cursor: pointer; }
+
+  #toast { position: fixed; right: 16px; bottom: 16px; z-index: 20; display: grid; gap: 8px; max-width: min(420px, calc(100vw - 32px)); }
+  .toast { background: var(--card); border: 1px solid var(--line-strong); border-left: 3px solid var(--green); padding: 10px 14px;
+           font: 12px/1.45 var(--mono); box-shadow: 4px 4px 0 rgba(0,0,0,.5); overflow-wrap: anywhere; }
+  .toast.err { border-left-color: var(--red); }
+
+  @media (max-width: 720px) {
+    :root { --gutter: 16px; }
+    .bar { gap: 8px; }
+    .brand span { display: none; }
+    .card .value { font-size: 22px; }
+    .log-line { grid-template-columns: 64px 1fr; }
+    .log-line .m { grid-column: 1 / -1; }
+    .toolbar .btn { flex: 1 1 auto; }
+    #header-status { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div class="lock-card">
+    <div class="brand"><img src="/logo.png" alt=""><b>ZEUS</b><span>// admin</span></div>
+    <h1>Control plane locked</h1>
+    <p class="muted" style="margin:0">Enter the server's <span class="mono">ADMIN_SECRET</span> to continue.</p>
+    <form id="lock-form" autocomplete="off">
+      <input id="lock-secret" class="input mono" type="password" placeholder="admin secret" aria-label="Admin secret" required autofocus>
+      <button class="btn primary" type="submit" id="lock-submit">Unlock</button>
+      <div class="lock-error" id="lock-error" role="alert"></div>
+    </form>
+  </div>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="bar">
+      <div class="brand"><img src="/logo.png" alt=""><b>ZEUS</b><span>// control plane</span></div>
+      <div class="spacer"></div>
+      <span id="header-status" class="pill off">MongoDB …</span>
+      <button class="btn small" id="refresh">Refresh</button>
+      <button class="btn small danger" id="logout">Logout</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Admin sections">
+      <button class="tab" role="tab" data-tab="telemetry">Telemetry</button>
+      <button class="tab" role="tab" data-tab="users">Users</button>
+      <button class="tab" role="tab" data-tab="tools">Toolsets</button>
+      <button class="tab" role="tab" data-tab="logs">Logs</button>
+      <button class="tab" role="tab" data-tab="console">Console</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel" id="tab-telemetry" role="tabpanel" hidden>
+      <h2>System telemetry</h2>
+      <p class="lede">Database, accounts, engine and storage health of this server.</p>
+      <div class="grid" id="tele-cards"></div>
+      <h3 class="sub">Local storage (SQLite)</h3>
+      <div id="tele-storage"></div>
+    </section>
+
+    <section class="panel" id="tab-users" role="tabpanel" hidden>
+      <h2>Users &amp; waitlist</h2>
+      <p class="lede"><span class="mono">Zeus.users</span>. Access gates <span class="mono">zeus login</span>; revoking signs out every terminal of the account.</p>
+      <div class="grid" id="user-counters"></div>
+      <div class="toolbar">
+        <input class="input grow" id="user-search" type="search" placeholder="Search name or email" aria-label="Search users">
+        <select class="input" id="user-provider" aria-label="Filter by provider">
+          <option value="">All providers</option>
+          <option value="google">Google</option>
+          <option value="github">GitHub</option>
+          <option value="other">Other</option>
+        </select>
+        <select class="input" id="user-access" aria-label="Filter by access">
+          <option value="">Any access</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+        </select>
+        <button class="btn" id="user-export">Export CSV</button>
+      </div>
+      <div id="user-source"></div>
+      <div class="table-wrap">
+        <table class="wide">
+          <thead><tr><th>User</th><th>Email</th><th>Provider</th><th>Terminals</th><th>Joined</th><th>Last seen</th><th>Access</th><th>Actions</th></tr></thead>
+          <tbody id="user-rows"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <p class="dim mono" id="user-count" style="font-size:12px"></p>
+    </section>
+
+    <section class="panel" id="tab-tools" role="tabpanel" hidden>
+      <h2>Toolsets</h2>
+      <p class="lede">Live <span class="mono">zeus tools list</span> for the Zeus install on this server. Read-only here; change them with <span class="mono">zeus tools</span> on the host.</p>
+      <div id="tools-body"></div>
+    </section>
+
+    <section class="panel" id="tab-logs" role="tabpanel" hidden>
+      <h2>Server log</h2>
+      <p class="lede">Last 200 in-memory events: requests, errors and admin authorization.</p>
+      <div class="toolbar">
+        <label class="check"><input type="checkbox" id="log-live" checked> Live (5s)</label>
+        <label class="check"><input type="checkbox" id="log-scroll" checked> Auto-scroll</label>
+        <div class="grow"></div>
+        <button class="btn" id="log-refresh">Refresh</button>
+        <button class="btn" id="log-clear">Clear view</button>
+      </div>
+      <div class="term" id="log-feed" role="log" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" id="tab-console" role="tabpanel" hidden>
+      <h2>Command console</h2>
+      <p class="lede">Runs allowlisted diagnostic commands on the server (no shell, 30s limit, site secrets stripped from the environment).</p>
+      <div class="presets" id="presets"></div>
+      <div class="term" id="console-out" aria-live="polite"><span class="dim">Pick a preset or type an allowed command below.</span>
+</div>
+      <form class="prompt-row" id="console-form" autocomplete="off">
+        <label for="console-input">admin@zeus:~$</label>
+        <input id="console-input" list="console-commands" spellcheck="false" aria-label="Command">
+        <datalist id="console-commands"></datalist>
+        <button class="btn small" type="submit" id="console-run" style="margin:6px;box-shadow:none">Run</button>
+      </form>
+      <div style="margin-top:10px"><button class="btn small" id="console-clear">Clear output</button></div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" aria-live="assertive"></div>
+
+<script>
+(() => {
+  'use strict';
+  const KEY = 'zeus_admin_secret';
+  const PRESETS = ['zeus status --full', 'zeus doctor', 'zeus tools list', 'zeus auth list', 'zeus cron list', 'zeus --version'];
+  const $ = (id) => document.getElementById(id);
+
+  const store = {
+    get() { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } },
+    set(v) { try { localStorage.setItem(KEY, v); } catch { /* private mode: session-only */ } },
+    clear() { try { localStorage.removeItem(KEY); } catch { /* nothing stored */ } },
+  };
+  let secret = store.get();
+
+  // Every string from the server goes in as a text node or attribute, never as HTML:
+  // user names and emails come from sign-ups and are attacker-controlled.
+  function h(tag, props, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : String(v));
+    }
+    for (const kid of kids.flat()) {
+      if (kid == null || kid === false) continue;
+      el.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    }
+    return el;
+  }
+  const fill = (el, ...kids) => { el.replaceChildren(...kids.flat().filter((k) => k != null && k !== false)); };
+
+  function toast(message, isError) {
+    const t = h('div', { class: 'toast' + (isError ? ' err' : ''), text: message });
+    $('toast').append(t);
+    setTimeout(() => t.remove(), isError ? 7000 : 3500);
+  }
+
+  async function api(path, body) {
+    const res = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Secret': secret },
+      body: body ? JSON.stringify(body) : undefined,
+      cache: 'no-store',
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* non-JSON error page */ }
+    if (res.status === 401 || res.status === 429) { lock(data.error || 'Session expired.'); throw new Error(data.error || 'Locked'); }
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    return data;
+  }
+
+  // ── formatting ──
+  const fmtDate = (iso) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return isNaN(d) ? String(iso) : d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  };
+  const fmtBytes = (n) => {
+    if (n == null) return '—';
+    const u = ['B', 'KB', 'MB', 'GB']; let i = 0; let v = n;
+    while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+    return `${v.toFixed(i ? 1 : 0)} ${u[i]}`;
+  };
+  const fmtUptime = (s) => {
+    const d = Math.floor(s / 86400), hr = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+    return d ? `${d}d ${hr}h ${m}m` : hr ? `${hr}h ${m}m` : `${m}m ${s % 60}s`;
+  };
+  const mongoPill = (status) => {
+    const s = String(status || 'unknown');
+    if (s === 'connected') return ['ok', 'CONNECTED'];
+    if (s === 'not_configured' || s === 'unconnected') return ['warn', 'NOT CONFIGURED'];
+    return ['bad', 'ERROR'];
+  };
+
+  // ── lock / unlock ──
+  function lock(message) {
+    secret = ''; store.clear();
+    stopTimers();
+    $('app').hidden = true; $('lock').hidden = false;
+    $('lock-error').textContent = message || '';
+    $('lock-secret').value = ''; $('lock-secret').focus();
+  }
+
+  async function unlock(candidate) {
+    $('lock-submit').disabled = true; $('lock-error').textContent = '';
+    try {
+      const res = await fetch('/api/admin/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret: candidate }), cache: 'no-store' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { $('lock-error').textContent = data.error || `HTTP ${res.status}`; store.clear(); return false; }
+      secret = candidate; store.set(candidate);
+      $('lock').hidden = true; $('app').hidden = false;
+      showTab(currentTabFromHash());
+      return true;
+    } catch (e) {
+      $('lock-error').textContent = 'Could not reach the server: ' + e.message;
+      return false;
+    } finally { $('lock-submit').disabled = false; }
+  }
+
+  $('lock-form').addEventListener('submit', (e) => { e.preventDefault(); unlock($('lock-secret').value); });
+  $('logout').addEventListener('click', () => { lock('Signed out.'); toast('Admin session cleared.'); });
+
+  // ── tabs ──
+  const TABS = ['telemetry', 'users', 'tools', 'logs', 'console'];
+  const loaders = {};
+  const loaded = new Set();
+  let active = '';
+  const currentTabFromHash = () => (TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'telemetry');
+
+  function showTab(name, force) {
+    active = name;
+    for (const t of TABS) {
+      $('tab-' + t).hidden = t !== name;
+      document.querySelector(`.tab[data-tab="${t}"]`).setAttribute('aria-selected', String(t === name));
+    }
+    if (location.hash.slice(1) !== name) history.replaceState(null, '', '#' + name);
+    if (force || !loaded.has(name)) { loaded.add(name); loaders[name]?.(); }
+    syncTimers();
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  window.addEventListener('hashchange', () => { if (!$('app').hidden) showTab(currentTabFromHash()); });
+  $('refresh').addEventListener('click', () => showTab(active, true));
+
+  // ── telemetry ──
+  function card(label, value, meta, valueClass) {
+    return h('div', { class: 'card' }, h('div', { class: 'label', text: label }),
+      h('div', { class: 'value ' + (valueClass || ''), text: value }),
+      h('div', { class: 'meta' }, ...[].concat(meta || []).map((m) => h('div', { text: m }))));
+  }
+
+  loaders.telemetry = async () => {
+    fill($('tele-cards'), h('div', { class: 'card dim', text: 'Loading…' }));
+    let o;
+    try { o = await api('/api/admin/overview'); } catch (e) { fill($('tele-cards'), h('div', { class: 'notice', text: e.message })); return; }
+    const [mCls, mText] = mongoPill(o.mongodb.status);
+    const hp = $('header-status'); hp.className = 'pill ' + mCls; hp.textContent = 'MongoDB ' + mText;
+    const u = o.users, eng = o.engine, srv = o.server;
+    const colour = { ok: 'c-green', warn: 'c-amber', bad: 'c-red' }[mCls];
+    const cards = [
+      card('MongoDB Atlas', mText, [
+        o.mongodb.ping_ms != null ? `ping ${o.mongodb.ping_ms} ms` : String(o.mongodb.status),
+        `${o.mongodb.database}.users`], colour),
+      card('Accounts', String(u.total), [`${u.approved} approved · ${u.total - u.approved} pending`,
+        `${u.google} Google · ${u.github} GitHub`, `source: ${u.source}`], 'c-cyan'),
+      card('Terminal tokens', String(u.active_tokens), ['active `zeus login` sessions'], 'c-cyan'),
+    ];
+    if (eng.available) {
+      cards.push(card('Engine model', eng.model, [`provider: ${eng.provider}`], 'sm'));
+      cards.push(card('Gateway', eng.gateway.running ? 'RUNNING' : 'STOPPED',
+        [eng.gateway.running ? `pid ${eng.gateway.pid}` : 'no gateway process for this home'],
+        eng.gateway.running ? 'c-green' : 'c-amber'));
+    } else {
+      cards.push(card('Engine', 'UNAVAILABLE', [eng.reason], 'c-amber sm'));
+    }
+    cards.push(card('Server', fmtUptime(srv.uptime_seconds), [`port ${srv.port} · ${srv.environment}${srv.cli_only ? ' · cli-only' : ''}`,
+      `python ${srv.python}`, srv.platform], 'sm'));
+    fill($('tele-cards'), cards);
+
+    const st = o.storage;
+    if (!st.available) { fill($('tele-storage'), h('div', { class: 'notice', text: st.reason })); return; }
+    const rows = st.files.length ? st.files.map((f) => h('tr', {},
+      h('td', { text: f.name }), h('td', { text: fmtBytes(f.bytes) }), h('td', { text: fmtDate(f.modified) }),
+      h('td', {}, h('span', { class: 'pill ' + (f.integrity === 'ok' ? 'ok' : f.integrity.startsWith('skipped') ? 'warn' : 'bad'), text: f.integrity }))))
+      : [h('tr', {}, h('td', { colspan: 4, class: 'empty', text: 'No SQLite databases yet.' }))];
+    fill($('tele-storage'),
+      h('p', { class: 'dim mono', style: 'font-size:12px;margin:0 0 8px', text: `ZEUS_HOME: ${st.home}` }),
+      h('div', { class: 'table-wrap' }, h('table', {},
+        h('thead', {}, h('tr', {}, ['Database', 'Size', 'Modified', 'Integrity'].map((t) => h('th', { text: t })))),
+        h('tbody', {}, rows))));
+  };
+
+  // ── users ──
+  let users = [];
+  let userSource = '';
+  const providerOf = (u) => (u.provider === 'google' || u.provider === 'github' ? u.provider : 'other');
+
+  function avatar(u) {
+    const initials = (String(u.name || u.email || '?').trim()[0] || '?').toUpperCase();
+    const fallback = () => h('div', { class: 'avatar', text: initials, 'aria-hidden': 'true' });
+    if (typeof u.picture === 'string' && u.picture.startsWith('https://')) {
+      const img = h('img', { class: 'avatar', src: u.picture, alt: '', referrerpolicy: 'no-referrer', loading: 'lazy' });
+      img.addEventListener('error', () => img.replaceWith(fallback()), { once: true });
+      return img;
+    }
+    return fallback();
+  }
+
+  function providerPill(u) {
+    const p = providerOf(u);
+    return h('span', { class: 'pill ' + (p === 'google' ? 'info' : p === 'github' ? 'off' : 'warn'), text: u.provider || 'unknown' });
+  }
+
+  async function act(u, action, extra) {
+    const res = await api('/api/admin/users/action', { action, email: u.email, ...extra });
+    return res;
+  }
+
+  function accessSwitch(u) {
+    const input = h('input', { type: 'checkbox', 'aria-label': `Approve ${u.email}` });
+    input.checked = u.approved === true;
+    input.disabled = userSource !== 'mongodb';
+    const text = h('span', { text: input.checked ? 'approved' : 'pending', class: input.checked ? 'c-green' : 'c-amber' });
+    input.addEventListener('change', async () => {
+      const want = input.checked; input.disabled = true;
+      try {
+        await act(u, 'approve', { approved: want });
+        u.approved = want; text.textContent = want ? 'approved' : 'pending'; text.className = want ? 'c-green' : 'c-amber';
+        renderCounters();
+        toast(`${u.email} ${want ? 'approved' : 'set to pending'}.`);
+      } catch (e) { input.checked = !want; toast(e.message, true); }
+      finally { input.disabled = false; }
+    });
+    return h('label', { class: 'switch' }, input, h('span', { class: 'track' }), text);
+  }
+
+  function rowFor(u) {
+    const terminals = h('span', { text: String(u.active_tokens || 0), class: u.active_tokens ? 'c-cyan' : 'dim' });
+    const canAct = userSource === 'mongodb';
+    const revoke = h('button', { class: 'btn small', disabled: !canAct || !u.active_tokens, title: 'Sign out every terminal of this account',
+      onclick: async () => {
+        if (!confirm(`Revoke all ${u.active_tokens} terminal token(s) for ${u.email}? Their terminals must run \`zeus login\` again.`)) return;
+        revoke.disabled = true;
+        try { const r = await act(u, 'revoke_tokens'); u.active_tokens = 0; terminals.textContent = '0'; terminals.className = 'dim'; renderCounters(); toast(`Revoked ${r.revoked} terminal(s) for ${u.email}.`); }
+        catch (e) { revoke.disabled = false; toast(e.message, true); }
+      } }, 'Revoke');
+    const del = h('button', { class: 'btn small danger', disabled: !canAct,
+      onclick: async () => {
+        if (!confirm(`Delete ${u.email}? This removes the account record and signs out its terminals. It cannot be undone.`)) return;
+        del.disabled = true;
+        try { await act(u, 'delete'); users = users.filter((x) => x !== u); renderUsers(); toast(`Deleted ${u.email}.`); }
+        catch (e) { del.disabled = false; toast(e.message, true); }
+      } }, 'Delete');
+    return h('tr', {},
+      h('td', {}, h('div', { class: 'user-cell' }, avatar(u), h('span', { text: u.name || '—' }))),
+      h('td', { text: u.email || '—' }),
+      h('td', {}, providerPill(u)),
+      h('td', {}, terminals),
+      h('td', { text: fmtDate(u.created_at) }),
+      h('td', { text: fmtDate(u.last_cli_login || u.last_login) }),
+      h('td', {}, accessSwitch(u)),
+      h('td', {}, h('div', { class: 'actions' }, revoke, del)));
+  }
+
+  function filteredUsers() {
+    const q = $('user-search').value.trim().toLowerCase();
+    const prov = $('user-provider').value, access = $('user-access').value;
+    return users.filter((u) =>
+      (!q || String(u.name || '').toLowerCase().includes(q) || String(u.email || '').toLowerCase().includes(q)) &&
+      (!prov || providerOf(u) === prov) &&
+      (!access || (access === 'approved') === (u.approved === true)));
+  }
+
+  function renderCounters() {
+    const n = (f) => users.filter(f).length;
+    const approved = n((u) => u.approved === true);
+    fill($('user-counters'),
+      card('Total users', String(users.length), [], 'c-cyan'),
+      card('Google', String(n((u) => providerOf(u) === 'google'))),
+      card('GitHub', String(n((u) => providerOf(u) === 'github'))),
+      card('Approved', String(approved), [`${users.length - approved} pending`], 'c-green'),
+      card('Active terminals', String(users.reduce((s, u) => s + (u.active_tokens || 0), 0)), [], 'c-cyan'));
+  }
+
+  function renderUsers() {
+    renderCounters();
+    const rows = filteredUsers();
+    fill($('user-rows'), rows.length ? rows.map(rowFor)
+      : h('tr', {}, h('td', { colspan: 8, class: 'empty', text: users.length ? 'No users match these filters.' : 'No users yet.' })));
+    $('user-count').textContent = `${rows.length} of ${users.length} shown`;
+  }
+
+  loaders.users = async () => {
+    fill($('user-rows'), h('tr', {}, h('td', { colspan: 8, class: 'empty', text: 'Loading…' })));
+    try {
+      const res = await api('/api/admin/users');
+      users = res.users; userSource = res.source;
+      fill($('user-source'), userSource === 'mongodb' ? null
+        : h('div', { class: 'notice', text: 'MongoDB is not connected: showing the local JSON fallback store. Account actions are disabled.' }));
+      renderUsers();
+    } catch (e) { fill($('user-rows'), h('tr', {}, h('td', { colspan: 8, class: 'empty c-red', text: e.message }))); }
+  };
+  ['user-search', 'user-provider', 'user-access'].forEach((id) => $(id).addEventListener('input', renderUsers));
+
+  $('user-export').addEventListener('click', () => {
+    const cols = ['email', 'name', 'provider', 'approved', 'active_tokens', 'created_at', 'last_login', 'last_cli_login'];
+    // Quote every cell and defuse spreadsheet formulas (=, +, -, @) in user-supplied text.
+    const cell = (v) => {
+      let s = v == null ? '' : String(v);
+      if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+      return '"' + s.replace(/"/g, '""') + '"';
+    };
+    const csv = [cols.join(','), ...users.map((u) => cols.map((c) => cell(u[c])).join(','))].join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = h('a', { href: url, download: `zeus_users_export_${new Date().toISOString().slice(0, 10)}.csv` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`Exported ${users.length} users.`);
+  });
+
+  // ── toolsets ──
+  loaders.tools = async () => {
+    fill($('tools-body'), h('div', { class: 'notice info', text: 'Running zeus tools list on the server…' }));
+    let r;
+    try { r = await api('/api/admin/tools'); } catch (e) { fill($('tools-body'), h('div', { class: 'notice', text: e.message })); return; }
+    const out = [];
+    if (r.timed_out || r.exit_code !== 0 || !r.toolsets.length) {
+      out.push(h('div', { class: 'notice', text: r.timed_out ? 'zeus tools list timed out.'
+        : `zeus tools list exited ${r.exit_code}${r.toolsets.length ? '' : ' and listed no toolsets'}.` }));
+    }
+    const enabled = r.toolsets.filter((t) => t.enabled).length;
+    if (r.toolsets.length) out.push(h('p', { class: 'mono muted', style: 'margin:0 0 14px', text: `${enabled} enabled / ${r.toolsets.length} toolsets · ${r.duration_ms} ms` }));
+    const sections = [...new Set(r.toolsets.map((t) => t.section))];
+    for (const s of sections) {
+      out.push(h('h3', { class: 'sub', text: s || 'Toolsets' }));
+      out.push(h('div', { class: 'grid' }, r.toolsets.filter((t) => t.section === s).map((t) =>
+        h('div', { class: 'card tool' + (t.enabled ? '' : ' disabled') },
+          h('div', { style: 'display:flex;justify-content:space-between;gap:8px;align-items:center' },
+            h('span', { class: 'name', text: t.name }),
+            h('span', { class: 'pill ' + (t.enabled ? 'ok' : 'off'), text: t.enabled ? 'enabled' : 'disabled' })),
+          h('div', { class: 'desc', text: t.label })))));
+    }
+    out.push(h('details', { class: 'raw' }, h('summary', { text: 'Raw output' }),
+      h('div', { class: 'term', style: 'margin-top:10px', text: (r.stdout || '') + (r.stderr ? '\n' + r.stderr : '') || '(empty)' })));
+    fill($('tools-body'), out);
+  };
+
+  // ── logs ──
+  let entries = [];
+  let clearedSeq = 0;
+  function renderLogs() {
+    const feed = $('log-feed');
+    const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 40;
+    const shown = entries.filter((e) => e.seq > clearedSeq);
+    fill(feed, shown.length ? shown.map((e) => h('div', { class: 'log-line' },
+      h('span', { class: 't', text: new Date(e.at).toLocaleTimeString(undefined, { hour12: false }) }),
+      h('span', { class: 'lvl lvl-' + e.level, text: `[${e.level}]` }),
+      h('span', { class: 'm', text: e.message })))
+      : h('div', { class: 'dim', style: 'padding:8px 14px', text: 'No events.' }));
+    if ($('log-scroll').checked && (atBottom || !feed.dataset.seen)) feed.scrollTop = feed.scrollHeight;
+    feed.dataset.seen = '1';
+  }
+  loaders.logs = async () => {
+    try { entries = (await api('/api/admin/logs')).entries; renderLogs(); }
+    catch (e) { if (active === 'logs') toast(e.message, true); }
+  };
+  $('log-refresh').addEventListener('click', () => loaders.logs());
+  $('log-clear').addEventListener('click', () => { clearedSeq = entries.length ? entries[entries.length - 1].seq : clearedSeq; renderLogs(); });
+  $('log-live').addEventListener('change', syncTimers);
+
+  // ── console ──
+  const cmdHistory = [];
+  let histPos = 0;
+  let running = false;
+  fill($('presets'), PRESETS.map((c) => h('button', { class: 'btn small', type: 'button', text: c, onclick: () => runCommand(c) })));
+  fill($('console-commands'), PRESETS.map((c) => h('option', { value: c })));
+
+  async function runCommand(command) {
+    command = command.trim().replace(/\s+/g, ' ');
+    if (!command || running) return;
+    running = true; $('console-run').disabled = true;
+    document.querySelectorAll('#presets .btn').forEach((b) => { b.disabled = true; });
+    if (cmdHistory[cmdHistory.length - 1] !== command) cmdHistory.push(command);
+    histPos = cmdHistory.length;
+    const out = $('console-out');
+    if (out.dataset.used !== '1') { out.replaceChildren(); out.dataset.used = '1'; }
+    const pending = h('span', { class: 'dim', text: 'running…\n' });
+    out.append(h('span', { class: 'cmd-echo', text: `admin@zeus:~$ ${command}\n` }), pending);
+    out.scrollTop = out.scrollHeight;
+    try {
+      const r = await api('/api/admin/exec', { command });
+      pending.remove();
+      if (r.stdout) out.append(h('span', { text: r.stdout.endsWith('\n') ? r.stdout : r.stdout + '\n' }));
+      if (r.stderr) out.append(h('span', { class: 'cmd-err', text: r.stderr.endsWith('\n') ? r.stderr : r.stderr + '\n' }));
+      out.append(h('span', { class: 'cmd-foot', text: r.timed_out ? `✗ timed out after ${Math.round(r.duration_ms / 1000)}s`
+        : `${r.exit_code === 0 ? '✓' : '✗'} exit ${r.exit_code} · ${r.duration_ms} ms` }));
+    } catch (e) {
+      pending.remove();
+      out.append(h('span', { class: 'c-red', text: e.message + '\n' }), h('span', { class: 'cmd-foot', text: '' }));
+    } finally {
+      running = false; $('console-run').disabled = false;
+      document.querySelectorAll('#presets .btn').forEach((b) => { b.disabled = false; });
+      out.scrollTop = out.scrollHeight;
+    }
+  }
+  $('console-form').addEventListener('submit', (e) => { e.preventDefault(); const v = $('console-input').value; $('console-input').value = ''; runCommand(v); });
+  $('console-input').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' && histPos > 0) { histPos--; $('console-input').value = cmdHistory[histPos]; e.preventDefault(); }
+    else if (e.key === 'ArrowDown') { histPos = Math.min(cmdHistory.length, histPos + 1); $('console-input').value = cmdHistory[histPos] || ''; e.preventDefault(); }
+  });
+  $('console-clear').addEventListener('click', () => { $('console-out').replaceChildren(); });
+
+  // ── timers ──
+  let logTimer = null;
+  function stopTimers() { clearInterval(logTimer); logTimer = null; }
+  function syncTimers() {
+    const want = active === 'logs' && $('log-live').checked && !document.hidden && !$('app').hidden;
+    if (want && !logTimer) logTimer = setInterval(loaders.logs, 5000);
+    if (!want) stopTimers();
+  }
+  document.addEventListener('visibilitychange', syncTimers);
+
+  // ── boot ──
+  if (secret) unlock(secret); else $('lock-secret').focus();
+})();
+</script>
+</body>
+</html>

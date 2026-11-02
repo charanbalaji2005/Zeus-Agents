@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Documentation — Zeus CLI &amp; Architecture</title>
+  <link rel="icon" type="image/png" href="/logo-square.png">
+  <style>
+    :root {
+      --bg: #09090b;
+      --card-bg: #111115;
+      --card-well: #16161c;
+      --border: rgba(255, 255, 255, 0.14);
+      --border-bright: rgba(255, 255, 255, 0.28);
+      --fg: #fafafa;
+      --muted: #a1a1aa;
+      --muted-dark: #71717a;
+      --accent: #10b981;
+      --accent-dim: rgba(16, 185, 129, 0.12);
+      --cyan: #38bdf8;
+      --cyan-dim: rgba(56, 189, 248, 0.12);
+      --amber: #f59e0b;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      background: #000;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: #fff;
+    }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--border-bright);
+    }
+    .brand-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .brand-badge {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      padding: 2px 7px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .nav-btn {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--fg);
+      text-decoration: none;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .nav-btn:hover { background: #fff; color: #000; }
+    .nav-btn.primary {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .nav-btn.primary:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
+    /* Hero / Subheader */
+    .docs-hero {
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 60%), #060608;
+      border-bottom: 1px solid var(--border);
+      padding: 48px 24px 36px 24px;
+      text-align: center;
+    }
+    .docs-hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .docs-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .docs-hero-title {
+      font-family: var(--font-mono);
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .docs-hero-desc {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 680px;
+    }
+
+    /* Jump Quick Navigation Bar */
+    .jump-nav-bar {
+      background: #0d0d12;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      position: sticky;
+      top: 53px;
+      z-index: 90;
+    }
+    .jump-nav-bar::-webkit-scrollbar { display: none; }
+    .jump-link {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .jump-link:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+
+    /* Content Layout */
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 36px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    /* Section Cards */
+    .doc-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 16px;
+    }
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--muted-dark);
+      text-transform: uppercase;
+    }
+
+    /* Tabs for Installation */
+    .tabs-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 6px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs-nav::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: #fff; }
+    .tab-btn.active {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+    .tab-pane { display: none; flex-direction: column; gap: 10px; }
+    .tab-pane.active { display: flex; }
+
+    /* Code Box */
+    .code-box {
+      background: #000;
+      border: 1px solid var(--border);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #fafafa;
+      position: relative;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .code-box code {
+      display: block;
+      white-space: pre;
+      color: #38bdf8;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-bright);
+      color: #fff;
+      padding: 4px 10px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .copy-btn:hover { background: #fff; color: #000; }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      background: #000;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      text-align: left;
+    }
+    th {
+      background: #141418;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      vertical-align: top;
+      color: #e4e4e7;
+    }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+    td code {
+      font-family: var(--font-mono);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    /* Grid cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .feature-card {
+      background: #0a0a0f;
+      border: 1px solid var(--border);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .feature-title {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .feature-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* CTA Banner */
+    .cta-banner {
+      background: #000;
+      border: 1px solid var(--accent);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .cta-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .cta-title {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .cta-sub {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Footer */
+    footer {
+      background: #000;
+      border-top: 1px solid var(--border);
+      padding: 20px 24px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--muted-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: #fff; }
+
+    /* Mobile Responsive Tweaks */
+    @media (max-width: 768px) {
+      header { padding: 10px 14px; }
+      .brand-title { font-size: 11px; }
+      .docs-hero { padding: 32px 14px 24px 14px; }
+      .docs-hero-title { font-size: 22px; }
+      .docs-hero-desc { font-size: 13px; }
+      .jump-nav-bar { padding: 8px 14px; justify-content: flex-start; top: 49px; }
+      main { padding: 20px 14px; gap: 24px; }
+      .doc-section { padding: 18px 14px; }
+      .section-title { font-size: 13px; }
+      .code-box { padding: 12px 10px 38px 10px; font-size: 11px; }
+      .copy-btn { top: auto; bottom: 8px; right: 8px; }
+      table { font-size: 11.5px; }
+      th, td { padding: 8px 10px; }
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="/" class="brand-wrap">
+      <img src="/logo-square.png" alt="Zeus Logo" class="brand-logo">
+      <span class="brand-title">ZEUS AGENTS</span>
+      <span class="brand-badge">DOCS</span>
+    </a>
+    <div class="header-nav">
+      <a href="/" class="nav-btn">&larr; Home</a>
+      <a href="/cli" class="nav-btn primary">&gt;_ Web CLI</a>
+      <a href="/admin" class="nav-btn">Admin &nearr;</a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="docs-hero">
+    <div class="docs-hero-inner">
+      <div class="docs-chip">
+        <span class="pulse-dot"></span>
+        <span>Zeus CLI &bull; Documentation &amp; Reference</span>
+      </div>
+      <h1 class="docs-hero-title">High-Performance Terminal AI Agent</h1>
+      <p class="docs-hero-desc">Zeus runs an autonomous turn-loop engine across macOS, Linux, and Windows with persistent FTS5/vector memory, hot prompt-caching preservation, and multi-platform messaging.</p>
+    </div>
+  </section>
+
+  <!-- QUICK JUMP BAR -->
+  <nav class="jump-nav-bar">
+    <a href="#install" class="jump-link">1. Install</a>
+    <a href="#architecture" class="jump-link">2. Architecture</a>
+    <a href="#commands" class="jump-link">3. Commands</a>
+    <a href="#slash" class="jump-link">4. Slash Commands</a>
+    <a href="#auth" class="jump-link">5. Providers &amp; Auth</a>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- SECTION 1: INSTALLATION -->
+    <section class="doc-section" id="install">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#10b981"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          1. Installation &amp; Setup
+        </h2>
+        <span class="section-tag">Linux &bull; macOS &bull; Windows &bull; pip</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Choose your operating system below to copy the one-line terminal installer command:</p>
+
+      <div class="tabs-nav">
+        <button type="button" class="tab-btn active" onclick="switchTab('linux', this)">Linux</button>
+        <button type="button" class="tab-btn" onclick="switchTab('macos', this)">macOS</button>
+        <button type="button" class="tab-btn" onclick="switchTab('windows', this)">Windows (PowerShell)</button>
+        <button type="button" class="tab-btn" onclick="switchTab('pip', this)">Python / pip</button>
+      </div>
+
+      <!-- Linux Pane -->
+      <div class="tab-pane active" id="pane-linux">
+        <div class="code-box">
+          <code>curl -fsSL https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.sh | bash</code>
+          <button type="button" class="copy-btn" onclick="copyCode(this)">COPY</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);">Provisions the isolated PM environment into <code>~/.zeus</code>, installs dependencies, and creates the global <code>zeus</code> executable in your PATH.</p>
+      </div>
+
+      <!-- macOS Pane -->
+      <div class="tab-pane" id="pane-macos">
+        <div class="code-box">
+          <code>curl -fsSL https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.sh | bash</code>
+          <button type="button" class="copy-btn" onclick="copyCode(this)">COPY</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);">Supports Apple Silicon (M1/M2/M3/M4) and Intel Macs on macOS 12 Monterey or newer.</p>
+      </div>
+
+      <!-- Windows Pane -->
+      <div class="tab-pane" id="pane-windows">
+        <div class="code-box">
+          <code>irm https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.ps1 | iex</code>
+          <button type="button" class="copy-btn" onclick="copyCode(this)">COPY</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);">Run in PowerShell. Provisions the Python virtual environment and sets user PATH automatically.</p>
+      </div>
+
+      <!-- pip Pane -->
+      <div class="tab-pane" id="pane-pip">
+        <div class="code-box">
+          <code>pip install git+https://github.com/charanbalaji2005/Zeus-Agents.git</code>
+          <button type="button" class="copy-btn" onclick="copyCode(this)">COPY</button>
+        </div>
+        <p style="font-size:11.5px;color:var(--muted);">Requires Python 3.10+ and git. Installs the <code>zeus</code> CLI directly into your active virtual environment.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 2: ARCHITECTURE & HOW IT WORKS -->
+    <section class="doc-section" id="architecture">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#38bdf8"><path d="M12 2l9 4-9 4-9-4 9-4zm0 6.5l7.5-3.3v6.6l-7.5 3.3-7.5-3.3V5.2L12 8.5z"/></svg>
+          2. How Zeus Works
+        </h2>
+        <span class="section-tag">Core Invariants</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Zeus is engineered with a narrow core waist while capability lives at the edges:</p>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <span class="feature-title">
+            <span style="color:#10b981;">&bull;</span> Sacred Prompt Caching
+          </span>
+          <p class="feature-desc">Past context prefixes are never modified, reloaded, or mutated mid-session. Preserving the cached prefix multiplies token speed and slashes inference costs.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title">
+            <span style="color:#38bdf8;">&bull;</span> Autonomous Skill Creation
+          </span>
+          <p class="feature-desc">When solving novel tasks, Zeus writes and validates its own reusable <code>SKILL.md</code> modules, compounding knowledge across sessions.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title">
+            <span style="color:#f59e0b;">&bull;</span> Persistent SQLite &amp; FTS5 Memory
+          </span>
+          <p class="feature-desc">All conversations, facts, and code context persist locally in <code>~/.zeus</code> using SQLite trigram full-text search indexing and vector embeddings.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title">
+            <span style="color:#a855f7;">&bull;</span> Multi-Platform Messaging Gateway
+          </span>
+          <p class="feature-desc">A single running gateway daemon connects your agent core to Discord, Telegram, Slack, WhatsApp, Signal, and the terminal simultaneously.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: COMMANDS REFERENCE -->
+    <section class="doc-section" id="commands">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#10b981"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-5 14H4v-4h11v4zm0-5H4V9h11v4z"/></svg>
+          3. CLI Commands Reference
+        </h2>
+        <span class="section-tag">Terminal Subcommands</span>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:260px;">Command</th>
+              <th style="width:140px;">Category</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>zeus</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);text-transform:uppercase;">Interactive</span></td>
+              <td>Launch the interactive conversation REPL terminal.</td>
+            </tr>
+            <tr>
+              <td><code>zeus "summarize git diff"</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--cyan);text-transform:uppercase;">One-Shot</span></td>
+              <td>Execute a task non-interactively and print the result.</td>
+            </tr>
+            <tr>
+              <td><code>zeus status</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;">System</span></td>
+              <td>Display active LLM model, default provider, gateway state, and jobs.</td>
+            </tr>
+            <tr>
+              <td><code>zeus doctor</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;">Diagnostics</span></td>
+              <td>Run full environment audit: Python runtime, SQLite WAL mode, external tools, and packages.</td>
+            </tr>
+            <tr>
+              <td><code>zeus model</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#f59e0b;text-transform:uppercase;">Models</span></td>
+              <td>Interactive model picker to switch between Claude, OpenAI, Groq, Gemini, or local models.</td>
+            </tr>
+            <tr>
+              <td><code>zeus auth list</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#a855f7;text-transform:uppercase;">Auth</span></td>
+              <td>Inspect all active credentials, priorities, and token pools.</td>
+            </tr>
+            <tr>
+              <td><code>zeus auth add &lt;provider&gt; --api-key &lt;KEY&gt;</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#a855f7;text-transform:uppercase;">Auth</span></td>
+              <td>Add credentials for Anthropic, OpenAI, Groq, OpenRouter, or Gemini.</td>
+            </tr>
+            <tr>
+              <td><code>zeus tools list</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#10b981;text-transform:uppercase;">Tools</span></td>
+              <td>Show built-in toolsets (web, browser, file, terminal, code_execution, vision, etc.).</td>
+            </tr>
+            <tr>
+              <td><code>zeus gateway</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#38bdf8;text-transform:uppercase;">Gateway</span></td>
+              <td>Start the multi-platform messaging gateway daemon.</td>
+            </tr>
+            <tr>
+              <td><code>zeus cron list</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:#f59e0b;text-transform:uppercase;">Automation</span></td>
+              <td>List background natural-language scheduled jobs and executions.</td>
+            </tr>
+            <tr>
+              <td><code>zeus update</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--accent);text-transform:uppercase;">System</span></td>
+              <td>Check for updates and pull the latest release from git automatically.</td>
+            </tr>
+            <tr>
+              <td><code>zeus --version</code></td>
+              <td><span style="font-family:var(--font-mono);font-size:10px;color:var(--muted);text-transform:uppercase;">Info</span></td>
+              <td>Print the active Zeus Agents version and Python environment facts.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 4: IN-SESSION SLASH COMMANDS -->
+    <section class="doc-section" id="slash">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#f59e0b"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+          4. In-Session Slash Commands
+        </h2>
+        <span class="section-tag">REPL Shortcuts</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <span class="feature-title"><code>/help</code></span>
+          <p class="feature-desc">Display the in-session command palette, shortcuts, and current session ID.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title"><code>/skills</code></span>
+          <p class="feature-desc">Inspect installed skills, browse optional skills, or teach the agent a new skill.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title"><code>/memory</code></span>
+          <p class="feature-desc">Search and browse persistent memories stored across past sessions.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title"><code>/model</code></span>
+          <p class="feature-desc">Switch the inference LLM on the fly without restarting your session.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title"><code>/compact</code></span>
+          <p class="feature-desc">Summarize and compress historical turns to free up context window space.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-title"><code>/clear</code></span>
+          <p class="feature-desc">Reset the conversation turn history while keeping long-term memories intact.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: PROVIDERS & AUTH -->
+    <section class="doc-section" id="auth">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:16px;height:16px;color:#a855f7"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+          5. Model Providers &amp; Free Keys
+        </h2>
+        <span class="section-tag">Private &amp; Secure</span>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;">Zeus supports all major LLM providers natively. Configure credentials via CLI or your <code>~/.zeus/.env</code> file:</p>
+
+      <div class="code-box">
+        <code># Configure Anthropic Claude:
+zeus auth add anthropic --api-key sk-ant-...
+
+# Configure OpenAI (GPT-4o / o1):
+zeus auth add openai --api-key sk-proj-...
+
+# Configure Groq (Free high-speed Llama 3):
+zeus auth add groq --api-key gsk_...
+
+# Configure Google Gemini (Free tier):
+zeus auth add gemini --api-key AIzaSy...
+
+# Configure OpenRouter (200+ models):
+zeus auth add openrouter --api-key sk-or-...</code>
+        <button type="button" class="copy-btn" onclick="copyCode(this)">COPY</button>
+      </div>
+    </section>
+
+    <!-- CTA BANNER -->
+    <div class="cta-banner">
+      <div class="cta-copy">
+        <span class="cta-title">Test Zeus CLI Live in Your Browser</span>
+        <span class="cta-sub">Run commands, test toolsets, and query models on our cloud web terminal.</span>
+      </div>
+      <a href="/cli" class="nav-btn primary" style="padding:10px 18px;font-size:12px;">Launch Web CLI &gt;_</a>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>&copy; 2026 Zeus Agents &bull; Open Source under MIT License</div>
+    <div style="display:flex;gap:16px;">
+      <a href="/">Home</a>
+      <a href="/cli">Web CLI</a>
+      <a href="/admin">Admin Panel</a>
+      <a href="https://github.com/charanbalaji2005/Zeus-Agents" target="_blank">GitHub &nearr;</a>
+    </div>
+  </footer>
+
+  <script>
+    function switchTab(name, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const target = document.getElementById('pane-' + name);
+      if (target) target.classList.add('active');
+    }
+
+    function copyCode(btn) {
+      const codeEl = btn.parentElement.querySelector('code');
+      if (codeEl) {
+        navigator.clipboard.writeText(codeEl.innerText.trim()).then(() => {
+          const old = btn.innerText;
+          btn.innerText = 'COPIED!';
+          setTimeout(() => btn.innerText = old, 1500);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
