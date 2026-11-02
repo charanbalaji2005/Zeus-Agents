@@ -8,10 +8,13 @@ the secret in ``X-Admin-Secret``; repeated wrong guesses from one client lock th
 Account actions map onto the model ``cli_api`` enforces: "approve" flips ``users.approved`` (the
 gate ``zeus login`` checks), "revoke_tokens" revokes every terminal token of the account (they are
 stored hashed, so the next ``zeus login`` mints a fresh one), "delete" removes the user document
-and revokes its terminals.
+and revokes its terminals (and with ``purge_data`` erases their usage and conversations too).
+Every mutation lands in the in-memory log and, with MongoDB connected, in ``admin_audit``.
 
 The command console runs only the argv vectors in ``COMMANDS`` (no shell, 30s timeout) with the
 site's own secrets stripped from the child environment.
+
+Analytics, sessions, conversations, database stats and retention live in ``admin_insights``.
 """
 
 from __future__ import annotations
@@ -34,6 +37,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Callable
 
+if __package__:
+    from . import admin_insights as insights
+else:  # marketing_landing/server.py runs as a script with this directory on sys.path
+    import admin_insights as insights
+
 logger = logging.getLogger("zeus.admin_api")
 
 PAGE = Path(__file__).resolve().parent / "admin.html"
@@ -49,6 +57,8 @@ COMMANDS: dict[str, list[str]] = {
     "zeus --version": ["--version"],
 }
 COMMAND_TIMEOUT = 30
+# Diagnostics probe the network and every subsystem; on a cold Render instance they outlast 30s.
+COMMAND_TIMEOUTS = {"zeus doctor": 150, "zeus status --full": 90}
 # The child is a diagnostic `zeus` run: it never needs the site's database or OAuth credentials.
 _SCRUBBED_ENV = ("MONGODB_URI", "ADMIN_SECRET", "GITHUB_CLIENT_SECRET")
 
@@ -66,6 +76,8 @@ _INTEGRITY_MAX_BYTES = 256 * 1024 * 1024
 _TOOL_LINE = re.compile(r"^\s*[✓✗]\s+(enabled|disabled)\s+(\S+)\s*(.*)$")
 _USER_FIELDS = ("email", "name", "picture", "provider", "created_at", "last_login",
                 "last_cli_login", "approved")
+_MAX_BULK = 500
+_SECRET_ENV = ("MONGODB_URI", "GITHUB_CLIENT_SECRET", "ADMIN_SECRET")
 
 
 class ApiError(Exception):
@@ -223,6 +235,17 @@ def _storage() -> dict[str, Any]:
          "integrity": _integrity(p)} for p in files]}
 
 
+def _config() -> dict[str, Any]:
+    """Which site settings are in place. Secrets are reported as set/unset, never echoed."""
+    env = os.environ
+    return {
+        "secrets": {k: bool(env.get(k)) for k in _SECRET_ENV},
+        "google_client_id": env.get("GOOGLE_CLIENT_ID", ""),
+        "github_oauth": bool(env.get("GITHUB_CLIENT_ID") and env.get("GITHUB_CLIENT_SECRET")),
+        "admin_emails": sorted(e.strip().lower() for e in env.get("ADMIN_EMAILS", "").split(",") if e.strip()),
+    }
+
+
 def overview(site: Site) -> dict[str, Any]:
     return {
         "server": {"uptime_seconds": int(time.time() - STARTED_AT), "port": site.port,
@@ -233,14 +256,38 @@ def overview(site: Site) -> dict[str, Any]:
         "users": _user_counts(site),
         "engine": _engine(),
         "storage": _storage(),
+        "config": _config(),
     }
+
+
+# ── audit ────────────────────────────────────────────────────────────────────
+
+def _audit(site: Site, client: str, action: str, target: str, detail: dict[str, Any]) -> None:
+    record("AUTH", f"Admin {action} {target}: {json.dumps(detail, default=str)}".rstrip())
+    if site.db is not None:
+        insights.write_audit(site.db, {"at": _now(), "action": action, "target": target,
+                                       "client": client, "detail": detail})
+
+
+def _require_db(site: Site) -> Any:
+    if site.db is None:
+        raise ApiError(503, "This needs MongoDB; the database is not connected.")
+    return site.db
+
+
+def _str_param(query: dict[str, list[str]], name: str) -> str:
+    return (query.get(name) or [""])[0].strip()
+
+
+def _int_param(query: dict[str, list[str]], name: str, default: int, low: int, high: int) -> int:
+    raw = _str_param(query, name)
+    return max(low, min(int(raw), high)) if raw.isdigit() else default
 
 
 # ── users ────────────────────────────────────────────────────────────────────
 
 def list_users(site: Site, query: dict[str, list[str]]) -> dict[str, Any]:
-    raw_limit = (query.get("limit") or [""])[0]
-    limit = max(1, min(int(raw_limit) if raw_limit.isdigit() else 1000, 5000))
+    limit = _int_param(query, "limit", 1000, 1, 5000)
     if site.db is None:
         users = sorted(site.fallback_users.values(), key=lambda u: u.get("created_at") or "", reverse=True)
         return {"source": "local_fallback",
@@ -271,7 +318,8 @@ def _revoke_tokens(db, email: str, payload: dict[str, Any]) -> dict[str, Any]:
 def _delete(db, email: str, payload: dict[str, Any]) -> dict[str, Any]:
     revoked = _revoke(db, email)
     db.users.delete_one({"email": email})
-    return {"deleted": True, "revoked": revoked}
+    purged = insights.purge_user_data(db, email) if payload.get("purge_data") is True else None
+    return {"deleted": True, "revoked": revoked, "purged": purged}
 
 
 _USER_ACTIONS: dict[str, Callable[[Any, str, dict[str, Any]], dict[str, Any]]] = {
@@ -279,20 +327,95 @@ _USER_ACTIONS: dict[str, Callable[[Any, str, dict[str, Any]], dict[str, Any]]] =
 }
 
 
-def user_action(site: Site, payload: dict[str, Any]) -> dict[str, Any]:
-    action, email = str(payload.get("action") or ""), str(payload.get("email") or "").strip().lower()
+def _check_action(site: Site, action: str) -> Any:
     if action not in _USER_ACTIONS:
         raise ApiError(400, f"Unknown action; use one of {', '.join(_USER_ACTIONS)}.")
-    if site.db is None:
-        raise ApiError(503, "Account actions need MongoDB; the database is not connected.")
+    return _require_db(site)
+
+
+def _apply(site: Site, client: str, action: str, email: str, payload: dict[str, Any]) -> dict[str, Any]:
     if not email or site.db.users.find_one({"email": email}) is None:
-        raise ApiError(404, "No such user.")
+        raise ApiError(404, f"No such user: {email or '(blank)'}.")
     result = _USER_ACTIONS[action](site.db, email, payload)
-    record("AUTH", f"Admin {action} {email}: {json.dumps(result)}")
+    _audit(site, client, f"user.{action}", email, result)
     return {"email": email, "action": action, **result}
 
 
+def user_action(site: Site, client: str, payload: dict[str, Any]) -> dict[str, Any]:
+    action = str(payload.get("action") or "")
+    _check_action(site, action)
+    return _apply(site, client, action, str(payload.get("email") or "").strip().lower(), payload)
+
+
+def bulk_user_action(site: Site, client: str, payload: dict[str, Any]) -> dict[str, Any]:
+    action, emails = str(payload.get("action") or ""), payload.get("emails")
+    _check_action(site, action)
+    if not isinstance(emails, list) or not emails:
+        raise ApiError(400, "Send a non-empty 'emails' list.")
+    if len(emails) > _MAX_BULK:
+        raise ApiError(413, f"At most {_MAX_BULK} users per bulk action.")
+    done, failed = [], []
+    for email in dict.fromkeys(str(e).strip().lower() for e in emails):
+        try:
+            done.append(_apply(site, client, action, email, payload))
+        except ApiError as exc:
+            failed.append({"email": email, "error": exc.message})
+    return {"action": action, "done": done, "failed": failed}
+
+
+def user_detail(site: Site, query: dict[str, list[str]]) -> dict[str, Any]:
+    detail = insights.user_detail(_require_db(site), _str_param(query, "email").lower())
+    if detail is None:
+        raise ApiError(404, "No such user.")
+    return detail
+
+
+# ── sessions, conversations, analytics, database ─────────────────────────────
+
+def list_sessions(site: Site, query: dict[str, list[str]]) -> dict[str, Any]:
+    status = _str_param(query, "status") or "active"
+    if status not in insights.SESSION_FILTERS:
+        raise ApiError(400, "status must be active, revoked or all.")
+    return {"sessions": insights.sessions(_require_db(site), status, _str_param(query, "email").lower(),
+                                          _int_param(query, "limit", 500, 1, 5000))}
+
+
+def revoke_session(site: Site, client: str, payload: dict[str, Any]) -> dict[str, Any]:
+    session_id = str(payload.get("id") or "")
+    email = insights.revoke_session(_require_db(site), session_id)
+    if email is None:
+        raise ApiError(404, "No active session with that id.")
+    _audit(site, client, "session.revoke", email, {"session": session_id[:12]})
+    return {"revoked": True, "email": email}
+
+
+def list_conversations(site: Site, query: dict[str, list[str]]) -> dict[str, Any]:
+    return insights.conversations(_require_db(site), _str_param(query, "email").lower(),
+                                  _str_param(query, "q")[:200], _str_param(query, "before"),
+                                  _int_param(query, "limit", 25, 1, 100))
+
+
+def prune(site: Site, client: str, payload: dict[str, Any]) -> dict[str, Any]:
+    collection, days = str(payload.get("collection") or ""), payload.get("older_than_days")
+    if collection not in insights.PRUNABLE:
+        raise ApiError(400, f"collection must be one of {', '.join(insights.PRUNABLE)}.")
+    if not isinstance(days, int) or isinstance(days, bool) or not 1 <= days <= 3650:
+        raise ApiError(400, "older_than_days must be a whole number of days between 1 and 3650.")
+    deleted = insights.prune(_require_db(site), collection, days)
+    _audit(site, client, "database.prune", collection, {"older_than_days": days, "deleted": deleted})
+    return {"collection": collection, "deleted": deleted}
+
+
+def audit(site: Site, query: dict[str, list[str]]) -> dict[str, Any]:
+    return {"entries": insights.audit_log(_require_db(site), _str_param(query, "action"),
+                                          _int_param(query, "limit", 200, 1, 2000))}
+
+
 # ── zeus CLI ─────────────────────────────────────────────────────────────────
+
+def _as_text(value: bytes | str | None) -> str:
+    return value.decode("utf-8", "replace") if isinstance(value, bytes) else (value or "")
+
 
 def run_cli(args: list[str], timeout: int = COMMAND_TIMEOUT) -> dict[str, Any]:
     env = {k: v for k, v in os.environ.items() if k not in _SCRUBBED_ENV}
@@ -303,8 +426,10 @@ def run_cli(args: list[str], timeout: int = COMMAND_TIMEOUT) -> dict[str, Any]:
                               stdin=subprocess.DEVNULL, capture_output=True, text=True, check=False,
                               encoding="utf-8", errors="replace", timeout=timeout)
     except subprocess.TimeoutExpired as exc:
-        return {"exit_code": None, "timed_out": True, "stdout": exc.stdout or "", "stderr": exc.stderr or "",
-                "duration_ms": int((time.perf_counter() - started) * 1000)}
+        # TimeoutExpired carries the partial output as bytes even under text=True.
+        note = f"\n[stopped: no result within {timeout}s; the output above is partial]\n"
+        return {"exit_code": None, "timed_out": True, "stdout": _as_text(exc.stdout),
+                "stderr": _as_text(exc.stderr) + note, "duration_ms": int((time.perf_counter() - started) * 1000)}
     return {"exit_code": done.returncode, "timed_out": False, "stdout": done.stdout, "stderr": done.stderr,
             "duration_ms": int((time.perf_counter() - started) * 1000)}
 
@@ -326,12 +451,13 @@ def tools() -> dict[str, Any]:
     return {"toolsets": parse_tools(result["stdout"]), **result}
 
 
-def execute(payload: dict[str, Any]) -> dict[str, Any]:
+def execute(site: Site, client: str, payload: dict[str, Any]) -> dict[str, Any]:
     command = " ".join(str(payload.get("command") or "").split())
     if command not in COMMANDS:
         raise ApiError(400, "Only these commands are allowed: " + ", ".join(COMMANDS))
-    record("AUTH", f"Admin ran `{command}`")
-    return {"command": command, **run_cli(COMMANDS[command])}
+    result = run_cli(COMMANDS[command], COMMAND_TIMEOUTS.get(command, COMMAND_TIMEOUT))
+    _audit(site, client, "console.exec", command, {"exit_code": result["exit_code"]})
+    return {"command": command, **result}
 
 
 # ── HTTP routing ─────────────────────────────────────────────────────────────
@@ -348,20 +474,36 @@ def _json_body(body: str) -> dict[str, Any]:
 
 def _auth(handler, site: Site, query, body: str) -> dict[str, Any]:
     require_admin(handler, str(_json_body(body).get("secret") or ""))
-    record("AUTH", f"Admin signed in from {_client_key(handler)}")
+    client = _client_key(handler)
+    _audit(site, client, "admin.sign_in", client, {})
     return {"ok": True}
+
+
+def _mutation(fn: Callable[[Site, str, dict[str, Any]], dict[str, Any]]) -> Callable[..., dict[str, Any]]:
+    """A POST route that changes state: it gets the JSON body and the caller for the audit trail."""
+    return lambda h, site, q, b: fn(site, _client_key(h), _json_body(b))
 
 
 _GET: dict[str, Callable[..., dict[str, Any]]] = {
     "/api/admin/overview": lambda h, site, q, b: overview(site),
     "/api/admin/users": lambda h, site, q, b: list_users(site, q),
+    "/api/admin/users/detail": lambda h, site, q, b: user_detail(site, q),
+    "/api/admin/sessions": lambda h, site, q, b: list_sessions(site, q),
+    "/api/admin/conversations": lambda h, site, q, b: list_conversations(site, q),
+    "/api/admin/analytics": lambda h, site, q, b: insights.analytics(
+        _require_db(site), _int_param(q, "days", 30, 1, 365)),
+    "/api/admin/database": lambda h, site, q, b: insights.database_stats(_require_db(site)),
+    "/api/admin/audit": lambda h, site, q, b: audit(site, q),
     "/api/admin/tools": lambda h, site, q, b: tools(),
     "/api/admin/logs": lambda h, site, q, b: logs(),
 }
 _POST: dict[str, Callable[..., dict[str, Any]]] = {
     "/api/admin/auth": _auth,
-    "/api/admin/users/action": lambda h, site, q, b: user_action(site, _json_body(b)),
-    "/api/admin/exec": lambda h, site, q, b: execute(_json_body(b)),
+    "/api/admin/users/action": _mutation(user_action),
+    "/api/admin/users/bulk": _mutation(bulk_user_action),
+    "/api/admin/sessions/revoke": _mutation(revoke_session),
+    "/api/admin/database/prune": _mutation(prune),
+    "/api/admin/exec": _mutation(execute),
 }
 _ROUTES = {"GET": _GET, "POST": _POST}
 _PAGE_PATHS = ("/admin", "/admin/")

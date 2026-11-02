@@ -14,53 +14,17 @@ import pytest
 
 from marketing_landing import admin_api, cli_api
 
-from .test_cli_api import CLIENT_ID, GOOGLE_PROFILE, _Collection
+from ._fake_mongo import Database
+from .test_cli_api import CLIENT_ID, GOOGLE_PROFILE
 
 SECRET = "correct horse battery staple"
-
-
-class _Cursor(list):
-    def sort(self, key, direction):
-        return _Cursor(sorted(self, key=lambda d: d.get(key) or "", reverse=direction < 0))
-
-    def limit(self, n):
-        return _Cursor(self[:n])
-
-
-class _AdminCollection(_Collection):
-    def find(self, query=None, projection=None):
-        return _Cursor(dict(d) for d in self.docs if self._match(d, query or {}))
-
-    def count_documents(self, query):
-        return len(self.find(query))
-
-    def update_many(self, query, update):
-        hits = self.find(query)
-        for doc in self.docs:
-            if self._match(doc, query):
-                doc.update(update.get("$set", {}))
-        return types.SimpleNamespace(modified_count=len(hits))
-
-    def delete_one(self, query):
-        doc = self.find_one(query)
-        if doc is not None:
-            self.docs.remove(doc)
-
-
-class _FakeMongo:
-    def __init__(self):
-        for name in ("users", "cli_tokens", "usage", "conversations"):
-            setattr(self, name, _AdminCollection())
-
-    def command(self, name):
-        return {"ok": 1}
 
 
 @pytest.fixture
 def site(monkeypatch):
     import server
 
-    db = _FakeMongo()
+    db = Database()
     monkeypatch.setattr(server, "mongo_db", db)
     monkeypatch.setattr(server, "GOOGLE_CLIENT_ID", CLIENT_ID)
     monkeypatch.setattr(cli_api, "_fetch_google", lambda url, headers=None: dict(GOOGLE_PROFILE))
