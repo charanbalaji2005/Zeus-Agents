@@ -172,6 +172,20 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
             }).encode("utf-8"))
             return
 
+        # If CLI_ONLY mode is enabled, serve terminal.html directly at root /
+        cli_only = os.environ.get("CLI_ONLY", "").lower() in ("true", "1", "yes")
+        if url.path in ("/", "/index.html") and cli_only:
+            term_file = os.path.join(DIRECTORY, "terminal.html")
+            if not os.path.exists(term_file):
+                term_file = os.path.join(os.path.dirname(DIRECTORY), "terminal.html")
+            if os.path.exists(term_file):
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.end_headers()
+                with open(term_file, "rb") as f:
+                    self.wfile.write(f.read())
+                return
+
         # Fallback root route to index.html
         if url.path == "/" or not os.path.exists(os.path.join(DIRECTORY, url.path.lstrip("/"))):
             if not os.path.splitext(url.path)[1]:
