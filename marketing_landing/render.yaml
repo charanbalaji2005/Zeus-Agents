@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: zeus-agent-portal
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: ""
+    startCommand: python server.py
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: GOOGLE_CLIENT_ID
+        value: 644632951361-d2j5eiu4ur41abjafjrtcpk5oenh4d6r.apps.googleusercontent.com
+      - key: GOOGLE_CLIENT_SECRET
+        value: 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
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+
