@@ -14,7 +14,6 @@
     { label: "Features", href: "/#features" },
     { label: "Downloads", href: "/#downloads" },
     { label: "Docs", href: "/docs" },
-    { label: "Web CLI", href: "/cli" },
     { label: "Community", href: "/community.html" },
     { label: "FAQ", href: "/#faqs" },
     SIGN_IN,
@@ -22,7 +21,7 @@
 
   // Header dropdowns, keyed by the buttons' data-research-target.
   var DROPDOWNS = {
-    Hermes: [PAGES[1], PAGES[2], PAGES[3], PAGES[4], PAGES[5], PAGES[7]],
+    Hermes: [PAGES[1], PAGES[2], PAGES[3], PAGES[4], PAGES[6]],
     Community: [
       { label: "Community hub", href: "/community.html" },
       { label: "GitHub", href: REPO },
