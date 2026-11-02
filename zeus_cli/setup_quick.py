@@ -142,14 +142,19 @@ def _run_first_time_quick_setup(config: dict, zeus_home, is_existing: bool, impo
     """Streamlined first-time setup via Nous Portal: OAuth, model, terminal & messaging;
     everything else gets defaults. A model brought by an agent import (*imported_from* names the
     agents) is offered first and kept by default, which skips the Nous Portal step."""
+    # Step 1: the imported model, or Nous Portal.
+    if not _keep_imported_model(config, imported_from):
+        _quick_setup_nous_portal(config)
+    finish_first_time_setup(config, zeus_home)
+
+
+def finish_first_time_setup(config: dict, zeus_home) -> None:
+    """The steps every quick first-time flow shares once a model is set: terminal backend,
+    defaults for everything else, the messaging offer, then the summary."""
     from zeus_cli.setup import (
         _apply_default_agent_settings, _info, print_info, _print_setup_summary, print_success,
         prompt_choice, save_config, setup_gateway, setup_terminal_backend
     )
-    # Step 1: the imported model, or Nous Portal.
-    if not _keep_imported_model(config, imported_from):
-        _quick_setup_nous_portal(config)
-
     # Step 2: Terminal Backend; Step 3: defaults for everything else.
     setup_terminal_backend(config)
     _apply_default_agent_settings(config)

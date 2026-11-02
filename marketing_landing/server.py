@@ -3,6 +3,7 @@ import socketserver
 import os
 import sys
 import json
+import hashlib
 import urllib.request
 import urllib.parse
 from datetime import datetime
@@ -64,12 +65,17 @@ if os.path.exists(fallback_db_path):
 
 def save_user_to_db(user_data):
     """Save or update user in MongoDB or local fallback."""
+    email = user_data.get("email") or "guest@zeus.local"
+    token_seed = f"zeus-agent:{email}:{user_data.get('id', '')}".encode("utf-8")
+    cli_token = "zeus_live_" + hashlib.sha256(token_seed).hexdigest()[:28]
+
     user_record = {
-        "email": user_data.get("email"),
+        "email": email,
         "name": user_data.get("name", "Zeus User"),
         "picture": user_data.get("picture"),
         "provider": user_data.get("provider", "google"),
         "provider_id": user_data.get("id"),
+        "cli_token": cli_token,
         "last_login": datetime.utcnow().isoformat()
     }
     
@@ -85,7 +91,7 @@ def save_user_to_db(user_data):
                 upsert=True
             )
             print(f"[MongoDB] Saved user {user_record['email']} to Zeus.users collection.")
-            return {"saved_to": "mongodb", "status": "success"}
+            return {"saved_to": "mongodb", "status": "success", "cli_token": cli_token}
         except Exception as err:
             print(f"[MongoDB] Save failed: {err}. Using local store.")
 
@@ -97,7 +103,7 @@ def save_user_to_db(user_data):
             json.dump(fallback_users, f, indent=2)
     except:
         pass
-    return {"saved_to": "local_fallback", "status": "success"}
+    return {"saved_to": "local_fallback", "status": "success", "cli_token": cli_token}
 
 
 class ZeusHandler(http.server.SimpleHTTPRequestHandler):
@@ -159,6 +165,23 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
             }).encode("utf-8"))
             return
 
+        # CLI Auth token retrieval
+        if url.path == "/api/auth/token":
+            query = urllib.parse.parse_qs(url.query)
+            email = query.get("email", ["guest@zeus.local"])[0]
+            token_seed = f"zeus-agent:{email}".encode("utf-8")
+            cli_token = "zeus_live_" + hashlib.sha256(token_seed).hexdigest()[:28]
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "success": True,
+                "email": email,
+                "cli_token": cli_token,
+                "cli_command": f"zeus auth add nous --api-key {cli_token}"
+            }).encode("utf-8"))
+            return
+
         # Fallback root route to index.html
         if url.path == "/" or not os.path.exists(os.path.join(DIRECTORY, url.path.lstrip("/"))):
             if not os.path.splitext(url.path)[1]:
@@ -170,6 +193,29 @@ class ZeusHandler(http.server.SimpleHTTPRequestHandler):
         url = urllib.parse.urlparse(self.path)
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length).decode("utf-8") if length > 0 else "{}"
+
+        # CLI Auth Token POST
+        if url.path == "/api/auth/token":
+            try:
+                data = json.loads(body) if body else {}
+                email = data.get("email") or "guest@zeus.local"
+                token_seed = f"zeus-agent:{email}".encode("utf-8")
+                cli_token = "zeus_live_" + hashlib.sha256(token_seed).hexdigest()[:28]
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "email": email,
+                    "cli_token": cli_token,
+                    "cli_command": f"zeus auth add nous --api-key {cli_token}"
+                }).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode("utf-8"))
+            return
 
         # Google OAuth verification & MongoDB persistence
         if url.path == "/api/auth/google":

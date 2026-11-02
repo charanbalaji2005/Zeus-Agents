@@ -734,8 +734,18 @@ def _run_setup_wizard_impl(args):
         # outside this dict (the import from another process), so reload it.
         imported_from = offer_agent_import(zeus_home)
         config = load_config()
-        setup_mode = prompt_choice("How would you like to set up Zeus?", [label for label, _ in _FIRST_TIME_MODES], 0)
-        label, runner = _FIRST_TIME_MODES[setup_mode]
+        from zeus_cli import setup_connect
+        found = setup_connect.detect_connections()
+        modes = list(_FIRST_TIME_MODES)
+        if found:  # logins/servers already here outrank a new account; Quick Setup stays below
+            connect_label = setup_connect.connect_mode_label(found)
+            modes = [(connect_label, None)] + [(lbl.replace(" (recommended)", ""), run) for lbl, run in modes]
+        setup_mode = prompt_choice("How would you like to set up Zeus?", [label for label, _ in modes], 0)
+        label, runner = modes[setup_mode]
+        if found and setup_mode == 0:
+            _run_setup_steps([(label, lambda: setup_connect.run_connect_setup(config, zeus_home, found))])
+            _record_setup_completed(config)
+            return
         if runner is not None:
             from zeus_cli import setup_quick
             # Quick Setup offers to keep a model the import brought (Full setup acknowledges it below).

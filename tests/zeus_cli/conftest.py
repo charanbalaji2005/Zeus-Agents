@@ -154,6 +154,16 @@ def isolated_source_completion(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_connect_detection(monkeypatch):
+    """First-time setup offers to connect logins and servers found on THIS machine (Claude Code,
+    Codex CLI, Ollama, LM Studio). HOME is not sandboxed, so a developer's real logins would add a
+    menu row and shift every wizard test. Tests of detection call the detectors directly."""
+    from zeus_cli import setup_connect
+
+    monkeypatch.setattr(setup_connect, "_DETECTORS", ())
+
+
+@pytest.fixture(autouse=True)
 def _reset_prompt_toolkit_output_cache():
     """Clear prompt_toolkit's cached AppSession output around each CLI test.
 
