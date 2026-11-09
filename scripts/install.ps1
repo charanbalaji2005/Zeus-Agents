@@ -1,11 +1,10 @@
 # Zeus Agents bootstrap: git checkout + venv + zeus command on PATH.
 # Heavy dependencies (tool binaries, browsers, node) are pm's job after
-# this: `zeus pm install`. Stage protocol kept for Zeus-Setup:
+# this: `zeus pm install`. Stage protocol (installer drivers and E2E harnesses):
 #   -Manifest             print the stage list as JSON
 #   -Stage NAME [-Json]   run one stage
 #   -NonInteractive       skip stages that need input
 #   -SkipSetup            deprecated alias for -NonInteractive
-#   -IncludeDesktop       add the desktop build stage
 #   -ProtocolVersion      print the stage protocol version
 #   -SkipBrowser          do not install the browser (Chromium); remembered by
 #                         later installs and `zeus update`, undone by
@@ -24,7 +23,7 @@
 param(
     [string]$Branch = "main",
     [string]$Commit = "",
-    [string]$Channel = $(if ($env:ZEUS_INSTALL_CHANNEL) { $env:ZEUS_INSTALL_CHANNEL } else { "" }),
+    [string]$Channel = $(if ($env:ZEUS_INSTALL_CHANNEL) { $env:ZEUS_INSTALL_CHANNEL } else { "main" }),
     [string]$ZeusHome = $(if ($env:ZEUS_HOME) { $env:ZEUS_HOME } else { "$env:LOCALAPPDATA\zeus" }),
     [string]$InstallDir = $(if ($env:ZEUS_HOME) { "$env:ZEUS_HOME\zeus-agents" } else { "$env:LOCALAPPDATA\zeus\zeus-agents" }),
     [switch]$Manifest,
@@ -35,7 +34,6 @@ param(
     # wrappers written against the old switch keep binding (#125350).
     [switch]$SkipSetup,
     [switch]$Json,
-    [switch]$IncludeDesktop,
     # Same opt-out as install.sh --skip-browser: PM records it, so later
     # installs and `zeus update` keep the browser off until
     # `zeus pm install chromium` opts back in.
@@ -285,8 +283,8 @@ public static extern int GetLongPathNameW(string lpszShortPath, System.Text.Stri
 
 function Set-LongProfileEnvVars {
     # Normalize every profile-rooted variable the install reads, not just
-    # %TEMP%: the desktop stage derives InstallDir from %LOCALAPPDATA%, and a
-    # short root there fails the post-build probe after a successful build.
+    # %TEMP%: InstallDir derives from %LOCALAPPDATA%, and a short root there
+    # breaks the paths later stages compare against it.
     # Returns $true when anything was rewritten.
     $rewrote = $false
     $script:NormalizedPathRewrites = @{}
@@ -621,9 +619,9 @@ function Write-Err([string]$msg) { Write-Host "[X] $msg" -ForegroundColor Red }
 function Write-Banner {
     Write-Host ""
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
-    Write-Host "|             * Zeus Agents Installer                    |" -ForegroundColor Magenta
+    Write-Host "|             * Zeus Agents Installer                     |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
-    Write-Host "|  An open source AI agent by Nous Research.              |" -ForegroundColor Magenta
+    Write-Host "|  An open source AI agent.                               |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
     Write-Host ""
 }
@@ -817,7 +815,6 @@ function Emit-Frame([bool]$ok, [string]$name, [bool]$skipped, [string]$reason = 
     $frame | ConvertTo-Json -Compress | Write-Output
 }
 
-$ProductTitle = if ($IncludeDesktop) { "Install command and app + desktop" } else { "Install command and app" }
 $Stages = @(
     @{ name = "prerequisites"; title = "System prerequisites"; category = "runtime"; needs_user_input = $false },
     @{ name = "repository"; title = "Download Zeus Agents"; category = "runtime"; needs_user_input = $false },
@@ -825,9 +822,8 @@ $Stages = @(
     @{ name = "python-deps"; title = "Install Python dependencies"; category = "runtime"; needs_user_input = $false },
     @{ name = "config"; title = "Prepare config and skills"; category = "configuration"; needs_user_input = $false },
     # The shared completion tail -- the same call `zeus update` makes -- so
-    # the manifest and the run cannot disagree. -IncludeDesktop selects the
-    # desktop product inside this stage instead of adding a second build stage.
-    @{ name = "products"; title = $ProductTitle; category = "runtime"; needs_user_input = $false },
+    # the manifest and the run cannot disagree.
+    @{ name = "products"; title = "Install command and app"; category = "runtime"; needs_user_input = $false },
     @{ name = "setup"; title = "Configure API keys and settings"; category = "configuration"; needs_user_input = $true },
     @{ name = "gateway"; title = "Configure gateway service"; category = "configuration"; needs_user_input = $true }
 )
@@ -939,7 +935,8 @@ function Get-StableTarget([string]$Origin) {
     }
     $release = Get-LatestStableRelease $Origin
     if ($release) { return $release }
-    return '-'
+    if ($Channel -ceq 'stable') { return '-' }
+    return ''
 }
 
 # Fetch tag $Release into checkout $Dir (releases can be cut off main, on release/* branches).
@@ -1302,16 +1299,14 @@ function Stage-PythonDeps {
     Invoke-BootstrapPm
 }
 
-function Invoke-SourceCompletion([bool]$Desktop) {
+function Invoke-SourceCompletion {
     # The whole tail in one place, by calling the completion an update calls:
-    # publish the commands, build the products (tui/web, plus the desktop app
-    # when asked), then run the post-build maintenance that syncs bundled
+    # publish the commands, build the products (tui/web), then run the post-build maintenance that syncs bundled
     # skills and migrates config. Node, browsers and the frontend build tools
     # arrive through pm as the build asks for them; the bootstrap interpreter
     # itself only re-enters the tree on PM's selected Python.
     $bootPy = Get-BootstrapPython
     $completionArgs = @('-I', '-B', '-X', 'utf8', 'zeus_cli/source_completion.py', '--source', $InstallDir)
-    if ($Desktop) { $completionArgs += '--desktop' }
     Push-Location $InstallDir
     try {
         Invoke-Logged "Building the zeus command and apps" { & $bootPy @completionArgs }
@@ -1341,27 +1336,9 @@ function Publish-UserCommand {
     Write-Ok "zeus command installed at $binDir"
 }
 
-function Test-DesktopProductPresent {
-    # Does this checkout already carry a built desktop app? A plain repair or
-    # upgrade rerun on a desktop install must REBUILD it rather than leave a
-    # bundle built by the previous code: the app is part of that install and its
-    # artifacts live inside the tree, so an update makes them stale, not gone.
-    # electron-builder suffixes the output dir with the arch on every non-x64
-    # target (win-arm64-unpacked, linux-arm64-unpacked, mac-arm64), so the x64
-    # names alone miss a desktop build on ARM64 (#94703).
-    $release = Join-Path $InstallDir "apps/desktop/release"
-    foreach ($candidate in @("win-unpacked", "win-ia32-unpacked", "win-arm64-unpacked",
-                             "linux-unpacked", "linux-arm64-unpacked", "mac", "mac-arm64")) {
-        if (Test-Path (Join-Path $release $candidate)) { return $true }
-    }
-    return $false
-}
-
 function Stage-Products {
-    $desktop = [bool]$IncludeDesktop -or [bool](Test-DesktopProductPresent)
-    Invoke-SourceCompletion $desktop
+    Invoke-SourceCompletion
     Publish-UserCommand
-    if ($desktop) { Confirm-DesktopArtifact }
 }
 
 function Set-LauncherUserPath([string]$binDir) {
@@ -1374,8 +1351,8 @@ function Set-LauncherUserPath([string]$binDir) {
     # process-wide, so prepending it here makes `zeus` resolve in the
     # caller's own window whenever this code runs in the caller's process
     # (`irm | iex`, `& .\install.ps1`); a -File child just discards it.
-    # Recorded before the first prepend only (the -IncludeDesktop ladder
-    # publishes twice): it is what the caller's shell inherited.
+    # Recorded before the first prepend only: it is what the caller's shell
+    # inherited.
     $sessionEntries = @($env:Path -split ';' | ForEach-Object { $_.TrimEnd('\') })
     $onPath = $sessionEntries -contains $binDir.TrimEnd('\')
     if ($null -eq $script:BinDirOnCallerPath) { $script:BinDirOnCallerPath = $onPath }
@@ -1435,58 +1412,6 @@ function Stage-Gateway {
     Invoke-InstalledZeus @('gateway', 'install', '--if-missing')
 }
 
-function Stage-Desktop {
-    # External-caller contract: -Stage desktop stays dispatchable on its own
-    # (see Invoke-StageByName). The work is the same completion call with the
-    # desktop product selected. Voice and wake extras are not synced here: pm
-    # lazy-installs them at first use (policy: Teknium, July 2026, #70509).
-    Invoke-SourceCompletion $true
-    Publish-UserCommand
-    Confirm-DesktopArtifact
-}
-
-function Confirm-DesktopArtifact {
-    # Probe the packaged artifact the completion just built -- the same
-    # candidates zeus_cli/main_desktop._desktop_packaged_executable resolves.
-    Push-Location $InstallDir
-    try {
-        $desktopDir = Join-Path $InstallDir "apps\desktop"
-        $candidates = @(
-            (Join-Path $desktopDir "release\win-unpacked\Zeus.exe"),
-            (Join-Path $desktopDir "release\win-ia32-unpacked\Zeus.exe"),
-            (Join-Path $desktopDir "release\win-arm64-unpacked\Zeus.exe")
-        )
-        $desktopExe = $null
-        foreach ($cand in $candidates) {
-            if (Test-Path $cand) { $desktopExe = $cand; break }
-        }
-        if (-not $desktopExe) {
-            Fail "desktop build produced no Zeus.exe under $desktopDir\release\*-unpacked" products_build_failed
-        }
-        Write-Ok "Desktop ready: $desktopExe"
-
-        # Grant ALL APPLICATION PACKAGES (S-1-15-2-2) RX on the unpacked
-        # app directory: Chromium's GPU/renderer sandboxes CHECK-fail with
-        # 0x80000003 without this ACE beside orphan AppContainer SIDs under
-        # %LOCALAPPDATA% (electron/electron#51761, zeus-agents#38216).
-        # Best-effort -- never fail an otherwise-good install over ACL.
-        try {
-            $appDir = Split-Path -Parent $desktopExe
-            Invoke-Native { & icacls $appDir /grant "*S-1-15-2-2:(OI)(CI)(RX)" /T /C /Q } | Out-Null
-            if ($LASTEXITCODE -eq 0) {
-                Log "Granted AppContainer read access on $appDir"
-            } else {
-                Write-Warn "icacls AppContainer grant returned exit $LASTEXITCODE for $appDir"
-            }
-        } catch {
-            Write-Warn "Could not grant AppContainer ACL: $($_.Exception.Message)"
-        }
-    } finally {
-        Pop-Location
-    }
-    New-DesktopShortcuts -TargetExe $desktopExe
-}
-
 function Stage-Complete {
     $commit = $Commit
     if (-not $commit) {
@@ -1506,69 +1431,6 @@ function Stage-Complete {
     if ($commit) { Write-Ok "Zeus Agents install complete (pinned $commit). Run: zeus" }
 }
 
-function New-DesktopShortcuts {
-    param([Parameter(Mandatory = $true)][string]$TargetExe)
-
-    # Best-effort: a shortcut failure must never fail an otherwise-good install.
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        $workDir = Split-Path -Parent $TargetExe
-
-        # Prefer the standalone icon.ico (shipped beside the exe via
-        # electron-builder extraResources -> resources/icon.ico) over the exe's
-        # embedded resource. An explicit .ico path is more stable across update
-        # cycles: pointing at "$TargetExe,0" makes Windows cache the icon it
-        # extracted from the exe at shortcut-creation time, and that cached
-        # bitmap can persist (showing the OLD/Electron icon) even after the exe
-        # is re-stamped on update. A dedicated .ico sidesteps that extraction.
-        $iconIco = Join-Path $workDir 'resources\icon.ico'
-        if (Test-Path $iconIco) {
-            $iconLocation = "$iconIco,0"
-        } else {
-            $iconLocation = "$TargetExe,0"
-        }
-
-        $targets = @(
-            (Join-Path ([Environment]::GetFolderPath('Programs')) 'Zeus.lnk'),
-            (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Zeus.lnk')
-        )
-
-        foreach ($lnkPath in $targets) {
-            try {
-                $parent = Split-Path -Parent $lnkPath
-                if (-not (Test-Path $parent)) {
-                    New-Item -ItemType Directory -Force -Path $parent | Out-Null
-        }
-                $sc = $shell.CreateShortcut($lnkPath)
-                $sc.TargetPath = $TargetExe
-                # Not the exe's folder: the Desktop's children inherit it, and a helper
-                # that outlives the app then blocks the next update's swap (#101789).
-                $sc.WorkingDirectory = $env:USERPROFILE
-                $sc.IconLocation = $iconLocation
-                $sc.Description = 'Zeus Agents'
-                $sc.Save()
-                Write-Ok "Shortcut created: $lnkPath"
-            } catch {
-                Write-Warn "Could not create shortcut $lnkPath : $($_.Exception.Message)"
-            }
-        }
-
-        # Bust the Windows shell icon cache so the desktop/Start-Menu shortcut
-        # repaints with the (possibly newly-stamped) icon instead of a stale
-        # cached bitmap. Critical on the --update path: the exe was re-stamped
-        # with the Zeus icon, but without this the shortcut can keep drawing
-        # the old Electron icon until the user manually refreshes / reboots.
-        # Best-effort and silent -- never fail the install over a cosmetic cache.
-        try {
-            Invoke-Native { & ie4uinit.exe -show 2>$null }
-        } catch {
-            # ie4uinit may be absent/renamed on some SKUs -- ignore.
-        }
-    } catch {
-        Write-Warn "Skipping shortcut creation: $($_.Exception.Message)"
-    }
-}
-
 function Invoke-StageByName([string]$name) {
     switch ($name) {
         "prerequisites" { Stage-Prerequisites }
@@ -1579,7 +1441,6 @@ function Invoke-StageByName([string]$name) {
         "config" { Stage-Config }
         "setup" { Stage-Setup }
         "gateway" { Stage-Gateway }
-        "desktop" { Stage-Desktop }
         "complete" { Stage-Complete }
         default { Write-Error "unknown stage: $name"; exit 2 }
     }
@@ -1622,12 +1483,10 @@ if ($Manifest) {
 
 if ($Stage) {
     # The $Stages table is the single authoritative list: it drives the
-    # -Manifest output AND the no-flag ladder, so -IncludeDesktop affects
-    # the real run exactly as the manifest advertises. "desktop" stays
-    # directly dispatchable via -Stage even though it is never listed
-    # (long-standing external-caller contract).
+    # -Manifest output AND the no-flag ladder, so the real run is exactly
+    # what the manifest advertises.
     $known = @($Stages | ForEach-Object { $_.name })
-    if ($known -notcontains $Stage -and $Stage -ne "desktop") {
+    if ($known -notcontains $Stage) {
         if ($Json) { Emit-Frame $false $Stage $false "unknown stage: $Stage" }
         else { [Console]::Error.WriteLine("unknown stage: $Stage") }
         exit 2
@@ -1650,7 +1509,7 @@ if ($Stage) {
 }
 
 # No -Stage: run the whole ladder — the same authoritative list the
-# manifest prints, so -IncludeDesktop inserts desktop here too.
+# manifest prints.
 $script:InstallStarted = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $script:InstallStage = "prerequisites"
 $script:InstallReceiptWritten = $false

@@ -373,8 +373,6 @@ from zeus_cli.subcommands.console import build_console_parser
 from zeus_cli.subcommands.update import build_update_parser
 from zeus_cli.subcommands.uninstall import build_uninstall_parser
 from zeus_cli.subcommands.dashboard import build_dashboard_parser, build_serve_parser
-from zeus_cli.subcommands.webapp import build_webapp_parser
-from zeus_cli.subcommands.gui import build_gui_parser
 from zeus_cli.subcommands.logs import build_logs_parser
 from zeus_cli.subcommands.prompt_size import build_prompt_size_parser
 from zeus_cli.subcommands.memory import build_memory_parser
@@ -883,9 +881,6 @@ from zeus_cli.main_install_repair import (  # frozen updater surface: update_cmd
     _resolve_update_branch,
     _update_marker_path,
     _venv_scripts_dir,
-)
-from zeus_cli.main_desktop import (
-    cmd_gui,
 )
 from zeus_cli.main_desktop import (  # frozen updater surface: update_cmd*.py resolve these via _m()
     _desktop_build_needed,
@@ -1840,7 +1835,6 @@ cmd_debug = _forward_command("cmd_debug", "zeus_cli.debug", "run_debug", doc='De
 cmd_skin = _forward_command("cmd_skin", "zeus_cli.skin_cmd", "skin_command", doc='Skin management (list / use / set).')
 cmd_import = _forward_command("cmd_import", "zeus_cli.backup", "run_import", forward_return=True, doc='Restore a Zeus backup from a zip file.')
 cmd_dashboard_register = _forward_command("cmd_dashboard_register", "zeus_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Nous Portal.')
-cmd_webapp = _forward_command("cmd_webapp", "zeus_cli.webapp_launcher", "cmd_webapp", forward_return=True, doc='Open the browser-hosted Desktop the gateway serves.')
 cmd_gateway_enroll = _forward_command("cmd_gateway_enroll", "zeus_cli.gateway_enroll", "cmd_gateway_enroll", doc='Enroll a self-hosted gateway with a relay connector.')
 cmd_prompt_size = _forward_command("cmd_prompt_size", "zeus_cli.prompt_size", "cmd_prompt_size", doc='Show a byte/char breakdown of the system prompt + tool schemas.')
 cmd_pairing = _forward_command("cmd_pairing", "zeus_cli.pairing", "pairing_command")
@@ -3383,10 +3377,6 @@ def _build_cli_parser():
     build_completion_parser(subparsers, cmd_completion=cmd_completion, parser=parser)
     build_dashboard_parser(
         subparsers, cmd_dashboard=cmd_dashboard, cmd_dashboard_register=cmd_dashboard_register)
-    build_webapp_parser(subparsers, cmd_webapp=cmd_webapp)
-    # "desktop" is canonical (Zeus-Setup.exe tells users to run it, so it
-    # must be the name --help shows); "gui" is a deprecated alias.
-    build_gui_parser(subparsers, cmd_gui=cmd_gui)
     build_logs_parser(subparsers, cmd_logs=cmd_logs)
     build_prompt_size_parser(subparsers, cmd_prompt_size=cmd_prompt_size)
     return parser, subparsers

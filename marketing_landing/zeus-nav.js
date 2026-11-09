@@ -29,7 +29,8 @@
       { label: "Discord", href: SOCIAL.Discord },
       { label: "X / Twitter", href: SOCIAL.X },
     ],
-    Nous: [{ label: "Built on Hermes Agent (Nous Research) ↗", href: "https://github.com/NousResearch/hermes-agent" }],
+    About: [{ label: "GitHub Repository ↗", href: REPO }, { label: "Documentation", href: "/docs" }],
+    Nous: [{ label: "GitHub Repository ↗", href: REPO }, { label: "Documentation", href: "/docs" }],
     Auth: [SIGN_IN],
     Portal: [SIGN_IN],
   };

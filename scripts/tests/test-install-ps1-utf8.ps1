@@ -19,7 +19,7 @@ function Assert-Equal($Expected, $Actual, [string]$Label) {
 
 try {
     if (-not $HiddenChild) {
-        # Match Desktop's CREATE_NO_WINDOW + piped stdout/stderr, with stdin
+        # Match a GUI host's CREATE_NO_WINDOW + piped stdout/stderr, with stdin
         # closed. Run this same behavioral suite in a genuinely console-less host.
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = (Get-Process -Id $PID).Path
@@ -47,7 +47,7 @@ try {
             if ($child.ExitCode -ne 0) { throw "hidden PowerShell regression failed: $stdout $stderr" }
             Assert-Equal $true ($stdout.Contains('Hidden host boundary verified:')) 'hidden boundary checks executed'
             Assert-Equal $true ($stdout.Contains('UTF-8 native capture and dependency-stage regression tests passed.')) 'hidden suite completed'
-            Write-Host 'Desktop hidden-host regression passed under all three code pages.'
+            Write-Host 'Hidden-host regression passed under all three code pages.'
         } finally {
             $child.Dispose()
         }

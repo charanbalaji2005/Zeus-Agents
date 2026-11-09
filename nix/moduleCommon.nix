@@ -10,9 +10,9 @@
 #   nixosModules.nix        the service user and group, stateDir,
 #                           addToSystemPackages, container mode, tmpfiles,
 #                           system.activationScripts, system systemd units
-#   homeManagerModules.nix  zeusHome, programs.zeus-agents (the CLI and
-#                           the desktop application), home.activation,
-#                           systemd.user.services, launchd.agents
+#   homeManagerModules.nix  zeusHome, programs.zeus-agents (the CLI),
+#                           home.activation, systemd.user.services,
+#                           launchd.agents
 #
 # The split is by scope, not by feature. Code that needs root or a system
 # identity stays in the NixOS module. All other code is here.
@@ -277,7 +277,7 @@ let
           The merge into the config.yaml on disk is also a deep merge. These
           keys replace the keys on disk. The module keeps all other keys,
           which includes the keys that `zeus config set` and the settings
-          panes of the TUI and the desktop app write at runtime.
+          panes of the TUI and the dashboard write at runtime.
         '';
         example = literalExpression ''
           {
@@ -508,8 +508,8 @@ let
       # `zeus serve` and `zeus dashboard` are the same entry point,
       # zeus_cli.main:cmd_dashboard, with one flag of difference. serve runs
       # without a user interface. dashboard also serves the web application.
-      # Both give the /api/ws and /api/pty sockets that Zeus Desktop
-      # connects to. They are one process, and you can run only one of them.
+      # Both give the /api/ws and /api/pty sockets that remote clients
+      # connect to. They are one process, and you can run only one of them.
       # Thus this option is an enum and not two booleans.
       #
       # The backend does not run the messaging gateway. web_server.py only
@@ -528,8 +528,8 @@ let
 
             - "none"      — no backend
             - "serve"     — the backend without a user interface. It gives
-                            the /api/ws and /api/pty sockets that Zeus
-                            Desktop connects to.
+                            the /api/ws and /api/pty sockets that remote
+                            clients connect to.
             - "dashboard" — all that "serve" gives, and the browser admin
                             panel on the same port
 
@@ -641,9 +641,8 @@ let
 
             The backend reads the file at each start and gives the value to
             ZEUS_DASHBOARD_SESSION_TOKEN. That token authorizes the /api
-            routes and the /api/ws socket. Zeus Desktop presents the same
-            value, so the application reaches this backend and starts no
-            second one.
+            routes and the /api/ws socket. A client that presents the same
+            value reaches this backend.
 
             Without this option the backend makes a new token at each start,
             which no other process can know.
@@ -652,7 +651,7 @@ let
             it mode 0600. Do not use a Nix path literal, because that copies
             the secret into the Nix store.
           '';
-          example = literalExpression ''config.sops.secrets."zeus/desktop-token".path'';
+          example = literalExpression ''config.sops.secrets."zeus/backend-token".path'';
         };
       };
     };
@@ -674,7 +673,6 @@ let
       Home Manager convention:
 
         programs.zeus-agents.enable = ${lib.boolToString (value != false)};  # the zeus CLI, and ZEUS_HOME for your shells
-        programs.zeus-agents.desktop.enable = true;  # the desktop application
 
       `services.zeus-agents` keeps the state, the configuration and
       the daemons. Remove `installPackage` and add the line above.
@@ -1070,9 +1068,9 @@ let
   backendDescription =
     cfg:
     if cfg.backend.mode == "dashboard" then
-      "Zeus Agents web dashboard and desktop backend"
+      "Zeus Agents web dashboard and backend"
     else
-      "Zeus Agents backend for Zeus Desktop";
+      "Zeus Agents backend";
 
   # The environment that each Zeus process needs, from either module.
   #

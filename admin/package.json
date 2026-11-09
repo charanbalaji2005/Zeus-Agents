@@ -1,0 +1,39 @@
+{
+  "name": "zeus-admin",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Zeus Agents admin console: React UI + Express API over the site's MongoDB, with live server CLI diagnostics.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "dev:web": "vite --config web/vite.config.ts",
+    "build": "vite build --config web/vite.config.ts",
+    "typecheck": "tsc --noEmit -p web/tsconfig.json",
+    "test": "node --test --test-concurrency=1 test/"
+  },
+  "dependencies": {
+    "express": "5.3.0",
+    "mongodb": "7.7.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.0.3",
+    "clsx": "2.1.1",
+    "lucide-react": "0.577.0",
+    "mongodb-memory-server": "11.3.0",
+    "motion": "12.43.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-router": "8.4.0",
+    "recharts": "3.10.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vite": "8.3.4"
+  }
+}

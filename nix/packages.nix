@@ -98,8 +98,6 @@
 
         tui = full.zeusTui;
         web = full.zeusWeb;
-        webapp = full.zeusWebapp;
-        desktop = full.zeusDesktop;
 
         update-npm-lockfile = full.zeusNpmLib.updateNpmLockfile;
       }

@@ -19,17 +19,14 @@
 #   changed   system.activationScripts -> home.activation
 #   changed   addToSystemPackages      -> programs.zeus-agents.enable and
 #                                        home.sessionVariables
-#   added     programs.zeus-agents    the CLI and the desktop application,
-#                                      because Home Manager separates an
-#                                      installation from a daemon
+#   added     programs.zeus-agents    the CLI, because Home Manager
+#                                      separates an installation from a
+#                                      daemon
 #   changed   stateDir (+ "/.zeus")  -> zeusHome, set directly
 #
 # To use the module:
 #   imports = [ zeus-agents.homeManagerModules.default ];
-#   programs.zeus-agents = {
-#     enable = true;          # the zeus CLI on your PATH
-#     desktop.enable = true;  # the Electron application and a launcher
-#   };
+#   programs.zeus-agents.enable = true;  # the zeus CLI on your PATH
 #   services.zeus-agents = {
 #     enable = true;
 #     gateway.enable = true;
@@ -70,59 +67,6 @@
         managedSystem = "home-manager";
       };
       unitPath = lib.makeBinPath (common.processPath { inherit pkgs cfg; });
-
-      # ── The desktop launcher ───────────────────────────────────────────
-      # A GUI launcher reads no shell profile, so home.sessionVariables does
-      # not reach it, and the application would open ~/.zeus while the
-      # services use zeusHome. Thus the launcher carries the value itself.
-      #
-      # ZEUS_MANAGED rides along only when the services are enabled. That
-      # variable makes the CLI refuse a configuration change and name the
-      # rebuild command. A person who enables `programs.` alone has no
-      # activation and no managed configuration, so the application must not
-      # claim one and refuse an edit that nothing else owns.
-      desktopEnvironment = {
-        ZEUS_HOME = cfg.zeusHome;
-      }
-      // lib.optionalAttrs cfg.enable {
-        inherit (processEnvironment) ZEUS_MANAGED;
-      }
-      // lib.optionalAttrs desktopUsesService {
-        ZEUS_DESKTOP_REMOTE_URL = "http://${cfg.backend.host}:${toString cfg.backend.port}";
-      };
-
-      # The application reaches the backend of the service only when there is
-      # a backend to reach AND a shared token to present with. Without the
-      # token the desktop resolver throws ("ZEUS_DESKTOP_REMOTE_URL is set
-      # but ZEUS_DESKTOP_REMOTE_TOKEN is not"), so the two variables travel
-      # together or not at all.
-      desktopUsesService = cfg.enable && cfg.backend.mode != "none" && cfg.backend.sessionTokenFile != null;
-
-      # The token is read at start time and never with `--set`. makeWrapper
-      # writes a --set value into the Nix store, which all users can read.
-      desktopRun = lib.optional desktopUsesService ''
-        _token_file=${lib.escapeShellArg cfg.backend.sessionTokenFile}
-
-        # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in secret
-        # paths for a shell to expand (agenix's Home Manager module does).
-        # escapeShellArg froze it into a literal, so expand it here.
-        _token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}
-
-        if [ -r "$_token_file" ]; then
-          ZEUS_DESKTOP_REMOTE_TOKEN="$(tr -d '\r\n' < "$_token_file")"
-          export ZEUS_DESKTOP_REMOTE_TOKEN
-        else
-          echo "zeus-desktop: cannot read the session token at $_token_file." >&2
-          echo "zeus-desktop: the application starts its own backend instead of the one of the service." >&2
-        fi
-      '';
-
-      # `override`, and not `overrideAttrs`: the values go into the wrapper
-      # that the installPhase writes, and not into a derivation attribute.
-      desktopPackage = cfgPrograms.desktop.package.override {
-        extraEnv = desktopEnvironment;
-        extraRun = desktopRun;
-      };
 
       # The systemd unit that the gateway and the backend both start from.
       mkUnit =
@@ -199,12 +143,12 @@
       # ── programs.zeus-agents — the installation ───────────────────────
       # Home Manager separates "install this application for me" from "run
       # this daemon". Zeus needs both, and a person can want one without
-      # the other: an application with no gateway, or a headless gateway on
-      # a machine with no display.
+      # the other: a command line with no gateway, or a headless gateway on
+      # a machine where nobody runs `zeus` by hand.
       #
       # `services.zeus-agents` stays the authority for the state and the
-      # configuration. This module reads zeusHome and the backend address
-      # from it, and never the reverse.
+      # configuration. This module reads zeusHome from it, and never the
+      # reverse.
       options.programs.zeus-agents = {
         enable = lib.mkEnableOption ''
           the Zeus Agents command line application.
@@ -227,39 +171,6 @@
             and a plugin that the services can load is a plugin that your
             shell can load.
           '';
-        };
-
-        desktop = {
-          enable = lib.mkEnableOption ''
-            the Zeus Desktop application (Electron).
-
-            This adds `zeus-desktop` to home.packages, with an XDG
-            launcher entry on Linux. The launcher starts the same Zeus
-            runtime that `package` gives, and reads the ZEUS_HOME of
-            `services.zeus-agents`. Thus the application, the interactive
-            shell and the services share one state directory.
-
-            The Electron application carries its own Zeus runtime with
-            the usual distribution. This module gives it the Nix package
-            instead, with ZEUS_DESKTOP_ZEUS. It installs no second copy
-            of Zeus, and it downloads nothing on the first start
-          '';
-
-          package = lib.mkOption {
-            type = lib.types.package;
-            default = cfgPrograms.package.zeusDesktop;
-            defaultText = lib.literalExpression "config.programs.zeus-agents.package.zeusDesktop";
-            description = ''
-              The zeus-desktop package to use.
-
-              The default follows `package`, and thus also
-              `services.zeus-agents.extraPythonPackages` and
-              `extraDependencyGroups`, because the desktop application is a
-              passthru of the agent package. A package that you set here
-              carries its own Zeus runtime, and this module cannot make
-              it agree with the services.
-            '';
-          };
         };
       };
 
@@ -311,21 +222,10 @@
 
         # ── programs.zeus-agents — the installation ──────────────────────
         # Outside the `services.enable` guard on purpose. A person can want
-        # the command line or the application on a machine that runs no
-        # daemon at all.
+        # the command line on a machine that runs no daemon at all.
         (lib.mkIf cfgPrograms.enable {
           home.packages = [ cfgPrograms.package ];
           home.sessionVariables.ZEUS_HOME = cfg.zeusHome;
-        })
-
-        # A launcher from the desktop menu reads no shell profile, so the
-        # ZEUS_HOME that `programs.enable` exports does not reach it. Home
-        # Manager writes only systemd.user.sessionVariables into
-        # environment.d, and this module does not put ZEUS_HOME there,
-        # because that file applies to each user unit. Thus the launcher
-        # carries the value itself. See desktopEnvironment above.
-        (lib.mkIf cfgPrograms.desktop.enable {
-          home.packages = [ desktopPackage ];
         })
 
         {

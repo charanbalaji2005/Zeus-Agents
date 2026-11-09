@@ -14,7 +14,6 @@
   writeText,
   callPackage,
   runCommand,
-  electron,
   git,
   openssh,
   ffmpeg-headless,
@@ -75,7 +74,7 @@ let
     else
       version;
 
-  # CLI and Electron consume the same provenance and update owner.
+  # The CLI and TUI consume the same provenance and update owner.
   installStampFile = writeText "zeus-install-stamp.json" (
     builtins.toJSON {
       schemaVersion = 2;
@@ -126,11 +125,6 @@ let
 
   zeusWeb = callPackage ./web.nix {
     inherit zeusNpmLib generatedIcons;
-  };
-
-  # The store is read-only, so the Webapp is built here and never by `zeus webapp`.
-  zeusWebapp = callPackage ./webapp.nix {
-    inherit zeusNpmLib;
   };
 
   bundledSkills = lib.cleanSourceWith {
@@ -230,7 +224,6 @@ let
       frontends = {
         tui = "${zeusTui}/lib/zeus-tui";
         web = toString zeusWeb;
-        webapp = toString zeusWebapp;
       };
       ref = if dirty then null else rev;
       stamp = toString installStampFile;
@@ -290,7 +283,7 @@ let
     print('No collisions found.')
   '';
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   pname = "zeus-agents";
   inherit version;
 
@@ -393,7 +386,6 @@ stdenv.mkDerivation (finalAttrs: {
       inherit
         zeusTui
         zeusWeb
-        zeusWebapp
         zeusNpmLib
         zeusVenv
         agentBuilderSrc
@@ -405,24 +397,6 @@ stdenv.mkDerivation (finalAttrs: {
         devVenv
         pmPython
         ;
-
-      # `zeusDesktop` references `finalAttrs.finalPackage` (this whole
-      # derivation, after all overrides are applied) so the desktop wrapper
-      # can pin its `zeus` command via ZEUS_DESKTOP_ZEUS. The
-      # deployment override then picks up the fully wrapped
-      # `zeus` binary — venv with all deps, bundled skills/plugins,
-      # runtime PATH (ripgrep/git/ffmpeg/etc).  No re-implementation
-      # of the agent resolution in the desktop wrapper.
-      zeusDesktop = callPackage ./desktop.nix {
-        inherit
-          zeusNpmLib
-          electron
-          installStampFile
-          generatedIcons
-          ;
-        python3 = python;
-        zeusAgents = finalAttrs.finalPackage;
-      };
 
       devShellHook = ''
         export ZEUS_PYTHON=${devVenv}/bin/python3
@@ -449,4 +423,4 @@ stdenv.mkDerivation (finalAttrs: {
     license = licenses.mit;
     platforms = platforms.unix;
   };
-})
+}

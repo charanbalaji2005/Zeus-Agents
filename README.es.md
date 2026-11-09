@@ -10,13 +10,12 @@
   <a href="https://charanbalaji2005.github.io/Zeus-Agents/docs/"><img src="https://img.shields.io/badge/Docs-Zeus--Agents-FFD700?style=for-the-badge" alt="Documentación"></a>
   <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
   <a href="https://github.com/charanbalaji2005/Zeus-Agents/blob/main/LICENSE"><img src="https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge" alt="Licencia: MIT"></a>
-  <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Creado%20por-Nous%20Research-blueviolet?style=for-the-badge" alt="Creado por Nous Research"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Lang-English-blue?style=for-the-badge" alt="English"></a>
   <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
   <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
 </p>
 
-**El agente de IA con mejora continua creado por [Nous Research](https://nousresearch.com).** Es el único agente con un bucle de aprendizaje integrado: crea habilidades a partir de la experiencia, las mejora durante el uso, se impulsa a sí mismo a persistir el conocimiento, busca en sus propias conversaciones pasadas y construye un modelo cada vez más profundo de quién eres a lo largo de las sesiones. Ejecútalo en un VPS de $5, un clúster de GPUs o infraestructura sin servidor que cuesta casi nada cuando está inactivo. No está atado a tu laptop — habla con él desde Telegram mientras trabaja en una VM en la nube.
+**El agente de IA de código abierto con mejora continua.** Es el único agente con un bucle de aprendizaje integrado: crea habilidades a partir de la experiencia, las mejora durante el uso, se impulsa a sí mismo a persistir el conocimiento, busca en sus propias conversaciones pasadas y construye un modelo cada vez más profundo de quién eres a lo largo de las sesiones. Ejecútalo en un VPS de $5, un clúster de GPUs o infraestructura sin servidor que cuesta casi nada cuando está inactivo. No está atado a tu laptop — habla con él desde Telegram mientras trabaja en una VM en la nube.
 
 Usa cualquier modelo que quieras — [Nous Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai) (más de 200 modelos), [NovitaAI](https://novita.ai), [NVIDIA NIM](https://build.nvidia.com) (Nemotron), [Xiaomi MiMo](https://platform.xiaomimimo.com), [z.ai/GLM](https://z.ai), [Kimi/Moonshot](https://platform.moonshot.ai), [MiniMax](https://www.minimax.io), [Hugging Face](https://huggingface.co), OpenAI, o tu propio endpoint. Cambia con `zeus model` — sin cambios de código, sin dependencias.
 
@@ -37,7 +36,7 @@ Usa cualquier modelo que quieras — [Nous Portal](https://portal.nousresearch.c
 ### Linux, macOS, WSL2
 
 ```bash
-curl -fsSL https://charanbalaji2005.github.io/Zeus-Agents/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.sh | bash
 ```
 
 ### Windows (nativo, PowerShell)
@@ -47,7 +46,7 @@ curl -fsSL https://charanbalaji2005.github.io/Zeus-Agents/install.sh | bash
 Ejecuta esto en PowerShell:
 
 ```powershell
-iex (irm https://charanbalaji2005.github.io/Zeus-Agents/install.ps1)
+irm https://raw.githubusercontent.com/charanbalaji2005/Zeus-Agents/main/scripts/install.ps1 | iex
 ```
 
 El instalador de código fuente usa PM para Python 3.14, Node.js, npm,
@@ -203,4 +202,4 @@ de verificación están en [Development Setup](CONTRIBUTING.md#development-setup
 
 MIT — ver [LICENSE](LICENSE).
 
-Creado por [Nous Research](https://nousresearch.com).
+Zeus Agents — Agente de IA personal de código abierto.

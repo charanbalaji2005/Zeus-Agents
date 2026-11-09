@@ -5,9 +5,7 @@
  * Generated icons are NOT committed (see scripts/generate_icons.py) — every
  * consuming pipeline regenerates them before building:
  *   - website:  website/scripts/prebuild.mjs (docusaurus prebuild)
- *   - desktop:  apps/desktop/package.json prebuild + predev
- *   - installer: apps/bootstrap-installer/package.json prebuild
- *   - web:       web/package.json prebuild
+ *   - web:      web/package.json prebuild
  *
  * The renderer runs on the Zeus runtime interpreter (ZEUS_PYTHON, else
  * `python` on PATH): Pillow and resvg-py are core dependencies, so every

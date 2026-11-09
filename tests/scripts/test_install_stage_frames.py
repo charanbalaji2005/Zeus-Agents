@@ -77,7 +77,7 @@ def test_real_single_stage_cli_reports_admission_or_execution_failure(tmp_path, 
 
 
 @pytest.mark.parametrize("flag", ["--zeus-home", "-ZeusHome"])
-def test_manifest_accepts_the_desktop_home_argument(tmp_path, flag):
+def test_manifest_accepts_the_home_argument(tmp_path, flag):
     home = tmp_path / "custom home"
     result = subprocess.run(["bash", str(SCRIPT), "--manifest", flag, str(home)],
                             cwd=tmp_path, env=_env(tmp_path), capture_output=True,

@@ -171,6 +171,9 @@ def build_update_products(project_root: Path, *, desktop: bool) -> None:
             return False
 
     attempt("feature dependencies", lambda: _install_configured_features_missing_deps(project_root))
+    # The desktop app no longer ships in this tree: an app installed by an older
+    # checkout still exists on disk, but there is no source to rebuild it from.
+    desktop = desktop and (project_root / "apps/desktop/package.json").is_file()
     frontends = source_frontends(project_root)
     if frontends:
         desktop_built = False

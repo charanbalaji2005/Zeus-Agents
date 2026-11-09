@@ -8,8 +8,6 @@ import { delimiter, dirname, join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 
-import { prepareElectronRuntime } from './electron-runtime.mjs'
-
 // npm.cmd needs a shell. Use npm's JS entrypoint so paths remain argv on Windows.
 export function npmCommand({ env = process.env } = {}) {
   const names = process.platform === 'win32' ? ['npm.cmd', 'npm'] : ['npm']
@@ -50,14 +48,10 @@ function npmManifestVersion(cli) {
   }
 }
 
-function completedInstallMatches({ source, receipt, hiddenLock, key, nativeKey }) {
+function completedInstallMatches({ source, receipt, hiddenLock, key }) {
   if (!existsSync(receipt) || !existsSync(hiddenLock)) return false
   const installed = readFileSync(hiddenLock)
   const expected = `${key}\n${createHash('sha256').update(installed).digest('hex')}\n`
-  if (nativeKey !== undefined) {
-    const nativeReceipt = `${receipt}.native-toolchain`
-    if (!existsSync(nativeReceipt) || readFileSync(nativeReceipt, 'utf8') !== `${expected}${nativeKey}\n`) return false
-  }
   // Probe each locked entry's manifest, not its directory: a partial cleanup or
   // snapshot restore can leave gutted directories behind, and product builders
   // resolve tools through these manifests (#128935). npm itself never repairs
@@ -90,9 +84,8 @@ function runNpmCi(node, npm, args, { source, env }) {
   }
 }
 
-/** Install the full requested workspace union in one strict, locked operation.
- *  ``electron: false`` leaves Desktop's Electron binary unprepared, for builds that never run it. */
-export function prepareNodeDependencies({ source, workspaces, env = process.env, reuse = false, install = true, nativeToolchain, electron = true }) {
+/** Install the full requested workspace union in one strict, locked operation. */
+export function prepareNodeDependencies({ source, workspaces, env = process.env, reuse = false, install = true }) {
   source = resolve(source)
   if (!Array.isArray(workspaces) || workspaces.length === 0) {
     throw new Error('Select at least one workspace; implicit all-workspace installation is not allowed')
@@ -109,8 +102,6 @@ export function prepareNodeDependencies({ source, workspaces, env = process.env,
     }
     return path
   }))].sort()
-  const prepareElectron = electron && selected.includes('apps/desktop')
-    && Boolean(JSON.parse(readFileSync(join(source, 'apps/desktop/package.json'), 'utf8')).devDependencies?.electron)
   const [node, npm] = npmCommand({ env })
   const npmVersion = npmManifestVersion(npm) ?? execFileSync(
     node, [npm, '--version'], { cwd: source, env, encoding: 'utf8' }).trim()
@@ -126,11 +117,6 @@ export function prepareNodeDependencies({ source, workspaces, env = process.env,
   // This receipt certifies dependency preparation, never compiled product freshness.
   // Keep it inside the cached tree so a clean npm ci also removes the receipt.
   const receipt = join(source, 'node_modules/.zeus-node-deps')
-  // Ordinary product builders consume the baseline receipt; preparation also
-  // binds lifecycle outputs to its compiler/SDK identity. On a mismatch npm ci
-  // removes arbitrary package lifecycle outputs, not just known node-pty paths.
-  const nativeReceipt = `${receipt}.native-toolchain`
-  const nativeKey = nativeToolchain === undefined ? undefined : JSON.stringify(nativeToolchain)
   const hiddenLock = join(source, 'node_modules/.package-lock.json')
   const inputs = createHash('sha256').update(JSON.stringify({
     node: process.versions.node, npm: npmVersion, platform: process.platform, arch: process.arch, args,
@@ -145,22 +131,17 @@ export function prepareNodeDependencies({ source, workspaces, env = process.env,
     inputs.update(file).update('\0').update(existsSync(join(source, file)) ? readFileSync(join(source, file)) : '<missing>').update('\0')
   }
   const key = inputs.digest('hex')
-  if (reuse && completedInstallMatches({ source, receipt, hiddenLock, key, nativeKey })) {
-    if (prepareElectron) prepareElectronRuntime({ source, install, env })
+  if (reuse && completedInstallMatches({ source, receipt, hiddenLock, key })) {
     console.log(`node-deps: reusing completed install (${selected.join(', ')})`)
     return { source, workspaces: selected }
   }
   if (!install) throw new Error('Workspace dependencies are stale or missing and lazy installs are disabled; run an explicit build/update')
   // npm can fail during validation before deleting node_modules. Invalidate first.
   rmSync(receipt, { force: true })
-  rmSync(nativeReceipt, { force: true })
   console.log(`node-deps: installing workspace dependencies with npm ci (${selected.join(', ')})...`)
   runNpmCi(node, npm, args, { source, env })
-  if (prepareElectron) prepareElectronRuntime({ source, install, env })
   if (reuse) {
-    const completed = `${key}\n${createHash('sha256').update(readFileSync(hiddenLock)).digest('hex')}\n`
-    writeFileSync(receipt, completed)
-    if (nativeKey !== undefined) writeFileSync(nativeReceipt, `${completed}${nativeKey}\n`)
+    writeFileSync(receipt, `${key}\n${createHash('sha256').update(readFileSync(hiddenLock)).digest('hex')}\n`)
   }
   return { source, workspaces: selected }
 }
@@ -177,8 +158,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     source: { type: 'string' }, workspace: { type: 'string', multiple: true },
     reuse: { type: 'boolean', default: false },
     'no-install': { type: 'boolean', default: false },
-    'native-toolchain': { type: 'string' },
   } })
   if (!values.source) throw new Error('--source is required')
-  prepareNodeDependencies({ source: values.source, workspaces: values.workspace, reuse: values.reuse, install: !values['no-install'], nativeToolchain: values['native-toolchain'] })
+  prepareNodeDependencies({ source: values.source, workspaces: values.workspace, reuse: values.reuse, install: !values['no-install'] })
 }

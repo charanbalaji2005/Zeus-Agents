@@ -5,11 +5,10 @@
 # state. Heavy dependencies (tool binaries, browsers, node) are pm's job:
 # `zeus pm install`.
 #
-# Stage protocol kept for Zeus-Setup:
+# Stage protocol (installer drivers and E2E harnesses):
 #   --manifest            print the stage list as JSON
 #   --stage NAME [--json] run one stage
 #   --non-interactive     skip stages that need input
-#   --include-desktop     build the desktop app too (products stage)
 #   --verbose             stream every child command's output (the default
 #                         off a terminal and in CI)
 set -u
@@ -25,14 +24,13 @@ BRANCH="main"
 INSTALL_COMMIT=""
 # The update channel to install: stable (the latest published release, the default for the
 # official repository's main line) or main (every commit). An explicit choice is persisted.
-CHANNEL="${ZEUS_INSTALL_CHANNEL:-}"
+CHANNEL="${ZEUS_INSTALL_CHANNEL:-main}"
 INSTALL_DIR="${ZEUS_INSTALL_DIR:-}"
 ZEUS_HOME="${ZEUS_HOME:-$HOME/.zeus}"
 STAGE=""
 WANT_MANIFEST=false
 JSON=false
 NON_INTERACTIVE=false
-INCLUDE_DESKTOP=false
 VERBOSE=false
 SKIP_BROWSER=false
 SKIP_COMPUTER_USE=false
@@ -66,13 +64,12 @@ while [ $# -gt 0 ]; do
         --skip-setup) NON_INTERACTIVE=true; shift ;;
         --skip-browser|--no-playwright|-SkipBrowser) SKIP_BROWSER=true; shift ;;
         --skip-computer-use|-SkipComputerUse) SKIP_COMPUTER_USE=true; shift ;;
-        --include-desktop|-IncludeDesktop) INCLUDE_DESKTOP=true; shift ;;
         --verbose|-Verbose) VERBOSE=true; shift ;;
         -h|--help)
             echo "Usage: install.sh [--channel stable|main] [--branch NAME] [--commit SHA]"
             echo "                  [--dir PATH] [--zeus-home PATH]"
             echo "                  [--manifest] [--stage NAME] [--json]"
-            echo "                  [--non-interactive] [--include-desktop] [--verbose]"
+            echo "                  [--non-interactive] [--verbose]"
             echo "                  [--skip-browser] [--skip-computer-use]"
             echo
             echo "  --channel       stable (default): the latest published release, then release"
@@ -191,9 +188,9 @@ stage_signal() {
 print_banner() {
     printf '\n%s%s' "$C_MAGENTA" "$C_BOLD"
     printf '%s\n' "┌─────────────────────────────────────────────────────────┐"
-    printf '%s\n' "│             ☤ Zeus Agents Installer                    │"
+    printf '%s\n' "│             ☤ Zeus Agents Installer                     │"
     printf '%s\n' "├─────────────────────────────────────────────────────────┤"
-    printf '%s\n' "│  An open source AI agent by Nous Research.              │"
+    printf '%s\n' "│  An open source AI agent.                               │"
     printf '%s\n' "└─────────────────────────────────────────────────────────┘"
     printf '%s\n' "$C_NC"
 }
@@ -490,20 +487,8 @@ stage_result() {
 # The single authoritative stage list: emit_manifest prints it AND the
 # no-flag ladder runs it. `products` is the shared completion tail -- the same
 # call `zeus update` makes -- so the manifest and the run cannot disagree.
-# `desktop` stays directly dispatchable via --stage for external callers, but
-# is never listed: --include-desktop selects the desktop product inside
-# `products` instead of adding a second build stage.
 stage_names() {
     printf '%s\n' prerequisites repository venv python-deps config products setup gateway complete
-}
-
-# "title|category|needs_user_input".
-products_record() {
-    if [ "$INCLUDE_DESKTOP" = true ]; then
-        echo "Install command and app + desktop|runtime|false"
-    else
-        echo "Install command and app|runtime|false"
-    fi
 }
 
 # "$1" stage name -> its manifest record fields (title|category|needs_user_input).
@@ -514,10 +499,9 @@ stage_record() {
         venv)          echo "Create Python environment|runtime|false" ;;
         python-deps)   echo "Install Python dependencies|runtime|false" ;;
         config)        echo "Prepare config and skills|configuration|false" ;;
-        products)      products_record ;;
+        products)      echo "Install command and app|runtime|false" ;;
         setup)         echo "Configure API keys and settings|configuration|true" ;;
         gateway)       echo "Configure gateway service|configuration|true" ;;
-        desktop)       echo "Build desktop app|runtime|false" ;;
         complete)      echo "Finish install|runtime|false" ;;
     esac
 }
@@ -688,7 +672,13 @@ stable_target() {
     esac
     local release
     release="$(latest_stable_release "$1")"
-    printf '%s' "${release:--}"
+    if [ -n "$release" ]; then
+        printf '%s' "$release"
+        return 0
+    fi
+    if [ "$CHANNEL" = "stable" ]; then
+        printf '-'
+    fi
 }
 
 # Fetch tag $release into checkout $1 (releases can be cut off main, on release/* branches).
@@ -1042,23 +1032,6 @@ stage_python_deps() {
     bootstrap_pm
 }
 
-desktop_product_present() {
-    # Does this checkout already carry a built desktop app? A plain repair or
-    # upgrade rerun on a desktop install must REBUILD it rather than leave a
-    # bundle built from the previous code: the app is part of that install, and
-    # the artifacts live inside the tree (gitignored), so an update makes them
-    # stale instead of removing them.
-    # electron-builder suffixes the output dir with the arch on every non-x64
-    # target (linux-arm64-unpacked, mac-arm64, win-arm64-unpacked), so the x64
-    # names alone miss a desktop build on ARM64 Linux/Windows (#94703).
-    local release="$INSTALL_DIR/apps/desktop/release" dir
-    for dir in linux-unpacked linux-arm64-unpacked mac mac-arm64 \
-               win-unpacked win-ia32-unpacked win-arm64-unpacked; do
-        [ -d "$release/$dir" ] && return 0
-    done
-    return 1
-}
-
 # Guarded: a login shell whose ~/.bash_profile sources ~/.bashrc (Fedora, RHEL)
 # reads both files, so an unconditional prepend would put ~/.local/bin on PATH twice.
 SHELL_PATH_LINE='case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) export PATH="$HOME/.local/bin:$PATH" ;; esac'
@@ -1105,7 +1078,7 @@ wire_shell_path() {
 
 stage_products() {
     # The whole tail in one place, by calling the completion an update calls:
-    # publish the commands, build the products (tui/web, plus the desktop app),
+    # publish the commands, build the products (tui/web),
     # then run the post-build maintenance that syncs bundled skills and migrates
     # config. Node, browsers and the frontend build tools arrive through pm as
     # the build asks for them; the bootstrap interpreter itself only re-enters
@@ -1113,22 +1086,11 @@ stage_products() {
     local boot_py
     local args=(--source "$INSTALL_DIR")
     bootstrap_python
-    if [ "$INCLUDE_DESKTOP" = true ] || desktop_product_present; then
-        args+=(--desktop)
-    fi
     (cd "$INSTALL_DIR" && run_logged "Building the zeus command and apps" \
         "$boot_py" -I -B -X utf8 zeus_cli/source_completion.py "${args[@]}") \
         || fail "app products or command publication failed" products_build_failed
     wire_shell_path
     log_success "app products and zeus command ready"
-}
-
-stage_desktop() {
-    # External-caller contract: `--stage desktop` stays dispatchable on its own
-    # (the manifest never lists it now -- --include-desktop selects the desktop
-    # product inside `products`). Same completion call, desktop selected.
-    INCLUDE_DESKTOP=true
-    stage_products
 }
 
 stage_config() {
@@ -1230,7 +1192,6 @@ run_stage() (
         products) stage_products ;;
         setup) stage_setup ;;
         gateway) stage_gateway ;;
-        desktop) stage_desktop ;;
         complete) stage_complete ;;
         *) STAGE_REASON="unknown stage: $1"; printf '%s\n' "$STAGE_REASON" >&2; exit 2 ;;
     esac
@@ -1270,7 +1231,7 @@ if [ "${BASH_SOURCE[0]:-$0}" = "$0" ]; then
     fi
 
     # No --stage: run the whole ladder — the same authoritative list the
-    # manifest prints, so --include-desktop inserts desktop here too.
+    # manifest prints.
     print_banner
     for s in $(stage_names); do
         # A TERM/HUP noted while the previous stage ran stops the run before this one.

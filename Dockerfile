@@ -187,7 +187,7 @@ WORKDIR /opt/zeus
 # the two-authorities failure the pm design exists to end. The image is now
 # a pin consumer: the stdlib-only pm provisioner reads pm/lock.json and
 # stages the pinned uv + full Chromium (sha256-verified at
-# download — the same code path pm.sh/pm.ps1 and the desktop payload use)
+# download — the same code path pm.sh/pm.ps1 use)
 # into the image's own runtime dir, a self-contained store baked under
 # /opt/zeus, outside the /opt/data volume so it survives the overlay.
 # PM alone resolves the pinned uv for dependency preparation; build consumers
@@ -333,22 +333,6 @@ COPY --from=icons /tmp/zeus-icons /tmp/zeus-icons
 RUN node scripts/build/tui.mjs --source /opt/zeus --out /opt/products/tui && \
     node scripts/build/web.mjs --source /opt/zeus --icons /tmp/zeus-icons --out /opt/products/web
 
-# The Webapp (the browser-hosted Desktop) builds through its source recipe,
-# which installs Desktop's dependencies in a private workspace. A stage of its
-# own so Desktop changes leave the TUI and dashboard layers cached.
-FROM runtime_base AS webapp_build
-COPY package.json package-lock.json .npmrc ./
-COPY apps/desktop/package.json apps/desktop/
-COPY apps/desktop/scripts/build-webapp.mjs apps/desktop/scripts/
-COPY apps/shared/package.json apps/shared/
-COPY scripts/build/*.mjs scripts/build/
-ENV npm_config_install_links=false
-# Dependencies first, keyed only by the manifests and the recipe, so a source
-# change reuses this layer and the build below reuses its install.
-RUN node apps/desktop/scripts/build-webapp.mjs --deps-only
-COPY apps/ apps/
-RUN node apps/desktop/scripts/build-webapp.mjs
-
 FROM python_deps AS runtime
 # Standalone TypeScript linting is a runtime feature; Vite/esbuild are not.
 COPY --from=frontend_build /opt/zeus/node_modules/typescript /opt/zeus/node_modules/typescript
@@ -374,7 +358,6 @@ RUN cd plugins/platforms/photon/sidecar && \
 # Shared product outputs are independent of application dependency assembly.
 COPY --from=frontend_build /opt/products/tui /opt/zeus/ui-tui
 COPY --from=frontend_build /opt/products/web /opt/zeus/zeus_cli/web_dist
-COPY --from=webapp_build /opt/zeus/apps/desktop/dist-webapp /opt/zeus/apps/desktop/dist-webapp
 # ---------- Bot Screen X socket directory ----------
 # Xvnc would create this itself (/tmp is 1777); pre-creating it keeps ownership
 # deterministic when ZEUS_UID is remapped between boots.
@@ -410,7 +393,7 @@ RUN mkdir -p /opt/zeus/bin && \
 # The ``.install_method`` stamp is baked next to the running code (the install
 # tree), NOT into $ZEUS_HOME. $ZEUS_HOME (/opt/data) is a shared data
 # volume that is commonly bind-mounted from the host and even shared with a
-# host-side Desktop/CLI install; stamping it at boot used to clobber that
+# host-side CLI install; stamping it at boot used to clobber that
 # host install's marker and wrongly block its ``zeus update``. A code-scoped
 # stamp is read first by detect_install_method() and is immune to the share.
 # Start as root so the s6-overlay stage2 hook can usermod/groupmod and chown
@@ -481,8 +464,8 @@ ENV ZEUS_WEB_DIST=/opt/zeus/zeus_cli/web_dist
 #
 # Why this is required (not just an optimization): the root package-lock.json
 # describes the WHOLE monorepo workspace set (root + web + ui-tui + apps/*),
-# but the image only installs root/web/ui-tui (apps/* — the desktop app — is
-# never `npm install`ed here). So the actualized node_modules permanently
+# but the image only installs root/web/ui-tui (apps/* is never
+# `npm install`ed here). So the actualized node_modules permanently
 # disagrees with the canonical lock, _tui_need_npm_install() returns True on
 # every launch, and the runtime `npm install` it triggers (a) can never
 # converge against the partial monorepo and (b) races itself across concurrent

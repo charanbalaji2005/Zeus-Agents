@@ -62,45 +62,23 @@ def test_installer_post_pm_stages(tmp_path: Path, stage: str, expected: list[str
 
 
 @pytest.mark.platforms('posix')
-@pytest.mark.parametrize('stage, include_desktop, expected_desktop', [
-    ('products', False, False), ('products', True, True), ('desktop', False, True),
-])
-def test_products_and_desktop_stages_share_the_completion_tail(tmp_path: Path, stage: str,
-                                                                include_desktop: bool, expected_desktop: bool) -> None:
-    """Both stages hand the checkout to zeus_cli/source_completion.py; --include-desktop
-    (or the external `desktop` stage) only adds --desktop to that one call."""
+def test_products_stage_hands_off_to_the_completion_tail(tmp_path: Path) -> None:
+    """`products` hands the checkout to zeus_cli/source_completion.py, the call `zeus update` makes."""
     install = tmp_path / 'source tree'
     calls = tmp_path / 'calls.json'
     (install / 'zeus_cli').mkdir(parents=True)
     (install / 'zeus_cli' / 'source_completion.py').write_text(
-        "import json, os, sys\nfrom pathlib import Path\n"
-        "Path(os.environ['CALLS']).write_text(json.dumps(sys.argv[1:]))\n", encoding='utf-8')
-    flag = 'true' if include_desktop else 'false'
+        "import json, os, sys
+from pathlib import Path
+"
+        "Path(os.environ['CALLS']).write_text(json.dumps(sys.argv[1:]))
+", encoding='utf-8')
     command = ['bash', '-c',
-               f'source "$1" --manifest >/dev/null; INSTALL_DIR="$2"; INCLUDE_DESKTOP={flag}; '
-               'bootstrap_python() { boot_py="$PYTHON_FOR_TEST"; }; "stage_$3"',
-               'test', str(ROOT / 'scripts/install.sh'), str(install), stage]
+               'source "$1" --manifest >/dev/null; INSTALL_DIR="$2"; '
+               'bootstrap_python() { boot_py="$PYTHON_FOR_TEST"; }; stage_products',
+               'test', str(ROOT / 'scripts/install.sh'), str(install)]
     env = {**os.environ, 'HOME': str(tmp_path), 'ZEUS_HOME': str(tmp_path / 'home'),
            'ZEUS_RUNTIME_DIR': str(tmp_path / 'store'), 'CALLS': str(calls), 'PYTHON_FOR_TEST': sys.executable}
     result = subprocess.run(command, cwd=tmp_path, env=env, capture_output=True, text=True, timeout=20, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
-    argv = json.loads(calls.read_text())
-    assert argv[:2] == ['--source', str(install)]
-    assert ('--desktop' in argv) is expected_desktop
-
-
-@pytest.mark.platforms("posix")
-def test_desktop_flag_does_not_add_a_stage(tmp_path):
-    """--include-desktop selects the desktop product inside `products`; the manifest is one ladder."""
-    def manifest(*flags):
-        result = subprocess.run(
-            ["bash", str(ROOT / "scripts/install.sh"), "--manifest", *flags],
-            cwd=tmp_path, capture_output=True, text=True, timeout=30, check=True,
-        )
-        return [row["name"] for row in json.loads(result.stdout)["stages"]]
-
-    plain = manifest()
-    assert "desktop" not in plain
-    assert "products" in plain
-    assert plain[-1] == "complete"
-    assert manifest("--include-desktop") == plain
+    assert json.loads(calls.read_text()) == ['--source', str(install)]

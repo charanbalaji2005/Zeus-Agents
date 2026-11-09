@@ -215,22 +215,13 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
           nativeBuildInputs = [ (pkgs.python3.withPackages (ps: [ ps.pillow ])) ];
         } ''
           python3 - <<'PY'
-          from pathlib import Path
           from PIL import Image
 
-          desktop = Path('${self'.packages.desktop}/share')
-          dist = desktop / 'zeus-desktop/dist'
-          launcher = desktop / 'icons/hicolor/1024x1024/apps/zeus.png'
-          for path in [launcher, dist / 'apple-touch-icon.png',
-                       dist / 'nous-girl.png', dist / 'nous-girl-dark.png',
-                       Path('${self'.packages.web}/favicon.ico')]:
-              with Image.open(path) as image:
-                  image.load()
-                  assert image.width > 0 and image.height > 0, path
-          with Image.open(launcher) as image, Image.open(dist / 'apple-touch-icon.png') as window_icon:
-              assert image.size == window_icon.size
-              assert image.convert('RGBA').tobytes() == window_icon.convert('RGBA').tobytes()
-          print('PASS: desktop and web ship decodable generated icons; launcher matches window icon')
+          path = '${self'.packages.web}/favicon.ico'
+          with Image.open(path) as image:
+              image.load()
+              assert image.width > 0 and image.height > 0, path
+          print('PASS: web ships a decodable generated favicon')
           PY
           mkdir -p $out
         '';
@@ -428,35 +419,19 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
               ''
           );
 
-        # ── The desktop application shares one ZEUS_HOME ───────────────
-        # `programs.enable` exports ZEUS_HOME with home.sessionVariables,
-        # which reaches an interactive shell only. Home Manager writes that
-        # file to etc/profile.d, and a launcher from the desktop menu reads
-        # no shell profile. Thus the desktop application would open ~/.zeus
-        # while the services use the ZEUS_HOME of the module, and the user
-        # would see an empty application with no sessions and no keys.
-        #
-        # The launcher must therefore carry the value itself. This check
-        # reads the real wrapper text of the package that the module
-        # installs, and not an option value.
-        home-manager-desktop =
+        # ── The backend's session token stays out of the Nix store ──────
+        # The backend unit carries the token's PATH in its environment and
+        # zeus reads the file itself, so the store never sees the token.
+        # This reads the real unit of the module, and not an option value.
+        home-manager-backend-token =
           let
-            tokenFile = "/run/secrets/zeus-desktop-token";
+            tokenFile = "/run/secrets/zeus-backend-token";
 
             enabled = evalHomeSplit {
-              programs = {
-                enable = true;
-                desktop.enable = true;
-              };
+              programs.enable = true;
               services = {
                 enable = true;
                 zeusHome = "/home/zeus-check/.zeus-work";
-                # An override on purpose. Without one the effective package
-                # IS the default package, so a launcher that pinned the plain
-                # default would look correct while it shipped a second
-                # runtime to anyone who customises theirs. The group must be
-                # one the default package does not already ship.
-                extraDependencyGroups = [ "google-meet" ];
                 backend = {
                   mode = "serve";
                   port = 9231;
@@ -466,27 +441,6 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
             };
             cfg = enabled.config;
 
-            desktopPackages = builtins.filter (p: (p.pname or "") == "zeus-desktop") cfg.home.packages;
-            desktop = lib.head desktopPackages;
-            wrapper = desktop.installPhase;
-
-            # Read the value that each --set flag gives the launcher. The
-            # quotes are not part of the test: escapeShellArg adds them only
-            # when the value needs them, and a path with no special character
-            # arrives bare.
-            setValue =
-              name:
-              let
-                m = builtins.match ".*--set ${name} ['\"]?([^'\"\n ]*)['\"]?.*" wrapper;
-              in
-              if m == null then null else lib.head m;
-
-            # The agent package that the module installs, and the runtime
-            # that the launcher pins. These must be the same store path: a
-            # second Zeus runtime beside the services is the fault that
-            # `programs.enable` plus a plain desktop package would give.
-            agentPackages = builtins.filter (p: (p.pname or "") == "zeus-agents") cfg.home.packages;
-
             # The backend of the service, as the unit or the agent runs it.
             backendArgvList =
               if pkgs.stdenv.hostPlatform.isDarwin then
@@ -494,13 +448,6 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
               else
                 [ cfg.systemd.user.services.zeus-backend.Service.ExecStart ];
             backendArgvText = lib.concatStringsSep " " (lib.flatten backendArgvList);
-            backendScript =
-              let
-                # writeShellScript gives a store path. Read the real text, so
-                # the check tests the script and not the option that made it.
-                path = lib.head (lib.splitString " " (lib.head (lib.flatten backendArgvList)));
-              in
-              builtins.readFile path;
             # The unit text that carries the token's path: an Environment
             # list (systemd) or an EnvironmentVariables set (launchd).
             backendTokenText =
@@ -517,112 +464,37 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
 
             failures =
               lib.optional (
-                lib.length desktopPackages != 1
-              ) "programs.desktop.enable must install exactly one zeus-desktop package, got ${toString (lib.length desktopPackages)}"
-              ++ lib.optional (
-                setValue "ZEUS_HOME" != "/home/zeus-check/.zeus-work"
-              ) "the launcher must carry ZEUS_HOME: a GUI launcher reads no shell profile, so home.sessionVariables never reaches it (got: ${toString (setValue "ZEUS_HOME")})"
-              ++ lib.optional (
-                setValue "ZEUS_MANAGED" != "home-manager"
-              ) "the launcher must report ZEUS_MANAGED=home-manager while the services own the configuration (got: ${toString (setValue "ZEUS_MANAGED")})"
-              ++ lib.optional (
-                lib.length agentPackages == 1
-                && setValue "ZEUS_DESKTOP_ZEUS" != "${lib.head agentPackages}/bin/zeus"
-              ) "the launcher must pin the agent package that programs.enable installs, and not a second runtime: ${toString (setValue "ZEUS_DESKTOP_ZEUS")}"
-
-              # ── The application reaches the backend of the service ──────
-              ++ lib.optional (
-                setValue "ZEUS_DESKTOP_REMOTE_URL" != "http://127.0.0.1:9231"
-              ) "the launcher must name the backend of the service, or the application starts a second one (got: ${toString (setValue "ZEUS_DESKTOP_REMOTE_URL")})"
-              ++ lib.optional (
-                !lib.hasInfix "ZEUS_DESKTOP_REMOTE_TOKEN" wrapper
-              ) "the launcher must give a token with the URL: the desktop resolver throws when the URL is set alone"
-
-              # ── The token never enters the Nix store ────────────────────
-              # The desktop launcher reads the file at start time (--run, not
-              # --set: a --set value writes the token into a store path that
-              # all users can read). The backend unit instead carries the
-              # token's PATH in its environment and zeus reads the file
-              # itself, so the store never sees the token either way.
-              ++ lib.optional (
-                !lib.hasInfix tokenFile wrapper || !lib.hasInfix "--run" wrapper
-              ) "the launcher must read the token from ${tokenFile} at start time, with --run"
-              ++ lib.optional (
                 !lib.hasInfix "ZEUS_DASHBOARD_SESSION_TOKEN=" backendTokenText
                 || !lib.hasInfix "file:${tokenFile}" backendTokenText
-              ) "the backend unit must name the token file in its environment, or zeus mints a token the application cannot know"
+              ) "the backend unit must name the token file in its environment, or zeus mints a token no client can know"
               # With no waitFor, a token must no longer force the launcher:
               # nothing in the command line has to read a secret any more.
               ++ lib.optional (
                 lib.hasInfix "zeus-backend-launch" backendArgvText
-              ) "a sessionTokenFile alone must not force the launcher; the token path rides in the unit environment (got: ${backendArgvText})"
-
-              # Secret managers leave a "$XDG_RUNTIME_DIR" placeholder in
-              # secret paths for a shell to expand (agenix's Home Manager
-              # module does). escapeShellArg freezes the placeholder into a
-              # literal, so the desktop reader must expand it before its
-              # readability check. The backend takes the path from the unit
-              # environment verbatim, so nothing renders it through a shell.
-              ++ lib.optional (
-                !lib.hasInfix ''_token_file=''${_token_file//\$\{XDG_RUNTIME_DIR\}/''${XDG_RUNTIME_DIR:-}}'' wrapper
-              ) "the desktop launcher must expand an unexpanded \"$XDG_RUNTIME_DIR\" in the token path"
-              ++ lib.optional (
-                setValue "ZEUS_DESKTOP_REMOTE_TOKEN" != null
-              ) "the token must never be a --set value: makeWrapper writes it into the world-readable Nix store";
+              ) "a sessionTokenFile alone must not force the launcher; the token path rides in the unit environment (got: ${backendArgvText})";
           in
-          pkgs.runCommand "zeus-home-manager-desktop" { } (
+          pkgs.runCommand "zeus-home-manager-backend-token" { } (
             if failures != [ ] then
-              throw "Home Manager desktop check failed:\n${lib.concatMapStringsSep "\n" (f: "  - ${f}") failures}"
+              throw "Home Manager backend token check failed:\n${lib.concatMapStringsSep "\n" (f: "  - ${f}") failures}"
             else
               ''
-                echo "PASS: the desktop launcher shares ZEUS_HOME, the runtime and the backend of the service"
+                echo "PASS: the backend unit reads its session token from a file outside the store"
                 mkdir -p $out
                 echo "ok" > $out/result
               ''
           );
 
-        # ── The desktop application without the services ─────────────────
-        # A person can want the application on a machine that runs no daemon.
-        # Then nothing writes config.yaml or the .managed marker, so the
-        # launcher must not claim a managed install: the CLI would refuse an
-        # edit that nothing else owns. It must also not name a backend, since
-        # there is none.
-        home-manager-desktop-standalone =
+        # ── programs.enable alone starts no service ──────────────────────
+        home-manager-programs-only =
           let
-            enabled = evalHomeSplit {
-              programs = {
-                enable = true;
-                desktop.enable = true;
-              };
-            };
-            cfg = enabled.config;
-
-            desktopPackages = builtins.filter (p: (p.pname or "") == "zeus-desktop") cfg.home.packages;
-            wrapper = (lib.head desktopPackages).installPhase;
-
-            failures =
-              lib.optional (
-                lib.length desktopPackages != 1
-              ) "programs.desktop.enable must install the application with no services enabled"
-              ++ lib.optional (
-                !lib.hasInfix "--set ZEUS_HOME" wrapper
-              ) "the launcher must carry ZEUS_HOME even with no services"
-              ++ lib.optional (
-                lib.hasInfix "ZEUS_MANAGED" wrapper
-              ) "the launcher must not claim a managed install when no activation writes one"
-              ++ lib.optional (
-                lib.hasInfix "ZEUS_DESKTOP_REMOTE_URL" wrapper
-              ) "the launcher must not name a backend when the services run none"
-              ++ lib.optional (
-                cfg.systemd.user.services ? zeus-backend || cfg.launchd.agents ? zeus-backend
-              ) "programs.enable alone must start no service";
+            cfg = (evalHomeSplit { programs.enable = true; }).config;
           in
-          pkgs.runCommand "zeus-home-manager-desktop-standalone" { } (
-            if failures != [ ] then
-              throw "Home Manager standalone desktop check failed:\n${lib.concatMapStringsSep "\n" (f: "  - ${f}") failures}"
+          pkgs.runCommand "zeus-home-manager-programs-only" { } (
+            if cfg.systemd.user.services ? zeus-backend || cfg.launchd.agents ? zeus-backend then
+              throw "programs.enable alone must start no service"
             else
               ''
-                echo "PASS: the application runs with no services, and claims nothing that no activation wrote"
+                echo "PASS: programs.enable alone starts no service"
                 mkdir -p $out
                 echo "ok" > $out/result
               ''
@@ -1121,15 +993,6 @@ json.dump(sorted(leaf_paths(DEFAULT_CONFIG)), sys.stdout, indent=2)
         entry-points-sync = pkgs.runCommand "zeus-entry-points-sync" { } ''
           ${zeus-agents.python}/bin/python3 ${./tests/agent-references.py} \
             ${zeus-agents} ${../pyproject.toml} ${zeus-agents.agentInputsFile}
-          mkdir -p $out
-        '';
-
-        # A pre-existing CLI install must not override the package's backend.
-        desktop-backend = pkgs.runCommand "zeus-desktop-backend" {
-          nativeBuildInputs = [ zeus-agents.python pkgs.cage ];
-        } ''
-          python3 ${./tests/desktop-backend.py} \
-            ${self'.packages.desktop}/bin/zeus-desktop ${zeus-agents}/bin/zeus
           mkdir -p $out
         '';
 
