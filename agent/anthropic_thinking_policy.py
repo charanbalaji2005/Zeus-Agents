@@ -22,7 +22,7 @@ from agent.anthropic_endpoints import (
     _is_deepseek_anthropic_endpoint,
     _is_kimi_family_endpoint,
     _is_minimax_anthropic_endpoint,
-    _is_nous_portal_endpoint,
+    _is_zeus_portal_endpoint,
     _is_third_party_anthropic_endpoint,
     _model_name_is_deepseek_thinking,
 )
@@ -68,7 +68,7 @@ SIGNED_REPLAY_ROUTES = frozenset({"native", "minimax"})
 
 
 def _is_off_anthropic(base_url: Any) -> bool:
-    return _is_third_party_anthropic_endpoint(base_url) and not _is_nous_portal_endpoint(base_url)
+    return _is_third_party_anthropic_endpoint(base_url) and not _is_zeus_portal_endpoint(base_url)
 
 
 # First match wins; an unmatched relay host is ``third_party``. DeepSeek models never sign, so they keep
@@ -84,7 +84,7 @@ _ROUTE_RULES = (
 
 def anthropic_thinking_route(base_url: Any, model: Any) -> str:
     """Which thinking-replay contract an Anthropic Messages request follows: ``kimi`` (replay as-is),
-    ``deepseek`` (unsigned only), ``native`` (Anthropic-signed blocks: the direct API, Nous Portal,
+    ``deepseek`` (unsigned only), ``native`` (Anthropic-signed blocks: the direct API, Zeus Portal,
     Bedrock, Vertex AI, Azure AI Foundry), ``minimax`` (its own signed blocks, returned unchanged on
     every turn as its docs require) or ``third_party`` (an unknown relay that cannot verify Anthropic
     signatures: strip all). The converter, accounting and signature-rejection state share this."""

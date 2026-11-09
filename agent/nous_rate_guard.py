@@ -1,7 +1,7 @@
-"""Cross-session rate limit guard for Nous Portal.
+"""Cross-session rate limit guard for Zeus Portal.
 
 Writes rate limit state to a shared file so all sessions (CLI, gateway, cron,
-auxiliary) can check whether Nous Portal is currently rate-limited before making
+auxiliary) can check whether Zeus Portal is currently rate-limited before making
 requests. Without it each 429 fans out into up to 9 calls per turn (3 SDK
 retries x 3 Zeus retries), all counted against RPH.
 """
@@ -35,7 +35,7 @@ format_remaining = _fmt_seconds
 
 
 def _state_path(*, anonymous: bool = False) -> str:
-    """Path to the Nous rate limit state file."""
+    """Path to the Zeus rate limit state file."""
     try:
         from zeus_constants import get_zeus_home
         base = get_zeus_home()
@@ -43,7 +43,7 @@ def _state_path(*, anonymous: bool = False) -> str:
         base = os.path.join(os.path.expanduser("~"), ".zeus")
     # Signing in must not inherit the anonymous allowance's cooldown (or clear it for
     # another anonymous session). Keep the existing named-account file unchanged.
-    return os.path.join(base, "rate_limits", "nous-anonymous.json" if anonymous else "nous.json")
+    return os.path.join(base, "rate_limits", "zeus-anonymous.json" if anonymous else "zeus.json")
 
 
 def _parse_reset_seconds(headers: Optional[Mapping[str, str]]) -> Optional[float]:
@@ -57,12 +57,12 @@ def _parse_reset_seconds(headers: Optional[Mapping[str, str]]) -> Optional[float
     return retry_after if retry_after else None
 
 
-def record_nous_rate_limit(
+def record_zeus_rate_limit(
     *, headers: Optional[Mapping[str, str]] = None, error_context: Optional[dict[str, Any]] = None,
     default_cooldown: float = 300.0,
     anonymous: bool = False,
 ) -> None:
-    """Record that Nous Portal is rate-limited in the shared state file.
+    """Record that Zeus Portal is rate-limited in the shared state file.
 
     Reset time comes from ``error_context["reset_at"]`` (the 429 body's own wait), then headers, then
     ``default_cooldown``. The body wins: a welcome-tier refusal says when to retry (410 s), while the
@@ -82,12 +82,12 @@ def record_nous_rate_limit(
     state = {"reset_at": reset_at, "recorded_at": now, "reset_seconds": reset_at - now}
     try:
         atomic_write_text(_state_path(anonymous=anonymous), json.dumps(state))
-        logger.info("Nous rate limit recorded: resets in %.0fs (at %.0f)", reset_at - now, reset_at)
+        logger.info("Zeus rate limit recorded: resets in %.0fs (at %.0f)", reset_at - now, reset_at)
     except Exception as exc:
-        logger.debug("Failed to write Nous rate limit state: %s", exc)
+        logger.debug("Failed to write Zeus rate limit state: %s", exc)
 
 
-def nous_rate_limit_remaining(*, anonymous: bool = False) -> Optional[float]:
+def zeus_rate_limit_remaining(*, anonymous: bool = False) -> Optional[float]:
     """Seconds remaining until reset, or None if not rate-limited (expired state is removed)."""
     path = _state_path(anonymous=anonymous)
     try:
@@ -103,14 +103,14 @@ def nous_rate_limit_remaining(*, anonymous: bool = False) -> Optional[float]:
         return None
 
 
-def clear_nous_rate_limit(*, anonymous: bool = False) -> None:
-    """Clear the rate limit state (e.g., after a successful Nous request)."""
+def clear_zeus_rate_limit(*, anonymous: bool = False) -> None:
+    """Clear the rate limit state (e.g., after a successful Zeus request)."""
     try:
         os.unlink(_state_path(anonymous=anonymous))
     except FileNotFoundError:
         pass
     except OSError as exc:
-        logger.debug("Failed to clear Nous rate limit state: %s", exc)
+        logger.debug("Failed to clear Zeus rate limit state: %s", exc)
 
 
 def _is_exhausted(remaining: Optional[int], reset: Optional[float]) -> bool:
@@ -123,14 +123,14 @@ def _is_exhausted(remaining: Optional[int], reset: Optional[float]) -> bool:
     )
 
 
-def is_genuine_nous_rate_limit(
+def is_genuine_zeus_rate_limit(
     *, headers: Optional[Mapping[str, str]] = None, last_known_state: Optional[Any] = None,
 ) -> bool:
-    """Decide whether a 429 from Nous Portal is a real account rate limit.
+    """Decide whether a 429 from Zeus Portal is a real account rate limit.
 
-    Nous multiplexes upstream providers behind one key, so a 429 may be one
+    Zeus multiplexes upstream providers behind one key, so a 429 may be one
     upstream model out of capacity (clears in seconds) rather than our quota;
-    tripping the breaker on that would block every Nous model for minutes.
+    tripping the breaker on that would block every Zeus model for minutes.
     Only an exhausted bucket (remaining == 0 with reset >= 60s) in the 429's
     own headers, or in the last-known-good ``RateLimitState``, is genuine.
     """
@@ -140,7 +140,7 @@ def is_genuine_nous_rate_limit(
 
 
 def is_long_welcome_rate_limit(error_context: Any) -> bool:
-    """True for a Nous welcome-tier ``rate_limited`` refusal whose reset is long enough to be an
+    """True for a Zeus welcome-tier ``rate_limited`` refusal whose reset is long enough to be an
     exhausted allowance (``WELCOME_LONG_WAIT_SECONDS``), as parsed into ``error_context``
     (``welcome_refusal`` from ``zeus_cli.anon_auth.parse_welcome_refusal``). Capacity refusals
     (``at_capacity`` / ``admission_closed``) are never this: they are retried in place."""

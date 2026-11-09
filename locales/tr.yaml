@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "Bilinmeyen /usage alt komutu: `{args}`. `/usage` veya `/usage reset [--force]` deneyin."
     reset_wrong_provider: "Biriktirilen limit sıfırlamaları yalnızca openai-codex sağlayıcısında kullanılabilir. Önce `/model` ile geçiş yapın."
   credits:
-    not_logged_in: "Nous Portal'a giriş yapılmadı. Bakiyenizi görmek ve yükleme yapmak için giriş yapın."
+    not_logged_in: "Zeus Portal'a giriş yapılmadı. Bakiyenizi görmek ve yükleme yapmak için giriş yapın."
   verbose:
     not_enabled: "`/verbose` komutu mesajlaşma platformlarında etkin değil.\n\n`config.yaml` içinde etkinleştirin:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Araç ilerlemesi: **OFF** — araç etkinliği gösterilmez."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Yapılandırma yüklenemedi: {error}"
   topup:
-    header: "💳 **Nous bakiyesi**"
+    header: "💳 **Zeus bakiyesi**"
     portal_link: "Faturalandırmayı portalda yönetin: {url}"
     hint: "Bakiye yükleme ve faturalandırma işlemlerini tarayıcıda yapın — bakiyeniz ardından burada güncellenir."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "Token kullanımını ve hız sınırlarını göster; `reset` biriktirilmiş Codex sınır sıfırlamasını kullanır"
   subscription:
-    description: "Nous planınızı görüntüleyin ve tarayıcıda değiştirin"
+    description: "Zeus planınızı görüntüleyin ve tarayıcıda değiştirin"
   login:
-    description: "Nous hesabıyla giriş yap (bağlayıcılarınız korunur)"
+    description: "Zeus hesabıyla giriş yap (bağlayıcılarınız korunur)"
   topup:
-    description: "Nous bakiyenizi göster ve faturalandırmayı portalda yönet"
+    description: "Zeus bakiyenizi göster ve faturalandırmayı portalda yönet"
   platforms:
     description: "Gateway/mesajlaşma platformu durumunu göster"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Faturalandırma yüklenemedi"
-    not_logged_in: "Nous Portal'a giriş yapılmadı."
+    not_logged_in: "Zeus Portal'a giriş yapılmadı."
     run_portal_then: "Giriş yapmak için `zeus portal` komutunu çalıştırın, ardından {cmd}."
     org_line: "Kuruluş: {org}"
     org_line_role: "Kuruluş: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  Sağlayıcı çözümleyici boş bir temel URL döndürdü. Sağlayıcı yapılandırmanızı kontrol edin veya şunu çalıştırın: zeus setup"
     switching_to_fallback: "⚠️  {reason} — yedeğe geçiliyor: {provider} / {model}"
     first_run_no_provider: "☤ Henüz yapılandırılmış bir çıkarım sağlayıcısı yok — hadi bunu halledelim."
-    first_run_pick_provider: "Bir sağlayıcı (en hızlısı Nous Portal OAuth; API anahtarı gerekmez) ve bir model seçeceksiniz."
+    first_run_pick_provider: "Bir sağlayıcı (en hızlısı Zeus Portal OAuth; API anahtarı gerekmez) ve bir model seçeceksiniz."
     first_run_prompt: "Şimdi bir sağlayıcı kurulsun mu? [Y/n]:"
     first_run_skipped: "Atlandı. İstediğiniz zaman 'zeus model' veya 'zeus setup' komutunu çalıştırın."
     first_run_cancelled: "Kurulum iptal edildi. İstediğiniz zaman 'zeus model' komutunu çalıştırın."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ Kalan /steer sonraki tur olarak iletiliyor: '{preview}'"
     reasoning_label: "Akıl yürütme"
     reasoning_more_lines: "... ({count} satır daha — göstermek için /reasoning full)"
-    billing_cta_nous: "Kredi eklemek için [bold]/topup[/], planı değiştirmek için [bold]/subscription[/] komutunu çalıştırın."
+    billing_cta_zeus: "Kredi eklemek için [bold]/topup[/], planı değiştirmek için [bold]/subscription[/] komutunu çalıştırın."
     billing_cta_provider: "{provider} ile kredi ekleyin"
     your_provider: "sağlayıcınız"
     billing_cta_switch: "Ya da [bold]/model <model> --provider <provider>[/] ile sağlayıcı değiştirin."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "LM Studio çözümü: Model ayarlarında bağlam uzunluğunu belirleyin → modeli yeniden yükleyin"
     fix_local_server: "Çözüm: sunucunuzu en az {tokens_k}K bağlamla başlatın (llama.cpp: -c {tokens}) veya config.yaml içinde model.ollama_num_ctx değerini gerçekten sunduğu pencereye ayarlayın"
     fix_config: "Çözüm: config.yaml içinde model.context_length değerini ayarlayın veya sunucunuzun bağlam ayarını artırın"
-    zeus_models_not_agentic: "⚠  Nous Research Hermes 3 ve 4 modelleri ajan modeli DEĞİLDİR ve Zeus Agents ile kullanılmak üzere tasarlanmamıştır."
+    zeus_models_not_agentic: "⚠  Zeus Agents Hermes 3 ve 4 modelleri ajan modeli DEĞİLDİR ve Zeus Agents ile kullanılmak üzere tasarlanmamıştır."
     zeus_models_lack_tools: "Ajan iş akışları için gereken araç çağırma yeteneklerinden yoksundurlar. Ajan yetenekli bir model (Claude, GPT, Gemini, DeepSeek vb.) kullanmayı düşünün."
     zeus_models_switch_hint: "Şununla geçiş yapın: /model sonnet  veya  /model gpt5"
     project_skills_loaded: "◆ Bu depodan {count} proje skill'i yüklendi"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Camofox (tespit önleyici Firefox) artık bir eklenti: zeus plugins install camofox."
   t182: "browser_exec birden çok tarayıcı adımını tek bir Python çağrısında çalıştırır — gezinme, çıkarma ve tıklama birlikte."
   t183: "browser.dialog_policy, sayfanın yerel iletişim kutularının nasıl ele alınacağını belirler: must_respond (ajan browser_dialog ile yanıtlar), auto_dismiss veya auto_accept."
-  t184: "zeus mcp, Nous onaylı MCP'leri tek tuşla kurabileceğiniz etkileşimli bir seçici açar."
-  t185: "zeus mcp catalog, depoyla birlikte gelen Nous onaylı MCP sunucularını listeler."
+  t184: "zeus mcp, Zeus onaylı MCP'leri tek tuşla kurabileceğiniz etkileşimli bir seçici açar."
+  t185: "zeus mcp catalog, depoyla birlikte gelen Zeus onaylı MCP sunucularını listeler."
   t186: "zeus mcp install <name>, bir katalog girdisini kurar, kimlik bilgilerini sorar ve hangi araçlarını etkinleştireceğinizi seçmenizi sağlar."
   t187: "MCP sunucuları config.yaml içinde yapılandırılır — hem stdio hem HTTP aktarımları desteklenir."
   t188: "Sunucu başına araç filtreleme: tools.include belirli araçları beyaz listeye, tools.exclude kara listeye alır."
@@ -3758,7 +3758,7 @@ tips:
   t209: "Özel sağlayıcılar: adlandırılmış uç noktaları config.yaml içinde custom_providers altına kaydedin."
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT, geçmişe hiç kaydedilmeyen bir sistem istemi enjekte eder."
   t211: "credential_pool_strategies; fill_first, round_robin, least_used ve random rotasyonunu destekler."
-  t212: "zeus auth add nous veya zeus auth add openai-codex, OAuth tabanlı sağlayıcıları kurar."
+  t212: "zeus auth add zeus veya zeus auth add openai-codex, OAuth tabanlı sağlayıcıları kurar."
   t213: "API sunucusu, sunucu tarafı durumla hem Chat Completions hem Responses API'sini destekler."
   t214: "Yapılandırmada tool_preview_length: 0, dönen simgenin etkinlik akışında tam dosya yollarını gösterir."
   t215: "zeus status --deep, tüm bileşenlerde daha derin tanılama denetimleri çalıştırır."
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback, skill'leri çalıştırma öncesi anlık görüntüden geri yükler — yedekler skills/.curator_backups/ altında durur."
   t306: "zeus auth reset <provider> [target], bekleme sürelerini ve tükenme işaretlerini tüm kimlik bilgisi havuzunda ya da dizin, id veya etikete göre tek bir kimlik bilgisinde temizler."
   t307: "credential_pool_strategies.<provider>: round_robin, varsayılan fill_first yerine anahtarları eşit biçimde sırayla kullanır."
-  t308: "Araç başına use_gateway: true, web, image, tts veya browser'ı Nous aboneliğiniz üzerinden yönlendirir — ek anahtar gerekmez."
+  t308: "Araç başına use_gateway: true, web, image, tts veya browser'ı Zeus aboneliğiniz üzerinden yönlendirir — ek anahtar gerekmez."
   t309: "provider_routing.data_collection: deny, OpenRouter'da veri saklayan sağlayıcıları dışarıda bırakır."
   t310: "provider_routing.require_parameters: true, yalnızca isteğinizdeki her parametreyi destekleyen sağlayıcılara yönlendirir."
   t311: "ZEUS_TUI_RESUME=1, başlatıldığında en son TUI oturumuna otomatik olarak yeniden bağlanır — SSH kopmalarından sonra işe yarar."
@@ -3937,7 +3937,7 @@ tips:
     p10: "Bir hatırlatıcı kur veya yinelenen bir görev zamanla"
     p11: "Komutlara göz atmak için / yazın, palet için Ctrl+P"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "Ücretsiz"
   level_top_tier: "Büyük"

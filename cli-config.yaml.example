@@ -77,8 +77,8 @@ model:
   # Inference provider selection:
   #   "auto"         - Auto-detect from credentials (default)
   #   "openrouter"   - OpenRouter (requires: OPENROUTER_API_KEY or OPENAI_API_KEY)
-  #   "nous"         - Nous Portal OAuth (requires: zeus auth add nous)
-  #   "nous-api"     - Nous Portal API key (requires: NOUS_API_KEY)
+  #   "zeus"         - Zeus Portal OAuth (requires: zeus auth add zeus)
+  #   "zeus-api"     - Zeus Portal API key (requires: ZEUS_PORTAL_API_KEY)
   #   "anthropic"    - Direct Anthropic API (requires: ANTHROPIC_API_KEY)
   #   "openai-codex" - OpenAI Codex (requires: zeus auth)
   #   "gemini"      - Use Google AI Studio direct (requires: GOOGLE_API_KEY or GEMINI_API_KEY)
@@ -879,11 +879,11 @@ prompt_caching:
 # browser screenshot analysis, web page summarization, TTS audio-tag insertion,
 # and context compression.
 #
-# By default these use Gemini Flash via OpenRouter or Nous Portal and are
+# By default these use Gemini Flash via OpenRouter or Zeus Portal and are
 # auto-detected from your credentials.  You do NOT need to change anything
 # here for normal usage.
 #
-# WARNING: Overriding these with providers other than OpenRouter or Nous Portal
+# WARNING: Overriding these with providers other than OpenRouter or Zeus Portal
 # is EXPERIMENTAL and may not work.  Not all models/providers support vision,
 # produce usable summaries, or accept the same API format.  Change at your own
 # risk — if things break, reset to "auto" / empty values.
@@ -893,9 +893,9 @@ prompt_caching:
 # local endpoint for compression (just needs text).
 #
 # Provider options:
-#   "auto"       - Best available: OpenRouter → Nous Portal → main endpoint (default)
+#   "auto"       - Best available: OpenRouter → Zeus Portal → main endpoint (default)
 #   "openrouter" - Force OpenRouter (requires OPENROUTER_API_KEY)
-#   "nous"       - Force Nous Portal (requires: zeus auth add nous)
+#   "zeus"       - Force Zeus Portal (requires: zeus auth add zeus)
 #   "gemini"      - Force Google AI Studio direct (requires: GOOGLE_API_KEY or GEMINI_API_KEY)
 #   "ollama-cloud" - Ollama Cloud (requires: OLLAMA_API_KEY)
 #   "codex"       - Force Codex OAuth (requires: zeus model → Codex).
@@ -905,7 +905,7 @@ prompt_caching:
 #                  endpoint.  Also falls back to Codex OAuth and API-key providers.
 #
 # Model: leave empty to use the provider's default.  When empty, OpenRouter
-# uses "google/gemini-3-flash-preview" and Nous uses "gemini-3-flash".
+# uses "google/gemini-3-flash-preview" and Zeus uses "gemini-3-flash".
 # Other providers pick a sensible default automatically.
 #
 # Native vision embeds (vision_analyze / browser screenshots when the MAIN model
@@ -1350,7 +1350,7 @@ agent:
   # Enable verbose logging
   verbose: false
   
-  # Reasoning effort level (OpenRouter and Nous Portal)
+  # Reasoning effort level (OpenRouter and Zeus Portal)
   # Controls how much "thinking" the model does before responding.
   # Options: "xhigh" (max), "high", "medium", "low", "minimal", "none" (disable)
   # Providers with bespoke thinking tiers (a relay serving fast/thinking): use the
@@ -1747,7 +1747,7 @@ stt:
   #   local_command/xai/
   #   elevenlabs             -> unsupported; DEBUG log, then continue
   #   plugin providers       -> `prompt` in `**extra`; plugin owns limits
-  # prompt: "Zeus, Teknium, Nous Research, kanban"
+  # prompt: "Zeus, Teknium, Zeus Agents, kanban"
   local:
     model: "base"              # tiny | base | small | medium | large-v3 | turbo
     # language: ""             # auto-detect; set to "en", "es", "fr", etc. to force
@@ -1913,7 +1913,7 @@ delegation:
   # model: "google/gemini-3-flash-preview"    # Override model for subagents (empty = inherit parent)
   # provider: "openrouter"                    # Override provider for subagents (empty = inherit parent)
   #                                           # Resolves full credentials (base_url, api_key) automatically.
-  #                                           # Supported: openrouter, nous, zai, kimi-coding, minimax
+  #                                           # Supported: openrouter, zeus, zai, kimi-coding, minimax
   #                                           # Cost tip: keep the parent on a frontier model and pin
   #                                           # delegation.model to an inexpensive one — children carry the
   #                                           # vast majority of tokens, so this is where spend is cut while
@@ -2282,7 +2282,7 @@ updates:
 # Web Dashboard
 # =============================================================================
 # OAuth gate configuration for `zeus dashboard --host <non-loopback>`.
-# The bundled Nous Portal plugin reads these on startup; settings here are
+# The bundled Zeus Portal plugin reads these on startup; settings here are
 # the canonical surface. Each can be overridden by an environment variable:
 #
 #   dashboard.oauth.client_id   <-  ZEUS_DASHBOARD_OAUTH_CLIENT_ID
@@ -2333,7 +2333,7 @@ updates:
 # -----------------------------------------------------------------------------
 # Self-hosted OIDC dashboard auth (generic OpenID Connect — Authentik,
 # Keycloak, Zitadel, Authelia, Auth0, Okta, Google, …). Use this INSTEAD of the
-# nous block above when gating the dashboard with your own identity provider.
+# zeus block above when gating the dashboard with your own identity provider.
 # Each setting can be overridden by an environment variable:
 #
 #   dashboard.oauth.self_hosted.issuer         <-  ZEUS_DASHBOARD_OIDC_ISSUER

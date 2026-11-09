@@ -54,7 +54,7 @@ On OpenAI Responses, both turn-2 requests are also sent with `reasoning.context:
 which the API rejects with a 400 on models that do not support it. Gemini native adds a third
 turn-2 request carrying the documented `skip_thought_signature_validator` dummy signature.
 
-**Lanes (Nous Portal).** The response id identifies the lane. `gen-…` means the OpenRouter lane,
+**Lanes (Zeus Portal).** The response id identifies the lane. `gen-…` means the OpenRouter lane,
 and anything else (`chatcmpl-`, a uuid, `msg_`) means a direct upstream. The same public id can
 switch lanes between calls. Pass `--want-direct id1,id2` to resample a cell up to
 `--lane-attempts` times until it lands on a direct lane. Results are keyed by
@@ -82,14 +82,14 @@ is at least `0.5·T`. For opaque carriers, any verbatim delta above 25 tokens co
 
 ```bash
 # what the Portal lists, minus aliases / :batch / non-text / non-reasoning ids
-python evals/reasoning_replay/harness.py models --route nous
+python evals/reasoning_replay/harness.py models --route zeus
 
 # priority ids, resampled until a direct-lane result exists for each cell
-python evals/reasoning_replay/harness.py run --route nous \
+python evals/reasoning_replay/harness.py run --route zeus \
     --models x-ai/grok-4.7,z-ai/glm-5.3 --want-direct x-ai/grok-4.7,z-ai/glm-5.3 --out $OUT
 
 # whole Portal catalog up to $4 per 1M output tokens; vendor routes
-python evals/reasoning_replay/harness.py run --route nous --models portal-max:4 --out $OUT
+python evals/reasoning_replay/harness.py run --route zeus --models portal-max:4 --out $OUT
 python evals/reasoning_replay/harness.py run --route openai-responses --models gpt-6-luna --out $OUT
 python evals/reasoning_replay/harness.py run --route gemini-native --models gemini-3.5-flash --out $OUT
 
@@ -102,7 +102,7 @@ python evals/reasoning_replay/harness.py report --out $OUT   # writes matrix.md 
 ```
 
 **Credentials** are read at call time and never written to disk or printed.
-- The Nous Portal key comes from `~/.zeus/auth.json` (`providers.nous.agent_key`, falling
+- The Zeus Portal key comes from `~/.zeus/auth.json` (`providers.zeus.agent_key`, falling
   back to `access_token`). On a 401 the file is re-read once, waiting 15 s if the key has not
   changed yet.
 - Every other route reads its key from the process environment first, then from

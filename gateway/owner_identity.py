@@ -41,7 +41,7 @@ def principal_subject(identity: dict) -> str:
 # (:func:`_login_provider`). ``session-token`` is the loopback Webapp's own credential and
 # ``server-internal`` the PTY child a signed-in dashboard spawns: both act for whoever opened that page,
 # the owner. ``local`` (a native grant) is not a sign-in: its stamp names an OS user (:func:`_owner_login`).
-_BUNDLED_LOGINS = frozenset({'basic', 'nous', 'self-hosted', 'session-token', 'server-internal'})
+_BUNDLED_LOGINS = frozenset({'basic', 'zeus', 'self-hosted', 'session-token', 'server-internal'})
 
 
 def _login_provider(provider: str) -> bool:
@@ -63,9 +63,9 @@ def _owner_login(provider: str, user: str) -> bool:
 def _login_label(value: str) -> bool:
     """``<provider>:<user>`` for a dashboard sign-in: the label ``zeus serve`` stamped for a login
     (session_transports). Any other prefix (``telegram:42``, ``uid:501``) names someone else, and a
-    ``nous:`` stamp keeps its own rule (``legacy_account_label``: a Desktop row's account label)."""
+    ``zeus:`` stamp keeps its own rule (``legacy_account_label``: a Desktop row's account label)."""
     provider, sep, user = value.partition(':')
-    return bool(sep and user.strip()) and provider != 'nous' and _owner_login(provider, user)
+    return bool(sep and user.strip()) and provider != 'zeus' and _owner_login(provider, user)
 
 
 def _login_subject(value) -> bool:

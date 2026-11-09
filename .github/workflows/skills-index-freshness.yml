@@ -23,7 +23,7 @@ permissions:
 jobs:
   check-freshness:
     if: github.repository == 'charanbalaji2005/Zeus-Agents'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: trusted-automation
     steps:
@@ -33,7 +33,7 @@ jobs:
       # "Can't find 'action.yml' ... under .github/actions/get-app-token"
       # every time the probe is non-ok — i.e. exactly when the watchdog is
       # supposed to file its issue.
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Probe live index
         id: probe
@@ -176,11 +176,11 @@ jobs:
     # chain lacks Access-Control-Allow-Origin (#136483). The probe above uses
     # curl -L, which never checks CORS, so it stays green while Desktop is blocked.
     if: github.repository == 'charanbalaji2005/Zeus-Agents'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: trusted-automation
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Fetch the plugin catalog the way Desktop does
         id: probe

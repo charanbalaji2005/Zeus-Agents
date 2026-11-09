@@ -1,6 +1,6 @@
 """Auxiliary client for OAuth-shaped model-provider plugins (``auth_type`` oauth_external / oauth_device_code).
 
-Built-in OAuth routes (nous, openai-codex, xai-oauth) have their own branches in ``auxiliary_client``.
+Built-in OAuth routes (zeus, openai-codex, xai-oauth) have their own branches in ``auxiliary_client``.
 A plugin OAuth provider reaches this one: its credential is the pooled row ``zeus auth add <name>``
 wrote, and its transport comes from ``ProviderProfile.create_client``. ``CredentialPool.select()``
 rotates an expiring row before leasing it, so compression and titling never send a dead bearer.

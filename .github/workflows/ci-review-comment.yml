@@ -46,11 +46,11 @@ jobs:
     if: >-
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.head_repository.full_name == github.repository
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout trusted default branch
-        uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false

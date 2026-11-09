@@ -35,13 +35,13 @@ jobs:
     # cargo builds codegen units and test binaries in parallel across the
     # cores. This lane also builds the crate from the start when Cargo.toml
     # changes.
-    runs-on: blacksmith-32vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/bootstrap-installer/src-tauri
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit }}
 

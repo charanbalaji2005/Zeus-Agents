@@ -1,4 +1,4 @@
-"""Nous Portal ``anthropic/*`` wire selection when ``nous.anthropic_wire`` is ``auto``.
+"""Zeus Portal ``anthropic/*`` wire selection when ``zeus.anthropic_wire`` is ``auto``.
 
 Portal serves Claude two ways and Zeus cannot tell which from the request: an OpenRouter
 passthrough (today, for every ``anthropic/*`` id) or GMI/Vertex (planned once GMI is back). The
@@ -64,29 +64,29 @@ def maybe_switch_wire_after_first_response(agent: Any, response: Any, api_call_c
     start of the next iteration (``apply_pending_wire_switch``), never while a response is being
     consumed. Returns True when a switch was scheduled.
 
-    Only for provider=nous, anthropic/* models, ``nous.anthropic_wire: auto``, and only on the
+    Only for provider=zeus, anthropic/* models, ``zeus.anthropic_wire: auto``, and only on the
     session's first API call.
     """
-    if api_call_count != 1 or getattr(agent, "_nous_wire_decided", False):
+    if api_call_count != 1 or getattr(agent, "_zeus_wire_decided", False):
         return False
-    if (getattr(agent, "provider", "") or "").lower() != "nous":
+    if (getattr(agent, "provider", "") or "").lower() != "zeus":
         return False
     model = str(getattr(agent, "model", "") or "")
     if not model.lower().startswith("anthropic/"):
         return False
     try:
-        from zeus_cli.providers import _nous_anthropic_wire
-        if _nous_anthropic_wire() != "auto":
+        from zeus_cli.providers import _zeus_anthropic_wire
+        if _zeus_anthropic_wire() != "auto":
             return False
     except Exception:
         return False
-    agent._nous_wire_decided = True  # one decision per session, whatever it is
+    agent._zeus_wire_decided = True  # one decision per session, whatever it is
     upstream = classify_upstream(response)
     want = wire_for_upstream(upstream)
     if want == getattr(agent, "api_mode", None):
-        logger.debug("nous wire auto: upstream=%s, staying on %s", upstream, want)
+        logger.debug("zeus wire auto: upstream=%s, staying on %s", upstream, want)
         return False
-    agent._nous_wire_pending = (want, upstream)
+    agent._zeus_wire_pending = (want, upstream)
     return True
 
 
@@ -95,18 +95,18 @@ def apply_pending_wire_switch(agent: Any) -> bool:
     ``maybe_switch_wire_after_first_response``. Reuses ``switch_model`` (same model/provider, new
     api_mode) so client rebuild, cache policy and ``_primary_runtime`` stay consistent. A failure
     is logged and the session stays on its current wire."""
-    pending = getattr(agent, "_nous_wire_pending", None)
+    pending = getattr(agent, "_zeus_wire_pending", None)
     if not pending:
         return False
-    agent._nous_wire_pending = None
+    agent._zeus_wire_pending = None
     want, upstream = pending
     try:
         from agent.agent_runtime_helpers import switch_model
-        switch_model(agent, agent.model, "nous", api_key=getattr(agent, "api_key", "") or "",
+        switch_model(agent, agent.model, "zeus", api_key=getattr(agent, "api_key", "") or "",
                      base_url=getattr(agent, "base_url", "") or "", api_mode=want)
     except Exception as exc:  # never let wire selection break a turn
-        logger.warning("nous wire auto: switch to %s failed (%s); staying on %s", want, exc, agent.api_mode)
+        logger.warning("zeus wire auto: switch to %s failed (%s); staying on %s", want, exc, agent.api_mode)
         return False
-    logger.info("nous wire auto: upstream=%s -> %s for the rest of session %s", upstream, want,
+    logger.info("zeus wire auto: upstream=%s -> %s for the rest of session %s", upstream, want,
                 getattr(agent, "session_id", "?"))
     return True

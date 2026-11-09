@@ -275,7 +275,7 @@ FROM runtime_base AS python_deps
 # the sealed venv.
 #
 # [fal] is baked because the image tool's availability check imports
-# fal_client whenever a FAL backend resolves, which the Nous-managed gateway
+# fal_client whenever a FAL backend resolves, which the Zeus-managed gateway
 # always does on hosted agents. Lazy-installing it at the gateway's first boot
 # builds a whole new venv generation on the volume (about 90s).
 #

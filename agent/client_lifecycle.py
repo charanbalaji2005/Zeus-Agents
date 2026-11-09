@@ -608,20 +608,20 @@ class ClientLifecycleMixin:
             return False
         return self._adopt_openai_credentials(api_key, base_url, reason=f"{self.provider}_credential_refresh")
 
-    def _try_refresh_nous_client_credentials(self, *, force: bool = True, require_account: str | None = None) -> bool:
+    def _try_refresh_zeus_client_credentials(self, *, force: bool = True, require_account: str | None = None) -> bool:
         # Portal serves anthropic/* on the native Messages route, so either client kind may hold the expiring JWT.
-        if self.provider != "nous" or self.api_mode not in ("chat_completions", "anthropic_messages"):
+        if self.provider != "zeus" or self.api_mode not in ("chat_completions", "anthropic_messages"):
             return False
         try:
-            from zeus_cli.auth import resolve_nous_runtime_credentials
-            timeout = env_float("ZEUS_NOUS_TIMEOUT_SECONDS", 15)
+            from zeus_cli.auth import resolve_zeus_runtime_credentials
+            timeout = env_float("ZEUS_PORTAL_TIMEOUT_SECONDS", 15)
             # Pass the bearer that just 401'd so a refresh already done by a sibling process is
             # adopted instead of rotating the grant again.
-            creds = resolve_nous_runtime_credentials(
+            creds = resolve_zeus_runtime_credentials(
                 timeout_seconds=timeout, force_refresh=force, stale_access_token=self.api_key or None,
             )
         except Exception as exc:
-            logger.debug("Nous credential refresh failed: %s", exc)
+            logger.debug("Zeus credential refresh failed: %s", exc)
             return False
         api_key, base_url = creds.get("api_key"), creds.get("base_url")
         if not _valid_credential_pair(api_key, base_url):
@@ -637,7 +637,7 @@ class ClientLifecycleMixin:
                 new_account = None
             if str(new_account or "") != require_account:
                 logger.info(
-                    "Nous pre-expiry adoption skipped: the store's key belongs to a different account "
+                    "Zeus pre-expiry adoption skipped: the store's key belongs to a different account "
                     "than the one in hand; keeping the current credential."
                 )
                 return False
@@ -646,16 +646,16 @@ class ClientLifecycleMixin:
             self._anthropic_api_key, self._anthropic_base_url = self.api_key, self.base_url
             self._rebuild_anthropic_client()
             return True
-        # Nous requests should not inherit OpenRouter-only attribution headers.
+        # Zeus requests should not inherit OpenRouter-only attribution headers.
         self._client_kwargs.pop("default_headers", None)
-        return self._adopt_openai_credentials(api_key, base_url, reason="nous_credential_refresh")
+        return self._adopt_openai_credentials(api_key, base_url, reason="zeus_credential_refresh")
 
     # Adopt a fresh key this many seconds before the one in hand expires. Wider than the store's
     # own refresh skew (120 s) so the keepalive has normally already minted the replacement.
-    _NOUS_KEY_ADOPT_SKEW_S = 180
+    _ZEUS_KEY_ADOPT_SKEW_S = 180
 
-    def _adopt_nous_key_before_expiry(self) -> bool:
-        """Swap in a fresh Nous agent key BEFORE the one in hand expires, so the request never 401s.
+    def _adopt_zeus_key_before_expiry(self) -> bool:
+        """Swap in a fresh Zeus agent key BEFORE the one in hand expires, so the request never 401s.
 
         The agent key is a JWT; its ``exp`` is read locally (no network). Inside the skew the store
         is re-read under the auth-store lock: the keepalive thread normally holds a fresh key already
@@ -670,7 +670,7 @@ class ClientLifecycleMixin:
         changes who is billed). When either side lacks a ``sub`` nothing is adopted here; the
         reactive 401 path is unchanged.
         """
-        if getattr(self, "provider", "") != "nous" or not getattr(self, "api_key", None):
+        if getattr(self, "provider", "") != "zeus" or not getattr(self, "api_key", None):
             return False
         try:
             from zeus_cli.auth_constants import _decode_jwt_claims
@@ -678,12 +678,12 @@ class ClientLifecycleMixin:
         except Exception:
             return False
         exp, account = claims.get("exp"), claims.get("sub")
-        if not account or not isinstance(exp, (int, float)) or exp - time.time() > self._NOUS_KEY_ADOPT_SKEW_S:
+        if not account or not isinstance(exp, (int, float)) or exp - time.time() > self._ZEUS_KEY_ADOPT_SKEW_S:
             return False
         try:
-            return self._try_refresh_nous_client_credentials(force=False, require_account=str(account))
+            return self._try_refresh_zeus_client_credentials(force=False, require_account=str(account))
         except Exception:
-            logger.debug("Nous key pre-expiry adoption failed", exc_info=True)
+            logger.debug("Zeus key pre-expiry adoption failed", exc_info=True)
             return False
 
 

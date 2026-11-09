@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "Onbekende /usage subopdrag: `{args}`. Probeer `/usage` of `/usage reset [--force]`."
     reset_wrong_provider: "Gebankte gebruikslimiet-terugstellings is slegs beskikbaar op die openai-codex verskaffer. Skakel eers oor met `/model`."
   credits:
-    not_logged_in: "Nie by Nous Portal aangemeld nie. Meld aan om jou kredietsaldo te sien en op te laai."
+    not_logged_in: "Nie by Zeus Portal aangemeld nie. Meld aan om jou kredietsaldo te sien en op te laai."
   verbose:
     not_enabled: "Die `/verbose`-opdrag is nie vir boodskapplatforms geaktiveer nie.\n\nAktiveer dit in `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Gereedskap-vordering: **AF** — geen gereedskap-aktiwiteit word vertoon nie."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Kon nie konfigurasie laai nie: {error}"
   topup:
-    header: "💳 **Nous-saldo**"
+    header: "💳 **Zeus-saldo**"
     portal_link: "Bestuur fakturering op die portaal: {url}"
     hint: "Laai op en bestuur fakturering in die blaaier — jou saldo word daarna hier opgedateer."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "Wys tokengebruik en tariefperke; `reset` los 'n gebankte Codex-limiet-terugstelling in"
   subscription:
-    description: "Bekyk jou Nous-plan en verander dit in die blaaier"
+    description: "Bekyk jou Zeus-plan en verander dit in die blaaier"
   login:
-    description: "Meld aan met 'n Nous-rekening (behou jou koppelaars)"
+    description: "Meld aan met 'n Zeus-rekening (behou jou koppelaars)"
   topup:
-    description: "Wys jou Nous-saldo en bestuur fakturering op die portaal"
+    description: "Wys jou Zeus-saldo en bestuur fakturering op die portaal"
   platforms:
     description: "Wys gateway-/boodskapplatform-status"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Kon nie faktureringsinligting laai nie"
-    not_logged_in: "Nie by Nous Portal aangemeld nie."
+    not_logged_in: "Nie by Zeus Portal aangemeld nie."
     run_portal_then: "Voer `zeus portal` uit om aan te meld, en dan {cmd}."
     org_line: "Org: {org}"
     org_line_role: "Org: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  Verskaffer-oplosser het 'n leë basis-URL teruggegee. Gaan jou verskaffer-konfigurasie na of voer uit: zeus setup"
     switching_to_fallback: "⚠️  {reason} — skakel oor na terugval: {provider} / {model}"
     first_run_no_provider: "☤ Geen inferensie-verskaffer is nog opgestel nie — kom ons stel dit reg."
-    first_run_pick_provider: "Jy sal 'n verskaffer kies (Nous Portal OAuth is die vinnigste; geen API-sleutel nodig) en 'n model."
+    first_run_pick_provider: "Jy sal 'n verskaffer kies (Zeus Portal OAuth is die vinnigste; geen API-sleutel nodig) en 'n model."
     first_run_prompt: "Stel nou 'n verskaffer op? [J/n]:"
     first_run_skipped: "Oorgeslaan. Voer enige tyd 'zeus model' of 'zeus setup' uit."
     first_run_cancelled: "Opstelling gekanselleer. Voer enige tyd 'zeus model' uit."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ Lewer oorblywende /steer as volgende beurt af: '{preview}'"
     reasoning_label: "Redenering"
     reasoning_more_lines: "... ({count} meer reëls — /reasoning full om te wys)"
-    billing_cta_nous: "Voer [bold]/topup[/] uit om krediete by te voeg, of [bold]/subscription[/] om jou plan te verander."
+    billing_cta_zeus: "Voer [bold]/topup[/] uit om krediete by te voeg, of [bold]/subscription[/] om jou plan te verander."
     billing_cta_provider: "Voeg krediete by met {provider}"
     your_provider: "jou verskaffer"
     billing_cta_switch: "Of skakel verskaffer oor met [bold]/model <model> --provider <provider>[/]."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "LM Studio-oplossing: Stel kontekslengte in die modelinstellings → herlaai model"
     fix_local_server: "Oplossing: begin jou bediener met ten minste {tokens_k}K konteks (llama.cpp: -c {tokens}), of stel model.ollama_num_ctx in config.yaml op die venster wat dit werklik bedien"
     fix_config: "Oplossing: Stel model.context_length in config.yaml, of verhoog jou bediener se konteksinstelling"
-    zeus_models_not_agentic: "⚠  Nous Research Hermes 3- & 4-modelle is NIE agenties nie en is nie ontwerp vir gebruik met Zeus Agents nie."
+    zeus_models_not_agentic: "⚠  Zeus Agents Hermes 3- & 4-modelle is NIE agenties nie en is nie ontwerp vir gebruik met Zeus Agents nie."
     zeus_models_lack_tools: "Hulle het nie die gereedskapsoproep-vermoëns wat agent-werkvloeie vereis nie. Oorweeg 'n agentiese model (Claude, GPT, Gemini, DeepSeek, ens.)."
     zeus_models_switch_hint: "Skakel oor met: /model sonnet  of  /model gpt5"
     project_skills_loaded: "◆ {count} projekvaardigheid/-hede uit hierdie bewaarplek gelaai"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Camofox (Firefox teen opsporing) is nou 'n inprop: zeus plugins install camofox."
   t182: "browser_exec voer verskeie blaaierstappe in een Python-oproep uit — navigeer, onttrek en klik saam."
   t183: "browser.dialog_policy bepaal hoe inheemse bladsy-dialoë hanteer word: must_respond (die agent antwoord met browser_dialog), auto_dismiss of auto_accept."
-  t184: "zeus mcp maak 'n interaktiewe kieser van Nous-goedgekeurde MCP's oop wat jy met een toetsdruk kan installeer."
-  t185: "zeus mcp catalog lys Nous-goedgekeurde MCP-bedieners wat saam met die bewaarplek verskeep word."
+  t184: "zeus mcp maak 'n interaktiewe kieser van Zeus-goedgekeurde MCP's oop wat jy met een toetsdruk kan installeer."
+  t185: "zeus mcp catalog lys Zeus-goedgekeurde MCP-bedieners wat saam met die bewaarplek verskeep word."
   t186: "zeus mcp install <name> installeer 'n katalogus-inskrywing, vra vir geloofsbriewe en laat jou kies watter van sy gereedskap om te aktiveer."
   t187: "MCP-bedieners word in config.yaml opgestel — beide stdio- en HTTP-vervoer word ondersteun."
   t188: "Gereedskapfiltrering per bediener: tools.include witlys en tools.exclude swartlys spesifieke gereedskap."
@@ -3758,7 +3758,7 @@ tips:
   t209: "Eie verskaffers: stoor benoemde eindpunte in config.yaml onder custom_providers."
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT spuit 'n stelselprompt in wat nooit in die geskiedenis bewaar word nie."
   t211: "credential_pool_strategies ondersteun fill_first-, round_robin-, least_used- en random-rotasie."
-  t212: "zeus auth add nous of zeus auth add openai-codex stel OAuth-gebaseerde verskaffers op."
+  t212: "zeus auth add zeus of zeus auth add openai-codex stel OAuth-gebaseerde verskaffers op."
   t213: "Die API-bediener ondersteun beide die Chat Completions- en Responses API met bedienerkant-toestand."
   t214: "tool_preview_length: 0 in die konfigurasie wys volledige lêerpaaie in die spinner se aktiwiteitsvoer."
   t215: "zeus status --deep voer dieper diagnostiese kontroles oor alle komponente uit."
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback herstel vaardighede vanaf 'n momentopname van voor die lopie — rugsteune woon onder skills/.curator_backups/."
   t306: "zeus auth reset <provider> [target] vee afkoeltye en uitputtingsvlae op 'n hele geloofsbriewe-poel uit, of op een geloofsbrief volgens indeks, id of etiket."
   t307: "credential_pool_strategies.<provider>: round_robin roteer sleutels eweredig in plaas van die fill_first-verstek."
-  t308: "use_gateway: true per gereedskap stuur web, image, tts of browser deur jou Nous-subskripsie — geen ekstra sleutels nodig nie."
+  t308: "use_gateway: true per gereedskap stuur web, image, tts of browser deur jou Zeus-subskripsie — geen ekstra sleutels nodig nie."
   t309: "provider_routing.data_collection: deny sluit verskaffers op OpenRouter uit wat data stoor."
   t310: "provider_routing.require_parameters: true stuur net na verskaffers wat elke parameter in jou versoek ondersteun."
   t311: "ZEUS_TUI_RESUME=1 herkoppel by die begin outomaties aan die mees onlangse TUI-sessie — handig nadat SSH afgebreek het."
@@ -3937,7 +3937,7 @@ tips:
     p10: "Stel 'n herinnering of skeduleer 'n herhalende taak"
     p11: "Tik / om deur opdragte te blaai, of Ctrl+P vir die palet"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "Gratis"
   level_top_tier: "Groot"

@@ -594,7 +594,7 @@ def _manage_thinking_signatures(result: list[dict[str, Any]], base_url: str | No
     """Strip or preserve thinking blocks per endpoint. Mutates ``result`` in place.
 
     Anthropic signs thinking blocks against the full turn; any upstream mutation invalidates them
-    (400 "Invalid signature in thinking block"). Signed routes (Anthropic, Nous Portal, Bedrock,
+    (400 "Invalid signature in thinking block"). Signed routes (Anthropic, Zeus Portal, Bedrock,
     Vertex, Foundry; MiniMax for its own blocks) keep valid signed blocks on every assistant turn
     when the model keeps prior thinking, else on every turn of the in-flight tool loop (the API
     requires those back and strips older turns itself; cutting at the latest assistant message

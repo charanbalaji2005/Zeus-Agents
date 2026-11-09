@@ -15,14 +15,14 @@ def _chat_completion_capturing_headers(agent, client, api_kwargs: dict):
     observes ``x-nous-credits-*`` (usage-window ``spend_source`` / gauges go stale). The SDK's
     ``with_raw_response`` returns the same request with headers attached; a client without it keeps
     the plain call. Usage-window plans
-    only: every other provider, and a Nous session not yet known to be on a window plan (the
+    only: every other provider, and a Zeus session not yet known to be on a window plan (the
     session-start seed or a stream header establishes it), keep the plain call; headers are
     captured only when the response itself is the usage-window kind. A capture failure never
     fails the turn.
     """
     # `is True`: a Mock agent's invented attribute is not a window plan.
     state = getattr(agent, "_credits_state", None)
-    if getattr(agent, "provider", "") != "nous" or getattr(state, "is_usage_window", False) is not True:
+    if getattr(agent, "provider", "") != "zeus" or getattr(state, "is_usage_window", False) is not True:
         return client.chat.completions.create(**api_kwargs)
     raw_api = getattr(getattr(getattr(client, "chat", None), "completions", None), "with_raw_response", None)
     if raw_api is None:
@@ -32,7 +32,7 @@ def _chat_completion_capturing_headers(agent, client, api_kwargs: dict):
     if not response_is_usage_window(raw):
         return raw.parse()
     for capture in (agent._capture_rate_limits, agent._capture_credits,
-                    agent._capture_nous_model_switch, agent._check_openrouter_cache_status):
+                    agent._capture_zeus_model_switch, agent._check_openrouter_cache_status):
         try:
             capture(raw)
         except Exception:

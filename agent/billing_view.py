@@ -266,7 +266,7 @@ def fetch_portal_state(
     ``portal_fallback(portal_base_url)``.
     """
     try:
-        import zeus_cli.nous_billing as nb
+        import zeus_cli.zeus_billing as nb
     except Exception:
         return failed(error="billing client unavailable")
     try:

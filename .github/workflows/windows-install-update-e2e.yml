@@ -49,12 +49,12 @@ concurrency:
 jobs:
   install-update:
     name: Windows install.ps1 + zeus update E2E
-    runs-on: blacksmith-32vcpu-windows-2025
+    runs-on: windows-latest
     # A typical run is ~17 min; one slow runner took 28 min for the same work (run 36295230146).
     timeout-minutes: 75
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit }}
           # serve.git is a bare clone of this checkout: the installer's treeless clone and
@@ -92,7 +92,7 @@ jobs:
           ZEUS_TEST_FILE_RETRIES: '0'
           OPENROUTER_API_KEY: ''
           OPENAI_API_KEY: ''
-          NOUS_API_KEY: ''
+          ZEUS_PORTAL_API_KEY: ''
 
       - name: Every crash cell ran
         # run_tests.sh passes a file whose tests were all deselected (pytest exit 5) or skipped,

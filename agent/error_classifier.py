@@ -98,7 +98,7 @@ class ClassifiedError:
 
 # Billing exhaustion (not transient rate limit). "out of extra usage" is the
 # Anthropic OAuth Pro/Max overage bucket depleted (HTTP 400).
-# The Nous gateway's own words for "the free tier will not serve this" — a billing wall for a
+# The Zeus gateway's own words for "the free tier will not serve this" — a billing wall for a
 # named account, the tier refusing for an anonymous one (see ``_WELCOME_403_NAMED_PATTERNS``).
 _FREE_TIER_REFUSAL_PATTERNS = ("model_not_supported_on_free_tier", "not available on the free tier")
 _BILLING_PATTERNS = (
@@ -127,12 +127,12 @@ _UNVERIFIED_BILLING_PATTERNS = ("out of extra usage",)
 # scoped on purpose: other providers' billing codes on a 403 stay auth failures.
 _XAI_SPENDING_LIMIT_ERROR_CODE = "personal-team-blocked:spending-limit"
 
-# Nous usage-window plan: included usage (or the large-model allowance) is spent AND
+# Zeus usage-window plan: included usage (or the large-model allowance) is spent AND
 # there are no top-up credits. Billing so the pool may rotate to a key the user
 # owns; the message names the reset, so it must never read as transient. Honoured
-# only on a Nous 402 (``_classify_402`` behind ``_is_nous_route``), never via
+# only on a Zeus 402 (``_classify_402`` behind ``_is_zeus_route``), never via
 # _BILLING_ERROR_CODES, so any other status or upstream keeps main's rules.
-_NOUS_USAGE_WINDOW_402_CODE = "usage_window_and_credits_exhausted"
+_ZEUS_USAGE_WINDOW_402_CODE = "usage_window_and_credits_exhausted"
 
 # Structured codes meaning the account cannot serve paid traffic.
 _BILLING_ERROR_CODES = frozenset({
@@ -144,7 +144,7 @@ _BILLING_ERROR_CODES = frozenset({
     # terminal for this credential until limits are raised.
     "credit_balance_exhausted", "organization_spend_limit_exceeded",
     "organization_usage_limit_exceeded", "project_spend_limit_exceeded",
-    # Nous paid model behind an empty credit balance arrives as a 404 (#115702).
+    # Zeus paid model behind an empty credit balance arrives as a 404 (#115702).
     "insufficient_credits_for_paid_model",
 })
 
@@ -281,7 +281,7 @@ CODEX_ACCOUNT_MODEL_ENTITLEMENT_MARKER = "model is not supported when using code
 _MODEL_NOT_FOUND_PATTERNS = (
     "is not a valid model", "invalid model", "model not found", "model_not_found", "does not exist",
     "no such model", "unknown model", "unsupported model", "no endpoints found that support tool use",
-    # Nous 404 when the provider retires a :free route — the slug is dead for every
+    # Zeus 404 when the provider retires a :free route — the slug is dead for every
     # credential, so fall back instead of burning retries (#123180). Unlike the free-tier
     # billing wording, the account's balance/tier is not what rejected the call.
     "is no longer free",
@@ -504,7 +504,7 @@ _V_ROLE_ALTERNATION = _v(_R.role_alternation, **_ABORT_FALLBACK)
 # other provider can fix that output, so falling back only replays the same broken turn 4-5 times
 # (20-60s per occurrence, #12770). Abort this call; the loop's argument repair handles the retry.
 _V_MALFORMED_TOOL_ARGS = _v(_R.format_error, retryable=False, should_fallback=False)
-# A reasoning-mandatory route answering ``reasoning: {enabled: false}`` (Nous Portal + OpenRouter wording).
+# A reasoning-mandatory route answering ``reasoning: {enabled: false}`` (Zeus Portal + OpenRouter wording).
 _REASONING_MANDATORY_PATTERN = "reasoning is mandatory"
 
 # Generic markers a provider 400 puts next to the offending parameter name. Bedrock Converse
@@ -576,7 +576,7 @@ def is_reasoning_level_rejection(error_msg: str) -> bool:
 
 def is_reasoning_required_rejection(error_msg: str) -> bool:
     """Provider 400 saying the model's reasoning cannot be switched OFF ("Reasoning is mandatory for
-    this endpoint and cannot be disabled", the Nous Portal on gpt-6-astra) — or refusing the OFF
+    this endpoint and cannot be disabled", the Zeus Portal on gpt-6-astra) — or refusing the OFF
     *level* because the endpoint's closed set starts at ``minimal``
     (``is_reasoning_level_rejection``). The opposite of ``is_reasoning_field_rejection``: the field is
     understood, the *disable* is refused, so the right reaction is to step the effort up to the
@@ -644,7 +644,7 @@ _OVERFLOW_AS_5XX_RULES = (
     (_CONTEXT_OVERFLOW_PATTERNS, _V_CONTEXT_OVERFLOW),
 )
 
-# 404: Nous API surfaces credit depletion as a paid model vanishing from the
+# 404: Zeus API surfaces credit depletion as a paid model vanishing from the
 # Free Tier (billing, not missing model); policy block before model_not_found.
 _404_RULES = (
     (_BILLING_PATTERNS, _V_BILLING), (_PROVIDER_POLICY_BLOCKED_PATTERNS, _V_POLICY_BLOCKED),
@@ -825,8 +825,8 @@ _WELCOME_403_NAMED_PATTERNS = _CONTENT_POLICY_BLOCKED_PATTERNS + tuple(
     p for p in _BILLING_PATTERNS if p not in _FREE_TIER_REFUSAL_PATTERNS)
 
 
-def _nous_welcome_tier(c: _Ctx) -> Optional[Verdict]:
-    """The Nous inference gateway's welcome-tier (free tier) refusals, read from the structured body.
+def _zeus_welcome_tier(c: _Ctx) -> Optional[Verdict]:
+    """The Zeus inference gateway's welcome-tier (free tier) refusals, read from the structured body.
 
     A 429 carrying a fairshare ``reason`` is either a tier gate (``model_not_free`` /
     ``feature_not_free``: the model or feature is never served on the free tier, so retrying is
@@ -842,7 +842,7 @@ def _nous_welcome_tier(c: _Ctx) -> Optional[Verdict]:
         # A named credential's fairshare 429 is an ordinary rate limit, whatever its body says. The
         # one welcome refusal it does receive is the gateway's mirror 400 on the welcome host; its
         # reconnect copy stands, only the sign-in card is withheld (``_welcome_surface_kind``).
-        if c.provider == "nous" and status == 400 and welcome_route_refusal(status, c.msg) == "named_on_welcome_host":
+        if c.provider == "zeus" and status == 400 and welcome_route_refusal(status, c.msg) == "named_on_welcome_host":
             return _v(_R.format_error, retryable=False, should_fallback=True,
                       error_context={"welcome_route": "named_on_welcome_host"})
         return None
@@ -855,7 +855,7 @@ def _nous_welcome_tier(c: _Ctx) -> Optional[Verdict]:
     if status == 429:
         # Every free-tier 429 is the allowance talking, so even one without a ``reason`` (header-only,
         # quota words) is a refusal; otherwise it would fall to billing or the generic rate-limit copy.
-        from agent.nous_rate_guard import welcome_refusal_from_headers
+        from agent.zeus_rate_guard import welcome_refusal_from_headers
         refusal = parse_welcome_refusal(c.body) or welcome_refusal_from_headers(
             c.headers, body_wait=_rate_limit_reset_seconds(c.msg, c.body, c.headers))
         ctx = {"welcome_refusal": refusal}
@@ -882,7 +882,7 @@ def _provider_special_cases(c: _Ctx) -> Optional[Verdict]:
     # Deterministic for this context: another provider would receive the same connector result.
     if c.code == "data_policy_denied":
         return _v(_R.data_policy_denied, retryable=False, should_fallback=False)
-    welcome = _nous_welcome_tier(c)
+    welcome = _zeus_welcome_tier(c)
     if welcome is not None:
         return welcome
     # Safety refusal before status classification so a 400 block isn't downgraded
@@ -1026,7 +1026,7 @@ def classify_api_error(
 ) -> ClassifiedError:
     """Classify an API error into a structured recovery recommendation (see ``_STAGES``).
 
-    ``base_url`` (optional) is the route the call went to; the Nous welcome tier keys its
+    ``base_url`` (optional) is the route the call went to; the Zeus welcome tier keys its
     dark-tier 403 on it because that refusal carries no distinguishing message.
     ``api_key`` identifies an anonymous request; a host or fairshare reason alone does not.
     The credential is never included in the returned context."""
@@ -1143,9 +1143,9 @@ def _status_5xx(c: _Ctx) -> Verdict:
     return _first_match(c.msg, _OVERFLOW_AS_5XX_RULES) or _V_SERVER_ERROR
 
 
-def _is_nous_route(c: _Ctx) -> bool:
-    """The usage-window 402 code is Nous's: any other upstream sending it keeps main's text rules."""
-    if (c.provider or "").strip().lower() == "nous":
+def _is_zeus_route(c: _Ctx) -> bool:
+    """The usage-window 402 code is Zeus's: any other upstream sending it keeps main's text rules."""
+    if (c.provider or "").strip().lower() == "zeus":
         return True
     from utils import base_url_host_matches
     return bool(c.base_url) and base_url_host_matches(c.base_url, "nousresearch.com")
@@ -1153,10 +1153,10 @@ def _is_nous_route(c: _Ctx) -> bool:
 
 def _classify_402(error_msg: str, result_fn: Callable[..., Any], code: str = "", body: Any = None) -> Any:
     """Disambiguate 402: "usage limit, try again in 5 minutes" is a periodic quota, not billing.
-    The Nous usage-window code is decisive (its prose names the reset time, which must not
+    The Zeus usage-window code is decisive (its prose names the reset time, which must not
     demote it to a transient rate limit); every other 402 keeps the text rules. A usage-window 402's
     optional ``display_message`` (server-set wording) rides in ``error_context`` for the refusal line."""
-    if code == _NOUS_USAGE_WINDOW_402_CODE:
+    if code == _ZEUS_USAGE_WINDOW_402_CODE:
         # Tagged so recovery skips the paid-entitlement refresh (none restores included usage before the reset).
         context: dict[str, Any] = {"usage_window": True}
         if display := _usage_window_display_message(body):
@@ -1246,7 +1246,7 @@ def _classify_400(c: _Ctx) -> Verdict:
         "conflicting authenticated continuation identities" in msg
     ):
         return _V_INVALID_ENCRYPTED
-    # Route rejecting a reasoning disable: a reasoning-mandatory route (GLM-5.3 on Nous Portal /
+    # Route rejecting a reasoning disable: a reasoning-mandatory route (GLM-5.3 on Zeus Portal /
     # OpenRouter), a chat-only relay that does not accept ``reasoning_effort: none`` at all
     # (#114460), or an endpoint whose closed level set starts above the disable ("must be one of:
     # 'minimal', …" — Alibaba token-plan). Deterministic for the request shape, but the only bad
@@ -1306,7 +1306,7 @@ def _classify_image_tool_422(c: _Ctx) -> Verdict:
 # read window). Unlisted 4xx → format_error, 5xx → server_error.
 _STATUS_HANDLERS: dict[int, Callable[[_Ctx], Verdict]] = {
     400: _classify_400, 401: lambda c: _V_AUTH_ROTATE,
-    402: lambda c: _classify_402(c.msg, dict, c.code if _is_nous_route(c) else "", c.body),
+    402: lambda c: _classify_402(c.msg, dict, c.code if _is_zeus_route(c) else "", c.body),
     403: _status_403, 404: _status_404, 408: lambda c: _V_TIMEOUT, 413: lambda c: _V_PAYLOAD_TOO_LARGE,
     422: lambda c: _classify_image_tool_422(c),
     429: _status_429, 500: _status_5xx, 502: _status_5xx,

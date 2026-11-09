@@ -180,7 +180,7 @@ def test_source_check_honors_transient_channel_without_rewriting_record(releases
 
 
 def test_fork_origin_uses_its_own_published_release_not_the_official_pointer(releases):
-    url = "https://github.com/Fixture/hermes-agent.git"
+    url = "https://github.com/Fixture/zeus-agents.git"
     git(releases.root, "config", "remote.origin.url", url)
     git(releases.root, "config", f"url.{releases.origin}.insteadOf", url)
     tag = releases.tags["stable"]
@@ -208,7 +208,7 @@ def test_zip_fallback_keeps_selected_repository_and_commit(releases, monkeypatch
         update_cmd_zip._update_via_zip(
             SimpleNamespace(branch=None), target_sha=releases.commits[2],
             target_repository="Fixture/zeus-agents", completion_request={})
-    assert seen == [(f"https://github.com/Fixture/hermes-agent/archive/{releases.commits[2]}.zip",
+    assert seen == [(f"https://github.com/Fixture/zeus-agents/archive/{releases.commits[2]}.zip",
                      releases.commits[2])]
 
 
@@ -259,6 +259,18 @@ def _track_official_origin(releases):
     git(releases.root, "config", f"url.{releases.origin.as_uri()}.insteadOf", official)
 
 
+def test_unconfigured_official_checkout_follows_main_without_release_requests(releases, capsys):
+    """No GitHub release is published, so a fresh official install must update along main
+    instead of failing every `zeus update` on the stable lookup's 404."""
+    from zeus_cli.update_channel import default_channel, resolve_update_channel
+
+    _track_official_origin(releases)
+    assert default_channel(releases.root) == resolve_update_channel({}, releases.root) == "main"
+    update_cmd._cmd_update_check()
+    assert "behind origin/main" in capsys.readouterr().out
+    assert releases.requests == []
+
+
 def test_stable_is_the_latest_published_github_release_without_r2(releases):
     """Publishing a GitHub release is the only promotion stable needs: no R2 record or pointer."""
     from zeus_cli import source_releases
@@ -278,8 +290,11 @@ def test_stable_is_the_latest_published_github_release_without_r2(releases):
 @pytest.mark.parametrize("start,expected", [(0, 1), (3, 3)], ids=["behind-release", "newer-than-release"])
 def test_default_stable_only_moves_forward_until_the_channel_is_chosen(releases, monkeypatch, capsys,
                                                                        start, expected):
+    from zeus_cli import update_channel
     from zeus_cli.update_channel import default_channel
 
+    # The forward-only rule for a default stable channel, for when releases are published.
+    monkeypatch.setattr(update_channel, "OFFICIAL_SOURCE_CHANNEL", "stable")
     _track_official_origin(releases)
     git(releases.root, "checkout", "--detach", releases.commits[start])
     assert default_channel(releases.root) == "stable"

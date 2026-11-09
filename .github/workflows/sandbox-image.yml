@@ -45,21 +45,21 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            runner: blacksmith-32vcpu-ubuntu-2404
+            runner: ubuntu-latest
             platform: linux/amd64
           - arch: arm64
-            runner: blacksmith-32vcpu-ubuntu-2404-arm
+            runner: ubuntu-latest
             platform: linux/arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: useblacksmith/setup-docker-builder@06dd9c83a5d541274d2e3ac67625560979275267  # v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Build (${{ matrix.arch }})
-        uses: useblacksmith/build-push-action@9b0579bbec7a6cad2f171596c57e7ac1e7658850  # v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/sandbox-desktop.Dockerfile
@@ -83,18 +83,18 @@ jobs:
       matrix:
         include:
           - arch: amd64
-            runner: blacksmith-32vcpu-ubuntu-2404
+            runner: ubuntu-latest
             platform: linux/amd64
           - arch: arm64
-            runner: blacksmith-32vcpu-ubuntu-2404-arm
+            runner: ubuntu-latest
             platform: linux/arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: useblacksmith/setup-docker-builder@06dd9c83a5d541274d2e3ac67625560979275267  # v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
@@ -104,7 +104,7 @@ jobs:
 
       - name: Push ${{ matrix.arch }} by digest
         id: push
-        uses: useblacksmith/build-push-action@9b0579bbec7a6cad2f171596c57e7ac1e7658850  # v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           file: docker/sandbox-desktop.Dockerfile

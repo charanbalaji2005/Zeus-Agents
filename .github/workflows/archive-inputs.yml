@@ -24,7 +24,7 @@ jobs:
   archive-inputs:
     name: Preserve every pinned HTTP input
     if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     environment: release-signing
     timeout-minutes: 60
     env:
@@ -33,7 +33,7 @@ jobs:
       CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
       CLOUDFLARE_R2_BUCKET: ${{ vars.CLOUDFLARE_R2_BUCKET }}
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.sha || github.sha }}
           persist-credentials: false

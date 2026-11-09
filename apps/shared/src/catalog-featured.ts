@@ -9,7 +9,7 @@
  *  or install count; the feed has none. */
 
 /** Skill sources that are first-party (bundled with Zeus or published by
- *  Nous). One list for the desktop catalog, the website and the hero pick. */
+ *  Zeus). One list for the desktop catalog, the website and the hero pick. */
 export const OFFICIAL_SKILL_SOURCES: readonly string[] = ['built-in', 'bundled', 'optional', 'official']
 
 export const isOfficialSkillSource = (source: string | null | undefined) => OFFICIAL_SKILL_SOURCES.includes(source ?? '')

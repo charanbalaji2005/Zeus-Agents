@@ -193,12 +193,12 @@ def _is_finite_num(v: Any) -> TypeGuard[float]:
     return _is_num(v) and not isinstance(v, bool) and math.isfinite(v)
 
 
-def _nous_snapshot(windows: list, details: list, tail: list, *, source: str, plan: Optional[str] = None,
+def _zeus_snapshot(windows: list, details: list, tail: list, *, source: str, plan: Optional[str] = None,
                    usage_window: bool = False) -> Optional[AccountUsageSnapshot]:
-    """Nous snapshot with *tail* lines appended, or None when there is nothing to show."""
+    """Zeus snapshot with *tail* lines appended, or None when there is nothing to show."""
     if not windows and not details:
         return None
-    return _snapshot("nous", source, windows, details + tail, title="Nous credits", plan=plan, usage_window=usage_window)
+    return _snapshot("zeus", source, windows, details + tail, title="Zeus credits", plan=plan, usage_window=usage_window)
 
 
 def _bp_window(label: str, used_bp: Any, resets_at_ms: Any) -> Optional[AccountUsageWindow]:
@@ -260,12 +260,12 @@ def _usage_window_rows(gauges: Any, *, paused_reason: Any,
     return out, lines
 
 
-def build_nous_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
-    """NousPortalAccountInfo → /usage snapshot: dollar magnitudes + renewal date + portal CTA, plus a ``% used``
+def build_zeus_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
+    """ZeusPortalAccountInfo → /usage snapshot: dollar magnitudes + renewal date + portal CTA, plus a ``% used``
     gauge when the portal supplies ``monthly_credits``. A usage-window account (``usage_window`` present) shows
     its allowances as percent used, the large-model line and its top-up balance instead. Fail-open → None."""
     try:
-        from zeus_cli.nous_account import nous_portal_topup_url
+        from zeus_cli.zeus_account import zeus_portal_topup_url
         if account_info is None or not getattr(account_info, "logged_in", False):
             return None
         access = getattr(account_info, "paid_service_access_info", None)
@@ -288,7 +288,7 @@ def build_nous_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
             if sub is not None and (period_end := getattr(sub, "current_period_end", None)):
                 from agent.billing_usage import format_renews
                 details.append(f"Renews: {format_renews(period_end) or period_end}")
-            return _nous_snapshot(windows, details, ["Top up via /topup"], source="portal-account",
+            return _zeus_snapshot(windows, details, ["Top up via /topup"], source="portal-account",
                                   plan=getattr(sub, "plan", None) if sub is not None else None, usage_window=True)
         # Gauge needs a positive cap AND a finite remaining <= cap (numeric fields, NOT a server *_usd); used =
         # cap - remaining clamped [0,100] so debt reads 100%. NaN/Inf (json.loads accepts bare NaN → "$nan") and
@@ -316,17 +316,17 @@ def build_nous_credits_snapshot(account_info) -> Optional[AccountUsageSnapshot]:
                 details.append(f"Renews: {period_end}")
         if getattr(account_info, "paid_service_access", None) is False:
             details.append(_DEPLETED_LINE)
-        return _nous_snapshot(windows, details, [f"Top up: {nous_portal_topup_url(account_info)}", "(or run /topup)"],
+        return _zeus_snapshot(windows, details, [f"Top up: {zeus_portal_topup_url(account_info)}", "(or run /topup)"],
                               source="portal-account", plan=getattr(sub, "plan", None) if sub is not None else None)
     except (AttributeError, TypeError):
         return None
 
 
-def _nous_logged_in() -> bool:
-    """Cheap local auth-state check: a Nous access token is present. Fail-open False."""
+def _zeus_logged_in() -> bool:
+    """Cheap local auth-state check: a Zeus access token is present. Fail-open False."""
     try:
         from zeus_cli.auth import get_provider_auth_state
-        tok = (get_provider_auth_state("nous") or {}).get("access_token")
+        tok = (get_provider_auth_state("zeus") or {}).get("access_token")
         return isinstance(tok, str) and bool(tok.strip())
     except Exception:
         return False
@@ -342,12 +342,12 @@ def _fetch_portal_account(timeout: float):
     and never blocks the caller or process exit; its eventual exception is
     drained so GC never logs "exception was never retrieved"."""
     import contextvars
-    from zeus_cli.nous_account import get_nous_portal_account_info
+    from zeus_cli.zeus_account import get_zeus_portal_account_info
     from tools.daemon_pool import DaemonThreadPoolExecutor
 
     context = contextvars.copy_context()
     pool = DaemonThreadPoolExecutor(max_workers=1)
-    future = pool.submit(context.run, get_nous_portal_account_info, force_fresh=True)
+    future = pool.submit(context.run, get_zeus_portal_account_info, force_fresh=True)
     try:
         return future.result(timeout=timeout)
     except BaseException:
@@ -400,16 +400,16 @@ def apply_header_gauge(snapshot: Optional[AccountUsageSnapshot], credits_state: 
     return replace(snapshot, windows=tuple(windows), details=details)
 
 
-def nous_credits_lines(*, markdown: bool = False, timeout: float = 10.0, credits_state: Any = None) -> list[str]:
-    """Rendered Nous-credits /usage lines, or [] when there's nothing to show. Independent of any live agent
+def zeus_credits_lines(*, markdown: bool = False, timeout: float = 10.0, credits_state: Any = None) -> list[str]:
+    """Rendered Zeus-credits /usage lines, or [] when there's nothing to show. Independent of any live agent
     (logged-in gate, then a bounded portal fetch); shared by CLI ``_show_usage`` and the TUI ``session.usage`` RPC.
     Fail-open: any hiccup or timeout → []. ZEUS_DEV_CREDITS_FIXTURE renders from the fixture instead of the portal.
     ``credits_state`` is the last response's header gauge; when it is ahead of the portal, the bars use it."""
-    return nous_credits_view(markdown=markdown, timeout=timeout, credits_state=credits_state)[0]
+    return zeus_credits_view(markdown=markdown, timeout=timeout, credits_state=credits_state)[0]
 
 
-def nous_credits_view(*, markdown: bool = False, timeout: float = 10.0, credits_state: Any = None) -> tuple[list[str], bool]:
-    """``nous_credits_lines`` plus whether they are the usage-window layout (callers keep today's
+def zeus_credits_view(*, markdown: bool = False, timeout: float = 10.0, credits_state: Any = None) -> tuple[list[str], bool]:
+    """``zeus_credits_lines`` plus whether they are the usage-window layout (callers keep today's
     presentation for everyone else). Fail-open → ``([], False)``."""
     try:
         from agent.credits_tracker import dev_fixture_credits_state
@@ -420,11 +420,11 @@ def nous_credits_view(*, markdown: bool = False, timeout: float = 10.0, credits_
     if fixture is not None:
         snapshot = _snapshot_from_credits_state(fixture)
         return render_account_usage_lines(snapshot, markdown=markdown), bool(snapshot and snapshot.usage_window)
-    if not _nous_logged_in():
+    if not _zeus_logged_in():
         return [], False
     try:
         snapshot = apply_header_gauge(
-            build_nous_credits_snapshot(_fetch_portal_account(timeout)), credits_state,
+            build_zeus_credits_snapshot(_fetch_portal_account(timeout)), credits_state,
         )
         return render_account_usage_lines(snapshot, markdown=markdown), bool(snapshot and snapshot.usage_window)
     except Exception:
@@ -433,11 +433,11 @@ def nous_credits_view(*, markdown: bool = False, timeout: float = 10.0, credits_
         return [], False
 
 
-def nous_credits_usage_fields(agent: Any = None) -> dict[str, Any]:
-    """The ``session.usage`` fields for the Nous credits block: ``credits_lines`` (when there are any) and
+def zeus_credits_usage_fields(agent: Any = None) -> dict[str, Any]:
+    """The ``session.usage`` fields for the Zeus credits block: ``credits_lines`` (when there are any) and
     ``credits_usage_window`` for the usage-window layout. Reads *agent*'s live credits headers. Never raises."""
     try:
-        lines, is_window = nous_credits_view(credits_state=getattr(agent, "_credits_state", None) if agent else None)
+        lines, is_window = zeus_credits_view(credits_state=getattr(agent, "_credits_state", None) if agent else None)
     except Exception:
         logger.debug("credits ▸ /usage fields unavailable", exc_info=True)
         return {}
@@ -462,7 +462,7 @@ def _snapshot_from_credits_state(state) -> Optional[AccountUsageSnapshot]:
                 details.append(f"Top-up credits: ${state.purchased_usd}")
             if getattr(state, "paid_access", True) is False and not window_lines:
                 details.append(_DEPLETED_LINE)
-            return _nous_snapshot(windows, details, ["(dev fixture — ZEUS_DEV_CREDITS_FIXTURE)"], source="dev-fixture",
+            return _zeus_snapshot(windows, details, ["(dev fixture — ZEUS_DEV_CREDITS_FIXTURE)"], source="dev-fixture",
                                   usage_window=True)
         uf = getattr(state, "used_fraction", None)
         sub_usd = getattr(state, "subscription_usd", None)
@@ -478,7 +478,7 @@ def _snapshot_from_credits_state(state) -> Optional[AccountUsageSnapshot]:
                 details.append(f"{label}: ${value}")
         if getattr(state, "paid_access", True) is False:
             details.append(_DEPLETED_LINE)
-        return _nous_snapshot(windows, details, ["(dev fixture — ZEUS_DEV_CREDITS_FIXTURE)"], source="dev-fixture")
+        return _zeus_snapshot(windows, details, ["(dev fixture — ZEUS_DEV_CREDITS_FIXTURE)"], source="dev-fixture")
     except (AttributeError, TypeError):
         return None
 
@@ -500,7 +500,7 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
     match; the balance block drops the trailing top-up/hint lines (/topup has its own affordance).
     Fail-open → ``CreditsView(logged_in=False)``."""
     not_logged_in = CreditsView(logged_in=False)
-    if not _nous_logged_in():
+    if not _zeus_logged_in():
         return not_logged_in
     try:
         account = _fetch_portal_account(timeout)
@@ -509,10 +509,10 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
         return not_logged_in
     if account is None or not getattr(account, "logged_in", False):
         return not_logged_in
-    from zeus_cli.nous_account import nous_portal_topup_url
+    from zeus_cli.zeus_account import zeus_portal_topup_url
     balance_lines = [
         line
-        for line in render_account_usage_lines(build_nous_credits_snapshot(account), markdown=markdown)
+        for line in render_account_usage_lines(build_zeus_credits_snapshot(account), markdown=markdown)
         if not line.lstrip().startswith(("Top up:", "Top up via", "(or run"))
     ]
     who = [str(v) for v in (getattr(account, "email", None),) if v]
@@ -521,7 +521,7 @@ def build_credits_view(*, markdown: bool = False, timeout: float = 10.0) -> Cred
         who.append(f"org {org_name}")
     return CreditsView(
         logged_in=True, balance_lines=tuple(balance_lines),
-        identity_line=("Topping up as " + " / ".join(who)) if who else None, topup_url=nous_portal_topup_url(account),
+        identity_line=("Topping up as " + " / ".join(who)) if who else None, topup_url=zeus_portal_topup_url(account),
         depleted=getattr(account, "paid_service_access", None) is False,
     )
 

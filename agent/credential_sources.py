@@ -173,7 +173,7 @@ def _remove_zeus_pkce(provider: str, removed) -> RemovalResult:
 
 
 def _remove_auth_store_oauth(provider: str, removed) -> RemovalResult:
-    """Clear auth.json ``providers.<provider>`` (nous, minimax-oauth, xai-oauth, openai-codex).
+    """Clear auth.json ``providers.<provider>`` (zeus, minimax-oauth, xai-oauth, openai-codex).
 
     Suppression by the dispatcher is still required — otherwise
     ``_seed_from_singletons`` re-seeds from any path that rewrites the block.
@@ -250,9 +250,9 @@ _REGISTRY: list[RemovalStep] = [
         description="~/.zeus/.anthropic_oauth.json",
     ),
     RemovalStep(
-        provider="nous", source_id="device_code",
+        provider="zeus", source_id="device_code",
         remove_fn=_remove_auth_store_oauth,
-        description="auth.json providers.nous",
+        description="auth.json providers.zeus",
     ),
     RemovalStep(
         provider="openai-codex", source_id="device_code",

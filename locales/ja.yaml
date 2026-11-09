@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "不明な /usage サブコマンド: `{args}`。`/usage` または `/usage reset [--force]` をお試しください。"
     reset_wrong_provider: "バンクされた使用制限リセットは openai-codex プロバイダーでのみ利用できます。まず `/model` で切り替えてください。"
   credits:
-    not_logged_in: "Nous Portal にログインしていません。ログインすると残高の確認とチャージができます。"
+    not_logged_in: "Zeus Portal にログインしていません。ログインすると残高の確認とチャージができます。"
   verbose:
     not_enabled: "`/verbose` コマンドはメッセージングプラットフォームで有効になっていません。\n\n`config.yaml` で有効にしてください:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ ツール進捗: **OFF** — ツールの動作は表示されません。"
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 設定を読み込めませんでした: {error}"
   topup:
-    header: "💳 **Nous 残高**"
+    header: "💳 **Zeus 残高**"
     portal_link: "請求はポータルで管理してください: {url}"
     hint: "チャージと請求の管理はブラウザで行ってください — 完了後、ここの残高が更新されます。"
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "トークン使用量とレート制限を表示。`reset` で蓄えた Codex の制限リセットを適用"
   subscription:
-    description: "Nous プランを確認し、ブラウザで変更"
+    description: "Zeus プランを確認し、ブラウザで変更"
   login:
-    description: "Nous アカウントでサインイン（コネクターは維持）"
+    description: "Zeus アカウントでサインイン（コネクターは維持）"
   topup:
-    description: "Nous の残高を表示し、ポータルで請求を管理"
+    description: "Zeus の残高を表示し、ポータルで請求を管理"
   platforms:
     description: "ゲートウェイ/メッセージングプラットフォームの状態を表示"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "請求情報を読み込めませんでした"
-    not_logged_in: "Nous Portal にログインしていません。"
+    not_logged_in: "Zeus Portal にログインしていません。"
     run_portal_then: "`zeus portal` を実行してログインし、その後 {cmd} を実行してください。"
     org_line: "組織: {org}"
     org_line_role: "組織: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  プロバイダーリゾルバーが空のベース URL を返しました。プロバイダー設定を確認するか、次を実行してください: zeus setup"
     switching_to_fallback: "⚠️  {reason} — フォールバックに切り替えます: {provider} / {model}"
     first_run_no_provider: "☤ 推論プロバイダーがまだ設定されていません — 今から設定しましょう。"
-    first_run_pick_provider: "プロバイダー（Nous Portal の OAuth が最速で、API キー不要です）とモデルを選択します。"
+    first_run_pick_provider: "プロバイダー（Zeus Portal の OAuth が最速で、API キー不要です）とモデルを選択します。"
     first_run_prompt: "今すぐプロバイダーを設定しますか？ [Y/n]:"
     first_run_skipped: "スキップしました。'zeus model' または 'zeus setup' はいつでも実行できます。"
     first_run_cancelled: "セットアップをキャンセルしました。'zeus model' はいつでも実行できます。"
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ 残っている /steer を次のターンとして送ります: '{preview}'"
     reasoning_label: "推論"
     reasoning_more_lines: "... （他 {count} 行 — /reasoning full で全文表示）"
-    billing_cta_nous: "[bold]/topup[/] でクレジットを追加するか、[bold]/subscription[/] でプランを変更してください。"
+    billing_cta_zeus: "[bold]/topup[/] でクレジットを追加するか、[bold]/subscription[/] でプランを変更してください。"
     billing_cta_provider: "{provider} でクレジットを追加してください"
     your_provider: "ご利用のプロバイダー"
     billing_cta_switch: "または [bold]/model <model> --provider <provider>[/] でプロバイダーを切り替えてください。"
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "LM Studio の対処法: モデル設定でコンテキスト長を設定 → モデルを再読み込み"
     fix_local_server: "対処法: サーバーを少なくとも {tokens_k}K コンテキストで起動する（llama.cpp: -c {tokens}）か、config.yaml の model.ollama_num_ctx を実際に提供しているウィンドウ長に設定してください"
     fix_config: "対処法: config.yaml で model.context_length を設定するか、サーバーのコンテキスト設定を増やしてください"
-    zeus_models_not_agentic: "⚠  Nous Research の Hermes 3 および 4 モデルはエージェント向けではなく、Zeus Agents での使用を想定していません。"
+    zeus_models_not_agentic: "⚠  Zeus Agents の Hermes 3 および 4 モデルはエージェント向けではなく、Zeus Agents での使用を想定していません。"
     zeus_models_lack_tools: "これらのモデルにはエージェントワークフローに必要なツール呼び出し機能がありません。エージェント対応モデル（Claude、GPT、Gemini、DeepSeek など）の使用を検討してください。"
     zeus_models_switch_hint: "切り替え方法: /model sonnet  または  /model gpt5"
     project_skills_loaded: "◆ このリポジトリからプロジェクトスキル {count} 件を読み込みました"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Camofox（検出回避 Firefox）はプラグインになりました: zeus plugins install camofox。"
   t182: "browser_exec は複数のブラウザ操作を 1 回の Python 呼び出しで実行します — 移動・抽出・クリックをまとめて。"
   t183: "browser.dialog_policy はページのネイティブダイアログの扱いを決めます: must_respond（エージェントが browser_dialog で応答）、auto_dismiss、auto_accept。"
-  t184: "zeus mcp は Nous 承認済み MCP の対話型ピッカーを開き、キー 1 つでインストールできます。"
-  t185: "zeus mcp catalog はリポジトリに同梱されている Nous 承認済みの MCP サーバーを一覧表示します。"
+  t184: "zeus mcp は Zeus 承認済み MCP の対話型ピッカーを開き、キー 1 つでインストールできます。"
+  t185: "zeus mcp catalog はリポジトリに同梱されている Zeus 承認済みの MCP サーバーを一覧表示します。"
   t186: "zeus mcp install <name> はカタログの項目をインストールし、認証情報の入力を求め、有効にするツールを選択させてくれます。"
   t187: "MCP サーバーは config.yaml で設定します。stdio と HTTP の両方のトランスポートに対応しています。"
   t188: "サーバーごとのツールフィルタリング: tools.include で特定のツールをホワイトリストに、tools.exclude でブラックリストに登録します。"
@@ -3758,7 +3758,7 @@ tips:
   t209: "カスタムプロバイダー: config.yaml の custom_providers に名前付きエンドポイントを保存できます。"
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT は、履歴に一切保存されないシステムプロンプトを注入します。"
   t211: "credential_pool_strategies は fill_first、round_robin、least_used、random のローテーションに対応しています。"
-  t212: "zeus auth add nous または zeus auth add openai-codex で、OAuth ベースのプロバイダーを設定できます。"
+  t212: "zeus auth add zeus または zeus auth add openai-codex で、OAuth ベースのプロバイダーを設定できます。"
   t213: "API サーバーは Chat Completions と、サーバー側で状態を保持する Responses API の両方に対応しています。"
   t214: "設定で tool_preview_length: 0 にすると、スピナーのアクティビティ表示にファイルパスが省略なしで表示されます。"
   t215: "zeus status --deep は、すべてのコンポーネントに対してより詳しい診断チェックを実行します。"
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback は実行前のスナップショットからスキルを復元します。バックアップは skills/.curator_backups/ にあります。"
   t306: "zeus auth reset <provider> [target] は、認証情報プール全体、またはインデックス・id・ラベルで指定した 1 件のクールダウンと枯渇フラグをクリアします。"
   t307: "credential_pool_strategies.<provider>: round_robin は、デフォルトの fill_first ではなくキーを均等に巡回させます。"
-  t308: "ツールごとに use_gateway: true を設定すると、web、image、tts、browser を Nous サブスクリプション経由で使えます。追加のキーは不要です。"
+  t308: "ツールごとに use_gateway: true を設定すると、web、image、tts、browser を Zeus サブスクリプション経由で使えます。追加のキーは不要です。"
   t309: "provider_routing.data_collection: deny は、OpenRouter 上でデータを保存するプロバイダーを除外します。"
   t310: "provider_routing.require_parameters: true は、リクエストのすべてのパラメーターに対応するプロバイダーだけにルーティングします。"
   t311: "ZEUS_TUI_RESUME=1 は起動時に最新の TUI セッションへ自動で再接続します。SSH が切れた後に便利です。"
@@ -3937,7 +3937,7 @@ tips:
     p10: "リマインダーを設定するか、定期タスクをスケジュールして"
     p11: "/ でコマンドを参照、Ctrl+P でパレットを開けます"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "無料"
   level_top_tier: "大"

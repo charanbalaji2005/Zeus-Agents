@@ -23,7 +23,7 @@ from typing import Any, Iterable, Optional
 
 logger = logging.getLogger(__name__)
 
-PROVIDER = "nous"
+PROVIDER = "zeus"
 # Leave room for the reply: a suggestion must fit the conversation with this many tokens to spare.
 _CONTEXT_HEADROOM_TOKENS = 8_000
 _MAX_SUGGESTIONS = 2
@@ -83,7 +83,7 @@ class LimitHit:
 # ── catalog reads ────────────────────────────────────────────────────────────────────────────────
 
 def cached_pricing(base_url: str = "") -> dict:
-    """The calling profile's own cached Nous catalog (never fetches); ``base_url`` is not needed for it. Only
+    """The calling profile's own cached Zeus catalog (never fetches); ``base_url`` is not needed for it. Only
     the profile-keyed read: a process serving several profiles holds their catalogs side by side, and a
     usage level (Large / Free) is per plan, so another profile's catalog must never answer."""
     try:
@@ -171,8 +171,8 @@ def _plan_usage() -> Any:
     # Plan shape only (featured models), so the last account snapshot at any age answers: the 60s
     # cache has long lapsed by the time a window runs out mid-session.
     try:
-        from zeus_cli.model_picker_usage import nous_picker_usage
-        return nous_picker_usage(any_age=True)
+        from zeus_cli.model_picker_usage import zeus_picker_usage
+        return zeus_picker_usage(any_age=True)
     except Exception:
         logger.debug("Plan usage unavailable", exc_info=True)
         return None
@@ -183,10 +183,10 @@ def _portal_free_models() -> list[str]:
     else its last copy on disk). Never fetches: this runs mid-turn."""
     try:
         from zeus_cli import models as m
-        base = m._resolve_nous_portal_url()
-        payload = (m._nous_recommended_cache.get((m._pricing_profile_key(), base)) or (None,))[0]
+        base = m._resolve_zeus_portal_url()
+        payload = (m._zeus_recommended_cache.get((m._pricing_profile_key(), base)) or (None,))[0]
         if not payload:
-            disk = m._read_nous_recommended_disk(base)
+            disk = m._read_zeus_recommended_disk(base)
             payload = disk[0] if disk else None
         entries = payload.get("freeRecommendedModels") if isinstance(payload, dict) else None
         return [n for e in (entries or []) if (n := m._extract_model_name(e))]

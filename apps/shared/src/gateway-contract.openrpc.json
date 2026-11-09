@@ -152,7 +152,7 @@
     },
     {
       "name": "billing.state",
-      "summary": "Read-only billing view (no scope); the Nous free tier is answered locally without a portal call.",
+      "summary": "Read-only billing view (no scope); the Zeus free tier is answered locally without a portal call.",
       "params": [
         {
           "name": "params",
@@ -763,20 +763,20 @@
       }
     },
     {
-      "name": "diagnostics.share_nous",
-      "summary": "Upload a force-redacted debug bundle to Nous-internal diagnostics storage.",
+      "name": "diagnostics.share_zeus",
+      "summary": "Upload a force-redacted debug bundle to Zeus-internal diagnostics storage.",
       "params": [
         {
           "name": "params",
           "schema": {
-            "$ref": "#/components/schemas/DiagnosticsShareNousParams"
+            "$ref": "#/components/schemas/DiagnosticsShareZeusParams"
           }
         }
       ],
       "result": {
         "name": "result",
         "schema": {
-          "$ref": "#/components/schemas/DiagnosticsShareNousResult"
+          "$ref": "#/components/schemas/DiagnosticsShareZeusResult"
         }
       }
     },
@@ -3662,7 +3662,7 @@
     },
     {
       "name": "session.usage",
-      "summary": "Token / context / cost counters for the session (+ Nous credit lines when available).",
+      "summary": "Token / context / cost counters for the session (+ Zeus credit lines when available).",
       "params": [
         {
           "name": "params",
@@ -5959,8 +5959,8 @@
             ],
             "title": "Billing Url"
           },
-          "is_nous": {
-            "title": "Is Nous",
+          "is_zeus": {
+            "title": "Is Zeus",
             "type": "boolean"
           },
           "message": {
@@ -5985,7 +5985,7 @@
           "provider_label",
           "model",
           "billing_url",
-          "is_nous",
+          "is_zeus",
           "message"
         ],
         "title": "BillingBlock",
@@ -16489,7 +16489,7 @@
         "title": "DelegationStatusResult",
         "type": "object"
       },
-      "DiagnosticsShareNousParams": {
+      "DiagnosticsShareZeusParams": {
         "additionalProperties": false,
         "properties": {
           "error_context": {
@@ -16532,10 +16532,10 @@
             "title": "Log Lines"
           }
         },
-        "title": "DiagnosticsShareNousParams",
+        "title": "DiagnosticsShareZeusParams",
         "type": "object"
       },
-      "DiagnosticsShareNousResult": {
+      "DiagnosticsShareZeusResult": {
         "additionalProperties": false,
         "description": "Structured envelope: ``ok=False`` + ``error`` renders inline instead of failing the RPC.",
         "properties": {
@@ -16595,7 +16595,7 @@
         "required": [
           "ok"
         ],
-        "title": "DiagnosticsShareNousResult",
+        "title": "DiagnosticsShareZeusResult",
         "type": "object"
       },
       "DiscoveredRepo": {
@@ -24502,7 +24502,7 @@
       },
       "ModelPricing": {
         "additionalProperties": false,
-        "description": "``zeus_cli/inventory.py::_apply_pricing`` \u2014 formatted $/Mtok strings (``\"\"`` unknown,\n``\"free\"``); the sale fields are Nous Portal-only.",
+        "description": "``zeus_cli/inventory.py::_apply_pricing`` \u2014 formatted $/Mtok strings (``\"\"`` unknown,\n``\"free\"``); the sale fields are Zeus Portal-only.",
         "properties": {
           "input": {
             "title": "Input",
@@ -45508,7 +45508,7 @@
             "type": "string"
           },
           "provider": {
-            "default": "nous",
+            "default": "zeus",
             "title": "Provider",
             "type": "string"
           }
@@ -47798,7 +47798,7 @@
           "REISSUE_REFUSED",
           "UNKNOWN_OPERATION",
           "INVALID_ANSWER",
-          "NEEDS_NOUS_AUTH",
+          "NEEDS_ZEUS_AUTH",
           "CONNECTOR_NOT_FOUND",
           "TOOLS_UNAVAILABLE",
           "CONNECTORS_UNAVAILABLE",

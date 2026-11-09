@@ -498,19 +498,19 @@ def _prompt_cache_scope_for_agent(agent) -> str | None:
         return None
 
 
-def _merge_nous_portal_messages_extra_body(agent, anthropic_kwargs: dict, api_messages: list) -> dict:
-    """The Nous profile body on the Messages wire, which the profile hook never reaches; never
+def _merge_zeus_portal_messages_extra_body(agent, anthropic_kwargs: dict, api_messages: list) -> dict:
+    """The Zeus profile body on the Messages wire, which the profile hook never reaches; never
     ``provider_preferences`` (OpenAI-wire routing the Portal 400s on)."""
-    if getattr(agent, "provider", None) not in {"nous", "nous-portal", "nousresearch"}:
+    if getattr(agent, "provider", None) not in {"zeus", "zeus-portal", "zeusagents"}:
         return anthropic_kwargs
     try:
         from providers import get_provider_profile
-        nous_profile = get_provider_profile("nous")
-        if nous_profile is not None:
-            anthropic_kwargs.setdefault("extra_body", {}).update(nous_profile.build_extra_body(
+        zeus_portal_profile = get_provider_profile("zeus")
+        if zeus_portal_profile is not None:
+            anthropic_kwargs.setdefault("extra_body", {}).update(zeus_portal_profile.build_extra_body(
                 session_id=getattr(agent, "session_id", None), data_use=data_use_requirement(api_messages)))
     except Exception as exc:
-        logger.debug("Nous Portal extra_body merge failed: %s", exc)
+        logger.debug("Zeus Portal extra_body merge failed: %s", exc)
     return anthropic_kwargs
 
 
@@ -1389,7 +1389,7 @@ def _build_anthropic_kwargs(agent, api_messages, tools_for_api, reasoning_config
         drop_context_1m_beta=bool(getattr(agent, "_oauth_1m_beta_disabled", False)))
     # Portal reads ``tags`` / ``session_id`` on its Messages route too, but the profile hook
     # is only consulted by the OpenAI-wire transport — merge here to keep sticky routing.
-    return _merge_nous_portal_messages_extra_body(agent, anthropic_kwargs, api_messages)
+    return _merge_zeus_portal_messages_extra_body(agent, anthropic_kwargs, api_messages)
 
 
 def _build_bedrock_kwargs(agent, api_messages, tools_for_api, reasoning_config):
@@ -1485,7 +1485,7 @@ def _build_chat_completions_kwargs(agent, api_messages, tools_for_api, reasoning
         **_common,
         model_lower=(agent.model or "").lower(),
         is_openrouter=_is_or,
-        is_nous=base_url_host_matches(_host, "nousresearch.com"),
+        is_zeus=base_url_host_matches(_host, "nousresearch.com"),
         is_qwen_portal=_is_qwen,
         is_nvidia_nim=base_url_host_matches(_host, "integrate.api.nvidia.com"),
         is_kimi=any(base_url_host_matches(agent.base_url, h) for h in ("api.kimi.com", "moonshot.ai", "moonshot.cn")),
@@ -1766,15 +1766,15 @@ def _fallback_entry_key(fb: dict) -> tuple[str, str, str]:
 
 def _fallback_entry_unavailable_without_network(agent, fb: dict) -> Optional[str]:
     """Return a skip reason for fallback entries known to be unusable locally."""
-    if (fb.get("provider") or "").strip().lower() != "nous":
+    if (fb.get("provider") or "").strip().lower() != "zeus":
         return None
     try:
         from zeus_cli.auth import get_provider_auth_state
-        state = get_provider_auth_state("nous") or {}
+        state = get_provider_auth_state("zeus") or {}
     except Exception as exc:
-        return f"nous_auth_unreadable:{type(exc).__name__}"
+        return f"zeus_auth_unreadable:{type(exc).__name__}"
     has_token = any(isinstance(t, str) and t.strip() for t in (state.get("access_token"), state.get("refresh_token")))
-    return None if has_token else "nous_token_missing"
+    return None if has_token else "zeus_token_missing"
 
 
 _FALLBACK_REASON_LABELS = {
@@ -1854,10 +1854,10 @@ def _fallback_api_mode_resolved(agent, fb_provider: str, fb_model: str, fb_base_
         # (minimax, qwen) and chat_completions models behind one provider; the primary /model path
         # already re-derives per model — the fallback wire must agree (#102148).
         return opencode_model_api_mode(opencode_family, fb_model)
-    if fb_provider in {"nous", "nous-portal", "nousresearch"}:
+    if fb_provider in {"zeus", "zeus-portal", "zeusagents"}:
         # Portal is dual-wire: anthropic/* must land on /v1/messages (the swap rebuilds the native client).
-        from zeus_cli.providers import nous_api_mode
-        return nous_api_mode(fb_model)
+        from zeus_cli.providers import zeus_api_mode
+        return zeus_api_mode(fb_model)
     if _is_anthropic_wire_url(fb_base_url):
         # Named custom providers (cron-anthropic) resolve base_url from config; the hint pass never saw it.
         return "anthropic_messages"
@@ -2105,7 +2105,7 @@ def try_activate_fallback(agent, reason: FailoverReason | None = None, reset_at=
                 model=agent.model, base_url=agent.base_url, provider=fb_provider, is_codex_backend=fb_provider == "openai-codex")
             return True
         except Exception as e:
-            if fb_provider == "nous":
+            if fb_provider == "zeus":
                 unavailable.add(fb_key)
             logger.error("Failed to activate fallback %s: %s", fb_model, e)
             continue  # try next in chain
@@ -2243,7 +2243,7 @@ def _anthropic_summary_attempt(agent, api_messages: list, api_request_id: str):
             model=agent.model, messages=api_messages, tools=None, max_tokens=agent.max_tokens,
             reasoning_config=agent.reasoning_config, is_oauth=agent._is_anthropic_oauth,
             preserve_dots=agent._anthropic_preserve_dots(), base_url=getattr(agent, "_anthropic_base_url", None))
-        ant_kw = _merge_nous_portal_messages_extra_body(agent, ant_kw, api_messages)
+        ant_kw = _merge_zeus_portal_messages_extra_body(agent, ant_kw, api_messages)
         response = _managed_summary_call(
             agent, api_request_id, ant_kw, agent._interruptible_api_call, retry_count=retry_count)
         return _summary_text(agent, response, strip_tool_prefix=agent._is_anthropic_oauth)
@@ -2930,7 +2930,7 @@ class _StreamingCall(StreamingWaitMonitor):
             body = _provider_error_body(
                 {"code": _err_type or "provider_in_stream_error", "message": str(_err_msg or chunk)}, _status)
             raise ProviderStreamError(status_code=_status, body=body, raw_text=f"{_err_type}: {_err_msg}")
-        # Nous Portal usage frames (choices=[] + lastOne=true, no [DONE]) are a
+        # Zeus Portal usage frames (choices=[] + lastOne=true, no [DONE]) are a
         # clean terminal, not a drop; relabelled upstreams send 1 / "true".
         # See #90848.
         last_one = getattr(chunk, "lastOne", None)
@@ -2958,7 +2958,7 @@ class _StreamingCall(StreamingWaitMonitor):
         response = self._attempt_stream_response = getattr(raw_stream, "response", None)
         self.agent._capture_rate_limits(response)
         self.agent._capture_credits(response)
-        self.agent._capture_nous_model_switch(response)
+        self.agent._capture_zeus_model_switch(response)
         self.agent._stream_diag_capture_response(self.clients.diag, response)
         self.agent._check_openrouter_cache_status(response)
         self._writer_token = claim_stream_writer(self.agent)

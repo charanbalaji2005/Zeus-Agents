@@ -57,13 +57,13 @@ concurrency:
 jobs:
   generate-patch:
     name: Generate eslint --fix patch
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       has-fixes: ${{ steps.produce-patch.outputs.has-fixes }}
     # No permissions override → inherits workflow-level contents: read.
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Set up locked Node and npm
         id: node
@@ -134,14 +134,14 @@ jobs:
     # Skip entirely when generate-patch found no fixes — saves a runner,
     # avoids a redundant checkout/download, and keeps the job graph honest.
     if: needs.generate-patch.outputs.has-fixes == 'true'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: trusted-automation
     permissions:
       contents: write # needed to push to bot/js-autofix
       pull-requests: write # needed for PR creation + auto-merge
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
 
       - name: Get GitHub App token
         id: app-token

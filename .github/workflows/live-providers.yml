@@ -8,7 +8,7 @@ name: Live provider canaries
 #
 # Each case skips cleanly when its secret is absent, so the job is safe to run
 # with any subset configured. Use dedicated, spend-capped keys:
-#   LIVE_OPENROUTER_API_KEY, LIVE_ANTHROPIC_API_KEY, LIVE_NOUS_API_KEY,
+#   LIVE_OPENROUTER_API_KEY, LIVE_ANTHROPIC_API_KEY, LIVE_ZEUS_API_KEY,
 #   LIVE_OPENAI_API_KEY, LIVE_GEMINI_API_KEY, LIVE_XAI_API_KEY
 
 on:
@@ -35,7 +35,7 @@ jobs:
     name: Live provider canaries
     # Forks and PRs never see these secrets; only run where they exist.
     if: github.repository == 'charanbalaji2005/Zeus-Agents'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     # Only booleans at job level: the key VALUES are scoped to the one step that
     # needs them ('Run live canaries'), so `uv sync` build backends and the
@@ -43,7 +43,7 @@ jobs:
     env:
       HAS_OPENROUTER: ${{ secrets.LIVE_OPENROUTER_API_KEY != '' }}
       HAS_ANTHROPIC: ${{ secrets.LIVE_ANTHROPIC_API_KEY != '' }}
-      HAS_NOUS: ${{ secrets.LIVE_NOUS_API_KEY != '' }}
+      HAS_ZEUS: ${{ secrets.LIVE_ZEUS_API_KEY != '' }}
       HAS_OPENAI: ${{ secrets.LIVE_OPENAI_API_KEY != '' }}
       HAS_GEMINI: ${{ secrets.LIVE_GEMINI_API_KEY != '' }}
       HAS_XAI: ${{ secrets.LIVE_XAI_API_KEY != '' }}
@@ -53,7 +53,7 @@ jobs:
         id: gate
         run: |
           n=0
-          for v in HAS_OPENROUTER HAS_ANTHROPIC HAS_NOUS HAS_OPENAI HAS_GEMINI HAS_XAI; do
+          for v in HAS_OPENROUTER HAS_ANTHROPIC HAS_ZEUS HAS_OPENAI HAS_GEMINI HAS_XAI; do
             if [ "${!v}" = "true" ]; then n=$((n+1)); echo "configured: ${v#HAS_}"; fi
           done
           echo "configured=$n" >> "$GITHUB_OUTPUT"
@@ -63,7 +63,7 @@ jobs:
 
       - name: Checkout code
         if: steps.gate.outputs.configured != '0'
-        uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+        uses: actions/checkout@v4
 
       - name: Install uv
         if: steps.gate.outputs.configured != '0'
@@ -96,7 +96,7 @@ jobs:
           LIVE_FILTER: ${{ inputs.filter }}
           OPENROUTER_API_KEY: ${{ secrets.LIVE_OPENROUTER_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
-          NOUS_API_KEY: ${{ secrets.LIVE_NOUS_API_KEY }}
+          ZEUS_PORTAL_API_KEY: ${{ secrets.LIVE_ZEUS_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
           XAI_API_KEY: ${{ secrets.LIVE_XAI_API_KEY }}

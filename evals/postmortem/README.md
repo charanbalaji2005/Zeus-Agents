@@ -103,15 +103,15 @@ response id, upstream provider and prefix shas are logged, and consecutive pairs
 
 ```bash
 # ~$50 per 20x6 arm on Fable 5.1 at the 5m tier
-python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider nous --workers 20 --calls 6 --out /tmp/p.jsonl
-python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider nous --wire native --workers 20 --calls 6 --out /tmp/p.jsonl
+python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider zeus --workers 20 --calls 6 --out /tmp/p.jsonl
+python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider zeus --wire native --workers 20 --calls 6 --out /tmp/p.jsonl
 python -m evals.postmortem.live_ab.cache_concurrency_probe --repo . --provider openrouter --pin anthropic --workers 20 --calls 6 --out /tmp/p.jsonl
 ```
 
-Reference results (2026-09-05/06): Nous native wire 13.9% stuck (14–20% over 4 runs, unchanged by the
-portal's provider pin or a 2 s settle); Nous chat wire 0/320; OpenRouter pinned 0/161; OpenRouter
+Reference results (2026-09-05/06): Zeus native wire 13.9% stuck (14–20% over 4 runs, unchanged by the
+portal's provider pin or a 2 s settle); Zeus chat wire 0/320; OpenRouter pinned 0/161; OpenRouter
 unpinned 9.8% collapse. Use this to clear a new upstream before flipping
-`agent/nous_wire.py::GMI_NATIVE_WIRE_CLEARED`. `--ttl 1h` reproduces the 2× write price
+`agent/zeus_wire.py::GMI_NATIVE_WIRE_CLEARED`. `--ttl 1h` reproduces the 2× write price
 (#104168). The `.summary.json` carries the bad pairs with both response ids for the provider's logs.
 
 ## What is NOT here, and why

@@ -672,7 +672,7 @@ _REASONING_CARRIER_ROUTES: tuple = (
     # Fireworks' ChatMessage schema is additionalProperties:false with reasoning_content only.
     (frozenset({RC}), frozenset({"fireworks"}), ("fireworks.ai",)),
     # OpenRouter-format gateways read the unified array, the string and the alias.
-    (_ALL_CARRIERS, frozenset({"openrouter", "kilocode", "ai-gateway", "nous"}),
+    (_ALL_CARRIERS, frozenset({"openrouter", "kilocode", "ai-gateway", "zeus"}),
      ("openrouter.ai", "kilo.ai", "ai-gateway.vercel.sh", "nousresearch.com")),
     # Vendors that document reasoning_details replay next to reasoning_content.
     (frozenset({RC, RD}), frozenset({"novita", "tencent-tokenhub", "minimax", "minimax-cn"}),

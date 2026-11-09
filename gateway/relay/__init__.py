@@ -64,7 +64,7 @@ def _launch_profile_scope():
     """The launch profile's runtime scope once the gateway multiplexes, ``nullcontext`` before.
 
     Self-provision runs at startup, before any turn binds a profile, and under multiplexing the
-    Nous Portal and inference routing overrides only resolve inside a profile scope. The scope is
+    Zeus Portal and inference routing overrides only resolve inside a profile scope. The scope is
     built from the profile's files like a turn's (``gateway.run._profile_runtime_scope``), not via
     ``launch_profile_scope_if_multiplexed``, whose first entry freezes the launch env snapshot
     before startup has written ``GATEWAY_RELAY_*`` into ``os.environ``.
@@ -429,7 +429,7 @@ def _resolve_relay_identity_token() -> str:
           ``$DOMINO_API_PROXY/access-token``): a plain GET whose body IS the token,
           raw JWT or a JSON envelope with ``access_token``. Possession of the
           (typically loopback) endpoint is the credential.
-      2.  Nous Portal (default): ``resolve_nous_access_token()``.
+      2.  Zeus Portal (default): ``resolve_zeus_access_token()``.
 
     Raises on failure; callers decide whether that's fatal (enroll CLI) or a graceful
     boot no-op (self-provision).
@@ -445,12 +445,12 @@ def _resolve_relay_identity_token() -> str:
     token_url, client_id, client_secret, scope = (env[k] for k in _IDP_KEYS)
 
     if not token_url:
-        from zeus_cli.auth import resolve_nous_access_token
+        from zeus_cli.auth import resolve_zeus_access_token
 
-        # Only the Nous refresh is scoped: the gateway config read above and the IdP modes below
+        # Only the Zeus refresh is scoped: the gateway config read above and the IdP modes below
         # keep resolving ``${VAR}`` refs from the launch env, as they always have.
         with _launch_profile_scope():
-            return resolve_nous_access_token()
+            return resolve_zeus_access_token()
 
     if not client_id and not client_secret:
         # Mode 1b — plain GET; the body is the token, raw or JSON-enveloped.

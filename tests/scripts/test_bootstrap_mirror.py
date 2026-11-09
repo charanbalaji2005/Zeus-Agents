@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import socket
+import struct
 import subprocess
 import tarfile
 import threading
@@ -20,17 +22,33 @@ def server():
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             self.server.requests.append(self.path)
+            if self.server.resets.get(self.path, 0) > 0:
+                self.server.resets[self.path] -= 1
+                self._reset_mid_body()
+                return
             body = self.server.files.get(self.path)
             self.send_response(200 if body is not None else 404)
             self.send_header("Content-Length", str(len(body or b"")))
             self.end_headers()
             self.wfile.write(body or b"")
 
+        def _reset_mid_body(self):
+            # Promise a large body, send a sliver, then abort with RST: the client sees the
+            # connection forcibly closed while reading, as on a dropped network.
+            self.send_response(200)
+            self.send_header("Content-Length", "1048576")
+            self.end_headers()
+            self.wfile.write(b"x" * 1024)
+            self.wfile.flush()
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            self.connection.close()
+            self.close_connection = True
+
         def log_message(self, *_args):
             pass
 
     http = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
-    http.files, http.requests = {}, []
+    http.files, http.requests, http.resets = {}, [], {}
     thread = threading.Thread(target=http.serve_forever, daemon=True)
     thread.start()
     try:
@@ -74,6 +92,30 @@ def test_windows_download_uses_only_verified_candidates(tmp_path, server, mode):
         if mode == "both-missing":
             assert mirror in result.stdout + result.stderr
     assert server[0].requests == (["/primary", "/mirror"] if mode in ("missing", "both-missing") else ["/primary"])
+
+
+@pytest.mark.platforms("windows")
+@pytest.mark.parametrize("primary_resets, expected_requests", [
+    (1, ["/primary", "/primary"]),
+    (3, ["/primary", "/primary", "/primary", "/mirror"]),
+])
+def test_windows_download_survives_a_connection_reset_mid_transfer(tmp_path, server, primary_resets, expected_requests):
+    body = b"exact archive bytes"
+    primary, mirror, digest = fixture_bytes(server, "primary", body)
+    server[0].resets["/primary"] = primary_resets
+    destination = tmp_path / "out.zip"
+    script = tmp_path / "driver.ps1"
+    script.write_text(
+        f". '{ROOT / 'scripts/install.ps1'}' -ZeusHome '{tmp_path / 'home'}' -InstallDir '{tmp_path / 'repo'}'\n"
+        "$script:DownloadRetryDelaySeconds = 0\n"
+        f"Invoke-VerifiedDownload -Url '{primary}' -MirrorUrl '{mirror}' -Sha256 '{digest}' -OutFile '{destination}'\n",
+        encoding="utf-8",
+    )
+    result = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                            capture_output=True, text=True, timeout=60, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert destination.read_bytes() == body
+    assert server[0].requests == expected_requests
 
 
 @pytest.mark.platforms("windows")

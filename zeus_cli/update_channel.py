@@ -22,7 +22,7 @@ same path, and the channel opt-in must survive that.
   (it knows its own id — the user never types a sha).
 * Shown by ``zeus update --install-id`` and the desktop About page.
 * Source installs select an R2 channel name, or use an explicit branch override.
-  Unconfigured official checkouts track ``stable``; forks and mirrors keep ``main``.
+  Unconfigured official checkouts track ``OFFICIAL_SOURCE_CHANNEL``; forks and mirrors keep ``main``.
   Bundles derive their channel from their baked identity, never these records.
   ``external`` installs have no configurable channel; the steward owns updates.
 
@@ -47,6 +47,12 @@ logger = logging.getLogger(__name__)
 CHANNEL_MAIN = "main"
 CHANNEL_STABLE = "stable"
 CHANNEL_CANARY = "canary"
+
+# The channel an unconfigured checkout of the official repository tracks. Zeus Agents
+# publishes no GitHub releases yet, so stable has nothing to resolve and every `zeus update`
+# on it fails with HTTP 404; the installers default to main for the same reason. Set this to
+# CHANNEL_STABLE once releases are published.
+OFFICIAL_SOURCE_CHANNEL = CHANNEL_MAIN
 
 
 # A canary source identity: the exact stable version plus a full UTC build
@@ -140,8 +146,8 @@ def _package_channel(stamp: dict) -> bool:
 def default_channel(project_root: Optional[Path] = None) -> str:
     """The channel an unconfigured install tracks.
 
-    A source checkout of the official repository follows the latest published
-    stable release. Forks, mirrors and checkout-less trees keep following main.
+    A source checkout of the official repository follows ``OFFICIAL_SOURCE_CHANNEL``.
+    Forks, mirrors and checkout-less trees keep following main.
     ``electron-updater`` and ``app-installer`` bundles report their artifact
     channel: a canary artifact tracks canary, every other bundle
     tracks stable. The stamp's ``tag`` is the authority, the same fact
@@ -155,7 +161,7 @@ def default_channel(project_root: Optional[Path] = None) -> str:
     root = Path(project_root) if project_root is not None else install_root()
     stamp = _read_stamp(root)
     if not _package_channel(stamp):
-        return CHANNEL_STABLE if _tracks_official_origin(root) else CHANNEL_MAIN
+        return OFFICIAL_SOURCE_CHANNEL if _tracks_official_origin(root) else CHANNEL_MAIN
     if stamp.get("source") == "channel-build":
         request = stamp.get("channelBuild")
         if not isinstance(request, dict):

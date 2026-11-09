@@ -28,11 +28,11 @@ concurrency:
 jobs:
   lint-docker-and-shell:
     name: Lint Dockerfile (hadolint)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit }}
 

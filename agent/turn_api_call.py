@@ -1,5 +1,5 @@
-"""The provider call for the conversation turn's retry loop: ``nous_rate_limit_guard`` (skip
-the attempt while another session's Nous Portal rate limit is active), ``perform_api_call``
+"""The provider call for the conversation turn's retry loop: ``zeus_rate_limit_guard`` (skip
+the attempt while another session's Zeus Portal rate limit is active), ``perform_api_call``
 (streaming decision, MoA prepared-request handshake, LLM execution middleware wrapper, the
 redirect ``_model_request_active`` bracket and the response-vs-redirect crossing check) and
 ``handle_api_interrupt`` (``InterruptedError`` mid-call). Nothing here imports
@@ -218,7 +218,7 @@ def handle_api_interrupt(
 
 
 @dataclass
-class NousRateGuardVerdict:
+class ZeusRateGuardVerdict:
     """``action``: ``"fallthrough"`` (no active limit — make the call), ``"break"``
     (fallback armed on ``_retry``) or ``"return"`` (``result``: no fallback available)."""
 
@@ -229,21 +229,21 @@ class NousRateGuardVerdict:
     result: Optional[dict[str, Any]] = None
 
 
-def nous_rate_limit_guard(
+def zeus_rate_limit_guard(
     agent: Any, *, _retry: Any, api_messages: Any, messages: Any, conversation_history: Any,
     active_system_prompt: Any, retry_count: Any, compression_attempts: Any, api_call_count: Any,
-) -> NousRateGuardVerdict:
-    """Skip the call if another session recorded a Nous Portal rate limit: every attempt (incl.
+) -> ZeusRateGuardVerdict:
+    """Skip the call if another session recorded a Zeus Portal rate limit: every attempt (incl.
     SDK retries) counts against RPH. Never lets the guard itself break the agent loop."""
     from agent.conversation_loop import _arm_fallback_restart
 
-    def _verdict(action: str, result: Optional[dict[str, Any]] = None) -> NousRateGuardVerdict:
-        return NousRateGuardVerdict(
+    def _verdict(action: str, result: Optional[dict[str, Any]] = None) -> ZeusRateGuardVerdict:
+        return ZeusRateGuardVerdict(
             action=action, active_system_prompt=active_system_prompt, retry_count=retry_count,
             compression_attempts=compression_attempts, result=result,
         )
 
-    if agent.provider == "nous":
+    if agent.provider == "zeus":
         # A gateway ``x-nous-model-switch`` recorded on the previous response moves this session
         # (and the config default, when it still names the free tier's model) before the next call.
         try:
@@ -252,21 +252,21 @@ def nous_rate_limit_guard(
         except Exception:
             pass
         try:
-            from agent.nous_rate_guard import (
-                nous_rate_limit_remaining, format_remaining as _fmt_nous_remaining
+            from agent.zeus_rate_guard import (
+                zeus_rate_limit_remaining, format_remaining as _fmt_zeus_remaining
             )
             from zeus_cli import anon_auth
             _anonymous = anon_auth.is_anonymous_agent(agent)
-            _nous_remaining = nous_rate_limit_remaining(anonymous=_anonymous)
-            if _nous_remaining is not None and _nous_remaining > 0:
-                reset = _fmt_nous_remaining(_nous_remaining)
+            _zeus_remaining = zeus_rate_limit_remaining(anonymous=_anonymous)
+            if _zeus_remaining is not None and _zeus_remaining > 0:
+                reset = _fmt_zeus_remaining(_zeus_remaining)
                 if _anonymous:
-                    _nous_msg = anon_auth.FREE_TIER_RATE_LIMIT_CHAT.format(
-                        reset=anon_auth.friendly_wait(_nous_remaining))
+                    _zeus_msg = anon_auth.FREE_TIER_RATE_LIMIT_CHAT.format(
+                        reset=anon_auth.friendly_wait(_zeus_remaining))
                 else:
-                    _nous_msg = f"Your Nous account has hit its rate limit; it resets in {reset}."
-                agent._buffer_vprint(f"⏳ {_nous_msg} Trying fallback...")
-                agent._buffer_diagnostic_status(f"⏳ {_nous_msg}")
+                    _zeus_msg = f"Your Zeus account has hit its rate limit; it resets in {reset}."
+                agent._buffer_vprint(f"⏳ {_zeus_msg} Trying fallback...")
+                agent._buffer_diagnostic_status(f"⏳ {_zeus_msg}")
                 if agent._try_activate_fallback():
                     active_system_prompt = _arm_fallback_restart(
                         agent, api_messages, active_system_prompt, _retry)
@@ -279,16 +279,16 @@ def nous_rate_limit_guard(
                 # The free tier's sentence already says what to do (wait, or sign in); the
                 # fallback-provider advice is for an install that runs its own providers.
                 return _verdict("return", stamp_failure({
-                    "final_response": (f"⏳ {_nous_msg}" if _anonymous
-                                       else f"⏳ {_nous_msg}\n\n{site_copy('nous_rate_limit')}"),
+                    "final_response": (f"⏳ {_zeus_msg}" if _anonymous
+                                       else f"⏳ {_zeus_msg}\n\n{site_copy('zeus_rate_limit')}"),
                     "messages": messages,
                     "api_calls": api_call_count,
                     "completed": False,
                     "failed": True,
-                    "error": _nous_msg,
+                    "error": _zeus_msg,
                     # The free tier's card body and its sign-in door (agent/error_surface.py).
                     **({"free_tier": {"kind": "rate_limited", "message": anon_auth.FREE_TIER_RATE_LIMIT_CARD.format(
-                        reset=anon_auth.friendly_wait(_nous_remaining))}} if _anonymous else {}),
+                        reset=anon_auth.friendly_wait(_zeus_remaining))}} if _anonymous else {}),
                 }, FailoverReason.rate_limit.value, True))
         except Exception:
             pass  # Never let rate guard break the agent loop

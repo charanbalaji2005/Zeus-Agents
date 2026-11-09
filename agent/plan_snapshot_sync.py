@@ -1,11 +1,11 @@
 """Keep the cached plan snapshot in step with what the gateway says on each reply.
 
-The pickers read a cached account snapshot (``zeus_cli.nous_account``) and a cached Nous catalog
+The pickers read a cached account snapshot (``zeus_cli.zeus_account``) and a cached Zeus catalog
 (``zeus_cli.models_pricing``), so a plan change made in the browser (upgrade, downgrade, cancel) or a
-limit filling / resetting would only show after the next session opened. Every Nous reply already
+limit filling / resetting would only show after the next session opened. Every Zeus reply already
 carries the usage-window headers, so this compares them with the snapshot and, only when they
 disagree, refreshes both caches once in the background. No extra call on an ordinary turn, and
-nothing at all for a reply that is not from Nous.
+nothing at all for a reply that is not from Zeus.
 """
 from __future__ import annotations
 
@@ -58,13 +58,13 @@ def plan_snapshot_is_stale(state: Any, snapshot: Any) -> bool:
 
 def _refresh(plan_changed: bool, key: str) -> None:
     try:
-        from zeus_cli.nous_account import get_nous_portal_account_info
-        if getattr(get_nous_portal_account_info(force_fresh=True), "source", None) == "error":
+        from zeus_cli.zeus_account import get_zeus_portal_account_info
+        if getattr(get_zeus_portal_account_info(force_fresh=True), "source", None) == "error":
             _last_attempt.pop(key, None)  # a failed fetch (reported, not raised) is no attempt either
         if plan_changed:
             # The per-model levels (Large / Free tags) come with the catalog; refetch so they move with the plan.
             from zeus_cli.models_pricing import get_pricing_for_provider
-            get_pricing_for_provider("nous", force_refresh=True)
+            get_pricing_for_provider("zeus", force_refresh=True)
     except Exception:
         logger.debug("plan sync ▸ refresh failed (fail-open)", exc_info=True)
         _last_attempt.pop(key, None)  # a transient portal error must not block the next re-sync
@@ -82,13 +82,13 @@ def sync_plan_snapshot(state: Any) -> bool:
         if not getattr(state, "is_usage_window", False):
             # Non-window reply: only a cached window snapshot (a downgrade / cancel) can be stale. Peek the
             # raw cache first so every other account pays no auth-state read per reply.
-            from zeus_cli import nous_account
-            cached = nous_account._account_info_cache
+            from zeus_cli import zeus_account
+            cached = zeus_account._account_info_cache
             if cached is None or _snapshot_full_ids(cached[2]) is None:
                 _last_attempt.pop(key, None)
                 return False
-        from zeus_cli.nous_account import cached_nous_portal_account_info
-        snapshot = cached_nous_portal_account_info(any_age=True)
+        from zeus_cli.zeus_account import cached_zeus_portal_account_info
+        snapshot = cached_zeus_portal_account_info(any_age=True)
         if not plan_snapshot_is_stale(state, snapshot):
             _last_attempt.pop(key, None)  # in step again: the next mismatch gets its own refresh
             return False
@@ -104,7 +104,7 @@ def sync_plan_snapshot(state: Any) -> bool:
             _last_attempt[key] = (seen, now)
         # Under this profile's contextvars (its Zeus home and auth store), as the credits seed thread does.
         from agent.memory_provider import spawn_context_thread
-        spawn_context_thread(_refresh, args=(plan_changed, key), name="nous-plan-sync").start()
+        spawn_context_thread(_refresh, args=(plan_changed, key), name="zeus-plan-sync").start()
         return True
     except Exception:
         logger.debug("plan sync ▸ check failed (fail-open)", exc_info=True)

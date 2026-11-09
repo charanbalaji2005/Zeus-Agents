@@ -42,7 +42,7 @@ from agent.turn_retry_state import TurnRetryState
 from agent.turn_scripted_prelude import Prelude, play_prelude
 # Phase helpers of the turn loop, bound at import so a source-tree swap cannot load a
 # skewed phase mid-turn.
-from agent.turn_api_call import handle_api_interrupt, nous_rate_limit_guard, perform_api_call
+from agent.turn_api_call import handle_api_interrupt, zeus_rate_limit_guard, perform_api_call
 from agent.turn_api_error import handle_api_error
 from agent.turn_api_request import build_api_request
 from agent.turn_failure_copy import FAILED_TURN_DISPLAY_KIND, OPEN_TURN_TAIL_ROLES, failed_turn_notice, site_copy
@@ -464,19 +464,19 @@ def _ra():
     return run_agent
 
 
-def _nous_entitlement_message(capability: str, *, billing: bool = False) -> str:
+def _zeus_entitlement_message(capability: str, *, billing: bool = False) -> str:
     """``billing``: the request hit a billing wall. A usage-window account then gets its own next
     step (top-up link); its plan is still live, so the entitlement copy alone would say nothing."""
     try:
-        from zeus_cli.nous_account import (
-            format_nous_portal_entitlement_message,
+        from zeus_cli.zeus_account import (
+            format_zeus_portal_entitlement_message,
             format_usage_window_block_guidance,
-            get_nous_portal_account_info,
+            get_zeus_portal_account_info,
         )
-        account_info = get_nous_portal_account_info(force_fresh=True)
+        account_info = get_zeus_portal_account_info(force_fresh=True)
         if billing and (window_guidance := format_usage_window_block_guidance(account_info)):
             return window_guidance
-        return format_nous_portal_entitlement_message(
+        return format_zeus_portal_entitlement_message(
             account_info, capability=capability, in_chat=True
         ) or ""
     except Exception:
@@ -492,8 +492,8 @@ def _print_guidance(agent, message: str) -> bool:
     return True
 
 
-def _print_nous_entitlement_guidance(agent, capability: str) -> bool:
-    return _print_guidance(agent, _nous_entitlement_message(capability))
+def _print_zeus_entitlement_guidance(agent, capability: str) -> bool:
+    return _print_guidance(agent, _zeus_entitlement_message(capability))
 
 
 def _system_prompt_for_hooks(api_kwargs: Any, request_messages: Any) -> Any:
@@ -509,8 +509,8 @@ def _system_prompt_for_hooks(api_kwargs: Any, request_messages: Any) -> Any:
     return system_prompt
 
 
-def _is_nous_inference_route(provider: str, base_url: str) -> bool:
-    return (provider or "").strip().lower() == "nous" or base_url_host_matches(
+def _is_zeus_inference_route(provider: str, base_url: str) -> bool:
+    return (provider or "").strip().lower() == "zeus" or base_url_host_matches(
         str(base_url or ""), "inference-api.nousresearch.com"
     )
 
@@ -518,8 +518,8 @@ def _is_nous_inference_route(provider: str, base_url: str) -> bool:
 def _billing_or_entitlement_message(
     *, capability: str, provider: str, base_url: str, model: str, unverified: bool = False
 ) -> str:
-    if _is_nous_inference_route(provider, base_url):
-        return _nous_entitlement_message(capability, billing=True)
+    if _is_zeus_inference_route(provider, base_url):
+        return _zeus_entitlement_message(capability, billing=True)
 
     provider_label = (provider or "").strip() or "the selected provider"
     model_label = (model or "").strip() or "the selected model"
@@ -1574,7 +1574,7 @@ def _run_api_retry_loop(agent, s: _LoopState) -> Optional[dict[str, Any]]:
     Returns a turn result dict when a phase ends the turn, else None once the loop is left
     (success, a restart armed on ``s._retry``, interrupt, or retries exhausted)."""
     while s.retry_count < s.max_retries:
-        _ng = _run_phase(nous_rate_limit_guard, agent, s)
+        _ng = _run_phase(zeus_rate_limit_guard, agent, s)
         if _ng.action == "return":
             return _ng.result
         if _ng.action == "break":

@@ -1,4 +1,4 @@
-"""Nous credits: parse ``x-nous-credits-*`` / ``x-nous-tool-pool-*`` response
+"""Zeus credits: parse ``x-nous-credits-*`` / ``x-nous-tool-pool-*`` response
 headers into a validated CreditsState (depletion = paid_access, subscription-cap
 used_fraction, warn-once schema-version gating) and drive the notice policy.
 Header contract: see ``_HEADER_FIELDS``. Money is micros ints only; ``*_usd``
@@ -391,8 +391,8 @@ def _sticky_notice(text: str, level: str, key: str) -> AgentNotice:
     return AgentNotice(text=text, level=level, kind=CREDITS_NOTICE_KIND, key=key, id=key)
 
 
-def _is_nous_welcome_route(base_url: str) -> bool:
-    """True when *base_url* is the Nous welcome host, which serves only the free tier. Local data only;
+def _is_zeus_welcome_route(base_url: str) -> bool:
+    """True when *base_url* is the Zeus welcome host, which serves only the free tier. Local data only;
     False wherever the free tier is not built in. The host is the evidence, not the model name: the paid
     inference host can serve ``nous/welcome`` to a named account, and that account's depletion is real."""
     try:
@@ -403,8 +403,8 @@ def _is_nous_welcome_route(base_url: str) -> bool:
 
 
 def is_free_tier_model(model: str, base_url: str = "") -> bool:
-    """True when *model* is a Nous free-tier model, using ONLY local data: (1) ``:free`` suffix — canonical
-    Nous free SKU marker; (2) ``stealth/`` prefix — stealth-preview SKUs are free without the suffix
+    """True when *model* is a Zeus free-tier model, using ONLY local data: (1) ``:free`` suffix — canonical
+    Zeus free SKU marker; (2) ``stealth/`` prefix — stealth-preview SKUs are free without the suffix
     (naming-convention trust: a PAID ``stealth/`` model would wrongly suppress the banner); (3) a PEEK into
     ``zeus_cli.models``' pricing cache (filled by the model picker; a miss never fetches). Fail-open to
     False (depleted notice still shows): a wrong warning is recoverable noise; hiding it masks a real block."""
@@ -414,10 +414,10 @@ def is_free_tier_model(model: str, base_url: str = "") -> bool:
         return True
     if not base_url:
         return False
-    # (4) the Nous free tier: the welcome host serves only the free tier. A free-tier identity carries $0
+    # (4) the Zeus free tier: the welcome host serves only the free tier. A free-tier identity carries $0
     # by design, so the portal seed reports paid_access=False for it; that is not a depleted account, and
     # "run /topup" means nothing to it. Local data only, same as the rules above.
-    if _is_nous_welcome_route(base_url):
+    if _is_zeus_welcome_route(base_url):
         return True
     try:
         from zeus_cli.models import _is_model_free
@@ -475,7 +475,7 @@ def evaluate_credits_notices(state: CreditsState, latch: dict, *, model_is_free:
             to_clear.append(CREDITS_USAGE_KEY)
             active.discard(CREDITS_USAGE_KEY)
         if target_band is not None:
-            # Absolute dollars used (a bare "N%" is only meaningful against a Nous cap): cap − remaining,
+            # Absolute dollars used (a bare "N%" is only meaningful against a Zeus cap): cap − remaining,
             # clamped [0, cap]; "$?" if a producer set the limit without its *_usd. Re-emits on band change only.
             level = current_band[1]  # type: ignore[index]  (current_band set when target_band set)
             lim = state.subscription_limit_micros or 0
@@ -589,7 +589,7 @@ def parse_credits_headers(headers: Mapping[str, str], provider: str = "") -> Opt
     global _version_warning_emitted
     try:
         # Cheap probe before the lowercase copy (header names are case-insensitive): bail when the
-        # version header is absent — the hot path for non-Nous providers.
+        # version header is absent — the hot path for non-Zeus providers.
         if not any(k.lower() == "x-nous-credits-version" for k in headers):
             return None
         lowered = {k.lower(): v for k, v in headers.items()}
@@ -694,7 +694,7 @@ def dev_fixture_credits_state() -> Optional[CreditsState]:
 
 
 def _credits_state_from_account(info) -> Optional[CreditsState]:
-    """Map a NousPortalAccountInfo into a header-shaped CreditsState for the seed. Float account dollars →
+    """Map a ZeusPortalAccountInfo into a header-shaped CreditsState for the seed. Float account dollars →
     micros plus a DISPLAY *_usd (formatting account floats is allowed; parsing a server *_usd is not). Fail-open → None."""
     try:
         acc = getattr(info, "paid_service_access_info", None)
@@ -726,7 +726,7 @@ def _credits_state_from_account(info) -> Optional[CreditsState]:
 
 
 def _window_seed_fields(uw) -> Optional[dict[str, Any]]:
-    """Portal ``usage_window`` (NousUsageWindowInfo or dict) → CreditsState window fields; None unless it
+    """Portal ``usage_window`` (ZeusUsageWindowInfo or dict) → CreditsState window fields; None unless it
     carries a readable gauge list with an all-scope allowance (same requirement as the header parser)."""
     if uw is None:
         return None
@@ -804,8 +804,8 @@ def apply_keep_going_change(agent, enabled: bool) -> None:
         agent._credits_state = replace(state, keep_going_on_credits=enabled)
         _rerun_notice_policy(agent)
         from agent.memory_provider import spawn_context_thread
-        from zeus_cli.nous_account import get_nous_portal_account_info
-        spawn_context_thread(lambda: get_nous_portal_account_info(force_fresh=True), name="keep-going-refresh").start()
+        from zeus_cli.zeus_account import get_zeus_portal_account_info
+        spawn_context_thread(lambda: get_zeus_portal_account_info(force_fresh=True), name="keep-going-refresh").start()
     except Exception:
         logger.debug("keep going ▸ local refresh failed", exc_info=True)
 
@@ -854,30 +854,30 @@ def _rerun_notice_policy(agent) -> None:
         emit()
 
 
-def _warm_nous_pricing_cache() -> None:
-    """Fill the in-process Nous pricing catalog so :func:`is_free_tier_model`'s peek can answer.
+def _warm_zeus_pricing_cache() -> None:
+    """Fill the in-process Zeus pricing catalog so :func:`is_free_tier_model`'s peek can answer.
     The peek never fetches and nothing else warms it during session start, so a cold process reads
     an EMPTY catalog and a subscription-billed model — which spends no credits — still draws the
     depleted banner. Fail-open: a miss leaves the peek exactly as it was."""
     try:
         from zeus_cli.models_pricing import get_pricing_for_provider
 
-        get_pricing_for_provider("nous")
+        get_pricing_for_provider("zeus")
     except Exception:
-        logger.debug("credits ▸ nous pricing warm failed", exc_info=True)
+        logger.debug("credits ▸ zeus pricing warm failed", exc_info=True)
 
 
 def rewarm_pricing_before_depleted_notice(agent) -> bool:
-    """Depleted account, model the peek cannot vouch for, Nous catalog cold: start a background warm
+    """Depleted account, model the peek cannot vouch for, Zeus catalog cold: start a background warm
     whose completion re-runs the policy and return True so the caller defers the depleted decision
     to it — the session-start warm is one-shot but the catalog expires after
-    ``_NOUS_CATALOG_TTL_SECONDS``, and a cold peek would bring the banner back for a
-    subscription-billed model. False = decide now: peek warm, not on Nous, a warm in flight (the
+    ``_ZEUS_CATALOG_TTL_SECONDS``, and a cold peek would bring the banner back for a
+    subscription-billed model. False = decide now: peek warm, not on Zeus, a warm in flight (the
     warm's own re-run included — fail-open, a failed fetch leaves the peek cold and the banner
     shows), or a fetch already failed and the cache is still refusing to dial. May raise; the notice
     path that calls it catches."""
     base_url = getattr(agent, "base_url", "") or ""
-    if getattr(agent, "provider", "") != "nous" or not base_url:
+    if getattr(agent, "provider", "") != "zeus" or not base_url:
         return False
     from zeus_cli.models_pricing import peek_cached_pricing, pricing_fetch_suppressed
 
@@ -888,7 +888,7 @@ def rewarm_pricing_before_depleted_notice(agent) -> bool:
         return False
 
     def _warm_then_rerun() -> None:
-        _warm_nous_pricing_cache()
+        _warm_zeus_pricing_cache()
         _rerun_notice_policy(agent)
 
     from agent.memory_provider import spawn_context_thread
@@ -903,7 +903,7 @@ def seed_credits_at_session_start(agent) -> bool:
     warnings show at session OPEN (TUI/desktop "ready" and plain-CLI first-turn setup). Idempotent once a seed
     or real header populated _credits_state. Returns True iff it seeded this call. Never raises."""
     try:
-        if getattr(agent, "provider", "") != "nous" or getattr(agent, "_credits_state", None) is not None:
+        if getattr(agent, "provider", "") != "zeus" or getattr(agent, "_credits_state", None) is not None:
             return False
         try:
             fixture = dev_fixture_credits_state()
@@ -915,12 +915,12 @@ def seed_credits_at_session_start(agent) -> bool:
 
         def _bg_seed() -> None:  # FIRE-AND-FORGET: a slow portal must never delay "ready"
             try:
-                from zeus_cli.nous_account import get_nous_portal_account_info
+                from zeus_cli.zeus_account import get_zeus_portal_account_info
                 # BEFORE the policy runs (either branch below): the free-model gate only PEEKS the
                 # pricing cache, and this thread is the first thing a chat session runs that can
                 # afford to fill it.
-                _warm_nous_pricing_cache()
-                info = get_nous_portal_account_info(force_fresh=True)
+                _warm_zeus_pricing_cache()
+                info = get_zeus_portal_account_info(force_fresh=True)
                 if getattr(agent, "_credits_state", None) is not None:
                     # A live inference header beat us — don't clobber it, but DO re-run the policy:
                     # it evaluated against the cold cache and may be showing a banner the warm

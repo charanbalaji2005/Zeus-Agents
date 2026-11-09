@@ -238,7 +238,7 @@ def _get_endpoint_metadata_cache_path() -> Path:
 
 def _endpoint_disk_cache_get(normalized: str) -> Optional[dict[str, dict[str, Any]]]:
     """Fresh cross-process memo of a remote ``/models`` probe (same TTL as in-memory): one-shot
-    runs (``zeus -q``, cron) start cold and Nous bypasses the persistent context cache, so
+    runs (``zeus -q``, cron) start cold and Zeus bypasses the persistent context cache, so
     without this every launch paid the live probe. Local endpoints are never memoized."""
     models = _ttl_memo_get(_get_endpoint_metadata_cache_path(), normalized, _ENDPOINT_MODEL_CACHE_TTL, ts_key="at", value_key="models")
     return models if isinstance(models, dict) else None
@@ -300,7 +300,7 @@ DEFAULT_CONTEXT_LENGTHS = {
     # its own branch). 5.4-nano/-mini are 400k, not 1.05M; gpt-5.3-codex-spark is
     # Codex-OAuth-only and listed so "gpt-5" (400k) doesn't win.
     "gpt-6-astra": 1050000,  # also matches -pro (verified live on OpenRouter)
-    "gpt-6.1-sol": 1050000, "gpt-6.1-terra": 1050000,  # Sol -pro too; both live on OpenRouter (Terra also Nous Portal, 2026-10-26)
+    "gpt-6.1-sol": 1050000, "gpt-6.1-terra": 1050000,  # Sol -pro too; both live on OpenRouter (Terra also Zeus Portal, 2026-10-26)
     "gpt-6-sol": 1050000, "gpt-6-luna": 1050000,  # -pro too (OpenRouter live 2026-09-22)
     "gpt-5.6-luna": 1050000, "gpt-5.6-terra": 1050000, "gpt-5.6-sol": 1050000, "gpt-5.5": 1050000,
     "gpt-5.4-nano": 400000, "gpt-5.4-mini": 400000, "gpt-5.4": 1050000,
@@ -320,12 +320,12 @@ DEFAULT_CONTEXT_LENGTHS = {
     # muse-image/muse-voice). Thinking Machines inkling (covers inkling-small and :free/:batch variants)
     "llama": 131072, "muse-spark-1.3": 1_048_576, "muse-spark": 1_048_576, "inkling": 1_048_576,
     # Qwen — https://help.aliyun.com/zh/model-studio/developer-reference/ (3.8-max/flash
-    # 1M verified on OpenRouter & Nous portal 2026-08; qwen3-max = 256K Coding Plan snapshot)
+    # 1M verified on OpenRouter & Zeus portal 2026-08; qwen3-max = 256K Coding Plan snapshot)
     "qwen3.8-max": 1_000_000, "qwen3.8-flash": 1_000_000, "qwen3.6-plus": 1048576, "qwen3.7-plus": 1048576,
     "qwen3-coder-plus": 1000000, "qwen3-coder": 262144, "qwen3-max": 262144, "qwen": 131072,
     # MiniMax — M3 is 1M; M2.x is 204,800. https://platform.minimax.io/docs/api-reference/text-chat-openai
     "minimax-m3": 1000000, "minimax": 204800,
-    # GLM — Nous + OpenRouter /v1/models (2026-09-09): 5.3 / 5.3-flash 1,310,720 (:batch/:US 1,048,576);
+    # GLM — Zeus + OpenRouter /v1/models (2026-09-09): 5.3 / 5.3-flash 1,310,720 (:batch/:US 1,048,576);
     # 5.3-flashx 1,048,576 (2026-09-20; its own key, else the shorter 5.3-flash entry wins by substring);
     # 5.2 1,048,576; 5 / 5.1 / 4.7 / 4.6 204,800; *-turbo / 4.7-flash 202,752 (the catch-all).
     # The OpenRouter :free variant is capped; the longer key wins.
@@ -447,7 +447,7 @@ _URL_TO_PROVIDER: dict[str, str] = {
     "api.stepfun.ai": "stepfun", "api.stepfun.com": "stepfun", "api.arcee.ai": "arcee", "api.minimax": "minimax",
     "dashscope.aliyuncs.com": "alibaba", "dashscope-intl.aliyuncs.com": "alibaba", "portal.qwen.ai": "qwen-oauth",
     "openrouter.ai": "openrouter", "generativelanguage.googleapis.com": "gemini",
-    "inference-api.nousresearch.com": "nous", "api.deepseek.com": "deepseek",
+    "inference-api.nousresearch.com": "zeus", "api.deepseek.com": "deepseek",
     "api.fireworks.ai": "fireworks", "opencode.ai": "opencode-go", "api.x.ai": "xai",
     "integrate.api.nvidia.com": "nvidia", "api.xiaomimimo.com": "xiaomi", "xiaomimimo.com": "xiaomi",
     "api.gmi-serving.com": "gmi", "api.novita.ai": "novita",
@@ -1301,7 +1301,7 @@ def parse_available_output_tokens_from_error(error_msg: str) -> Optional[int]:
         match = re.search(pattern, error_lower)
         if match and int(match.group(1)) >= 1:
             return int(match.group(1))
-    # OpenRouter/Nous: "maximum context length is N … (A of text input, B of tool input, C in the output)" -> ctx - A - B.
+    # OpenRouter/Zeus: "maximum context length is N … (A of text input, B of tool input, C in the output)" -> ctx - A - B.
     _m_ctx = re.search(r'maximum context length is (\d+)', error_lower)
     _m_parts = re.search(r'\((\d+)\s+of text input,\s*(\d+)\s+of tool input,\s*(\d+)\s+in the output\)', error_lower)
     if _m_ctx and _m_parts:
@@ -1343,7 +1343,7 @@ def parse_available_output_tokens_from_error(error_msg: str) -> Optional[int]:
 
 
 # Each entry is a phrase group; the group matches when ALL phrases are present.
-# DashScope, Anthropic (available_tokens / "maximum allowed number of output tokens"), OpenRouter/Nous,
+# DashScope, Anthropic (available_tokens / "maximum allowed number of output tokens"), OpenRouter/Zeus,
 # LM Studio/llama.cpp, generic "should be <= N", OpenAI-compat relays.
 _OUTPUT_CAP_SIGNALS = (
     ("range of max_tokens should be",), ("available_tokens",), ("available tokens",),
@@ -1629,7 +1629,7 @@ def _query_local_context_length_uncached(model: str, base_url: str, api_key: str
 
 
 def _normalize_model_version(model: str) -> str:
-    """Dots -> dashes so Nous ids (claude-opus-4-6) compare with OpenRouter's (claude-opus-4.6)."""
+    """Dots -> dashes so Zeus ids (claude-opus-4-6) compare with OpenRouter's (claude-opus-4.6)."""
     return model.replace(".", "-")
 
 
@@ -1926,9 +1926,9 @@ def _resolve_codex_oauth_context_length_with_source(model: str, access_token: st
     return _apply_verified_bump(hit[1], "fallback", catalog_max) if hit else (None, "")
 
 
-def _resolve_nous_context_length(model: str, base_url: str = "", api_key: str = "") -> tuple[Optional[int], str]:
-    """``(context_length, source)`` for a Nous Portal model: portal /v1/models is authoritative
-    ("portal"). Fallback matches OR's prefixed ids against the bare Nous id with dot/dash
+def _resolve_zeus_context_length(model: str, base_url: str = "", api_key: str = "") -> tuple[Optional[int], str]:
+    """``(context_length, source)`` for a Zeus Portal model: portal /v1/models is authoritative
+    ("portal"). Fallback matches OR's prefixed ids against the bare Zeus id with dot/dash
     normalisation ("openrouter" — callers must NOT persist it, or a portal blip freezes the wrong value)."""
     if base_url:
         portal_ctx = _resolve_endpoint_context_length(model, base_url, api_key=api_key)
@@ -1939,7 +1939,7 @@ def _resolve_nous_context_length(model: str, base_url: str = "", api_key: str = 
         """Context length minus the known stale 32K underreports (same guard as step 6)."""
         ctx = entry.get("context_length")
         if ctx is not None and ctx <= 32768 and _model_name_suggests_stale_32k_underreport(or_id):
-            logger.info("Rejecting OpenRouter metadata context=%s for %r (known 32K underreport, Nous path); falling through to hardcoded defaults", ctx, or_id)
+            logger.info("Rejecting OpenRouter metadata context=%s for %r (known 32K underreport, Zeus path); falling through to hardcoded defaults", ctx, or_id)
             return None
         return ctx
     model_lower, normalized = model.lower(), _normalize_model_version(model).lower()
@@ -1979,10 +1979,10 @@ def _validate_cached_context_length(model: str, base_url: str, cached: int, *, a
             log(msg, model, base_url, shown)
             _invalidate_cached_context_length(model, base_url)
             return None
-    # Nous Portal: /v1/models is authoritative. Bypass (don't drop) the cache so step
+    # Zeus Portal: /v1/models is authoritative. Bypass (don't drop) the cache so step
     # 5b reconciles OR-seeded entries without touching disk when the portal is down.
-    if _infer_provider_from_url(base_url) == "nous":
-        logger.debug("Bypassing persistent cache for %s@%s (Nous portal authoritative)", model, base_url)
+    if _infer_provider_from_url(base_url) == "zeus":
+        logger.debug("Bypassing persistent cache for %s@%s (Zeus portal authoritative)", model, base_url)
         return None
 
     # For local endpoints, run the probe that respects configured Modelfile context values first.
@@ -2159,11 +2159,11 @@ def _resolve_provider_aware_context_length(model: str, base_url: str, api_key: s
     with contextlib.suppress(Exception):  # fall through to models.dev
         if profile is not None and (ctx := profile.live_context_length(model, api_key=api_key or "", base_url=base_url or "")):
             return ctx
-    # 5b/5c. Nous portal and Codex OAuth (lower limits than the direct API for the same slug; its
+    # 5b/5c. Zeus portal and Codex OAuth (lower limits than the direct API for the same slug; its
     # own /models is authoritative). Persist ONLY the authoritative source ("portal" / "live"): an
     # OR-fallback or static-table value cached on a blip would be frozen in by step 1 forever.
     sourced = {
-        "nous": lambda: _resolve_nous_context_length(model, base_url=base_url or "", api_key=api_key or "") + ("portal",),
+        "zeus": lambda: _resolve_zeus_context_length(model, base_url=base_url or "", api_key=api_key or "") + ("portal",),
         "openai-codex": lambda: _resolve_codex_oauth_context_length_with_source(model, access_token=api_key or "", base_url=base_url or "") + ("live",),
     }.get(effective_provider)
     if sourced is not None:
@@ -2211,10 +2211,10 @@ def get_model_context_length(
     provider: str = "", custom_providers: list | None = None,
 ) -> int:
     """Context length for a model. Resolution order: 0 config override / MoA aggregator /
-    model_overrides / custom_providers / endpoint-scoped; 1 persistent cache (Nous, LM
+    model_overrides / custom_providers / endpoint-scoped; 1 persistent cache (Zeus, LM
     Studio, Codex OAuth bypass it) and Bedrock; 2-3 custom endpoints (/models, local
     probe, Ollama); 4 Anthropic /v1/models (API keys only); 5 provider-aware (profile live
-    catalog, Nous, Codex OAuth, GMI, Ollama, OpenRouter live, models.dev); 6 OpenRouter for
+    catalog, Zeus, Codex OAuth, GMI, Ollama, OpenRouter live, models.dev); 6 OpenRouter for
     unknown providers; 7 local server; 8 hardcoded defaults; 9 256K fallback."""
     # 0. Explicit config override — user knows best
     if isinstance(config_context_length, int) and config_context_length > 0:

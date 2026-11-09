@@ -128,7 +128,7 @@ REGISTRY_AUTHTYPE_ARMS: dict[str, Callable[[_ResolveRequest], _ResolveResult]] =
     "vertex": _resolve_vertex_arm,
     "aws_sdk": _resolve_bedrock_arm,
     "oauth_minimax": _resolve_minimax_oauth_arm,
-    # Plugin OAuth: nous / openai-codex / xai-oauth returned from their explicit branches.
+    # Plugin OAuth: zeus / openai-codex / xai-oauth returned from their explicit branches.
     "oauth_device_code": _resolve_plugin_oauth_arm,
     "oauth_external": _resolve_plugin_oauth_arm,
 }

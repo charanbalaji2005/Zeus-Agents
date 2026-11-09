@@ -72,7 +72,7 @@ own or consume those turns, and an interrupted started turn stays unknown and pa
 ## `/login` (off-turn, paired DM only)
 
 `GatewayLoginCommandsMixin` refuses outside a real paired DM (ntfy, raft and a2a report `dm` for
-broadcast surfaces) and binds the WHOLE install's `providers.nous`, so shared gateways must set
+broadcast surfaces) and binds the WHOLE install's `providers.zeus`, so shared gateways must set
 `allow_admin_from`. It drains `anon_auth.run_sign_in` on its private single-worker `_login_executor`
 (never the shared pool), allows one attempt per process, and on completion evicts agents still on
 `nous/welcome` instead of writing a model override. Long form: `gateway-internals.md` § `/login`.

@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "أمر فرعي غير معروف لـ /usage: `{args}`. جرّب `/usage` أو `/usage reset [--force]`."
     reset_wrong_provider: "إعادة تعيين الاستخدام المُدّخر متاحة فقط على مزوّد openai-codex. بدّل عبر `/model` أولًا."
   credits:
-    not_logged_in: "لم تُسجّل الدخول إلى Nous Portal. سجّل الدخول لرؤية رصيد أرصدتك وإعادة الشحن."
+    not_logged_in: "لم تُسجّل الدخول إلى Zeus Portal. سجّل الدخول لرؤية رصيد أرصدتك وإعادة الشحن."
   verbose:
     not_enabled: "الأمر `/verbose` غير مُفعّل لمنصّات المراسلة.\n\nفعّله في `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ تقدّم الأدوات: **مُعطّل** — لا يُعرض نشاط الأدوات."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ تعذّر تحميل الإعدادات: {error}"
   topup:
-    header: "💳 **رصيد Nous**"
+    header: "💳 **رصيد Zeus**"
     portal_link: "أدِر الفوترة من البوابة: {url}"
     hint: "أعد تعبئة الرصيد وأدِر الفوترة في المتصفح — سيتحدّث رصيدك هنا بعد ذلك."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "عرض استخدام الرموز وحدود المعدّل؛ `reset` يستبدل إعادة تعيين حد Codex المدّخرة"
   subscription:
-    description: "عرض خطة Nous الخاصة بك وتغييرها في المتصفح"
+    description: "عرض خطة Zeus الخاصة بك وتغييرها في المتصفح"
   login:
-    description: "تسجيل الدخول بحساب Nous (مع الاحتفاظ بموصّلاتك)"
+    description: "تسجيل الدخول بحساب Zeus (مع الاحتفاظ بموصّلاتك)"
   topup:
-    description: "عرض رصيد Nous الخاص بك وإدارة الفوترة على البوابة"
+    description: "عرض رصيد Zeus الخاص بك وإدارة الفوترة على البوابة"
   platforms:
     description: "عرض حالة البوّابة/منصات المراسلة"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "تعذّر تحميل الفوترة"
-    not_logged_in: "لم تسجّل الدخول إلى Nous Portal."
+    not_logged_in: "لم تسجّل الدخول إلى Zeus Portal."
     run_portal_then: "شغّل `zeus portal` لتسجيل الدخول، ثم {cmd}."
     org_line: "المؤسسة: {org}"
     org_line_role: "المؤسسة: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  أعاد محدّد المزوّد عنوان URL أساسيًا فارغًا. تحقق من إعدادات المزوّد أو شغّل: zeus setup"
     switching_to_fallback: "⚠️  {reason} — جارٍ التبديل إلى البديل: {provider} / {model}"
     first_run_no_provider: "☤ لم يُضبط أي مزوّد استدلال بعد — لنُصلح ذلك."
-    first_run_pick_provider: "ستختار مزوّدًا (Nous Portal OAuth هو الأسرع؛ لا يحتاج مفتاح API) ونموذجًا."
+    first_run_pick_provider: "ستختار مزوّدًا (Zeus Portal OAuth هو الأسرع؛ لا يحتاج مفتاح API) ونموذجًا."
     first_run_prompt: "هل تريد إعداد مزوّد الآن؟ [Y/n]:"
     first_run_skipped: "تم التخطّي. شغّل 'zeus model' أو 'zeus setup' في أي وقت."
     first_run_cancelled: "أُلغي الإعداد. شغّل 'zeus model' في أي وقت."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ جارٍ تسليم /steer المتبقي كدور تالٍ: '{preview}'"
     reasoning_label: "الاستدلال"
     reasoning_more_lines: "... ({count} أسطر إضافية — /reasoning full للعرض)"
-    billing_cta_nous: "شغّل [bold]/topup[/] لإضافة رصيد، أو [bold]/subscription[/] لتغيير الخطة."
+    billing_cta_zeus: "شغّل [bold]/topup[/] لإضافة رصيد، أو [bold]/subscription[/] لتغيير الخطة."
     billing_cta_provider: "أضف رصيدًا عبر {provider}"
     your_provider: "مزوّدك"
     billing_cta_switch: "أو بدّل المزوّد عبر [bold]/model <model> --provider <provider>[/]."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "حل LM Studio: عيّن طول السياق في إعدادات النموذج ← أعد تحميل النموذج"
     fix_local_server: "الحل: شغّل خادمك بسياق لا يقل عن {tokens_k}K (llama.cpp: -c {tokens})، أو عيّن model.ollama_num_ctx في config.yaml إلى النافذة التي يخدمها فعلًا"
     fix_config: "الحل: عيّن model.context_length في config.yaml، أو ارفع إعداد السياق في خادمك"
-    zeus_models_not_agentic: "⚠  نماذج Nous Research Hermes 3 و4 ليست وكيلية ولم تُصمَّم للاستخدام مع Zeus Agents."
+    zeus_models_not_agentic: "⚠  نماذج Zeus Agents Hermes 3 و4 ليست وكيلية ولم تُصمَّم للاستخدام مع Zeus Agents."
     zeus_models_lack_tools: "فهي تفتقر إلى قدرات استدعاء الأدوات اللازمة لسير عمل الوكيل. فكّر في استخدام نموذج وكيلي (Claude أو GPT أو Gemini أو DeepSeek وغيرها)."
     zeus_models_switch_hint: "بدّل عبر: /model sonnet  أو  /model gpt5"
     project_skills_loaded: "◆ تم تحميل {count} من مهارات المشروع من هذا المستودع"
@@ -3730,8 +3730,8 @@ tips:
   t181: "أصبح Camofox (Firefox مضاد للكشف) إضافة الآن: zeus plugins install camofox."
   t182: "يشغّل browser_exec عدة خطوات متصفح في استدعاء Python واحد — التنقل والاستخراج والنقر معًا."
   t183: "يحدد browser.dialog_policy طريقة التعامل مع مربعات الحوار الأصلية في الصفحة: must_respond (يرد الوكيل عبر browser_dialog) أو auto_dismiss أو auto_accept."
-  t184: "يفتح zeus mcp منتقيًا تفاعليًا لخوادم MCP المعتمدة من Nous يمكنك تثبيتها بضغطة مفتاح واحدة."
-  t185: "يعرض zeus mcp catalog خوادم MCP المعتمدة من Nous والمرفقة مع المستودع."
+  t184: "يفتح zeus mcp منتقيًا تفاعليًا لخوادم MCP المعتمدة من Zeus يمكنك تثبيتها بضغطة مفتاح واحدة."
+  t185: "يعرض zeus mcp catalog خوادم MCP المعتمدة من Zeus والمرفقة مع المستودع."
   t186: "يثبّت zeus mcp install <name> مدخلًا من الفهرس، ويطلب بيانات الاعتماد، ويتيح لك اختيار الأدوات المفعّلة منه."
   t187: "تُضبط خوادم MCP في config.yaml — مع دعم وسيلتي النقل stdio وHTTP."
   t188: "تصفية الأدوات لكل خادم: tools.include يسمح بأدوات محددة، وtools.exclude يحظرها."
@@ -3758,7 +3758,7 @@ tips:
   t209: "المزوّدون المخصصون: احفظ نقاط نهاية مسمّاة في config.yaml تحت custom_providers."
   t210: "يحقن ZEUS_EPHEMERAL_SYSTEM_PROMPT موجّه نظام لا يُحفظ في السجل أبدًا."
   t211: "يدعم credential_pool_strategies استراتيجيات التدوير fill_first وround_robin وleast_used وrandom."
-  t212: "يضبط zeus auth add nous أو zeus auth add openai-codex المزوّدين المعتمدين على OAuth."
+  t212: "يضبط zeus auth add zeus أو zeus auth add openai-codex المزوّدين المعتمدين على OAuth."
   t213: "يدعم خادم API كلًّا من Chat Completions وResponses API مع حالة محفوظة على جانب الخادم."
   t214: "يعرض tool_preview_length: 0 في الإعدادات مسارات الملفات كاملةً في شريط نشاط مؤشر الانتظار."
   t215: "يشغّل zeus status --deep فحوصات تشخيصية أعمق عبر جميع المكوّنات."
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback يستعيد المهارات من لقطة سابقة للتشغيل — النسخ الاحتياطية تحت skills/.curator_backups/."
   t306: "zeus auth reset <provider> [target] يمسح فترات التهدئة وعلامات النفاد عن مجمّع اعتمادات كامل، أو عن اعتماد واحد بالفهرس أو المعرّف أو التسمية."
   t307: "credential_pool_strategies.<provider>: round_robin يدوّر المفاتيح بالتساوي بدلًا من الافتراضي fill_first."
-  t308: "use_gateway: true لكل أداة يوجّه web أو image أو tts أو browser عبر اشتراكك في Nous — دون مفاتيح إضافية."
+  t308: "use_gateway: true لكل أداة يوجّه web أو image أو tts أو browser عبر اشتراكك في Zeus — دون مفاتيح إضافية."
   t309: "provider_routing.data_collection: deny يستثني المزوّدين الذين يخزّنون البيانات على OpenRouter."
   t310: "provider_routing.require_parameters: true يوجّه فقط إلى المزوّدين الذين يدعمون كل معامل في طلبك."
   t311: "ZEUS_TUI_RESUME=1 يُعيد الاتصال تلقائيًا بأحدث جلسة TUI عند الإطلاق — مفيد بعد انقطاع SSH."
@@ -3937,7 +3937,7 @@ tips:
     p10: "اضبط تذكيرًا أو جدولة مهمة متكررة"
     p11: "اكتب / لاستعراض الأوامر، أو Ctrl+P للوحة الأوامر"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "مجاني"
   level_top_tier: "كبير"

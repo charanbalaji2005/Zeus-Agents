@@ -41,11 +41,11 @@ env:
 jobs:
   windows-x64:
     name: Zeus-Setup.exe (windows x64, signed)
-    runs-on: blacksmith-2vcpu-windows-2025
+    runs-on: windows-latest
     environment: release-signing
     timeout-minutes: 90
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -151,11 +151,11 @@ jobs:
 
   macos-arm64:
     name: Zeus-Setup.dmg (macos arm64, signed + notarized)
-    runs-on: blacksmith-12vcpu-macos-latest
+    runs-on: macos-latest
     environment: release-signing
     timeout-minutes: 90
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0

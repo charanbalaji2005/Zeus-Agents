@@ -311,7 +311,7 @@ class GatewayModelCommandsMixin:
             t("gateway.model.switched", model=format_model_for_display(result.new_model)),
             t("gateway.model.provider_label", provider=result.provider_label or result.target_provider),
         ]
-        # Provider-aware chain: Codex OAuth, Nous and profile live-catalog caps win over the raw models.dev entry.
+        # Provider-aware chain: Codex OAuth, Zeus and profile live-catalog caps win over the raw models.dev entry.
         mi = result.model_info
         model_cfg: dict = {}
         config_ctx = None
@@ -749,7 +749,7 @@ class GatewayModelCommandsMixin:
 
     async def _accept_usage_limit_switch(self, event: MessageEvent, model_id: str, *,
                                          offer: Optional[tuple[str, int]] = None) -> str:
-        """The tap: switch this session to *model_id* on Nous, then re-send the refused message.
+        """The tap: switch this session to *model_id* on Zeus, then re-send the refused message.
         ``offer`` is the refused turn's ``(session_key, run_generation)``."""
         from gateway.run import _zeus_home
         source = await asyncio.to_thread(self._normalize_source_for_session_key, event.source)
@@ -763,7 +763,7 @@ class GatewayModelCommandsMixin:
         async def _switch() -> str:
             ctx.read_config()
             ctx.apply_override(self._session_model_overrides.get(session_key, {}))
-            result, error = await self._perform_model_switch(ctx, model_id, "nous", event.source)
+            result, error = await self._perform_model_switch(ctx, model_id, "zeus", event.source)
             if error is not None:
                 return error
             return await self._commit_model_switch(result, ctx, source=event.source, picker=True)
@@ -776,7 +776,7 @@ class GatewayModelCommandsMixin:
             with _profile_runtime_scope(profile_home):
                 reply = await _switch()
         after = self._session_model_overrides.get(session_key)
-        switched = after is not None and after is not before and after.get("provider") == "nous"
+        switched = after is not None and after is not before and after.get("provider") == "zeus"
         if switched:
             # Only after the switch landed (an error reply leaves the override unchanged). Exactly a typed /retry from the same sender (rewinds the refused turn, runs the message
             # again, and the adapter delivers the reply). Called directly, the re-run's reply would be

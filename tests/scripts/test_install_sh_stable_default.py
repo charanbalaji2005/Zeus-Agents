@@ -1,8 +1,9 @@
-"""A new or rerun install of the official repository lands on the latest stable release.
+"""The installer's channel choice decides where an install of the official repository lands.
 
-`zeus update` already follows stable for an official checkout that never chose a channel;
-the installer has to put a fresh install there too, or new users start on main's tip. The
-official URL is redirected to a local origin and `curl` answers the release lookup.
+No GitHub release is published yet, so a plain install follows main (as `zeus update` does
+for an unconfigured checkout). The stable path stays reachable with an empty `--channel`,
+which lets a release decide: a new or rerun install then lands on the latest stable release.
+The official URL is redirected to a local origin and `curl` answers the release lookup.
 """
 from pathlib import Path
 import os
@@ -15,6 +16,9 @@ OFFICIAL = "https://github.com/charanbalaji2005/Zeus-Agents.git"
 
 pytestmark = pytest.mark.platforms("posix")
 
+# An empty channel: the release decides (stable for the official repository's main line).
+RELEASE = ["--channel", ""]
+
 
 def _git(cwd, *args, env=None):
     return subprocess.run(
@@ -25,17 +29,18 @@ def _git(cwd, *args, env=None):
 
 
 @pytest.mark.parametrize("side,start,args,tagged,lands", [
-    (False, None, [], True, "release"),                 # fresh install: the release, not main's tip
+    (False, None, [], True, "tip"),                     # default: main, no release lookup
+    (False, None, RELEASE, True, "release"),            # fresh install: the release, not main's tip
     (False, None, ["--channel", "main"], True, "tip"),  # explicit opt-out: main's tip
-    (False, "before", [], True, "release"),             # rerun behind the release: moves forward to it
-    (False, "tip", [], True, "tip"),                    # rerun already containing it: never moves back
-    (False, None, [], False, None),                     # release tag unreachable: fail, publish nothing
-    (False, "before", [], False, "before"),             # ... a rerun keeps its checkout instead
+    (False, "before", RELEASE, True, "release"),             # rerun behind the release: moves forward to it
+    (False, "tip", RELEASE, True, "tip"),                    # rerun already containing it: never moves back
+    (False, None, RELEASE, False, None),                     # release tag unreachable: fail, publish nothing
+    (False, "before", RELEASE, False, "before"),             # ... a rerun keeps its checkout instead
     # The release cut on a release branch, main past the fork point (v0.22.2's shape): main moves
     # back only through `zeus update`, whose downgrade guard the installer cannot run.
-    (True, "tip", [], True, "tip"),
+    (True, "tip", RELEASE, True, "tip"),
     (True, "tip", ["--channel", "stable"], True, "tip"),
-    (True, "before", [], True, "release"),
+    (True, "before", RELEASE, True, "release"),
 ])
 def test_install_lands_on_the_latest_stable_release(tmp_path, side, start, args, tagged, lands):
     origin, home, bin_dir = tmp_path / "origin", tmp_path / "home", tmp_path / "bin"

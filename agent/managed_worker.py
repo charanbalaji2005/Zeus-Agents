@@ -38,7 +38,7 @@ RESULT_FIELDS = ('final_response', 'failed', 'interrupted', 'completed', 'partia
 # plus ``unverified``) and ``free_tier`` (``agent/turn_recovery._stamp_free_tier``). With
 # ``failure_reason``, ``failure_retryable`` and ``failure_resets_at`` they are what
 # ``agent.error_surface.build_error_surface_from_result`` reads for the owner's error card.
-BILLING_FIELDS = ('provider', 'provider_label', 'model', 'billing_url', 'is_nous', 'message', 'unverified')
+BILLING_FIELDS = ('provider', 'provider_label', 'model', 'billing_url', 'is_zeus', 'message', 'unverified')
 STRUCTURED_FIELDS = {'billing_block': BILLING_FIELDS, 'free_tier': ('kind', 'message')}
 
 

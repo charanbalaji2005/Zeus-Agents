@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "알 수 없는 /usage 하위 명령: `{args}`. `/usage` 또는 `/usage reset [--force]`를 사용해 보세요."
     reset_wrong_provider: "적립된 사용량 한도 초기화는 openai-codex 공급자에서만 사용할 수 있습니다. 먼저 `/model`로 전환하세요."
   credits:
-    not_logged_in: "Nous Portal에 로그인되어 있지 않습니다. 로그인하면 크레딧 잔액 확인 및 충전을 할 수 있습니다."
+    not_logged_in: "Zeus Portal에 로그인되어 있지 않습니다. 로그인하면 크레딧 잔액 확인 및 충전을 할 수 있습니다."
   verbose:
     not_enabled: "`/verbose` 명령은 메시징 플랫폼에서 활성화되어 있지 않습니다.\n\n`config.yaml`에서 활성화하세요:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ 도구 진행 상황: **OFF** — 도구 활동이 표시되지 않습니다."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 설정을 불러올 수 없어요: {error}"
   topup:
-    header: "💳 **Nous 잔액**"
+    header: "💳 **Zeus 잔액**"
     portal_link: "포털에서 결제 관리: {url}"
     hint: "브라우저에서 충전과 결제 관리를 하면 잔액이 여기에도 곧 반영돼요."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "토큰 사용량과 요청 제한 표시; `reset`은 적립된 Codex 한도 초기화 사용"
   subscription:
-    description: "Nous 요금제 확인 및 브라우저에서 변경"
+    description: "Zeus 요금제 확인 및 브라우저에서 변경"
   login:
-    description: "Nous 계정으로 로그인 (커넥터 유지)"
+    description: "Zeus 계정으로 로그인 (커넥터 유지)"
   topup:
-    description: "Nous 잔액 표시 및 포털에서 결제 관리"
+    description: "Zeus 잔액 표시 및 포털에서 결제 관리"
   platforms:
     description: "게이트웨이/메시징 플랫폼 상태 표시"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "결제 정보를 불러올 수 없어요"
-    not_logged_in: "Nous Portal에 로그인되어 있지 않아요."
+    not_logged_in: "Zeus Portal에 로그인되어 있지 않아요."
     run_portal_then: "`zeus portal`로 로그인한 뒤 {cmd}을(를) 실행하세요."
     org_line: "조직: {org}"
     org_line_role: "조직: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  제공자 리졸버가 빈 기본 URL을 반환했어요. 제공자 설정을 확인하거나 zeus setup을 실행해 주세요"
     switching_to_fallback: "⚠️  {reason} — 대체 제공자로 전환해요: {provider} / {model}"
     first_run_no_provider: "☤ 아직 설정된 추론 제공자가 없어요 — 지금 설정해 볼게요."
-    first_run_pick_provider: "제공자(Nous Portal OAuth가 가장 빨라요, API 키 불필요)와 모델을 선택하게 돼요."
+    first_run_pick_provider: "제공자(Zeus Portal OAuth가 가장 빨라요, API 키 불필요)와 모델을 선택하게 돼요."
     first_run_prompt: "지금 제공자를 설정할까요? [Y/n]:"
     first_run_skipped: "건너뛰었어요. 언제든 'zeus model' 또는 'zeus setup'을 실행할 수 있어요."
     first_run_cancelled: "설정이 취소됐어요. 언제든 'zeus model'을 실행할 수 있어요."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ 남은 /steer를 다음 턴으로 전달해요: '{preview}'"
     reasoning_label: "추론"
     reasoning_more_lines: "... ({count}줄 더 있음 — /reasoning full로 표시)"
-    billing_cta_nous: "[bold]/topup[/]으로 크레딧을 충전하거나 [bold]/subscription[/]으로 요금제를 변경하세요."
+    billing_cta_zeus: "[bold]/topup[/]으로 크레딧을 충전하거나 [bold]/subscription[/]으로 요금제를 변경하세요."
     billing_cta_provider: "{provider}에서 크레딧을 충전하세요"
     your_provider: "사용 중인 제공자"
     billing_cta_switch: "또는 [bold]/model <model> --provider <provider>[/]로 제공자를 전환하세요."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "LM Studio 해결법: 모델 설정에서 컨텍스트 길이를 지정 → 모델 다시 불러오기"
     fix_local_server: "해결법: 서버를 최소 {tokens_k}K 컨텍스트로 시작하거나 (llama.cpp: -c {tokens}), config.yaml의 model.ollama_num_ctx를 실제로 제공하는 창 크기로 설정하세요"
     fix_config: "해결법: config.yaml에서 model.context_length를 설정하거나 서버의 컨텍스트 설정을 늘리세요"
-    zeus_models_not_agentic: "⚠  Nous Research Hermes 3 & 4 모델은 에이전트용이 아니며 Zeus Agents와 함께 사용하도록 설계되지 않았어요."
+    zeus_models_not_agentic: "⚠  Zeus Agents Hermes 3 & 4 모델은 에이전트용이 아니며 Zeus Agents와 함께 사용하도록 설계되지 않았어요."
     zeus_models_lack_tools: "에이전트 워크플로에 필요한 도구 호출 기능이 없어요. 에이전트용 모델(Claude, GPT, Gemini, DeepSeek 등)을 사용해 보세요."
     zeus_models_switch_hint: "전환 방법: /model sonnet  또는  /model gpt5"
     project_skills_loaded: "◆ 이 저장소에서 프로젝트 스킬 {count}개를 불러왔어요"
@@ -3731,7 +3731,7 @@ tips:
   t182: "browser_exec는 여러 브라우저 단계를 한 번의 Python 호출로 실행합니다 — 이동, 추출, 클릭을 한꺼번에."
   t183: "browser.dialog_policy는 페이지의 기본 대화 상자 처리 방식을 정해요: must_respond(에이전트가 browser_dialog로 응답), auto_dismiss, auto_accept."
   t184: "zeus mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
-  t185: "zeus mcp catalog는 저장소에 포함된 Nous 승인 MCP 서버 목록을 보여줘요."
+  t185: "zeus mcp catalog는 저장소에 포함된 Zeus 승인 MCP 서버 목록을 보여줘요."
   t186: "zeus mcp install <name>은 카탈로그 항목을 설치하고 자격 증명을 묻은 뒤, 어떤 도구를 활성화할지 고를 수 있게 해요."
   t187: "MCP 서버는 config.yaml에서 설정해요 — stdio와 HTTP 전송 방식을 모두 지원해요."
   t188: "서버별 도구 필터링: tools.include는 특정 도구만 허용하고 tools.exclude는 특정 도구를 제외해요."
@@ -3758,7 +3758,7 @@ tips:
   t209: "사용자 정의 제공자: config.yaml의 custom_providers 아래에 이름 붙인 엔드포인트를 저장해요."
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT는 기록에 절대 저장되지 않는 시스템 프롬프트를 주입해요."
   t211: "credential_pool_strategies는 fill_first, round_robin, least_used, random 순환 방식을 지원해요."
-  t212: "zeus auth add nous 또는 zeus auth add openai-codex로 OAuth 기반 제공자를 설정해요."
+  t212: "zeus auth add zeus 또는 zeus auth add openai-codex로 OAuth 기반 제공자를 설정해요."
   t213: "API 서버는 Chat Completions와 서버 측 상태를 갖는 Responses API를 모두 지원해요."
   t214: "설정에서 tool_preview_length: 0으로 두면 스피너 활동 피드에 전체 파일 경로가 표시돼요."
   t215: "zeus status --deep은 모든 구성 요소에 대해 더 깊은 진단 검사를 실행해요."
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback은 실행 전 스냅샷에서 스킬을 복원해요 — 백업은 skills/.curator_backups/ 아래에 있어요."
   t306: "zeus auth reset <provider> [target]은 자격 증명 풀 전체, 또는 인덱스·id·라벨로 지정한 자격 증명 하나의 쿨다운과 소진 플래그를 지워요."
   t307: "credential_pool_strategies.<provider>: round_robin은 기본값 fill_first 대신 키를 균등하게 순환해요."
-  t308: "도구별 use_gateway: true는 web, image, tts, browser를 Nous 구독으로 라우팅해요 — 추가 키가 필요 없어요."
+  t308: "도구별 use_gateway: true는 web, image, tts, browser를 Zeus 구독으로 라우팅해요 — 추가 키가 필요 없어요."
   t309: "provider_routing.data_collection: deny는 OpenRouter에서 데이터를 저장하는 제공자를 제외해요."
   t310: "provider_routing.require_parameters: true는 요청의 모든 파라미터를 지원하는 제공자에게만 라우팅해요."
   t311: "ZEUS_TUI_RESUME=1은 실행 시 가장 최근 TUI 세션에 자동으로 다시 연결해요 — SSH가 끊긴 뒤에 유용해요."
@@ -3937,7 +3937,7 @@ tips:
     p10: "리마인더를 설정하거나 반복 작업을 예약해 줘"
     p11: "/ 를 입력해 명령을 둘러보거나 Ctrl+P로 팔레트를 여세요"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "무료"
   level_top_tier: "대형"

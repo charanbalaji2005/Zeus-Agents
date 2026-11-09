@@ -121,9 +121,9 @@ zeus doctor       # Diagnose any issues
 
 ---
 
-## Skip the API-key collection — Nous Portal
+## Skip the API-key collection — Zeus Portal
 
-Zeus works with whatever provider you want — that's not changing. But if you'd rather not collect five separate API keys for the model, web search, image generation, TTS, and a cloud browser, **[Nous Portal](https://portal.nousresearch.com)** covers all of them under one subscription:
+Zeus works with whatever provider you want — that's not changing. But if you'd rather not collect five separate API keys for the model, web search, image generation, TTS, and a cloud browser, **[Zeus Portal](https://portal.nousresearch.com)** covers all of them under one subscription:
 
 - **300+ models** — pick any of them with `/model <name>`
 - **Tool Gateway** — web search, image generation (FAL), text-to-speech (OpenAI), cloud browser (Browser Use), all routed through your sub. No extra accounts.
@@ -134,7 +134,7 @@ One command from a fresh install:
 zeus setup --portal
 ```
 
-That logs you in via OAuth, sets Nous as your provider, and turns on the Tool Gateway. Check what's wired up any time with `zeus portal info`. Full details on the [Tool Gateway docs page](https://charanbalaji2005.github.io/Zeus-Agents/docs/user-guide/features/tool-gateway).
+That logs you in via OAuth, sets Zeus as your provider, and turns on the Tool Gateway. Check what's wired up any time with `zeus portal info`. Full details on the [Tool Gateway docs page](https://charanbalaji2005.github.io/Zeus-Agents/docs/user-guide/features/tool-gateway).
 
 You can still bring your own keys per-tool whenever you want — the gateway is per-backend, not all-or-nothing.
 

@@ -1,6 +1,6 @@
-"""Centralized Nous Portal request tags.
+"""Centralized Zeus Portal request tags.
 
-Every Zeus request to the Nous Portal (main loop, auxiliary client, fallback
+Every Zeus request to the Zeus Portal (main loop, auxiliary client, fallback
 paths) must carry the same product-attribution tags, sent in OpenAI-compatible
 ``extra_body['tags']``: ``["product=zeus-agents", "client=zeus-client-v<base_version>"]``.
 The value comes from the canonical runtime identity's base version so build
@@ -15,11 +15,11 @@ from typing import List, Optional
 # Ambient conversation id (ATTRIBUTION value, sent as ``conversation=<id>``).
 # The agent loop publishes it at turn entry; auxiliary call sites funnelling
 # through ``auxiliary_client.call_llm`` (no session handle) pick it up via
-# ``nous_portal_tags()``. A ContextVar so concurrent agents in one process never
+# ``zeus_portal_tags()``. A ContextVar so concurrent agents in one process never
 # see each other's id; ``propagate_context_to_thread`` workers inherit it.
-_conversation_id: ContextVar[Optional[str]] = ContextVar("nous_portal_conversation_id", default=None)
+_conversation_id: ContextVar[Optional[str]] = ContextVar("zeus_portal_conversation_id", default=None)
 
-# Ambient affinity scope (ROUTING value): OpenRouter's sticky ``session_id``, Nous
+# Ambient affinity scope (ROUTING value): OpenRouter's sticky ``session_id``, Zeus
 # Portal's sticky key and xAI's ``x-grok-conv-id`` pin a conversation to one
 # backend/prompt cache. Usually equal to the conversation id, but a host that mints
 # one physical session per RESPONSE must route on the key it declared for the whole
@@ -82,8 +82,8 @@ def conversation_tag(session_id: str) -> str:
     return f"conversation={session_id}"
 
 
-def nous_portal_tags(session_id: str | None = None) -> list[str]:
-    """Fresh list of the canonical Nous Portal tags.
+def zeus_portal_tags(session_id: str | None = None) -> list[str]:
+    """Fresh list of the canonical Zeus Portal tags.
 
     The ambient conversation context (lineage ROOT id) wins over the explicit
     ``session_id``, a fallback for callers outside any agent turn.

@@ -302,7 +302,7 @@ def _wire_reasoning_carriers(provider: Any, base_url: Any) -> frozenset:
     ``message_sanitization.route_reasoning_carriers`` owns the table; keys the route rejected
     this session were already removed upstream by ``reapply_reasoning_echo``. The table replays
     ``reasoning_details`` to OpenRouter-format gateways (OpenRouter, Kilo, Vercel AI Gateway,
-    Nous Portal) and to vendors documenting it (Novita, MiniMax /v1, TokenHub), never to strict
+    Zeus Portal) and to vendors documenting it (Novita, MiniMax /v1, TokenHub), never to strict
     schemas (Groq, Mistral, Cerebras, opencode relays: ``property 'reasoning_details' is
     unsupported`` / ``Extra inputs are not permitted`` / ``no such field``, #70233).
     The Portal is back on the list: the "cumulative replayed-reasoning budget" blamed for #118182

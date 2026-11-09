@@ -320,11 +320,11 @@ def _resolve_api_mode(agent, api_mode, provider_name, base_url):
         host.startswith("bedrock-runtime.") and base_url_host_matches(url, "amazonaws.com")
     ):
         agent.api_mode = "bedrock_converse"
-    elif agent.provider in {"nous", "nous-portal", "nousresearch"}:
+    elif agent.provider in {"zeus", "zeus-portal", "zeusagents"}:
         # Portal is dual-wire (anthropic/* → Messages, else chat_completions); covers direct
         # AIAgent construction without a resolved runtime.
-        from zeus_cli.providers import nous_api_mode
-        agent.api_mode = nous_api_mode(agent.model)
+        from zeus_cli.providers import zeus_api_mode
+        agent.api_mode = zeus_api_mode(agent.model)
     else:
         # Host-mandated wire check — LAST, so the provider-slug rewrites above always win.
         # Covers api.meta.ai → codex_responses (prompt caching: 0% on chat vs 93-99%).
@@ -362,16 +362,16 @@ def _finalize_routing(agent, api_mode, credential_pool):
     with suppress(Exception):
         agent._get_transport()
 
-    # The Nous agent key lives ~1 h. Without the proactive refresher every agent in the process
+    # The Zeus agent key lives ~1 h. Without the proactive refresher every agent in the process
     # discovers expiry reactively, on its own next request, all in the same minute: with 200
     # in-process subagents that was a 401 storm each hour (620 in one run) and the credential
     # pool benched the provider for all of them. The gateway and web server start this thread
     # at boot; the CLI process (and everything spawned inside it) never did. Idempotent,
     # process-wide, daemon.
-    if agent.provider == "nous":
+    if agent.provider == "zeus":
         with suppress(Exception):
-            from zeus_cli.nous_auth_keepalive import start_nous_auth_keepalive
-            start_nous_auth_keepalive()
+            from zeus_cli.zeus_auth_keepalive import start_zeus_auth_keepalive
+            start_zeus_auth_keepalive()
 
     with suppress(Exception):
         from zeus_cli.model_normalize import (
@@ -381,7 +381,7 @@ def _finalize_routing(agent, api_mode, credential_pool):
         if agent.provider not in _AGGREGATOR_PROVIDERS:
             agent.model = normalize_model_for_provider(agent.model, agent.provider)
 
-    # Nous model policy follows the ROUTE (the welcome host serves one model); a credential-pool
+    # Zeus model policy follows the ROUTE (the welcome host serves one model); a credential-pool
     # swap can change the route later, so ``_swap_credential`` applies the same helper again.
     from zeus_cli.anon_auth import pin_model_for_route
     agent.model = pin_model_for_route(agent.provider, agent.base_url, agent.model)
@@ -1995,7 +1995,7 @@ def _enforce_minimum_context(agent):
 
 
 def _warn_nonagentic_zeus_model(agent):
-    # Nous Hermes 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
+    # Zeus Hermes 3/4 are chat models, not tool-call-tuned. cli.py show_banner() already
     # warns on the CLI, so skip platform=="cli"; non-quiet non-CLI surfaces still get it.
     if agent.quiet_mode or (agent.platform or "cli") == "cli":
         return
@@ -2004,7 +2004,7 @@ def _warn_nonagentic_zeus_model(agent):
         _zeus_warn = _check_zeus_model_warning(agent.model or "")
         if _zeus_warn:
             _user_msg = (
-                "⚠ Nous Research Hermes 3 & 4 models are NOT agentic — they "
+                "⚠ Zeus Agents Hermes 3 & 4 models are NOT agentic — they "
                 "lack reliable tool-calling for agent workflows (delegation, "
                 "cron, proactive tools). Consider an agentic model instead "
                 "(Claude, GPT, Gemini, Qwen-Coder, etc.)."

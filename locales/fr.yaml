@@ -647,7 +647,7 @@ gateway:
     unknown_subcommand: "Sous-commande /usage inconnue : `{args}`. Essayez `/usage` ou `/usage reset [--force]`."
     reset_wrong_provider: "Les réinitialisations de limite en réserve ne sont disponibles qu'avec le fournisseur openai-codex. Changez d'abord avec `/model`."
   credits:
-    not_logged_in: "Non connecté à Nous Portal. Connecte-toi pour voir ton solde de crédits et recharger."
+    not_logged_in: "Non connecté à Zeus Portal. Connecte-toi pour voir ton solde de crédits et recharger."
   verbose:
     not_enabled: "La commande `/verbose` n'est pas activée pour les plateformes de messagerie.\n\nActivez-la dans `config.yaml` :\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Progression des outils : **OFF** — aucune activité d'outil affichée."
@@ -1007,7 +1007,7 @@ gateway:
     action_shutting_down: "en cours d'arrêt"
     action_restarting: "en cours de redémarrage"
     cron_interrupted: "⚠️ La tâche planifiée '{job}' a été interrompue car Zeus est {action} ; aucun résultat pour cette exécution. Elle se relancera selon son planning, ou lancez-la maintenant avec `zeus cron run {job}` une fois Zeus de retour."
-    notice_shutdown: "⚠️ Zeus s'arrête — votre tâche en cours va être interrompue. Une fois de retour en ligne, envoyez n'importe quel message et j'essaierai de reprendre là où nous en étions."
+    notice_shutdown: "⚠️ Zeus s'arrête — votre tâche en cours va être interrompue. Une fois de retour en ligne, envoyez n'importe quel message et j'essaierai de reprendre là où zeus en étions."
     notice_restart: "⚠️ Zeus redémarre — votre tâche en cours va être interrompue. Envoyez n'importe quel message après le redémarrage et j'essaierai de reprendre là où vous en étiez."
   startup:
     handoff_thread_title: "Zeus — {title}"
@@ -1143,7 +1143,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Impossible de charger la configuration : {error}"
   topup:
-    header: "💳 **Solde Nous**"
+    header: "💳 **Solde Zeus**"
     portal_link: "Gérez votre facturation sur le portail : {url}"
     hint: "Rechargez et gérez votre facturation dans le navigateur — votre solde sera mis à jour ici ensuite."
   login:
@@ -1931,11 +1931,11 @@ slash:
   usage:
     description: "Afficher la consommation de tokens et les limites de débit ; `reset` utilise une réinitialisation de limite Codex mise en réserve"
   subscription:
-    description: "Voir votre forfait Nous et le modifier dans le navigateur"
+    description: "Voir votre forfait Zeus et le modifier dans le navigateur"
   login:
-    description: "Se connecter avec un compte Nous (conserve vos connecteurs)"
+    description: "Se connecter avec un compte Zeus (conserve vos connecteurs)"
   topup:
-    description: "Afficher votre solde Nous et gérer la facturation sur le portail"
+    description: "Afficher votre solde Zeus et gérer la facturation sur le portail"
   platforms:
     description: "Afficher l'état du gateway et des plateformes de messagerie"
   platform:
@@ -1971,7 +1971,7 @@ cli:
   billing:
     load_failed: "{label} : {error}"
     load_failed_label: "Facturation indisponible"
-    not_logged_in: "Non connecté à Nous Portal."
+    not_logged_in: "Non connecté à Zeus Portal."
     run_portal_then: "Lancez `zeus portal` pour vous connecter, puis {cmd}."
     org_line: "Org : {org}"
     org_line_role: "Org : {org} · {role}"
@@ -2755,7 +2755,7 @@ cli:
     empty_base_url: "⚠️  Le résolveur de fournisseur a renvoyé une URL de base vide. Vérifiez la configuration de votre fournisseur ou exécutez : zeus setup"
     switching_to_fallback: "⚠️  {reason} — bascule vers le fournisseur de secours : {provider} / {model}"
     first_run_no_provider: "☤ Aucun fournisseur d'inférence n'est encore configuré — réglons cela."
-    first_run_pick_provider: "Vous allez choisir un fournisseur (Nous Portal OAuth est le plus rapide ; aucune clé API requise) puis un modèle."
+    first_run_pick_provider: "Vous allez choisir un fournisseur (Zeus Portal OAuth est le plus rapide ; aucune clé API requise) puis un modèle."
     first_run_prompt: "Configurer un fournisseur maintenant ? [Y/n] :"
     first_run_skipped: "Ignoré. Exécutez 'zeus model' ou 'zeus setup' à tout moment."
     first_run_cancelled: "Configuration annulée. Exécutez 'zeus model' à tout moment."
@@ -2787,7 +2787,7 @@ cli:
     delivering_leftover_steer: "⏩ /steer restant transmis comme prochain tour : '{preview}'"
     reasoning_label: "Raisonnement"
     reasoning_more_lines: "... ({count} lignes de plus — /reasoning full pour les afficher)"
-    billing_cta_nous: "Exécutez [bold]/topup[/] pour ajouter des crédits, ou [bold]/subscription[/] pour changer de formule."
+    billing_cta_zeus: "Exécutez [bold]/topup[/] pour ajouter des crédits, ou [bold]/subscription[/] pour changer de formule."
     billing_cta_provider: "Ajoutez des crédits chez {provider}"
     your_provider: "votre fournisseur"
     billing_cta_switch: "Ou changez de fournisseur avec [bold]/model <model> --provider <provider>[/]."
@@ -3452,7 +3452,7 @@ cli:
     fix_lm_studio: "Correctif LM Studio : réglez la longueur de contexte dans les paramètres du modèle → rechargez le modèle"
     fix_local_server: "Correctif : démarrez votre serveur avec au moins {tokens_k}K de contexte (llama.cpp : -c {tokens}), ou réglez model.ollama_num_ctx dans config.yaml sur la fenêtre réellement servie"
     fix_config: "Correctif : réglez model.context_length dans config.yaml, ou augmentez le paramètre de contexte de votre serveur"
-    zeus_models_not_agentic: "⚠  Les modèles Nous Research Hermes 3 et 4 ne sont PAS agentiques et ne sont pas conçus pour Zeus Agents."
+    zeus_models_not_agentic: "⚠  Les modèles Zeus Agents Hermes 3 et 4 ne sont PAS agentiques et ne sont pas conçus pour Zeus Agents."
     zeus_models_lack_tools: "Ils ne disposent pas des capacités d'appel d'outils requises pour les workflows agentiques. Préférez un modèle agentique (Claude, GPT, Gemini, DeepSeek, etc.)."
     zeus_models_switch_hint: "Changez avec : /model sonnet  ou  /model gpt5"
     project_skills_loaded: "◆ {count} skill(s) de projet chargée(s) depuis ce dépôt"
@@ -4055,8 +4055,8 @@ tips:
   t181: "Camofox (Firefox anti-détection) est désormais un plugin : zeus plugins install camofox."
   t182: "browser_exec exécute plusieurs étapes navigateur en un seul appel Python — naviguer, extraire et cliquer ensemble."
   t183: "browser.dialog_policy définit la gestion des boîtes de dialogue natives des pages : must_respond (l'agent répond avec browser_dialog), auto_dismiss ou auto_accept."
-  t184: "zeus mcp ouvre un sélecteur interactif de MCP approuvés par Nous, installables en une touche."
-  t185: "zeus mcp catalog liste les serveurs MCP approuvés par Nous fournis avec le dépôt."
+  t184: "zeus mcp ouvre un sélecteur interactif de MCP approuvés par Zeus, installables en une touche."
+  t185: "zeus mcp catalog liste les serveurs MCP approuvés par Zeus fournis avec le dépôt."
   t186: "zeus mcp install <name> installe une entrée du catalogue, demande les identifiants et vous laisse choisir les outils à activer."
   t187: "Les serveurs MCP se configurent dans config.yaml — transports stdio et HTTP pris en charge."
   t188: "Filtrage d'outils par serveur : tools.include met des outils en liste blanche, tools.exclude en liste noire."
@@ -4083,7 +4083,7 @@ tips:
   t209: "Fournisseurs personnalisés : enregistrez des endpoints nommés dans config.yaml sous custom_providers."
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT injecte un prompt système qui n'est jamais conservé dans l'historique."
   t211: "credential_pool_strategies prend en charge les rotations fill_first, round_robin, least_used et random."
-  t212: "zeus auth add nous ou zeus auth add openai-codex configure des fournisseurs basés sur OAuth."
+  t212: "zeus auth add zeus ou zeus auth add openai-codex configure des fournisseurs basés sur OAuth."
   t213: "Le serveur API prend en charge à la fois Chat Completions et l'API Responses avec état côté serveur."
   t214: "tool_preview_length: 0 dans la configuration affiche les chemins de fichiers complets dans le flux d'activité du spinner."
   t215: "zeus status --deep effectue des vérifications de diagnostic approfondies sur tous les composants."
@@ -4179,7 +4179,7 @@ tips:
   t305: "zeus curator rollback restaure les skills depuis un instantané pré-exécution — les sauvegardes vivent sous skills/.curator_backups/."
   t306: "zeus auth reset <provider> [target] efface les temps de repos et les indicateurs d'épuisement d'un pool d'identifiants entier, ou d'un seul identifiant par index, id ou libellé."
   t307: "credential_pool_strategies.<provider>: round_robin fait tourner les clés de façon équitable au lieu du fill_first par défaut."
-  t308: "use_gateway: true par outil route web, image, tts ou browser via votre abonnement Nous — aucune clé supplémentaire."
+  t308: "use_gateway: true par outil route web, image, tts ou browser via votre abonnement Zeus — aucune clé supplémentaire."
   t309: "provider_routing.data_collection: deny exclut les fournisseurs qui conservent les données sur OpenRouter."
   t310: "provider_routing.require_parameters: true ne route que vers les fournisseurs prenant en charge chaque paramètre de votre requête."
   t311: "ZEUS_TUI_RESUME=1 se rattache automatiquement à la session TUI la plus récente au lancement — pratique après une coupure SSH."
@@ -4262,7 +4262,7 @@ tips:
     p10: "Définis un rappel ou planifie une tâche récurrente"
     p11: "Tapez / pour parcourir les commandes, ou Ctrl+P pour la palette"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "Gratuit"
   level_top_tier: "Grand"

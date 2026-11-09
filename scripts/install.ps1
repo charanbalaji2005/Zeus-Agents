@@ -390,6 +390,35 @@ function Get-WindowsArch {
     return 'x64'
 }
 
+$script:DownloadAttempts = 3
+$script:DownloadRetryDelaySeconds = 2
+
+# How a download failure is handled: 'http' (the server answered with a status: try the next
+# candidate), 'transport' (DNS/connect failure or a transfer cut off mid-stream: retry, then the
+# next candidate) or 'fatal' (TLS trust failures and anything that is not a network error).
+function Get-DownloadFailureKind([System.Exception]$Exception) {
+    $errorType = $Exception.GetType().FullName
+    if ($Exception -is [System.Net.WebException]) {
+        # Windows PowerShell 5.1: DNS/connect/HTTP failures.
+        if ($Exception.Status -in @('TrustFailure', 'SecureChannelFailure')) { return 'fatal' }
+        if ($Exception.Status -eq 'ProtocolError') { return 'http' }
+        return 'transport'
+    }
+    if ($errorType -eq 'System.Net.Http.HttpRequestException') {
+        # pwsh 7: DNS/connect failures. A TLS trust failure arrives with an
+        # AuthenticationException inside and is never a routing problem.
+        # (Matched by name: 5.1 may not load System.Net.Http.)
+        $inner = $Exception.InnerException
+        if ($inner -and $inner.GetType().FullName -eq 'System.Security.Authentication.AuthenticationException') { return 'fatal' }
+        return 'transport'
+    }
+    if ($errorType -eq 'Microsoft.PowerShell.Commands.HttpResponseException') { return 'http' }
+    # A connection reset while the body streams surfaces as a bare IOException ("Unable to read
+    # data from the transport connection") or SocketException, not a WebException.
+    if ($Exception -is [System.IO.IOException] -or $Exception -is [System.Net.Sockets.SocketException]) { return 'transport' }
+    return 'fatal'
+}
+
 # Mirror bytes must match the same pin; corruption is never a cache miss.
 function Invoke-VerifiedDownload {
     param(
@@ -402,25 +431,25 @@ function Invoke-VerifiedDownload {
     if ($MirrorUrl -and $MirrorUrl -ne $Url) { $urls += $MirrorUrl }
     $httpFailure = ""
     foreach ($candidate in $urls) {
-        try {
-            Invoke-DownloadWithProgress -Uri $candidate -OutFile $OutFile
-        } catch {
-            $errorType = $_.Exception.GetType().FullName
-            if ($_.Exception -is [System.Net.WebException]) {
-                # Windows PowerShell 5.1: DNS/connect/HTTP failures.
-                if ($_.Exception.Status -in @('TrustFailure', 'SecureChannelFailure')) { throw }
-            } elseif ($errorType -eq 'System.Net.Http.HttpRequestException') {
-                # pwsh 7: DNS/connect failures. A TLS trust failure arrives
-                # with an AuthenticationException inside and is never a routing
-                # problem. (Matched by name: 5.1 may not load System.Net.Http.)
-                $inner = $_.Exception.InnerException
-                if ($inner -and $inner.GetType().FullName -eq 'System.Security.Authentication.AuthenticationException') { throw }
-            } elseif ($errorType -ne 'Microsoft.PowerShell.Commands.HttpResponseException') {
-                throw
+        $downloaded = $false
+        for ($attempt = 1; $attempt -le $script:DownloadAttempts; $attempt++) {
+            try {
+                Invoke-DownloadWithProgress -Uri $candidate -OutFile $OutFile
+                $downloaded = $true
+                break
+            } catch {
+                $kind = Get-DownloadFailureKind $_.Exception
+                if ($kind -eq 'fatal') { throw }
+                $httpFailure = $_.Exception.Message
+                # An HTTP status is the server's answer and asking again changes nothing; a
+                # dropped or reset transfer (flaky Wi-Fi, a proxy cutting a large download)
+                # usually succeeds on a second try, so only those retry before the mirror.
+                if ($kind -ne 'transport' -or $attempt -ge $script:DownloadAttempts) { break }
+                Write-Warn "download from $candidate interrupted ($httpFailure); retrying ($($attempt + 1) of $($script:DownloadAttempts))"
+                Start-Sleep -Seconds ($script:DownloadRetryDelaySeconds * $attempt)
             }
-            $httpFailure = $_.Exception.Message
-            continue
         }
+        if (-not $downloaded) { continue }
         $digest = (Get-FileHash -Path $OutFile -Algorithm SHA256).Hash.ToLowerInvariant()
         if ($digest -eq $Sha256.ToLowerInvariant()) { return }
         Remove-Item -Path $OutFile -Force -ErrorAction SilentlyContinue

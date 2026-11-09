@@ -33,10 +33,10 @@ permissions:
 jobs:
   lazy-deps-guard:
     name: No production imports of the tools.lazy_deps stub
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit }}
 

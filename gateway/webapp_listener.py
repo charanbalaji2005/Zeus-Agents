@@ -210,11 +210,11 @@ def listener_plan(home) -> tuple[str, int, WebappMount | None, str | None]:
 
 
 def use_own_sign_in(webapp: WebappMount):
-    """Sign the Webapp's browsers in to Nous with the Portal client Web Access registered for it
+    """Sign the Webapp's browsers in to Zeus with the Portal client Web Access registered for it
     (``zeus_cli.webapp_access.sign_in_client``), never the dashboard's
     ``ZEUS_DASHBOARD_OAUTH_CLIENT_ID``, until the returned undo runs. None, changing nothing, when
-    Web Access registered no client of its own (Nous sign-in set up by hand keeps the configured
-    client) or the Nous sign-in plugin is not enabled."""
+    Web Access registered no client of its own (Zeus sign-in set up by hand keeps the configured
+    client) or the Zeus sign-in plugin is not enabled."""
     from zeus_cli.dashboard_auth import listener_client
     from zeus_cli.webapp_access import sign_in_client
 
@@ -386,7 +386,7 @@ def register_control_verbs(runner, home, server=None, *, links_checked: bool | N
             # Behind the dashboard's sign-in the page asks for it; a launch link opens only a private Webapp.
             # Sign-in returns to a callback the provider must know and checks a state cookie set where it
             # started, so the browser starts at that callback's origin: webapp.public_url when set (the
-            # listener's own public URL), else on the LAN the address Web Access registered Nous sign-in
+            # listener's own public URL), else on the LAN the address Web Access registered Zeus sign-in
             # for, else the loopback address (a password provider, or sign-in set up by hand for it).
             # Native clients keep the loopback address.
             from zeus_cli.webapp_access import registered_lan_origin

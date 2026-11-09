@@ -479,8 +479,8 @@ async def _start_gateway_shutdown_tail(
             logger.debug("Control socket stop failed (non-fatal)", exc_info=True)
 
     def _stop_keepalive() -> None:
-        from zeus_cli.nous_auth_keepalive import stop_nous_auth_keepalive
-        stop_nous_auth_keepalive()
+        from zeus_cli.zeus_auth_keepalive import stop_zeus_auth_keepalive
+        stop_zeus_auth_keepalive()
 
     _best_effort(_stop_keepalive)
 
@@ -853,11 +853,11 @@ async def start_gateway(config: Optional[GatewayConfig] = None, replace: bool = 
             return record_startup()
 
         def _start_keepalive() -> None:
-            from zeus_cli.nous_auth_keepalive import start_nous_auth_keepalive
-            start_nous_auth_keepalive()
+            from zeus_cli.zeus_auth_keepalive import start_zeus_auth_keepalive
+            start_zeus_auth_keepalive()
 
         _unclean_exit = _best_effort(_lifecycle_record_startup, "Lifecycle ledger startup record failed: %s")
-        _best_effort(_start_keepalive, "Nous auth keepalive did not start: %s")
+        _best_effort(_start_keepalive, "Zeus auth keepalive did not start: %s")
         _ensure_windows_gateway_venv_imports()
 
         _early_verdict = await _start_gateway_run_runner(runner, _signal_initiated_shutdown)

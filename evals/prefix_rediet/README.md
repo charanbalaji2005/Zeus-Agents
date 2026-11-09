@@ -36,7 +36,7 @@ python3 evals/prefix_rediet/run.py qwen/qwen3.8-27b 3 --parallel=7
 python3 evals/prefix_rediet/run.py --report
 ```
 
-Inference defaults to the Nous Portal agent key, read fresh from `$ZEUS_HOME/auth.json` for every
+Inference defaults to the Zeus Portal agent key, read fresh from `$ZEUS_HOME/auth.json` for every
 cell (read-only; the grant is never refreshed or copied). Set `PRD_INFERENCE_URL` +
 `PRD_INFERENCE_KEY` for any other OpenAI-compatible endpoint.
 

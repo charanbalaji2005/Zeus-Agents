@@ -29,7 +29,7 @@ _GREETINGS = {
     "ar": "مرحبًا، أنا Zeus. لنجهّز كل شيء لك، ثم ننجز معًا شيئًا رائعًا.",
     "de": "Hallo, ich bin Zeus. Richten wir alles für Sie ein. Danach machen wir etwas Cooles.",
     "es": "Hola, soy Zeus. Vamos a dejarlo todo listo para ti. Luego haremos algo genial.",
-    "fr": "Bonjour, je suis Zeus. Configurons tout pour vous. Ensuite, nous ferons quelque chose de génial.",
+    "fr": "Bonjour, je suis Zeus. Configurons tout pour vous. Ensuite, zeus ferons quelque chose de génial.",
     "ja": "こんにちは、Zeus です。まずはあなたに合わせて設定しましょう。そのあと、何かすごいものを作りましょう。",
     "ru": "Привет, я Zeus. Давайте всё настроим под вас. А потом сделаем что-нибудь классное.",
     "zh": "你好，我是 Zeus。我们先帮你把一切设置好，然后一起做点很酷的事。",
@@ -317,7 +317,7 @@ def _waiting_beat(record) -> str | None:
 
 _REMINDERS = {
     "after_name": lambda r, f: f"They go by {r['picks']['name']}. Greet them by name in a few words. {_next(r)}",
-    "after_theme": lambda r, f: (f"Accent {r['picks']['accent'] or 'Nous blue'} is on, already applied. Do not call "
+    "after_theme": lambda r, f: (f"Accent {r['picks']['accent'] or 'Zeus blue'} is on, already applied. Do not call "
                                  f"set_theme for it again. React in three words or fewer. {_next(r)}"),
     "after_layout": _after_layout,
     "offer_first": lambda r, f: f"The connectors card is not shown yet. {_LOOK_AROUND}",

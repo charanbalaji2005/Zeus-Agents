@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "Fo-ordú /usage anaithnid: `{args}`. Bain triail as `/usage` nó `/usage reset [--force]`."
     reset_wrong_provider: "Níl athshocruithe teorann bainc ar fáil ach ar an soláthraí openai-codex. Athraigh le `/model` ar dtús."
   credits:
-    not_logged_in: "Níl tú logáilte isteach i Nous Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
+    not_logged_in: "Níl tú logáilte isteach i Zeus Portal. Logáil isteach chun d'iarmhéid creidmheasa a fheiceáil agus breis a chur leis."
   verbose:
     not_enabled: "Níl an t-ordú `/verbose` cumasaithe d'ardáin teachtaireachtaí.\n\nCumasaigh in `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Dul chun cinn uirlise: **AS** — gan aon ghníomhaíocht uirlise á thaispeáint."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Níorbh fhéidir an chumraíocht a lódáil: {error}"
   topup:
-    header: "💳 **Iarmhéid Nous**"
+    header: "💳 **Iarmhéid Zeus**"
     portal_link: "Bainistigh billeáil ar an bportal: {url}"
     hint: "Cuir breis leis agus bainistigh billeáil sa bhrabhsálaí — nuashonrófar d'iarmhéid anseo ina dhiaidh sin."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "Taispeáin úsáid comharthaí agus teorainneacha ráta; fuasclaíonn `reset` athshocrú teorann Codex bainc"
   subscription:
-    description: "Féach ar do phlean Nous agus athraigh é sa bhrabhsálaí"
+    description: "Féach ar do phlean Zeus agus athraigh é sa bhrabhsálaí"
   login:
-    description: "Sínigh isteach le cuntas Nous (coinníonn sé do nascóirí)"
+    description: "Sínigh isteach le cuntas Zeus (coinníonn sé do nascóirí)"
   topup:
-    description: "Taispeáin d'iarmhéid Nous agus bainistigh billeáil ar an bportal"
+    description: "Taispeáin d'iarmhéid Zeus agus bainistigh billeáil ar an bportal"
   platforms:
     description: "Taispeáin stádas gateway/ardán teachtaireachtaí"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Níorbh fhéidir an bhilleáil a lódáil"
-    not_logged_in: "Níl tú logáilte isteach i Nous Portal."
+    not_logged_in: "Níl tú logáilte isteach i Zeus Portal."
     run_portal_then: "Rith `zeus portal` chun logáil isteach, ansin {cmd}."
     org_line: "Eagraíocht: {org}"
     org_line_role: "Eagraíocht: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  D'fhill réiteoir an tsoláthraí URL bunaidh folamh. Seiceáil cumraíocht do sholáthraí nó rith: zeus setup"
     switching_to_fallback: "⚠️  {reason} — ag athrú go dtí an cúltaca: {provider} / {model}"
     first_run_no_provider: "☤ Níl aon soláthraí inférála cumraithe fós — réitímis é sin."
-    first_run_pick_provider: "Roghnóidh tú soláthraí (is é Nous Portal OAuth an ceann is tapúla; ní gá eochair API) agus samhail."
+    first_run_pick_provider: "Roghnóidh tú soláthraí (is é Zeus Portal OAuth an ceann is tapúla; ní gá eochair API) agus samhail."
     first_run_prompt: "Socraigh soláthraí anois? [T/n]:"
     first_run_skipped: "Scipeáilte. Rith 'zeus model' nó 'zeus setup' am ar bith."
     first_run_cancelled: "Socrú cealaithe. Rith 'zeus model' am ar bith."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ Ag seachadadh /steer fuílligh mar an chéad seal eile: '{preview}'"
     reasoning_label: "Réasúnaíocht"
     reasoning_more_lines: "... ({count} líne eile — /reasoning full le taispeáint)"
-    billing_cta_nous: "Rith [bold]/topup[/] le creidmheasanna a chur leis, nó [bold]/subscription[/] leis an bplean a athrú."
+    billing_cta_zeus: "Rith [bold]/topup[/] le creidmheasanna a chur leis, nó [bold]/subscription[/] leis an bplean a athrú."
     billing_cta_provider: "Cuir creidmheasanna leis trí {provider}"
     your_provider: "do sholáthraí"
     billing_cta_switch: "Nó athraigh soláthraí le [bold]/model <model> --provider <provider>[/]."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "Leigheas LM Studio: Socraigh fad an chomhthéacs i socruithe na samhla → athlódáil an tsamhail"
     fix_local_server: "Leigheas: tosaigh do fhreastalaí le comhthéacs {tokens_k}K ar a laghad (llama.cpp: -c {tokens}), nó socraigh model.ollama_num_ctx in config.yaml don fhuinneog a fhreastalaíonn sé i ndáiríre"
     fix_config: "Leigheas: Socraigh model.context_length in config.yaml, nó méadaigh socrú comhthéacs do fhreastalaí"
-    zeus_models_not_agentic: "⚠  NÍL samhlacha Hermes 3 & 4 de chuid Nous Research gníomhaireach agus níl siad deartha le húsáid le Zeus Agents."
+    zeus_models_not_agentic: "⚠  NÍL samhlacha Hermes 3 & 4 de chuid Zeus Agents gníomhaireach agus níl siad deartha le húsáid le Zeus Agents."
     zeus_models_lack_tools: "Níl na cumais glaonna uirlisí acu a theastaíonn do shreafaí oibre gníomhaire. Smaoinigh ar shamhail ghníomhaireach a úsáid (Claude, GPT, Gemini, DeepSeek, etc.)."
     zeus_models_switch_hint: "Athraigh le: /model sonnet  nó  /model gpt5"
     project_skills_loaded: "◆ {count} scil(eanna) tionscadail lódáilte ón stór seo"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Is breiseán é Camofox (Firefox frith-bhrath) anois: zeus plugins install camofox."
   t182: "Ritheann browser_exec roinnt céimeanna brabhsálaí in aon ghlao Python amháin — nascleanúint, eastóscadh agus cliceáil le chéile."
   t183: "Socraíonn browser.dialog_policy conas a láimhseáiltear dialóga dúchasacha leathanaigh: must_respond (freagraíonn an gníomhaire le browser_dialog), auto_dismiss nó auto_accept."
-  t184: "Osclaíonn zeus mcp roghnóir idirghníomhach de MCPanna atá ceadaithe ag Nous agus is féidir leat iad a shuiteáil le brú amháin eochrach."
-  t185: "Liostaíonn zeus mcp catalog freastalaithe MCP atá ceadaithe ag Nous agus a sheoltar leis an stór."
+  t184: "Osclaíonn zeus mcp roghnóir idirghníomhach de MCPanna atá ceadaithe ag Zeus agus is féidir leat iad a shuiteáil le brú amháin eochrach."
+  t185: "Liostaíonn zeus mcp catalog freastalaithe MCP atá ceadaithe ag Zeus agus a sheoltar leis an stór."
   t186: "Suiteálann zeus mcp install <name> iontráil chatalóige, iarrann dintiúir ort, agus ligeann duit roghnú cé acu dá huirlisí a chumasófar."
   t187: "Cumraítear freastalaithe MCP in config.yaml — tacaítear le hiompar stdio agus HTTP araon."
   t188: "Scagadh uirlisí de réir freastalaí: liostaíonn tools.include uirlisí ceadaithe agus tools.exclude uirlisí coiscthe."
@@ -3758,7 +3758,7 @@ tips:
   t209: "Soláthraithe saincheaptha: sábháil críochphointí ainmnithe in config.yaml faoi custom_providers."
   t210: "Instealann ZEUS_EPHEMERAL_SYSTEM_PROMPT leid chórais nach sábháiltear sa stair choíche."
   t211: "Tacaíonn credential_pool_strategies le rothlú fill_first, round_robin, least_used, agus random."
-  t212: "Socraíonn zeus auth add nous nó zeus auth add openai-codex soláthraithe OAuth-bhunaithe."
+  t212: "Socraíonn zeus auth add zeus nó zeus auth add openai-codex soláthraithe OAuth-bhunaithe."
   t213: "Tacaíonn an freastalaí API le Chat Completions agus le Responses API araon, le staid ar thaobh an fhreastalaí."
   t214: "Taispeánann tool_preview_length: 0 sa chumraíocht conairí comhaid iomlána i bhfotha gníomhaíochta an snitheora."
   t215: "Ritheann zeus status --deep seiceálacha diagnóiseacha níos doimhne ar gach comhpháirt."
@@ -3854,7 +3854,7 @@ tips:
   t305: "Aischuireann zeus curator rollback scileanna ó roghchóip réamhrite — tá cúltacaí faoi skills/.curator_backups/."
   t306: "Glanann zeus auth reset <provider> [target] tréimhsí fuaraithe agus bratacha ídithe ar linn dintiúr iomlán, nó ar dhintiúr amháin de réir innéacs, id, nó lipéid."
   t307: "Rothlaíonn credential_pool_strategies.<provider>: round_robin eochracha go cothrom in ionad an réamhshocraithe fill_first."
-  t308: "Seolann use_gateway: true de réir uirlise web, image, tts, nó browser trí do shíntiús Nous — gan eochracha breise."
+  t308: "Seolann use_gateway: true de réir uirlise web, image, tts, nó browser trí do shíntiús Zeus — gan eochracha breise."
   t309: "Eisiann provider_routing.data_collection: deny soláthraithe a stórálann sonraí ar OpenRouter."
   t310: "Ní sheolann provider_routing.require_parameters: true ach chuig soláthraithe a thacaíonn le gach paraiméadar i d'iarratas."
   t311: "Athcheanglaíonn ZEUS_TUI_RESUME=1 leis an seisiún TUI is déanaí go huathoibríoch ag am tosaithe — áisiúil tar éis titim SSH."
@@ -3937,7 +3937,7 @@ tips:
     p10: "Socraigh meabhrúchán nó sceidealaigh tasc athfhillteach"
     p11: "Clóscríobh / chun orduithe a bhrabhsáil, nó Ctrl+P don phailéad"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "Saor in aisce"
   level_top_tier: "Mór"

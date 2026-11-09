@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "Неизвестная подкоманда /usage: `{args}`. Попробуйте `/usage` или `/usage reset [--force]`."
     reset_wrong_provider: "Накопленные сбросы лимитов доступны только с провайдером openai-codex. Сначала переключитесь через `/model`."
   credits:
-    not_logged_in: "Вы не вошли в Nous Portal. Войдите, чтобы увидеть баланс кредитов и пополнить его."
+    not_logged_in: "Вы не вошли в Zeus Portal. Войдите, чтобы увидеть баланс кредитов и пополнить его."
   verbose:
     not_enabled: "Команда `/verbose` не включена для платформ обмена сообщениями.\n\nВключите в `config.yaml`:\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ Прогресс инструментов: **OFF** — активность инструментов не показывается."
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ Не удалось загрузить конфигурацию: {error}"
   topup:
-    header: "💳 **Баланс Nous**"
+    header: "💳 **Баланс Zeus**"
     portal_link: "Управление оплатой на портале: {url}"
     hint: "Пополняйте баланс и управляйте оплатой в браузере — баланс здесь обновится после этого."
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "Показать расход токенов и лимиты; `reset` использует накопленный сброс лимита Codex"
   subscription:
-    description: "Посмотреть ваш тариф Nous и изменить его в браузере"
+    description: "Посмотреть ваш тариф Zeus и изменить его в браузере"
   login:
-    description: "Войти с аккаунтом Nous (ваши коннекторы сохраняются)"
+    description: "Войти с аккаунтом Zeus (ваши коннекторы сохраняются)"
   topup:
-    description: "Показать ваш баланс Nous и управлять оплатой на портале"
+    description: "Показать ваш баланс Zeus и управлять оплатой на портале"
   platforms:
     description: "Показать состояние шлюза и платформ обмена сообщениями"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}: {error}"
     load_failed_label: "Не удалось загрузить данные биллинга"
-    not_logged_in: "Вы не вошли в Nous Portal."
+    not_logged_in: "Вы не вошли в Zeus Portal."
     run_portal_then: "Выполните `zeus portal`, чтобы войти, затем {cmd}."
     org_line: "Организация: {org}"
     org_line_role: "Организация: {org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  Резолвер провайдера вернул пустой базовый URL. Проверьте конфигурацию провайдера или выполните: zeus setup"
     switching_to_fallback: "⚠️  {reason} — переключаемся на резервный вариант: {provider} / {model}"
     first_run_no_provider: "☤ Провайдер инференса ещё не настроен — давайте это исправим."
-    first_run_pick_provider: "Вы выберете провайдера (Nous Portal OAuth — самый быстрый способ; API-ключ не нужен) и модель."
+    first_run_pick_provider: "Вы выберете провайдера (Zeus Portal OAuth — самый быстрый способ; API-ключ не нужен) и модель."
     first_run_prompt: "Настроить провайдера сейчас? [Y/n]:"
     first_run_skipped: "Пропущено. Выполните 'zeus model' или 'zeus setup' в любое время."
     first_run_cancelled: "Настройка отменена. Выполните 'zeus model' в любое время."
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ Доставляем оставшуюся корректировку /steer как следующий ход: '{preview}'"
     reasoning_label: "Рассуждения"
     reasoning_more_lines: "... (ещё строк: {count} — /reasoning full, чтобы показать)"
-    billing_cta_nous: "Выполните [bold]/topup[/], чтобы пополнить кредиты, или [bold]/subscription[/], чтобы сменить тариф."
+    billing_cta_zeus: "Выполните [bold]/topup[/], чтобы пополнить кредиты, или [bold]/subscription[/], чтобы сменить тариф."
     billing_cta_provider: "Пополните кредиты у {provider}"
     your_provider: "вашего провайдера"
     billing_cta_switch: "Или переключите провайдера: [bold]/model <модель> --provider <провайдер>[/]."
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "Исправление для LM Studio: задайте длину контекста в настройках модели → перезагрузите модель"
     fix_local_server: "Исправление: запустите сервер с контекстом не менее {tokens_k}K (llama.cpp: -c {tokens}) или задайте model.ollama_num_ctx в config.yaml равным реально обслуживаемому окну"
     fix_config: "Исправление: задайте model.context_length в config.yaml или увеличьте настройку контекста на сервере"
-    zeus_models_not_agentic: "⚠  Модели Nous Research Hermes 3 и 4 НЕ агентные и не предназначены для использования с Zeus Agents."
+    zeus_models_not_agentic: "⚠  Модели Zeus Agents Hermes 3 и 4 НЕ агентные и не предназначены для использования с Zeus Agents."
     zeus_models_lack_tools: "У них нет вызова инструментов, необходимого для агентных рабочих процессов. Используйте агентную модель (Claude, GPT, Gemini, DeepSeek и т. д.)."
     zeus_models_switch_hint: "Переключиться: /model sonnet  или  /model gpt5"
     project_skills_loaded: "◆ Из этого репозитория загружено навыков проекта: {count}"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Camofox (Firefox с защитой от обнаружения) теперь плагин: zeus plugins install camofox."
   t182: "browser_exec выполняет несколько шагов в браузере за один вызов Python — переход, извлечение и клики вместе."
   t183: "browser.dialog_policy задаёт обработку нативных диалогов страницы: must_respond (агент отвечает через browser_dialog), auto_dismiss или auto_accept."
-  t184: "zeus mcp открывает интерактивный выбор одобренных Nous MCP-серверов, которые устанавливаются одним нажатием."
-  t185: "zeus mcp catalog выводит список одобренных Nous MCP-серверов, поставляемых с репозиторием."
+  t184: "zeus mcp открывает интерактивный выбор одобренных Zeus MCP-серверов, которые устанавливаются одним нажатием."
+  t185: "zeus mcp catalog выводит список одобренных Zeus MCP-серверов, поставляемых с репозиторием."
   t186: "zeus mcp install <name> устанавливает запись из каталога, запрашивает учётные данные и позволяет выбрать, какие из его инструментов включить."
   t187: "MCP-серверы настраиваются в config.yaml — поддерживаются транспорты stdio и HTTP."
   t188: "Фильтрация инструментов для каждого сервера: tools.include разрешает, а tools.exclude запрещает конкретные инструменты."
@@ -3758,7 +3758,7 @@ tips:
   t209: "Пользовательские провайдеры: сохраняйте именованные конечные точки в config.yaml в разделе custom_providers."
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT внедряет системный промпт, который никогда не сохраняется в историю."
   t211: "credential_pool_strategies поддерживает ротацию fill_first, round_robin, least_used и random."
-  t212: "zeus auth add nous или zeus auth add openai-codex настраивает провайдеров на основе OAuth."
+  t212: "zeus auth add zeus или zeus auth add openai-codex настраивает провайдеров на основе OAuth."
   t213: "API-сервер поддерживает и Chat Completions, и Responses API с состоянием на стороне сервера."
   t214: "tool_preview_length: 0 в конфигурации показывает полные пути к файлам в ленте активности спиннера."
   t215: "zeus status --deep выполняет углублённые диагностические проверки всех компонентов."
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback восстанавливает навыки из снимка перед запуском — резервные копии лежат в skills/.curator_backups/."
   t306: "zeus auth reset <провайдер> [цель] сбрасывает задержки и флаги исчерпания для всего пула учётных данных или для одного из них — по индексу, id или метке."
   t307: "credential_pool_strategies.<провайдер>: round_robin перебирает ключи по кругу вместо стратегии fill_first по умолчанию."
-  t308: "use_gateway: true для отдельного инструмента направляет web, image, tts или browser через вашу подписку Nous — без дополнительных ключей."
+  t308: "use_gateway: true для отдельного инструмента направляет web, image, tts или browser через вашу подписку Zeus — без дополнительных ключей."
   t309: "provider_routing.data_collection: deny исключает провайдеров OpenRouter, которые хранят данные."
   t310: "provider_routing.require_parameters: true направляет запросы только к провайдерам, поддерживающим каждый параметр вашего запроса."
   t311: "ZEUS_TUI_RESUME=1 автоматически подключается к последнему сеансу TUI при запуске — удобно после обрыва SSH."
@@ -3937,7 +3937,7 @@ tips:
     p10: "Поставь напоминание или запланируй повторяющуюся задачу"
     p11: "Введите / для просмотра команд или Ctrl+P для палитры"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "Бесплатно"
   level_top_tier: "Крупная"

@@ -36,11 +36,11 @@ env:
 jobs:
   real-backends:
     name: SSH + Docker backends (real sshd, real daemon)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout code
-        uses: useblacksmith/checkout@2b9fe87d796feea153b455ec2f3125b471a7b0e7  # v1
+        uses: actions/checkout@v4
         with:
           ref: ${{ inputs.commit }}
 
@@ -67,7 +67,7 @@ jobs:
           ZEUS_TEST_DOCKER_IMAGE: ${{ env.ZEUS_TEST_IMAGE_REF }}
           OPENROUTER_API_KEY: ""
           OPENAI_API_KEY: ""
-          NOUS_API_KEY: ""
+          ZEUS_PORTAL_API_KEY: ""
         # The real tests skip when their host is missing; here that would be a green
         # lane over zero coverage. --fail-on-skip fails the run on any skip, decided
         # from pytest's parsed counts rather than the progress line's display format.

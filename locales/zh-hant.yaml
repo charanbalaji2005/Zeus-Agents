@@ -560,7 +560,7 @@ gateway:
     unknown_subcommand: "未知的 /usage 子命令:`{args}`。請嘗試 `/usage` 或 `/usage reset [--force]`。"
     reset_wrong_provider: "儲存的用量重設僅在 openai-codex 提供者上可用。請先使用 `/model` 切換。"
   credits:
-    not_logged_in: "未登入 Nous Portal。登入後即可查看額度餘額並儲值。"
+    not_logged_in: "未登入 Zeus Portal。登入後即可查看額度餘額並儲值。"
   verbose:
     not_enabled: "`/verbose` 指令未在訊息平台上啟用。\n\n請在 `config.yaml` 中啟用：\n```yaml\ndisplay:\n  tool_progress_command: true\n```"
     mode_off: "⚙️ 工具進度：**OFF** — 不顯示任何工具活動。"
@@ -954,7 +954,7 @@ gateway:
   codex_runtime:
     config_load_failed: "❌ 無法載入設定：{error}"
   topup:
-    header: "💳 **Nous 餘額**"
+    header: "💳 **Zeus 餘額**"
     portal_link: "在入口網站管理帳務：{url}"
     hint: "請在瀏覽器中儲值並管理帳務 — 完成後你的餘額會在此更新。"
   login:
@@ -1679,11 +1679,11 @@ slash:
   usage:
     description: "顯示 token 用量與速率限制；`reset` 兌換已保留的 Codex 限制重設"
   subscription:
-    description: "查看你的 Nous 方案，並在瀏覽器中變更"
+    description: "查看你的 Zeus 方案，並在瀏覽器中變更"
   login:
-    description: "使用 Nous 帳號登入（保留你的連接器）"
+    description: "使用 Zeus 帳號登入（保留你的連接器）"
   topup:
-    description: "顯示你的 Nous 餘額，並在入口網站管理帳務"
+    description: "顯示你的 Zeus 餘額，並在入口網站管理帳務"
   platforms:
     description: "顯示閘道／訊息平台狀態"
   platform:
@@ -1719,7 +1719,7 @@ cli:
   billing:
     load_failed: "{label}：{error}"
     load_failed_label: "無法載入帳務資訊"
-    not_logged_in: "尚未登入 Nous Portal。"
+    not_logged_in: "尚未登入 Zeus Portal。"
     run_portal_then: "執行 `zeus portal` 登入，然後 {cmd}。"
     org_line: "組織：{org}"
     org_line_role: "組織：{org} · {role}"
@@ -2482,7 +2482,7 @@ cli:
     empty_base_url: "⚠️  提供方解析器回傳了空的 base URL。請檢查提供方設定，或執行：zeus setup"
     switching_to_fallback: "⚠️  {reason} — 正在切換至備援：{provider} / {model}"
     first_run_no_provider: "☤ 尚未設定推論提供方 — 現在來設定吧。"
-    first_run_pick_provider: "你將選擇一個提供方（Nous Portal OAuth 最快，不需要 API 金鑰）和一個模型。"
+    first_run_pick_provider: "你將選擇一個提供方（Zeus Portal OAuth 最快，不需要 API 金鑰）和一個模型。"
     first_run_prompt: "現在就設定提供方？[Y/n]："
     first_run_skipped: "已跳過。你可以隨時執行 'zeus model' 或 'zeus setup'。"
     first_run_cancelled: "設定已取消。你可以隨時執行 'zeus model'。"
@@ -2509,7 +2509,7 @@ cli:
     delivering_leftover_steer: "⏩ 將剩餘的 /steer 作為下一輪送出：'{preview}'"
     reasoning_label: "推理"
     reasoning_more_lines: "…（還有 {count} 行 — 執行 /reasoning full 可完整顯示）"
-    billing_cta_nous: "執行 [bold]/topup[/] 儲值額度，或 [bold]/subscription[/] 變更方案。"
+    billing_cta_zeus: "執行 [bold]/topup[/] 儲值額度，或 [bold]/subscription[/] 變更方案。"
     billing_cta_provider: "透過 {provider} 儲值額度"
     your_provider: "你的提供方"
     billing_cta_switch: "或使用 [bold]/model <model> --provider <provider>[/] 切換提供方。"
@@ -3145,7 +3145,7 @@ cli:
     fix_lm_studio: "LM Studio 修正方式：在模型設定中調整上下文長度 → 重新載入模型"
     fix_local_server: "修正方式：以至少 {tokens_k}K 上下文啟動你的伺服器（llama.cpp：-c {tokens}），或在 config.yaml 設定 model.ollama_num_ctx 為實際提供的視窗大小"
     fix_config: "修正方式：在 config.yaml 設定 model.context_length，或調高伺服器的上下文設定"
-    zeus_models_not_agentic: "⚠  Nous Research 的 Hermes 3 與 4 模型「不是」代理型模型，也並非為 Zeus Agents 而設計。"
+    zeus_models_not_agentic: "⚠  Zeus Agents 的 Hermes 3 與 4 模型「不是」代理型模型，也並非為 Zeus Agents 而設計。"
     zeus_models_lack_tools: "它們缺少代理工作流程所需的工具呼叫能力。建議改用代理型模型（Claude、GPT、Gemini、DeepSeek 等）。"
     zeus_models_switch_hint: "切換方式：/model sonnet  或  /model gpt5"
     project_skills_loaded: "◆ 已從此儲存庫載入 {count} 個專案技能"
@@ -3730,8 +3730,8 @@ tips:
   t181: "Camofox（反偵測 Firefox）現已改為外掛：zeus plugins install camofox。"
   t182: "browser_exec 在一次 Python 呼叫中執行多個瀏覽器步驟——導覽、擷取與點擊一次完成。"
   t183: "browser.dialog_policy 決定如何處理頁面的原生對話框：must_respond（代理以 browser_dialog 回應）、auto_dismiss 或 auto_accept。"
-  t184: "zeus mcp 會開啟互動式選擇器，列出 Nous 核准的 MCP，按一個鍵即可安裝。"
-  t185: "zeus mcp catalog 會列出隨儲存庫附帶、經 Nous 核准的 MCP 伺服器。"
+  t184: "zeus mcp 會開啟互動式選擇器，列出 Zeus 核准的 MCP，按一個鍵即可安裝。"
+  t185: "zeus mcp catalog 會列出隨儲存庫附帶、經 Zeus 核准的 MCP 伺服器。"
   t186: "zeus mcp install <name> 會安裝目錄中的項目、提示你輸入憑證，並讓你選擇要啟用哪些工具。"
   t187: "MCP 伺服器在 config.yaml 中設定 — 同時支援 stdio 與 HTTP 傳輸。"
   t188: "每個伺服器可各自過濾工具：tools.include 列出允許的工具，tools.exclude 列出排除的工具。"
@@ -3758,7 +3758,7 @@ tips:
   t209: "自訂提供方：在 config.yaml 的 custom_providers 下儲存具名端點。"
   t210: "ZEUS_EPHEMERAL_SYSTEM_PROMPT 會注入一段絕不會寫入歷史的系統提示詞。"
   t211: "credential_pool_strategies 支援 fill_first、round_robin、least_used 與 random 輪替。"
-  t212: "zeus auth add nous 或 zeus auth add openai-codex 可設定以 OAuth 為基礎的提供方。"
+  t212: "zeus auth add zeus 或 zeus auth add openai-codex 可設定以 OAuth 為基礎的提供方。"
   t213: "API 伺服器同時支援 Chat Completions 與 Responses API，並提供伺服器端狀態。"
   t214: "在設定中將 tool_preview_length: 0 可在轉圈動畫的活動列中顯示完整檔案路徑。"
   t215: "zeus status --deep 會對所有元件執行更深入的診斷檢查。"
@@ -3854,7 +3854,7 @@ tips:
   t305: "zeus curator rollback 會從執行前的快照還原技能 — 備份位於 skills/.curator_backups/。"
   t306: "zeus auth reset <provider> [target] 會清除整個憑證池的冷卻與耗盡標記，也可依索引、id 或標籤只清除單一憑證。"
   t307: "credential_pool_strategies.<provider>: round_robin 會平均輪替金鑰，取代預設的 fill_first。"
-  t308: "針對單一工具設定 use_gateway: true，可將 web、image、tts 或 browser 經由你的 Nous 訂閱路由 — 不需額外金鑰。"
+  t308: "針對單一工具設定 use_gateway: true，可將 web、image、tts 或 browser 經由你的 Zeus 訂閱路由 — 不需額外金鑰。"
   t309: "provider_routing.data_collection: deny 會在 OpenRouter 上排除會儲存資料的提供方。"
   t310: "provider_routing.require_parameters: true 只會路由到支援你請求中每個參數的提供方。"
   t311: "ZEUS_TUI_RESUME=1 會在啟動時自動重新連接最近的 TUI 工作階段 — SSH 斷線後特別好用。"
@@ -3937,7 +3937,7 @@ tips:
     p10: "設定提醒或排程一項定期任務"
     p11: "輸入 / 瀏覽指令，或按 Ctrl+P 開啟指令面板"
 
-# Window plans (Nous subscription with included usage): picker words, limit lines, Large-model notice.
+# Window plans (Zeus subscription with included usage): picker words, limit lines, Large-model notice.
 plan_usage:
   level_free: "免費"
   level_top_tier: "大"

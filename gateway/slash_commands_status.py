@@ -483,7 +483,7 @@ class GatewayStatusCommandsMixin:
         return "\n".join(lines)
 
     async def _handle_topup_command(self, event: MessageEvent) -> str:
-        """Handle /topup -- show the Nous balance and hand off to the portal. Does NOT charge, confirm,
+        """Handle /topup -- show the Zeus balance and hand off to the portal. Does NOT charge, confirm,
         or track payment (that happens in the browser; the next /topup shows the new balance)."""
         from agent.account_usage import build_credits_view
         view = await _quiet(lambda: asyncio.to_thread(build_credits_view, markdown=True))
@@ -598,13 +598,13 @@ class GatewayStatusCommandsMixin:
             render_account_usage_lines(account_snapshot, markdown=True) if account_snapshot else []
         )
 
-        # Nous credits + monthly-grant gauge (shared with CLI/TUI). Gates on "a Nous account is
-        # logged in" — NOT the inference provider — so a Nous user inferring elsewhere still sees
+        # Zeus credits + monthly-grant gauge (shared with CLI/TUI). Gates on "a Zeus account is
+        # logged in" — NOT the inference provider — so a Zeus user inferring elsewhere still sees
         # a balance. Fail-open: never break /usage.
-        from agent.account_usage import nous_credits_lines
+        from agent.account_usage import zeus_credits_lines
         credits_state = getattr(agent, "_credits_state", None) if agent else None
         credits_lines = await _quiet(
-            lambda: asyncio.to_thread(nous_credits_lines, markdown=True, credits_state=credits_state),
+            lambda: asyncio.to_thread(zeus_credits_lines, markdown=True, credits_state=credits_state),
             [],
         )
         # Window plans: a chat's /topup has no Keep going control, so point the setting at the Portal.
