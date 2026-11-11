@@ -64,6 +64,7 @@ while [ $# -gt 0 ]; do
         --skip-setup) NON_INTERACTIVE=true; shift ;;
         --skip-browser|--no-playwright|-SkipBrowser) SKIP_BROWSER=true; shift ;;
         --skip-computer-use|-SkipComputerUse) SKIP_COMPUTER_USE=true; shift ;;
+        --cli-only|-CliOnly) SKIP_BROWSER=true; SKIP_COMPUTER_USE=true; shift ;;
         --verbose|-Verbose) VERBOSE=true; shift ;;
         -h|--help)
             echo "Usage: install.sh [--channel stable|main] [--branch NAME] [--commit SHA]"
@@ -85,6 +86,17 @@ while [ $# -gt 0 ]; do
         *) echo "unknown option: $1" >&2; exit 1 ;;
     esac
 done
+
+if [ "${ZEUS_CLI_ONLY:-}" = "1" ] || [ "${ZEUS_CLI_ONLY:-}" = "true" ]; then
+    SKIP_BROWSER=true
+    SKIP_COMPUTER_USE=true
+fi
+if [ "${ZEUS_SKIP_BROWSER:-}" = "1" ] || [ "${ZEUS_SKIP_BROWSER:-}" = "true" ]; then
+    SKIP_BROWSER=true
+fi
+if [ "${ZEUS_SKIP_COMPUTER_USE:-}" = "1" ] || [ "${ZEUS_SKIP_COMPUTER_USE:-}" = "true" ]; then
+    SKIP_COMPUTER_USE=true
+fi
 
 case "$CHANNEL" in
     ""|stable|main) ;;

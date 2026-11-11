@@ -39,6 +39,7 @@ param(
     # `zeus pm install chromium` opts back in.
     [switch]$SkipBrowser,
     [switch]$SkipComputerUse,
+    [switch]$CliOnly,
     # Print the paths this install would use, as JSON on stdout, and exit
     # without touching anything. The first question on any "installer says a
     # path doesn't exist" report is which paths it actually resolved --
@@ -51,6 +52,12 @@ $ErrorActionPreference = "Stop"
 
 # -SkipSetup is the pre-rework spelling of -NonInteractive.
 if ($SkipSetup) { $NonInteractive = $true }
+
+# CLI-only mode: skip browser (Chromium) and computer-use driver (cua-driver)
+$script:CliOnly = [bool]($CliOnly -or ($env:ZEUS_CLI_ONLY -in @("1", "true", "yes", "on")))
+$script:SkipBrowser = [bool]($SkipBrowser -or $script:CliOnly -or ($env:ZEUS_SKIP_BROWSER -in @("1", "true", "yes", "on")))
+$script:SkipComputerUse = [bool]($SkipComputerUse -or $script:CliOnly -or ($env:ZEUS_SKIP_COMPUTER_USE -in @("1", "true", "yes", "on")) -or ($env:ZEUS_SKIP_CUA -in @("1", "true", "yes", "on")))
+
 
 # --- Dot-source guard (part 1: detect) ---------------------------------------
 # Tests (and any embedding host) dot-source this file (`. install.ps1`) to get
@@ -653,6 +660,11 @@ function Write-Banner {
     Write-Host "|  An open source AI agent.                               |" -ForegroundColor Magenta
     Write-Host "+---------------------------------------------------------+" -ForegroundColor Magenta
     Write-Host ""
+    if ($script:CliOnly) {
+        Write-Ok "CLI-only install mode active (skipping browser & computer-use apps)"
+    } elseif ($script:SkipBrowser) {
+        Write-Ok "skipping browser app install"
+    }
 }
 
 # Windows PowerShell 5.1 turns a native command's stderr into an ErrorRecord
@@ -1316,8 +1328,8 @@ function Invoke-BootstrapPm {
         $pmArgs = @('install')
         # Legacy spelling on purpose: the stable PM this script installs by
         # default rejects 'chromium', and newer PMs read 'agent-browser' as 'chromium'.
-        if ($SkipBrowser) { $pmArgs += @('--without', 'agent-browser') }
-        if ($SkipComputerUse) { $pmArgs += @('--without', 'cua-driver') }
+        if ($script:SkipBrowser) { $pmArgs += @('--without', 'agent-browser') }
+        if ($script:SkipComputerUse) { $pmArgs += @('--without', 'cua-driver') }
         Invoke-Logged "Installing dependencies (hash-verified via uv.lock)" { & $bootPy -m pm.cli @pmArgs }
         if ($LASTEXITCODE) { Fail "dependency install failed" deps_install_failed }
     } finally {
