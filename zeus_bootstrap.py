@@ -508,6 +508,32 @@ def _legacy_post_swap_invocation(argv: list[str]) -> tuple[Path, list[str]] | No
 harden_import_path(str(_root))
 
 
+class _HermesCliAliasLoader(importlib.abc.Loader):
+    def __init__(self, target: str):
+        self.target = target
+
+    def create_module(self, spec):
+        return __import__(self.target, fromlist=["*"])
+
+    def exec_module(self, module):
+        pass
+
+
+class _HermesCliAliasFinder(importlib.abc.MetaPathFinder):
+    """Map legacy `hermes_cli` imports to `zeus_cli` for bundled and external plugins."""
+
+    def find_spec(self, fullname: str, path=None, target=None):
+        if fullname == "hermes_cli" or fullname.startswith("hermes_cli."):
+            tgt = "zeus_cli" + fullname[len("hermes_cli"):]
+            return importlib.util.spec_from_loader(fullname, _HermesCliAliasLoader(tgt))
+        return None
+
+
+if not any(isinstance(finder, _HermesCliAliasFinder) for finder in sys.meta_path):
+    sys.meta_path.insert(0, _HermesCliAliasFinder())
+
+
+
 def _settle_interrupted_update() -> None:
     """Put back the tree a killed ``zeus update`` left half-moved, before PM, launch preparation or
     any Zeus package imports from it (``zeus_cli._early_recovery``; ``zeus_cli.main`` repeats the
