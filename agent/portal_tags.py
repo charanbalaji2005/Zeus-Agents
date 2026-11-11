@@ -93,3 +93,8 @@ def zeus_portal_tags(session_id: str | None = None) -> list[str]:
     if effective:
         tags.append(conversation_tag(effective))
     return tags
+
+
+# Compatibility alias for provider plugins
+nous_portal_tags = zeus_portal_tags
+

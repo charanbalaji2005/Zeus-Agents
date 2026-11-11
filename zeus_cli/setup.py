@@ -105,6 +105,8 @@ def _sanitize_pasted_input(value: str) -> str:
 
 def prompt(question: str, default: str | None = None, password: bool = False) -> str:
     """Prompt for input with optional default."""
+    if is_noninteractive() or not is_interactive_stdin():
+        return default or ""
     display = color(f"{question} [{default}]: " if default else f"{question}: ", Colors.YELLOW)
     try:
         if password:
@@ -289,7 +291,7 @@ def prompt_yes_no(question: str, default: bool = True, description: str | None =
     closed/redirected stdin return ``default`` instead of aborting the whole process.
     ``description`` is the context the question refers to, shown above it in setup's full-screen
     menu, which hides everything printed before it; the line prompt keeps that text on screen."""
-    if is_noninteractive():
+    if is_noninteractive() or not is_interactive_stdin():
         return default
     # Inside setup, route binary selections through the curses menu so ESC and left-arrow work
     # consistently; every other caller keeps the traditional line prompt.

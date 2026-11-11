@@ -1,4 +1,4 @@
-# Zeus Agents bootstrap: git checkout + venv + zeus command on PATH.
+﻿# Zeus Agents bootstrap: git checkout + venv + zeus command on PATH.
 # Heavy dependencies (tool binaries, browsers, node) are pm's job after
 # this: `zeus pm install`. Stage protocol (installer drivers and E2E harnesses):
 #   -Manifest             print the stage list as JSON
@@ -762,7 +762,7 @@ function Invoke-Logged {
     try {
         $logWriter.WriteLine("==> $StatusLabel ($((Get-Date).ToUniversalTime().ToString('s'))Z)")
         Write-StatusLine $StatusLabel $columns
-        Invoke-Native { & $NativeBlock 2>&1 } | ForEach-Object {
+        Invoke-Native -Utf8Output { & $NativeBlock 2>&1 } | ForEach-Object {
             $outputLine = "$_".TrimEnd("`r")
             $logWriter.WriteLine($outputLine)
             $recentLines.Enqueue($outputLine)
@@ -775,7 +775,9 @@ function Invoke-Logged {
         if ($exitCode) { $script:NativeError = Select-ErrorLine $recentLines }
     } finally {
         $logWriter.Dispose()
-        Write-Host ("`r" + (' ' * ($columns - 1)) + "`r") -NoNewline
+        $clearCols = 120
+        try { $clearCols = [Math]::Max(120, $Host.UI.RawUI.WindowSize.Width) } catch {}
+        Write-Host ("`r" + (' ' * ($clearCols - 1)) + "`r") -NoNewline
     }
     if ($exitCode -and -not $MayFail) {
         Write-Err "$StatusLabel failed (exit $exitCode). Last output:"
@@ -1430,13 +1432,43 @@ function Invoke-InstalledZeus([string[]]$CommandArgs) {
     }
 }
 
+function Clear-StaleInstallLocks {
+    $locks = @(
+        (Join-Path $ZeusHome ".zeus-update-in-progress.lock"),
+        (Join-Path $ZeusHome ".zeus-update-in-progress"),
+        (Join-Path $InstallDir ".git\zeus-update.lock"),
+        (Join-Path $InstallDir ".zeus-update.lock")
+    )
+    foreach ($l in $locks) {
+        if (Test-Path $l) {
+            try { Remove-Item -Force $l -ErrorAction SilentlyContinue } catch {}
+        }
+    }
+}
+
+function Test-CanPromptUser {
+    if ($NonInteractive) { return $false }
+    try {
+        if ([Console]::IsInputRedirected) { return $false }
+    } catch {
+        return $false
+    }
+    return $true
+}
+
 function Stage-Setup {
-    if ($NonInteractive) { return }
+    if (-not (Test-CanPromptUser)) {
+        Write-Ok "skipped interactive setup (run 'zeus setup' to configure API keys)"
+        return
+    }
     Invoke-InstalledZeus @('setup')
 }
 
 function Stage-Gateway {
-    if ($NonInteractive) { return }
+    if (-not (Test-CanPromptUser)) {
+        Write-Ok "skipped gateway service install (run 'zeus gateway install' to configure background service)"
+        return
+    }
     # Setup installs the service when it handles the gateway; ask only if it did not.
     Invoke-InstalledZeus @('gateway', 'install', '--if-missing')
 }
@@ -1457,6 +1489,7 @@ function Stage-Complete {
         $marker | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $InstallDir ".zeus-bootstrap-complete") -Encoding UTF8
     }
     if ($Channel) { Invoke-InstalledZeus @('update', '--set-channel', $Channel) }
+    Clear-StaleInstallLocks
     if ($commit) { Write-Ok "Zeus Agents install complete (pinned $commit). Run: zeus" }
 }
 
@@ -1543,6 +1576,7 @@ $script:InstallStarted = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
 $script:InstallStage = "prerequisites"
 $script:InstallReceiptWritten = $false
 try {
+    Clear-StaleInstallLocks
     Write-Banner
     foreach ($s in $Stages) {
         $script:InstallStage = $s.name
@@ -1558,6 +1592,7 @@ try {
     # Under iex: report failure without closing the user's window.
     $global:LASTEXITCODE = 1
 } finally {
+    Clear-StaleInstallLocks
     # Ctrl-C stops the run without reaching catch; finally still runs (no-op after a receipt).
     Write-InstallReceipt "failed" $script:InstallStage "interrupted"
 }
