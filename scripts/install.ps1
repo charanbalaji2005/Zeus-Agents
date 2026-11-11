@@ -1,4 +1,4 @@
-﻿# Zeus Agents bootstrap: git checkout + venv + zeus command on PATH.
+# Zeus Agents bootstrap: git checkout + venv + zeus command on PATH.
 # Heavy dependencies (tool binaries, browsers, node) are pm's job after
 # this: `zeus pm install`. Stage protocol (installer drivers and E2E harnesses):
 #   -Manifest             print the stage list as JSON

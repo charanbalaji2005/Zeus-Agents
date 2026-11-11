@@ -50,3 +50,19 @@ def test_failed_file_install_still_exits_nonzero(tmp_path):
                             env=_failing_install_env(tmp_path), capture_output=True, text=True, timeout=60, check=False)
     assert REFUSAL in result.stdout
     assert result.returncode == 1
+
+
+def test_installer_has_no_utf8_bom():
+    """scripts/install.ps1 must not have a UTF-8 BOM.
+
+    When users pipe `irm ... | iex`, PowerShell's Invoke-RestMethod returns a
+    string with a leading U+FEFF character. PowerShell's parser does not treat
+    U+FEFF as whitespace or comment prefix in iex string contexts, causing line 1
+    to be treated as an expression statement and making [CmdletBinding()] /
+    param() fail with ParseException: Unexpected attribute 'CmdletBinding'.
+    """
+    raw = INSTALLER.read_bytes()
+    assert not raw.startswith(b"\xef\xbb\xbf"), (
+        "scripts/install.ps1 must not start with a UTF-8 BOM"
+    )
+

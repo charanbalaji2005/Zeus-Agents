@@ -125,13 +125,21 @@ SQUIRCLE_TARGETS = (
 
 # ─── girl art extraction ────────────────────────────────────────────────────
 
+def _resolve_girl(assets: Path, color: str) -> Path:
+    for name in (f"zeus-girl-{color}.svg", f"nous-girl-{color}.svg"):
+        p = assets / name
+        if p.exists():
+            return p
+    return assets / f"zeus-girl-{color}.svg"
+
+
 class IconArt:
     """One generation's rendering inputs and caches; never writes to source."""
 
     def __init__(self, source: Path):
         assets = source / "assets"
         self.source = source
-        self.girls = {color: assets / f"nous-girl-{color}.svg" for color in ("black", "white")}
+        self.girls = {color: _resolve_girl(assets, color) for color in ("black", "white")}
         self.backgrounds = assets / "backgrounds"
         self.paths: dict[str, str] = {}
         self.bboxes: dict[str, tuple[float, float, float, float]] = {}
@@ -143,9 +151,12 @@ def girl_path(art: IconArt, girl: str) -> str:
     """The girl `<path>` element with editor metadata stripped (resvg rejects
     undeclared inkscape/sodipodi prefixes)."""
     if girl not in art.paths:
-        src = art.girls[girl].read_text(encoding="utf-8-sig")
+        svg_path = art.girls[girl]
+        if not svg_path.exists():
+            raise FileNotFoundError(f"Girl SVG art file not found: {svg_path}")
+        src = svg_path.read_text(encoding="utf-8-sig")
         m = re.search(r"<path\b.*?/>", src, re.DOTALL)
-        assert m, f"no <path> found in {art.girls[girl].name}"
+        assert m, f"no <path> found in {svg_path.name}"
         path = re.sub(r'\s+(inkscape|sodipodi):[a-zA-Z-]+="[^"]*"', "", m.group(0))
         art.paths[girl] = path
     return art.paths[girl]
@@ -155,7 +166,10 @@ def girl_bbox(art: IconArt, girl: str) -> tuple[float, float, float, float]:
     """Art bounding box in the girl SVG's coordinate space, measured by
     rendering once and taking the alpha bbox (robust to art changes)."""
     if girl not in art.bboxes:
-        data = resvg_py.svg_to_bytes(svg_path=str(art.girls[girl]), width=512, height=512)
+        svg_path = art.girls[girl]
+        if not svg_path.exists():
+            raise FileNotFoundError(f"Girl SVG art file not found: {svg_path}")
+        data = resvg_py.svg_to_bytes(svg_path=str(svg_path), width=512, height=512)
         im = Image.open(io.BytesIO(data))
         bx, by, bx2, by2 = im.getchannel("A").point(lambda v: 255 if v > 0 else 0).getbbox()
         s = GIRL_VIEWBOX / 512.0

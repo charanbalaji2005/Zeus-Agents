@@ -96,6 +96,8 @@ assets/
 assets/*
 !assets/zeus-girl-black.svg
 !assets/zeus-girl-white.svg
+!assets/nous-girl-black.svg
+!assets/nous-girl-white.svg
 !assets/dmg-volume.png
 !assets/backgrounds/
 !assets/backgrounds/**
