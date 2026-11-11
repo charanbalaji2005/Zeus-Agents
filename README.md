@@ -60,7 +60,12 @@ for the separate MSIX/App Installer package and its update ownership.
 After installation:
 
 ```bash
-source ~/.bashrc    # reload shell (or: source ~/.zshrc)
+# macOS (default shell is zsh):
+source ~/.zshrc
+
+# Linux / WSL2 (bash):
+source ~/.bashrc
+
 zeus              # start chatting!
 ```
 

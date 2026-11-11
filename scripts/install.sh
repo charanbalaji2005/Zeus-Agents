@@ -136,7 +136,9 @@ error_line() {
         line="${line%$'\r'}"; line="${line##*$'\r'}"
         [ -n "${line//[[:space:]]/}" ] || continue
         last="$line"
-        [ -n "$pick" ] || case "$line" in fatal:*|error:*|*" fatal: "*|*" error: "*) pick="$line" ;; esac
+        [ -n "$pick" ] || case "$line" in
+            [Ff]atal:*|[Ee]rror:*|*[Ff]atal:*|*[Ee]rror:*|*[Ff]ailed:*|[Ee]xception:*|*"[Ee]rror"*|*"ERR!"*|*"Incomplete tail"*) pick="$line" ;;
+        esac
     done
     pick="${pick:-$last}"
     printf '%s' "${pick:0:240}"
@@ -330,7 +332,7 @@ uv_bootstrap_target() {
         *) return 1 ;;
     esac
     case "$(uname -s)" in
-        Linux)
+        Linux*)
             # Same precedence as pm/store.py::_is_musl_libc: the native
             # userland's ELF interpreter decides; ldd and a musl loader on
             # disk are fallbacks only (a glibc host may carry musl as a
@@ -346,7 +348,7 @@ uv_bootstrap_target() {
             done
             if [[ -z "$_libc" ]]; then
                 _libc="$(ldd --version 2>&1 || true)"
-                _libc="${_libc,,}"
+                _libc="$(printf '%s' "$_libc" | tr '[:upper:]' '[:lower:]')"
             fi
             if [[ "$_libc" == *musl* ]]; then
                 echo "linux-$_arch-musl"
@@ -358,7 +360,7 @@ uv_bootstrap_target() {
                 echo "linux-$_arch"
             fi
             ;;
-        Darwin) echo "darwin-$_arch" ;;
+        Darwin*) echo "darwin-$_arch" ;;
         *) return 1 ;;
     esac
 }

@@ -85,6 +85,24 @@ else
   esac
 fi
 target="$os-$arch"
+if [ "$os" = linux ]; then
+  _libc=""
+  for _probe in /bin/sh /bin/ls; do
+    _head="$(head -c 8192 "$_probe" 2>/dev/null | LC_ALL=C tr -d '\000')" || continue
+    [[ "$_head" == $'\x7f'ELF* ]] || continue
+    case "$_head" in
+      *ld-musl-*) _libc="musl"; break ;;
+      *ld-linux*) _libc="glibc"; break ;;
+    esac
+  done
+  if [ -z "$_libc" ]; then
+    _libc="$(ldd --version 2>&1 || true)"
+    _libc="$(printf '%s' "$_libc" | tr '[:upper:]' '[:lower:]')"
+  fi
+  if [[ "$_libc" == *musl* ]] || compgen -G '/lib/ld-musl-*.so.1' >/dev/null 2>&1; then
+    target="linux-$arch-musl"
+  fi
+fi
 
 # The machine-written lock has one member per line. Follow object names and
 # braces, not indentation, to read pins before Python is available.
