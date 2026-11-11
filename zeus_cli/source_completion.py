@@ -147,6 +147,10 @@ def _complete_locked(
                   file=sys.stderr)
     if followups is not None:
         followups.extend(owed)
+    if owed:
+        print("\n⚠ Incomplete tail steps:", file=sys.stderr)
+        for name, reason in owed:
+            print(f"  - {name}: {reason}", file=sys.stderr)
     # The SQLite verdict is not tail work (re-running the tail cannot fix the interpreter); it
     # is reported by the maintenance step itself and only withholds an install's success.
     return tail_done and all(verdict)
