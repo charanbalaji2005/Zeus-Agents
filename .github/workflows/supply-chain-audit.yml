@@ -61,7 +61,7 @@ jobs:
       review_status: ${{ steps.emit-status.outputs.review_status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.commit }}
           fetch-depth: 0
@@ -165,7 +165,7 @@ jobs:
       review_status: ${{ steps.emit-status.outputs.review_status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.commit }}
           fetch-depth: 0

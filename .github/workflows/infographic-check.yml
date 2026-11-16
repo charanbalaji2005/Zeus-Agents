@@ -38,7 +38,7 @@ jobs:
     outputs:
       review_status: ${{ steps.infographic-check.outputs.review_status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ inputs.commit }}
 
